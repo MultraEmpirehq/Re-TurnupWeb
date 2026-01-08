@@ -1,0 +1,15 @@
+export enum ROUTE_TYPE {
+  NAV_ROUTE = "NAV_ROUTE",
+  FOOTER_ROUTE = "FOOTER_ROUTE",
+  FOOTER_COMPANY_INFO_ROUTE = "FOOTER_COMPANY_INFO_ROUTE",
+  FOOTER_HELP_ROUTE = "FOOTER_HELP_ROUTE",
+  FOOTER_CATEGORIES_ROUTE = "FOOTER_CATEGORIES_ROUTE",
+  FOOTER_FOLLOW_US_ROUTE = "FOOTER_FOLLOW_US_ROUTE",
+}
+
+export interface RouteProps {
+  shouldShowIn: ROUTE_TYPE[];
+  label: string;
+  href: string;
+  icon?: React.ReactNode;
+}
