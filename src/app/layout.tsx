@@ -27,10 +27,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background`}
       >
         <GeneralNavComponent />
-        {children}
+        <div className="min-h-[calc(100vh-70px)]">{children}</div>
         <GeneralFooterComponent />
       </body>
     </html>
