@@ -1,4 +1,5 @@
 import SectionContainer from "@/components/layouts/section-container/section-container";
+import CustomImageComponent from "@/components/ui/custom-image.component";
 import Image from "next/image";
 import React, { memo } from "react";
 
@@ -7,7 +8,12 @@ const HomeBannerComponent = () => {
     <div className="py-10 md:py-16">
       <SectionContainer>
         <div className="w-full aspect-video bg-cover relative rounded-lg overflow-hidden">
-          <Image src={null} alt="banner" fill className="object-cover" />
+          <CustomImageComponent
+            src={""}
+            alt="banner"
+            fill
+            imageClassName="object-cover object-center"
+          />
           <div className="size-full bg-black/50 z-10 flex-col flex text-center gap-6 items-center justify-center">
             <h1 className="text-4xl font-bold text-white">
               Discover Amazing Events

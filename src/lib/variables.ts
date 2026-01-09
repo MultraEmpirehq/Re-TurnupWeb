@@ -1,11 +1,16 @@
 import { ROUTE_TYPE, RouteProps } from "./types";
 
 export const ROUTES: { [key: string]: RouteProps } = {
+  HOME: {
+    shouldShowIn: [],
+    label: "Home",
+    href: "/",
+  },
   // Nav Routes
   EXPLORE: {
     shouldShowIn: [ROUTE_TYPE.NAV_ROUTE],
     label: "Explore",
-    href: "/",
+    href: "/explore",
   },
   CONTACT: {
     shouldShowIn: [ROUTE_TYPE.NAV_ROUTE, ROUTE_TYPE.FOOTER_COMPANY_INFO_ROUTE],

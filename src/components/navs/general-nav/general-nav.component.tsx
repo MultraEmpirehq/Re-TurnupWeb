@@ -8,41 +8,32 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
+import { getRoutesByType } from "@/lib/functions";
+import { ROUTE_TYPE } from "@/lib/types";
+import { ROUTES } from "@/lib/variables";
 import Image from "next/image";
 import Link from "next/link";
 import React, { memo } from "react";
+
+const navLinks = getRoutesByType(ROUTE_TYPE.NAV_ROUTE);
 
 const GeneralNavComponent = () => {
   return (
     <div className="py-3 bg-linear-to-r from-secondary via- to-primary">
       <SectionContainer className="flex flex-row items-center justify-between">
-        <Image src={LogoWhiteSVG} alt="logo" className="h-8" />
+        <Link href={ROUTES.HOME.href}>
+          <Image src={LogoWhiteSVG} alt="logo" className="h-8" />
+        </Link>
 
         <NavigationMenu>
           <NavigationMenuList className="text-white">
-            <NavigationMenuItem className="">
-              <NavigationMenuLink asChild>
-                <Link href="/">Explore</Link>
-              </NavigationMenuLink>
-            </NavigationMenuItem>
-
-            <NavigationMenuItem className="">
-              <NavigationMenuLink asChild>
-                <Link href="/contact">Contact</Link>
-              </NavigationMenuLink>
-            </NavigationMenuItem>
-
-            <NavigationMenuItem className="">
-              <NavigationMenuLink asChild>
-                <Link href="/auth">Login</Link>
-              </NavigationMenuLink>
-            </NavigationMenuItem>
-
-            <NavigationMenuItem className="">
-              <NavigationMenuLink asChild>
-                <Link href="/auth">Signup</Link>
-              </NavigationMenuLink>
-            </NavigationMenuItem>
+            {navLinks.map((link) => (
+              <NavigationMenuItem key={link.href} className="">
+                <NavigationMenuLink asChild>
+                  <Link href={link.href}>{link.label}</Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+            ))}
           </NavigationMenuList>
         </NavigationMenu>
 

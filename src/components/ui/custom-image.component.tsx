@@ -22,9 +22,14 @@ const imageVariantClassName = cva("relative rounded-lg overflow-hidden", {
       lg: "w-32",
       xl: "w-36",
     },
+    hasFill: {
+      true: "size-full absolute top-0 left-0",
+      false: "",
+    },
   },
   defaultVariants: {
     size: "md",
+    hasFill: false,
   },
 });
 
@@ -38,13 +43,27 @@ const CustomImageComponent = React.forwardRef<
   } & React.ComponentPropsWithoutRef<typeof Image>
 >(
   (
-    { size, src, alt, imageClassName, loading = "lazy", className, ...props },
+    {
+      size,
+      src,
+      alt,
+      imageClassName,
+      loading = "lazy",
+      className,
+      fill,
+      ...props
+    },
     ref
   ) => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [hasError, setHasError] = useState(false);
     return (
-      <div className={cn(imageVariantClassName({ size }), className)}>
+      <div
+        className={cn(
+          imageVariantClassName({ size, hasFill: !!fill }),
+          className
+        )}
+      >
         {src && (
           <Image
             className={cn(
@@ -54,6 +73,7 @@ const CustomImageComponent = React.forwardRef<
             )}
             ref={ref}
             src={src}
+            fill={fill}
             alt={alt}
             onLoad={() => {
               setIsLoaded(true);
