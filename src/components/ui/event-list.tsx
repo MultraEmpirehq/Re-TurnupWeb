@@ -5,6 +5,7 @@ import EventCard, {
 } from "./event-card";
 import EmptyContainer from "./empty-container";
 import { Button } from "./button";
+import { CalendarDays } from "lucide-react";
 
 export interface EventListProps {
   events: EventCardComponentProps[];
@@ -38,6 +39,7 @@ const EventList: React.FC<EventListProps> = ({
       )}
       {!isLoading && events && events.length === 0 && (
         <EmptyContainer
+          icon={<CalendarDays className="size-10" />}
           title="No events found"
           description="There is no events available at the moment"
         />
