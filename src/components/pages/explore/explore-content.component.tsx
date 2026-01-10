@@ -1,4 +1,5 @@
 import SectionContainer from "@/components/layouts/section-container/section-container";
+import EventList from "@/components/ui/event-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React, { memo } from "react";
 
@@ -16,12 +17,12 @@ const tabItems: TabItem[] = [
   {
     value: EXPLORE_CONTENT_TABS.EVENTS,
     label: "Events",
-    content: <div>Events</div>,
+    content: <EventList events={[]} />,
   },
   {
     value: EXPLORE_CONTENT_TABS.VENUES,
     label: "Venues",
-    content: <div>Venues</div>,
+    content: <EventList events={[]} />,
   },
 ];
 
