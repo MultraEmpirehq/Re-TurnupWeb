@@ -1,7 +1,10 @@
+"use client";
 import SectionContainer from "@/components/layouts/section-container/section-container";
-import EventList from "@/components/ui/event-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React, { memo } from "react";
+import EventContent from "./event-content";
+import { useRouter, useSearchParams } from "next/navigation";
+import VenueContent from "./venue-content";
 
 export enum EXPLORE_CONTENT_TABS {
   EVENTS = "events",
@@ -17,20 +20,26 @@ const tabItems: TabItem[] = [
   {
     value: EXPLORE_CONTENT_TABS.EVENTS,
     label: "Events",
-    content: <EventList events={[]} />,
+    content: <EventContent />,
   },
   {
     value: EXPLORE_CONTENT_TABS.VENUES,
     label: "Venues",
-    content: <EventList events={[]} />,
+    content: <VenueContent />,
   },
 ];
 
 const ExploreContentComponent = () => {
+  const { push } = useRouter();
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab")?.toString();
   return (
     <SectionContainer className="w-full py-10 md:py-16">
       <Tabs
-        defaultValue={EXPLORE_CONTENT_TABS.EVENTS}
+        onValueChange={(value) => {
+          push(`?tab=${value}`, { scroll: false });
+        }}
+        defaultValue={tab || EXPLORE_CONTENT_TABS.EVENTS}
         className="w-full space-y-6"
       >
         <TabsList>

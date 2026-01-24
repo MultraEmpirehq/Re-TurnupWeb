@@ -1,18 +1,19 @@
 import React, { memo } from "react";
-import EventCard, {
-  EventCardComponentProps,
-  EventCardSkeleton,
-} from "./event-card";
+import EventCard, { EventCardSkeleton } from "./event-card";
 import EmptyContainer from "./empty-container";
 import { Button } from "./button";
 import { CalendarDays } from "lucide-react";
+import { EventDetailsType } from "@/lib/types";
+import ErrorContainer from "./error-container";
 
 export interface EventListProps {
-  events: EventCardComponentProps[];
+  events: EventDetailsType[];
   isLoading?: boolean;
   hasNextPage?: boolean;
   fetchNextPage?: () => void;
   isFetchingNextPage?: boolean;
+  error?: string;
+  refetch?: () => void;
 }
 
 const EventList: React.FC<EventListProps> = ({
@@ -21,10 +22,12 @@ const EventList: React.FC<EventListProps> = ({
   hasNextPage,
   fetchNextPage,
   isFetchingNextPage,
+  error,
+  refetch,
 }) => {
   return (
     <div className="w-full">
-      {(isLoading || (!isLoading && events && events.length > 0)) && (
+      {(isLoading || (!isLoading && events && events.length > 0)) && !error && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {isLoading &&
             Array.from({ length: 6 }).map((_, index) => (
@@ -37,13 +40,14 @@ const EventList: React.FC<EventListProps> = ({
             ))}
         </div>
       )}
-      {!isLoading && events && events.length === 0 && (
+      {!isLoading && !error && events && events.length === 0 && (
         <EmptyContainer
           icon={<CalendarDays className="size-10" />}
           title="No events found"
           description="There is no events available at the moment"
         />
       )}
+      {error && <ErrorContainer error={error} retryFunction={refetch} />}
       {hasNextPage && fetchNextPage && (
         <div className="flex flex-row items-center gap-2 justify-between">
           <Button
