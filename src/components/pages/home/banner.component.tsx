@@ -1,6 +1,5 @@
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import CustomImageComponent from "@/components/ui/custom-image.component";
-import Image from "next/image";
 import React, { memo } from "react";
 
 const HomeBannerComponent = () => {
@@ -12,10 +11,11 @@ const HomeBannerComponent = () => {
             src={""}
             alt="banner"
             fill
+            className="rounded-none"
             imageClassName="object-cover object-center"
           />
-          <div className="size-full bg-black/50 z-10 flex-col flex text-center gap-6 items-center justify-center">
-            <h1 className="text-4xl font-bold text-white">
+          <div className="size-full bg-black/60 z-10 flex-col flex text-center gap-6 items-center justify-center relative">
+            <h1 className="text-[clamp(1.1rem,5vw,2.5rem)] font-bold text-white">
               Discover Amazing Events
             </h1>
             <p className="text-white opacity-70">

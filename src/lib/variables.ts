@@ -25,7 +25,7 @@ export const ROUTES: { [key: string]: RouteProps } = {
   SIGNUP: {
     shouldShowIn: [ROUTE_TYPE.NAV_ROUTE],
     label: "Signup",
-    href: "/auth",
+    href: "/auth/signup",
   },
   CREATE_EVENT: {
     shouldShowIn: [],

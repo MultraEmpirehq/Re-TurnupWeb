@@ -1,12 +1,59 @@
+"use client";
+import { getData } from "@/api";
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import EventList from "@/components/ui/event-list";
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { EventDetailsType } from "@/lib/types";
+import { constructErrorMessage } from "@/api/functions";
+
+const getPastEvents = async (page: number = 1) => {
+  const urlParams = new URLSearchParams();
+  urlParams.set("page", page.toString());
+  urlParams.set("limit", "10");
+  const url = `/events?${urlParams.toString()}`;
+  const { data } = await getData<EventDetailsType[]>(`/events?${url}`);
+  return data;
+};
 
 const TrendingEvents = () => {
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    error,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: ["past-events"],
+    queryFn: ({ pageParam = 1 }) => getPastEvents(pageParam),
+    getNextPageParam: (lastPage) => lastPage?.pagination?.nextPage,
+    initialPageParam: 1,
+  });
+  const events = useMemo(
+    () =>
+      (data?.pages.flatMap((page) => page?.data || []) || [])?.filter(Boolean),
+    [data],
+  );
   return (
     <SectionContainer className="space-y-4 py-10 md:py-16">
       <h1 className="text-2xl font-bold">Past Events</h1>
-      <EventList events={[]} />
+      <EventList
+        events={events}
+        isLoading={!data}
+        hasNextPage={hasNextPage}
+        fetchNextPage={fetchNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        error={
+          error
+            ? constructErrorMessage(
+                error as TApiErrorResponseType,
+                "Unknown error occurred whilst getting events list",
+              )
+            : undefined
+        }
+        refetch={refetch}
+      />
     </SectionContainer>
   );
 };

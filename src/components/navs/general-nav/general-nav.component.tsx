@@ -19,7 +19,7 @@ const navLinks = getRoutesByType(ROUTE_TYPE.NAV_ROUTE);
 
 const GeneralNavComponent = () => {
   return (
-    <div className="py-3 bg-linear-to-r from-secondary via- to-primary">
+    <div className="py-3 bg-linear-to-r from-secondary to-primary sticky top-0 z-9999">
       <SectionContainer className="flex flex-row items-center justify-between">
         <Link href={ROUTES.HOME.href}>
           <Image src={LogoWhiteSVG} alt="logo" className="h-8" />

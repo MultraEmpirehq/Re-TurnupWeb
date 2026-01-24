@@ -11,6 +11,7 @@ const ExploreBannerComponent = () => {
         src={""}
         alt="banner"
         fill
+        className="rounded-none"
         imageClassName="object-cover object-center"
       />
       <div className="size-full bg-black/50 z-10 relative">
