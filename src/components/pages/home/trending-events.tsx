@@ -12,7 +12,7 @@ const getTrendingEvents = async (page: number = 1) => {
   urlParams.set("page", page.toString());
   urlParams.set("limit", "10");
   const url = `/events?${urlParams.toString()}`;
-  const { data } = await getData<EventDetailsType[]>(`/events?${url}`);
+  const { data } = await getData<EventDetailsType[]>(url);
   return data;
 };
 

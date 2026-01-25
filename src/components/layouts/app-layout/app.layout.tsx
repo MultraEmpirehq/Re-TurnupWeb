@@ -1,6 +1,7 @@
 "use client";
 import GeneralFooterComponent from "@/components/footers/general-footer/general-footer.component";
 import GeneralNavComponent from "@/components/navs/general-nav/general-nav.component";
+import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
 import React, { memo, useMemo } from "react";
@@ -25,6 +26,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {!shouldHideNav && <GeneralNavComponent />}
       <div className="min-h-[calc(100vh-70px)]">{children}</div>
       {!shouldHideFooter && <GeneralFooterComponent />}
+      <Toaster position="top-center" richColors />
     </QueryClientProvider>
   );
 };

@@ -22,6 +22,11 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Login",
     href: "/auth",
   },
+  OTP: {
+    shouldShowIn: [],
+    label: "OTP Verification",
+    href: "/auth/otp",
+  },
   SIGNUP: {
     shouldShowIn: [ROUTE_TYPE.NAV_ROUTE],
     label: "Signup",

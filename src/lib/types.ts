@@ -9,6 +9,14 @@ export enum ROUTE_TYPE {
   FOOTER_FOLLOW_US_ROUTE = "FOOTER_FOLLOW_US_ROUTE",
 }
 
+export enum OTP_VERIFICATION_TYPE {
+  EMAIL_VERIFICATION = "EMAIL_VERIFICATION",
+  FORGOT_PASSWORD = "FORGOT_PASSWORD",
+  CHANGE_EMAIL = "CHANGE_EMAIL",
+  CHANGE_MOBILE = "CHANGE_MOBILE",
+  ACCOUNT_CREATION = "ACCOUNT_CREATION",
+}
+
 export interface RouteProps {
   shouldShowIn: ROUTE_TYPE[];
   label: string;
@@ -45,4 +53,12 @@ export interface EventDetailsType {
   additionalInformation?: string[];
   eventGuestsOfHonour?: ({ name: string } | TUserDetails)[];
   medias?: string[];
+}
+
+export interface IUserCheckedCredentials {
+  exists: boolean;
+  isAccountDisabled: boolean;
+  isEmailVerified: boolean;
+  shouldRequestPassword: boolean;
+  isAccountCreationCompleted: boolean;
 }
