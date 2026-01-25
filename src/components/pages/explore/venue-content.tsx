@@ -12,8 +12,8 @@ import React, { memo, useMemo } from "react";
 const getVenues = async (page = 1) => {
   const urlSearchParams = new URLSearchParams();
   urlSearchParams.set("page", page?.toString());
-  const url = urlSearchParams?.toString();
-  const { data } = await getData<VenueDetailsType[]>(`/venues?${url}`);
+  const url = `/venues?${urlSearchParams.toString()}`;
+  const { data } = await getData<VenueDetailsType[]>(url);
   return data;
 };
 
