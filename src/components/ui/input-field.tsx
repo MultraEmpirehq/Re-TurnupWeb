@@ -18,7 +18,8 @@ import { EyeIcon, EyeOffIcon } from "lucide-react";
 
 // Types
 interface InputFieldProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">,
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">,
     VariantProps<typeof inputWrapperVariants> {
   label?: string;
   error?: string;
@@ -66,7 +67,7 @@ const iconButtonVariants = cva(
       position: "left",
       variant: "default",
     },
-  }
+  },
 );
 
 // Input variants to work with icons
@@ -108,7 +109,7 @@ const MessageText: React.FC<MessageTextProps> = ({
         variant === "destructive"
           ? "text-destructive"
           : "text-muted-foreground",
-        className
+        className,
       )}
       {...(variant === "destructive" && { role: "alert" })}
     >
@@ -200,7 +201,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
       "aria-describedby": ariaDescribedBy,
       ...props
     },
-    ref
+    ref,
   ) => {
     const inputId = useId();
     const errorId = `${inputId}-error`;
@@ -243,7 +244,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
           hasRightIcon: !!rightIcon,
         }),
         hasError && "border-destructive focus-visible:ring-destructive",
-        inputClassName
+        inputClassName,
       );
     }, [leftIcon, rightIcon, hasError, inputClassName]);
 
@@ -325,7 +326,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
         />
       </div>
     );
-  }
+  },
 );
 
 InputField.displayName = "InputField";

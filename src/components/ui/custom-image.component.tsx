@@ -11,7 +11,7 @@ const Player = dynamic(
   () => import("@lottiefiles/react-lottie-player").then((mod) => mod.Player),
   {
     ssr: false,
-  }
+  },
 );
 
 const imageVariantClassName = cva("relative rounded-lg overflow-hidden", {
@@ -53,7 +53,7 @@ const CustomImageComponent = React.forwardRef<
       fill,
       ...props
     },
-    ref
+    ref,
   ) => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [hasError, setHasError] = useState(false);
@@ -61,7 +61,7 @@ const CustomImageComponent = React.forwardRef<
       <div
         className={cn(
           imageVariantClassName({ size, hasFill: !!fill }),
-          className
+          className,
         )}
       >
         {src && (
@@ -69,7 +69,7 @@ const CustomImageComponent = React.forwardRef<
             className={cn(
               "size-full",
               (!isLoaded || hasError) && "invisible",
-              imageClassName
+              imageClassName,
             )}
             ref={ref}
             src={src}
@@ -107,7 +107,7 @@ const CustomImageComponent = React.forwardRef<
         )}
       </div>
     );
-  }
+  },
 );
 
 CustomImageComponent.displayName = "CustomImageComponent";
