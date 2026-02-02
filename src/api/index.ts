@@ -28,9 +28,22 @@ api.interceptors.response.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
+api.interceptors.request.use(
+  (config) => {
+    // Not used.. Rely on cookie for authentication
+    // const authToken = useUserStore.getState().userToken;
+    // if (authToken) {
+    //   config.headers.Authorization = `Bearer ${authToken || ""}`;
+    // }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  },
+);
 export const setHeaderAuthorization: (token?: string) => void = (token) => {
   if (token) {
     api.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -42,14 +55,14 @@ export const setHeaderAuthorization: (token?: string) => void = (token) => {
 export const postData = <T, D>(
   url: string,
   data?: T | undefined,
-  options?: AxiosRequestConfig
+  options?: AxiosRequestConfig,
 ): TApiRequestResponseType<D> => {
   return api.post(url, data, options);
 };
 
 export const getData = <T>(
   url: string,
-  options?: AxiosRequestConfig
+  options?: AxiosRequestConfig,
 ): TApiRequestResponseType<T> => {
   return api.get(url, options);
 };
@@ -57,7 +70,7 @@ export const getData = <T>(
 export const putData = <T, D>(
   url: string,
   data: T | undefined,
-  options?: AxiosRequestConfig
+  options?: AxiosRequestConfig,
 ): TApiRequestResponseType<D> => {
   return api.put(url, data, options);
 };
@@ -65,14 +78,14 @@ export const putData = <T, D>(
 export const patchData = <T, D>(
   url: string,
   data: T | undefined,
-  options?: AxiosRequestConfig
+  options?: AxiosRequestConfig,
 ): TApiRequestResponseType<D> => {
   return api.patch(url, data, options);
 };
 
 export const deleteData = <T>(
   url: string,
-  options?: AxiosRequestConfig
+  options?: AxiosRequestConfig,
 ): TApiRequestResponseType<T | undefined> => {
   return api.delete(url, options);
 };

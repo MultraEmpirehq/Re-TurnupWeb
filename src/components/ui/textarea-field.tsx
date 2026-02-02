@@ -3,23 +3,20 @@
 import React, {
   forwardRef,
   memo,
-  useCallback,
   useId,
   useImperativeHandle,
   useMemo,
   useRef,
-  useState,
 } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Input } from "./input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { Textarea } from "./textarea";
 
 // Types
 interface InputFieldProps
   extends
-    Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">,
+    Omit<React.InputHTMLAttributes<HTMLTextAreaElement>, "size">,
     VariantProps<typeof inputWrapperVariants> {
   label?: string;
   error?: string;
@@ -48,27 +45,6 @@ const inputWrapperVariants = cva("relative flex items-stretch w-full", {
     variant: "default",
   },
 });
-
-// Button variants for icon buttons
-const iconButtonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:border-white/20 hover:bg-accent hover:text-accent-foreground self-stretch cursor-pointer absolute top-1/2 -translate-y-1/2 z-[1] opacity-70 [&_svg]:shrink-0 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-5",
-  {
-    variants: {
-      position: {
-        left: "left-2",
-        right: "right-2",
-      },
-      variant: {
-        default: "",
-        destructive: "",
-      },
-    },
-    defaultVariants: {
-      position: "left",
-      variant: "default",
-    },
-  },
-);
 
 // Input variants to work with icons
 const inputWithIconVariants = cva("relative py-5", {
@@ -142,41 +118,8 @@ const EnhancedLabel: React.FC<EnhancedLabelProps> = ({
   );
 };
 
-// Icon Button Component
-interface IconButtonProps {
-  children: React.ReactNode;
-  onClick?: () => void;
-  position: "left" | "right";
-  disabled?: boolean;
-  className?: string;
-  variant?: "default" | "destructive";
-  ariaLabel?: string;
-}
-
-const IconButton: React.FC<IconButtonProps> = ({
-  children,
-  onClick,
-  position,
-  disabled,
-  className,
-  variant = "default",
-  ariaLabel,
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    className={cn(iconButtonVariants({ position, variant }), className)}
-    tabIndex={onClick ? 0 : -1}
-    {...(ariaLabel && { "aria-label": ariaLabel })}
-    {...(!ariaLabel && { "aria-hidden": "true" })}
-  >
-    {children}
-  </button>
-);
-
 // Main InputField Component
-const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
+const InputField = forwardRef<HTMLTextAreaElement, InputFieldProps>(
   (
     {
       label,
@@ -185,16 +128,8 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
       inputClassName,
       labelClassName,
       containerClassName,
-      leftIcon,
-      rightIcon: propRightIcon,
-      leftButtonClassName,
-      rightButtonClassName,
-      buttonClassName,
-      rightButtonAction: propRightButtonAction = () => {},
-      leftButtonAction = () => {},
       placeholder = "Enter text...",
       variant = "default",
-      type: propType = "text",
       required,
       disabled,
       className,
@@ -206,47 +141,24 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
     const inputId = useId();
     const errorId = `${inputId}-error`;
     const helperId = `${inputId}-helper`;
-    const [showPassword, setShowPassword] = useState(false);
 
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
 
-    useImperativeHandle(ref, () => inputRef.current as HTMLInputElement);
+    useImperativeHandle(ref, () => inputRef.current as HTMLTextAreaElement);
 
-    const isPasswordType = propType === "password";
-    const inputType = isPasswordType && showPassword ? "text" : propType;
     const hasError = !!error;
     const currentVariant = hasError ? "destructive" : variant;
-
-    // Generate right icon for password fields
-    const rightIcon = useMemo(() => {
-      if (isPasswordType) {
-        return showPassword ? (
-          <EyeOffIcon className="h-4 w-4" />
-        ) : (
-          <EyeIcon className="h-4 w-4" />
-        );
-      }
-      return propRightIcon;
-    }, [isPasswordType, showPassword, propRightIcon]);
-
-    const rightButtonAction = useCallback(() => {
-      if (isPasswordType) {
-        setShowPassword((prev) => !prev);
-      } else {
-        propRightButtonAction();
-      }
-    }, [isPasswordType, propRightButtonAction]);
 
     const enhancedInputClassName = useMemo(() => {
       return cn(
         inputWithIconVariants({
-          hasLeftIcon: !!leftIcon,
-          hasRightIcon: !!rightIcon,
+          hasLeftIcon: false,
+          hasRightIcon: false,
         }),
         hasError && "border-destructive focus-visible:ring-destructive",
         inputClassName,
       );
-    }, [leftIcon, rightIcon, hasError, inputClassName]);
+    }, [hasError, inputClassName]);
 
     const combinedAriaDescribedBy = useMemo(() => {
       const ids = [
@@ -271,24 +183,10 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
 
         {/* Input Container */}
         <div className={inputWrapperVariants({ variant: currentVariant })}>
-          {/* Left Icon Button */}
-          {leftIcon && (
-            <IconButton
-              position="left"
-              onClick={leftButtonAction}
-              disabled={disabled}
-              variant={currentVariant || undefined}
-              className={cn(buttonClassName, leftButtonClassName)}
-            >
-              {leftIcon}
-            </IconButton>
-          )}
-
           {/* Shadcn Input */}
-          <Input
+          <Textarea
             ref={inputRef}
             id={inputId}
-            type={inputType}
             placeholder={placeholder}
             className={enhancedInputClassName}
             disabled={disabled}
@@ -297,29 +195,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
             aria-describedby={combinedAriaDescribedBy}
             {...props}
           />
-
-          {/* Right Icon Button */}
-          {rightIcon && (
-            <IconButton
-              position="right"
-              onClick={rightButtonAction}
-              disabled={disabled}
-              variant={currentVariant || undefined}
-              className={cn(buttonClassName, rightButtonClassName)}
-              ariaLabel={
-                isPasswordType
-                  ? showPassword
-                    ? "Hide password"
-                    : "Show password"
-                  : undefined
-              }
-            >
-              {rightIcon}
-            </IconButton>
-          )}
         </div>
-
-        {/* Error/Helper Text */}
         <MessageText
           message={error || helperText}
           variant={hasError ? "destructive" : "default"}
