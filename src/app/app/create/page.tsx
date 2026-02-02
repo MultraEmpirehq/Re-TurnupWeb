@@ -3,7 +3,9 @@ import BasicForm, {
   IBasicFormValues,
   basicInformationSchema,
 } from "@/components/pages/app/create/basic-form";
-import CoverForm from "@/components/pages/app/create/cover-form";
+import CoverForm, {
+  coverFormSchema,
+} from "@/components/pages/app/create/cover-form";
 import MediaUploadForm from "@/components/pages/app/create/media-upload-form";
 import Steps from "@/components/pages/app/create/steps";
 import TicketForm from "@/components/pages/app/create/ticket-form";
@@ -15,6 +17,11 @@ import { FormProvider, useForm } from "react-hook-form";
 export const dynamic = "force-dynamic";
 
 export type TFormValues = IBasicFormValues;
+
+const schemas = {
+  1: basicInformationSchema,
+  2: coverFormSchema,
+};
 
 export const defaultValues: TFormValues = {
   eventName: "",
@@ -29,12 +36,9 @@ export const defaultValues: TFormValues = {
 };
 
 const CreateEvent = () => {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(2);
   const schema = useMemo(() => {
-    if (step === 1) {
-      return basicInformationSchema;
-    }
-    return basicInformationSchema;
+    return schemas[step as keyof typeof schemas] ?? basicInformationSchema;
   }, [step]);
   const form = useForm<TFormValues>({
     defaultValues,
@@ -52,7 +56,7 @@ const CreateEvent = () => {
       <Steps currentStep={step} />
       <FormProvider {...form}>
         {step === 1 && <BasicForm handleNextStep={handleNextStep} />}
-        {step === 2 && <CoverForm />}
+        {step === 2 && <CoverForm handleNextStep={handleNextStep} />}
         {step === 3 && <TicketForm />}
         {step === 4 && <MediaUploadForm />}
       </FormProvider>
