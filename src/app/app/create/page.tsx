@@ -4,6 +4,7 @@ import BasicForm, {
   basicInformationSchema,
 } from "@/components/pages/app/create/basic-form";
 import CoverForm, {
+  ICoverFormValues,
   coverFormSchema,
 } from "@/components/pages/app/create/cover-form";
 import MediaUploadForm from "@/components/pages/app/create/media-upload-form";
@@ -16,7 +17,7 @@ import { FormProvider, useForm } from "react-hook-form";
 
 export const dynamic = "force-dynamic";
 
-export type TFormValues = IBasicFormValues;
+export type TFormValues = IBasicFormValues & ICoverFormValues;
 
 const schemas = {
   1: basicInformationSchema,
@@ -33,6 +34,7 @@ export const defaultValues: TFormValues = {
   description: "",
   eventActivities: [],
   additionalInformation: [],
+  coverImage: null,
 };
 
 const CreateEvent = () => {

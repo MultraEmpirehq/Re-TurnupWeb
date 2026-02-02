@@ -1,14 +1,16 @@
 import { Button } from "@/components/ui/button";
+import CustomImageComponent from "@/components/ui/custom-image.component";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import Joi from "joi";
-import { UploadIcon } from "lucide-react";
+import { TrashIcon, UploadIcon } from "lucide-react";
 import React, { memo, useCallback, useMemo } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { toast } from "sonner";
 
 export interface ICoverFormValues {
-  coverImage: File;
+  coverImage: File | null;
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -20,8 +22,6 @@ export const coverFormSchema = Joi.object({
     type: Joi.string()
       .valid("image/jpeg", "image/png", "image/webp", "image/jpg")
       .required(),
-
-    lastModified: Joi.number().required(),
   })
     .required()
     .unknown(true),
@@ -32,6 +32,8 @@ const CoverForm: React.FC<{ handleNextStep: () => void }> = ({
   const {
     handleSubmit,
     control,
+    watch,
+    setValue,
     formState: { isValid, errors },
   } = useFormContext<ICoverFormValues>();
   const errorMessage = useMemo(() => {
@@ -40,12 +42,20 @@ const CoverForm: React.FC<{ handleNextStep: () => void }> = ({
     }
     return null;
   }, [errors]);
+  const coverImage = watch("coverImage");
+  console.log(coverImage);
   const onSubmit = useCallback(() => {
     handleNextStep?.();
   }, [handleNextStep]);
   return (
     <div className="gap-3 flex flex-col items-center justify-center w-full py-20">
-      <div className="border border-dashed flex flex-col gap-3 items-center justify-center w-full max-w-[500px] py-10 px-14 rounded-xl relative overflow-hidden">
+      <div
+        className={cn(
+          "border border-dashed flex flex-col gap-3 items-center justify-center w-full max-w-[500px] rounded-xl relative overflow-hidden",
+          !coverImage && "py-10 px-14",
+          coverImage && " p-5"
+        )}
+      >
         <Controller
           control={control}
           name="coverImage"
@@ -70,19 +80,44 @@ const CoverForm: React.FC<{ handleNextStep: () => void }> = ({
             />
           )}
         />
-        <UploadIcon className="size-10 text-secondary-700" />
-        <p>Drag your file to start uploading</p>
-        <div className="flex flex-row items-center w-full gap-3 max-w-[200px]">
-          <Separator className="flex-1" />
-          <p className="text-sm opacity-60">OR</p>
-          <Separator className="flex-1" />
-        </div>
-        <Button
-          variant="outline"
-          className="border-secondary-700 text-secondary-700"
-        >
-          Browse Files
-        </Button>
+        {!coverImage && (
+          <>
+            <UploadIcon className="size-10 text-secondary-700" />
+            <p>Drag your file to start uploading</p>
+            <div className="flex flex-row items-center w-full gap-3 max-w-[200px]">
+              <Separator className="flex-1" />
+              <p className="text-sm opacity-60">OR</p>
+              <Separator className="flex-1" />
+            </div>
+            <Button
+              variant="outline"
+              className="border-secondary-700 text-secondary-700"
+            >
+              Browse Files
+            </Button>
+          </>
+        )}
+        {coverImage && (
+          <div className="w-full aspect-video relative">
+            <CustomImageComponent
+              src={URL.createObjectURL(coverImage)}
+              alt="Cover Image"
+              className="size-full"
+              fill
+              imageClassName="object-cover object-center"
+            />
+            <button
+              type="button"
+              title="Remove Image"
+              className="size-full opacity-0 hover:opacity-100 transition-all duration-300 z-10 absolute top-0 left-0 flex items-center justify-center text-red-500 bg-white/30 cursor-pointer"
+              onClick={() => {
+                setValue("coverImage", null);
+              }}
+            >
+              <TrashIcon className="size-8 text-red-500" />
+            </button>
+          </div>
+        )}
       </div>
       {!errorMessage && (
         <p className="text-sm max-w-[500px] w-full text-secondary-700">
