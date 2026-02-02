@@ -30,6 +30,7 @@ export type TUserDetails = {
   gender?: EUserGenders;
   username?: string;
   dateOfBirth?: Date;
+  avatar?: string;
 };
 
 type TStoreState = {

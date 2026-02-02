@@ -7,6 +7,9 @@ export enum ROUTE_TYPE {
   FOOTER_HELP_ROUTE = "FOOTER_HELP_ROUTE",
   FOOTER_CATEGORIES_ROUTE = "FOOTER_CATEGORIES_ROUTE",
   FOOTER_FOLLOW_US_ROUTE = "FOOTER_FOLLOW_US_ROUTE",
+  HIDE_ON_LOGIN = "HIDE_ON_LOGIN",
+  APP_ROUTE = "APP_ROUTE",
+  SHOW_ON_APP_SIDE_NAV = "SHOW_ON_APP_SIDE_NAV",
 }
 
 export enum OTP_VERIFICATION_TYPE {
@@ -61,4 +64,13 @@ export interface IUserCheckedCredentials {
   isEmailVerified: boolean;
   shouldRequestPassword: boolean;
   isAccountCreationCompleted: boolean;
+}
+
+export interface ITicketDetailsType {
+  id: string;
+  event: EventDetailsType;
+  name: string;
+  type: string;
+  link: string;
+  price: number;
 }

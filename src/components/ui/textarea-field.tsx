@@ -15,8 +15,7 @@ import { Textarea } from "./textarea";
 
 // Types
 interface InputFieldProps
-  extends
-    Omit<React.InputHTMLAttributes<HTMLTextAreaElement>, "size">,
+  extends Omit<React.InputHTMLAttributes<HTMLTextAreaElement>, "size">,
     VariantProps<typeof inputWrapperVariants> {
   label?: string;
   error?: string;
@@ -38,7 +37,8 @@ const inputWrapperVariants = cva("relative flex items-stretch w-full", {
   variants: {
     variant: {
       default: "",
-      destructive: "[&>input]:border-destructive [&>button]:border-destructive",
+      destructive:
+        "[&>textarea]:border-destructive [&>button]:border-destructive",
     },
   },
   defaultVariants: {
@@ -85,7 +85,7 @@ const MessageText: React.FC<MessageTextProps> = ({
         variant === "destructive"
           ? "text-destructive"
           : "text-muted-foreground",
-        className,
+        className
       )}
       {...(variant === "destructive" && { role: "alert" })}
     >
@@ -136,7 +136,7 @@ const InputField = forwardRef<HTMLTextAreaElement, InputFieldProps>(
       "aria-describedby": ariaDescribedBy,
       ...props
     },
-    ref,
+    ref
   ) => {
     const inputId = useId();
     const errorId = `${inputId}-error`;
@@ -156,7 +156,7 @@ const InputField = forwardRef<HTMLTextAreaElement, InputFieldProps>(
           hasRightIcon: false,
         }),
         hasError && "border-destructive focus-visible:ring-destructive",
-        inputClassName,
+        inputClassName
       );
     }, [hasError, inputClassName]);
 
@@ -202,7 +202,7 @@ const InputField = forwardRef<HTMLTextAreaElement, InputFieldProps>(
         />
       </div>
     );
-  },
+  }
 );
 
 InputField.displayName = "InputField";

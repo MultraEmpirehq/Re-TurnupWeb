@@ -1,0 +1,47 @@
+"use client";
+import SectionContainer from "@/components/layouts/section-container/section-container";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import useUserStore from "@/stores/user-store";
+import { BellIcon } from "lucide-react";
+import React, { memo, useMemo } from "react";
+
+const DashboardNav = () => {
+  const userDetails = useUserStore((state) => state.userDetails);
+  const fallBackName = useMemo(() => {
+    if (!userDetails) return "AN";
+    return (
+      `${userDetails?.firstName?.charAt(0)}${userDetails?.lastName?.charAt(0)}` ||
+      "AN"
+    );
+  }, [userDetails]);
+  const fullName = useMemo(() => {
+    if (!userDetails) return "Anonymous User";
+    return userDetails?.name || "Anonymous User";
+  }, [userDetails]);
+  return (
+    <div className="bg-white shadow">
+      <SectionContainer className="sticky top-0 z-9999 flex justify-between items-center gap-6 bg-white py-4">
+        <h1 className="text-[clamp(1.25rem,5vw,1.5rem)] font-bold text-secondary-800">
+          Dashboard
+        </h1>
+        <div className="flex flex-row items-center gap-3">
+          <Button size={"icon-lg"} variant={"outline"}>
+            <BellIcon />
+          </Button>
+          <div className="p-1 bg-gray-100 rounded-lg flex flex-row items-center gap-1 px-3">
+            <Avatar className="size-8 text-xs border">
+              <AvatarImage src={userDetails?.avatar} />
+              <AvatarFallback className="bg-secondary-800 text-white">
+                {fallBackName}
+              </AvatarFallback>
+            </Avatar>
+            <p className="text-xs font-medium text-secondary-800">{fullName}</p>
+          </div>
+        </div>
+      </SectionContainer>
+    </div>
+  );
+};
+
+export default memo(DashboardNav);

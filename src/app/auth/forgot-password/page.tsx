@@ -13,6 +13,8 @@ import { IUserCheckedCredentials, OTP_VERIFICATION_TYPE } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/variables";
 
+export const dynamic = "force-dynamic";
+
 interface IFormValues {
   email: string;
 }
@@ -47,7 +49,7 @@ const ForgotPasswordPage = () => {
     async (body: IFormValues) => {
       try {
         const { data } = await getData<IUserCheckedCredentials>(
-          `/auth?email=${body.email}`,
+          `/auth?email=${body.email}`
         );
         if (!data?.data?.exists) {
           toast.error("An account with this email does not exist");
@@ -59,18 +61,18 @@ const ForgotPasswordPage = () => {
           return;
         }
         push(
-          `${ROUTES.OTP.href}?email=${body.email}&type=${OTP_VERIFICATION_TYPE.FORGOT_PASSWORD}`,
+          `${ROUTES.OTP.href}?email=${body.email}&type=${OTP_VERIFICATION_TYPE.FORGOT_PASSWORD}`
         );
       } catch (error) {
         toast.error(
           constructErrorMessage(
             error as TApiErrorResponseType,
-            "Something went wrong while sending the reset email",
-          ),
+            "Something went wrong while sending the reset email"
+          )
         );
       }
     },
-    [push],
+    [push]
   );
   return (
     <SectionContainer className="flex flex-col items-center justify-center min-h-full py-10 md:py-16">
