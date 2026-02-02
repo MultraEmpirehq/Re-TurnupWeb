@@ -84,7 +84,8 @@ export const basicInformationSchema = Joi.object({
     "array.empty": "Additional information is required",
     "any.required": "Additional information is required",
   }),
-});
+}).unknown(true);
+
 const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
   handleNextStep,
 }) => {

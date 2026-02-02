@@ -14,18 +14,36 @@ export interface ICoverFormValues {
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
 export const coverFormSchema = Joi.object({
-  coverImage: Joi.object({
-    name: Joi.string().required(),
-    size: Joi.number().max(MAX_FILE_SIZE).required(),
-    type: Joi.string()
-      .valid("image/jpeg", "image/png", "image/webp", "image/jpg")
-      .required(),
-  })
+  coverImage: Joi.any()
     .required()
-    .unknown(true),
-});
+    .custom((value, helpers) => {
+      if (value == null) {
+        return helpers.error("any.required");
+      }
+      if (!(value instanceof File)) {
+        return helpers.error("any.custom", {
+          message: "Please select an image file",
+        });
+      }
+      if (value.size > MAX_FILE_SIZE) {
+        return helpers.error("any.custom", {
+          message: "File size must be less than 5MB",
+        });
+      }
+      if (!ALLOWED_TYPES.includes(value.type)) {
+        return helpers.error("any.custom", {
+          message: "Only .jpg, .png, .webp are supported",
+        });
+      }
+      return value;
+    })
+    .messages({
+      "any.required": "Please select a cover image",
+    }),
+}).unknown(true);
 const CoverForm: React.FC<{ handleNextStep: () => void }> = ({
   handleNextStep,
 }) => {
@@ -34,7 +52,7 @@ const CoverForm: React.FC<{ handleNextStep: () => void }> = ({
     control,
     watch,
     setValue,
-    formState: { isValid, errors },
+    formState: { errors },
   } = useFormContext<ICoverFormValues>();
   const errorMessage = useMemo(() => {
     if (errors?.coverImage) {
@@ -42,8 +60,8 @@ const CoverForm: React.FC<{ handleNextStep: () => void }> = ({
     }
     return null;
   }, [errors]);
+  console.log(errors);
   const coverImage = watch("coverImage");
-  console.log(coverImage);
   const onSubmit = useCallback(() => {
     handleNextStep?.();
   }, [handleNextStep]);
@@ -61,20 +79,31 @@ const CoverForm: React.FC<{ handleNextStep: () => void }> = ({
           name="coverImage"
           render={({ field }) => (
             <Input
+              key={coverImage ? "has-file" : "no-file"}
               type="file"
-              accept=".jpg, .png"
+              accept=".jpg, .png, .webp"
+              ref={field.ref}
+              name={field.name}
+              onBlur={field.onBlur}
               onChange={(e) => {
                 const file = e?.target?.files?.[0];
                 if (!file) {
+                  field.onChange(null);
+                  setValue("coverImage", null, { shouldValidate: true });
                   return toast.error("Please select a file");
                 }
-                if (file?.size > MAX_FILE_SIZE) {
+                if (file.size > MAX_FILE_SIZE) {
+                  field.onChange(null);
+                  setValue("coverImage", null, { shouldValidate: true });
                   return toast.error("File size must be less than 5MB");
                 }
-                if (!file?.type.includes("image")) {
+                if (!file.type.includes("image")) {
+                  field.onChange(null);
+                  setValue("coverImage", null, { shouldValidate: true });
                   return toast.error("Please select an image file");
                 }
-                return field.onChange(file);
+                field.onChange(file);
+                setValue("coverImage", file, { shouldValidate: true });
               }}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
             />
@@ -111,7 +140,7 @@ const CoverForm: React.FC<{ handleNextStep: () => void }> = ({
               title="Remove Image"
               className="size-full opacity-0 hover:opacity-100 transition-all duration-300 z-10 absolute top-0 left-0 flex items-center justify-center text-red-500 bg-white/30 cursor-pointer"
               onClick={() => {
-                setValue("coverImage", null);
+                setValue("coverImage", null, { shouldValidate: true });
               }}
             >
               <TrashIcon className="size-8 text-red-500" />
@@ -132,7 +161,7 @@ const CoverForm: React.FC<{ handleNextStep: () => void }> = ({
       <div className="w-full max-w-[500px] mt-10">
         <Button
           onClick={handleSubmit(onSubmit)}
-          disabled={!isValid}
+          disabled={!coverImage || !!errors?.coverImage}
           className=""
         >
           Continue
