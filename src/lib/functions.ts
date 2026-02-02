@@ -3,7 +3,7 @@ import { ROUTES } from "./variables";
 
 export const getRoutesByType = (type: ROUTE_TYPE) => {
     return Object.values(ROUTES).filter((route: RouteProps) =>
-      route.shouldShowIn.includes(type),
+      route.shouldShowIn.includes(type)
     );
   },
   maskSensitiveInfo = (text: string, type: "email" | "phone" | "card") => {
@@ -20,11 +20,15 @@ export const getRoutesByType = (type: ROUTE_TYPE) => {
       },
       phone: () => {
         if (text.length < 7) return text; // Not enough digits to mask
-        return `${text.slice(0, 4)}${"*".repeat(text.length - 5)}${text.slice(-2)}`;
+        return `${text.slice(0, 4)}${"*".repeat(text.length - 5)}${text.slice(
+          -2
+        )}`;
       },
       card: () => {
         if (text.length < 12) return text; // Unusually short, might not be a real card
-        return `${text.slice(0, 4)} ${"*".repeat(text.length - 8)} ${text.slice(-4)}`;
+        return `${text.slice(0, 4)} ${"*".repeat(text.length - 8)} ${text.slice(
+          -4
+        )}`;
       },
     };
     const functionToRun = functionCalls[type];
@@ -35,3 +39,10 @@ export const getRoutesByType = (type: ROUTE_TYPE) => {
 
     return functionToRun();
   };
+
+export const formatCurrency = (amount: number = 0) => {
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+  }).format(amount);
+};

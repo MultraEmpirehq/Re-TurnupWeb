@@ -59,6 +59,7 @@ const GuestNamesInput: React.FC<IAdditionalInformationProps> = ({
                 <p className="text-xs">{guestName}</p>
               </div>
               <Button
+                type="button"
                 onClick={() => handleRemoveGuestName(index)}
                 variant="ghost"
                 className="text-xs inline-flex items-center gap-2 text-red-500"
@@ -80,6 +81,7 @@ const GuestNamesInput: React.FC<IAdditionalInformationProps> = ({
           <div className="flex justify-end gap-2">
             {parsedGuestNames.length > 0 && (
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => setShowTextArea(false)}
                 className="text-xs inline-flex items-center gap-2 text-red-500 border-red-300"
@@ -88,6 +90,7 @@ const GuestNamesInput: React.FC<IAdditionalInformationProps> = ({
               </Button>
             )}
             <Button
+              type="button"
               onClick={handleAddGuestName}
               variant="outline"
               className="text-xs inline-flex items-center gap-2"
@@ -101,6 +104,7 @@ const GuestNamesInput: React.FC<IAdditionalInformationProps> = ({
         <div className="flex justify-end">
           <Button
             variant="outline"
+            type="button"
             onClick={() => {
               setShowTextArea(true);
               setTimeout(() => {

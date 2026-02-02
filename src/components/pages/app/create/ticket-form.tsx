@@ -1,32 +1,26 @@
 "use client";
 import SelectField, { ISelectFieldOption } from "@/components/ui/select-field";
-import React, { memo } from "react";
+import React, { memo, useCallback } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import Joi from "joi";
 import InputField from "@/components/ui/input-field";
 import { Button } from "@/components/ui/button";
+import TicketInput, { ITicketType } from "./ticket-input";
 
-enum ETicketType {
-  FREE = "free",
-  PAID = "paid",
+enum ESaleMethods {
+  SELL_ON_TURNUP = "on_turnup",
   EXTERNAL_LINK = "external_link",
 }
 
-interface ITicketType {
-  ticketName: string;
-  ticketPrice: number;
-  ticketQuantity: number;
-}
 export interface ITicketFormValues {
-  ticketType: string;
+  saleMethod: string;
   ticketUrl?: string;
   eventTickets?: ITicketType[];
 }
 
-const ticketTypeOptions: ISelectFieldOption[] = [
-  { label: "Free", value: ETicketType.FREE },
-  { label: "Paid", value: ETicketType.PAID },
-  { label: "External Link", value: ETicketType.EXTERNAL_LINK },
+const ticketSaleMethodOptions: ISelectFieldOption[] = [
+  { label: "Sell on Turnup", value: ESaleMethods.SELL_ON_TURNUP },
+  { label: "External Link", value: ESaleMethods.EXTERNAL_LINK },
 ];
 
 const ticketItemSchema = Joi.object({
@@ -41,22 +35,23 @@ const ticketItemSchema = Joi.object({
     "number.base": "Ticket price must be a number",
     "number.integer": "Ticket price must be an integer",
   }),
-  ticketQuantity: Joi.number().required().messages({
+  ticketQuantity: Joi.number().min(1).required().messages({
     "number.empty": "Ticket quantity is required",
     "any.required": "Ticket quantity is required",
+    "number.min": "Ticket quantity must be at least 1",
   }),
 });
 
 export const ticketFormSchema = Joi.object({
-  ticketType: Joi.string()
+  saleMethod: Joi.string()
     .required()
-    .valid(ETicketType.FREE, ETicketType.PAID, ETicketType.EXTERNAL_LINK)
+    .valid(ESaleMethods.SELL_ON_TURNUP, ESaleMethods.EXTERNAL_LINK)
     .messages({
-      "any.only": "Invalid ticket type",
-      "any.required": "Ticket type is required",
+      "any.only": "Invalid sale method",
+      "any.required": "Sale method is required",
     }),
-  ticketUrl: Joi.when("ticketType", {
-    is: ETicketType.EXTERNAL_LINK,
+  ticketUrl: Joi.when("saleMethod", {
+    is: ESaleMethods.EXTERNAL_LINK,
     then: Joi.string().uri().required().messages({
       "string.uri": "Invalid ticket URL",
       "string.empty": "Please provide your ticket URL",
@@ -64,35 +59,55 @@ export const ticketFormSchema = Joi.object({
     }),
     otherwise: Joi.string().allow("").optional(),
   }),
-  eventTickets: Joi.when("ticketType", {
-    is: Joi.string().valid(ETicketType.FREE, ETicketType.PAID),
-    then: Joi.array().items(ticketItemSchema).min(1).required().messages({
-      "array.min": "Please add at least one ticket",
-      "any.required": "Please add at least one ticket",
-    }),
+  eventTickets: Joi.when("saleMethod", {
+    is: ESaleMethods.SELL_ON_TURNUP,
+    then: Joi.array()
+      .items(ticketItemSchema)
+      .min(1)
+      .required()
+      .custom((value: ITicketType[], helpers) => {
+        const freeTickets = (value ?? []).filter((t) => t.ticketPrice === 0);
+        if (freeTickets.length > 1) {
+          return helpers.error("array.custom", {
+            message: "Only one ticket can have a price of 0",
+          });
+        }
+        return value;
+      })
+      .messages({
+        "array.min": "Please add at least one ticket",
+        "any.required": "Please add at least one ticket",
+        "array.custom": "Only one ticket can have a price of 0",
+      }),
     otherwise: Joi.array().items(ticketItemSchema).optional(),
   }),
 }).unknown(true);
 
-const TicketForm = () => {
+const TicketForm: React.FC<{ handleNextStep: () => void }> = ({
+  handleNextStep,
+}) => {
   const {
     control,
     watch,
     register,
+    handleSubmit,
     setValue,
     formState: { errors, isValid, isSubmitting },
   } = useFormContext<ITicketFormValues>();
-  const ticketType = watch("ticketType");
+  const saleMethod = watch("saleMethod");
+  const onSubmit = useCallback(() => {
+    handleNextStep?.();
+  }, [handleNextStep]);
   return (
     <div className="space-y-10 w-full flex flex-col items-center justify-center">
-      <form className="space-y-10 w-full">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-10 w-full">
         <Controller
           control={control}
-          name="ticketType"
+          name="saleMethod"
           render={({ field, fieldState }) => (
             <SelectField
-              options={ticketTypeOptions}
-              label="Ticket Type"
+              options={ticketSaleMethodOptions}
+              label="Sale Method"
               value={field.value}
               setValue={(value) => {
                 field?.onChange(value);
@@ -100,16 +115,29 @@ const TicketForm = () => {
                 setValue("ticketUrl", "", { shouldValidate: true });
               }}
               error={fieldState?.error?.message}
-              placeholder="Select ticket type"
+              placeholder="Select sale method"
             />
           )}
         />
-        {ticketType === ETicketType.EXTERNAL_LINK && (
+        {saleMethod === ESaleMethods.EXTERNAL_LINK && (
           <InputField
             label="Ticket URL"
             placeholder="Enter ticket URL"
             error={errors?.ticketUrl?.message}
             {...register("ticketUrl")}
+          />
+        )}
+        {saleMethod === ESaleMethods.SELL_ON_TURNUP && (
+          <Controller
+            control={control}
+            name="eventTickets"
+            render={({ field, fieldState }) => (
+              <TicketInput
+                tickets={field.value ?? []}
+                setTickets={field.onChange}
+                error={fieldState?.error?.message}
+              />
+            )}
           />
         )}
         <Button disabled={!isValid} loading={isSubmitting} type="submit">

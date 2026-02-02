@@ -1,4 +1,6 @@
 "use client";
+import { postData } from "@/api";
+import { constructErrorMessage } from "@/api/functions";
 import BasicForm, {
   IBasicFormValues,
   basicInformationSchema,
@@ -13,6 +15,7 @@ import MediaUploadForm, {
 } from "@/components/pages/app/create/media-upload-form";
 import Steps from "@/components/pages/app/create/steps";
 import TicketForm, {
+  ITicketFormValues,
   ticketFormSchema,
 } from "@/components/pages/app/create/ticket-form";
 import DashboardBanner from "@/components/pages/app/dashboard-banner";
@@ -20,12 +23,14 @@ import { joiResolver } from "@hookform/resolvers/joi";
 import Joi from "joi";
 import React, { memo, useCallback, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 export const dynamic = "force-dynamic";
 
 export type TFormValues = IBasicFormValues &
   ICoverFormValues &
-  IMediaUploadFormValues;
+  IMediaUploadFormValues &
+  ITicketFormValues;
 
 const schemas = {
   1: basicInformationSchema,
@@ -46,10 +51,13 @@ export const defaultValues: TFormValues = {
   additionalInformation: [],
   coverImage: null,
   mediaFiles: [],
+  saleMethod: "",
+  eventTickets: [],
+  ticketUrl: "",
 };
 
 const CreateEvent = () => {
-  const [step, setStep] = useState(3);
+  const [step, setStep] = useState(1);
   const schema = useMemo(() => {
     return schemas[step as keyof typeof schemas] as Joi.Schema;
   }, [step]);
@@ -58,11 +66,77 @@ const CreateEvent = () => {
     resolver: schema ? joiResolver(schema) : undefined,
     mode: "onChange",
   });
-  const handleNextStep = useCallback(() => {
+  const handleNextStep = useCallback(async () => {
     if (step < 4) {
       return setStep(step + 1);
     }
-    console.log("form values", form.getValues());
+    try {
+      const body = form.getValues();
+      const formData = new FormData();
+      formData.append("eventName", body.eventName);
+      formData.append("eventDate", body.eventDate.toDateString());
+      formData.append("venueId", body.venueId);
+      formData.append("categoryId", body.categoryId);
+      if (body?.guestIds && body?.guestIds?.length > 0) {
+        formData.append("guestIds", JSON.stringify(body.guestIds));
+      }
+
+      if (
+        body?.unRegisteredGuestNames &&
+        body?.unRegisteredGuestNames?.length > 0
+      ) {
+        formData.append(
+          "unRegisteredGuestNames",
+          JSON.stringify(body.unRegisteredGuestNames)
+        );
+      }
+      formData.append("description", body.description);
+
+      if (body?.eventActivities && body?.eventActivities?.length > 0) {
+        formData.append(
+          "eventActivities",
+          JSON.stringify(body.eventActivities)
+        );
+      }
+      if (
+        body?.additionalInformation &&
+        body?.additionalInformation?.length > 0
+      ) {
+        formData.append(
+          "additionalInformation",
+          JSON.stringify(body.additionalInformation)
+        );
+      }
+      if (body?.eventTickets && body?.eventTickets?.length > 0) {
+        formData.append("eventTickets", JSON.stringify(body.eventTickets));
+      }
+      if (body.ticketUrl) {
+        formData.append("ticketUrl", body.ticketUrl);
+      }
+      if (body.coverImage) {
+        formData.append("image", body.coverImage);
+      }
+      if (body.mediaFiles.length > 0) {
+        body.mediaFiles.forEach((file) => {
+          formData.append("medias", file);
+        });
+      }
+      await postData("/event", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      setStep(1);
+      form.reset();
+      toast.success("Event created successfully");
+    } catch (error) {
+      toast.error(
+        constructErrorMessage(
+          error as TApiErrorResponseType,
+          "Something went wrong while creating event"
+        )
+      );
+    }
   }, [step, form]);
   return (
     <div className="space-y-10">
@@ -71,7 +145,7 @@ const CreateEvent = () => {
       <FormProvider {...form}>
         {step === 1 && <BasicForm handleNextStep={handleNextStep} />}
         {step === 2 && <CoverForm handleNextStep={handleNextStep} />}
-        {step === 3 && <TicketForm />}
+        {step === 3 && <TicketForm handleNextStep={handleNextStep} />}
         {step === 4 && <MediaUploadForm handleNextStep={handleNextStep} />}
       </FormProvider>
     </div>
