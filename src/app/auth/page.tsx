@@ -16,6 +16,8 @@ import { TUserDetails } from "@/stores/user-store";
 import { IUserCheckedCredentials } from "@/lib/types";
 import { useParams } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 interface IFormValues {
   email: string;
   password: string;
@@ -102,7 +104,7 @@ const AuthPage = () => {
       try {
         if (!checkedCredentials) {
           const { data } = await getData<IUserCheckedCredentials>(
-            `/auth?email=${body.email}`,
+            `/auth?email=${body.email}`
           );
           const credentials = data?.data;
           if (
@@ -123,19 +125,19 @@ const AuthPage = () => {
         }
         const { data } = await postData<IFormValues, IAuthResponse>(
           "/auth/login",
-          body,
+          body
         );
         await performAuthOperation(data?.data?.user);
       } catch (error) {
         toast.error(
           constructErrorMessage(
             error as TApiErrorResponseType,
-            "Something went wrong while accessing your account!",
-          ),
+            "Something went wrong while accessing your account!"
+          )
         );
       }
     },
-    [checkedCredentials, performAuthOperation],
+    [checkedCredentials, performAuthOperation]
   );
 
   return (
