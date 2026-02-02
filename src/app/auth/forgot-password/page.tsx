@@ -5,8 +5,6 @@ import InputField from "@/components/ui/input-field";
 import { joiResolver } from "@hookform/resolvers/joi";
 import { useForm } from "react-hook-form";
 import React, { memo, useCallback } from "react";
-
-export const dynamic = "force-dynamic";
 import joi from "joi";
 import { toast } from "sonner";
 import { getData, postData } from "@/api";
@@ -14,6 +12,8 @@ import { constructErrorMessage } from "@/api/functions";
 import { IUserCheckedCredentials, OTP_VERIFICATION_TYPE } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/variables";
+
+export const dynamic = "force-dynamic";
 
 interface IFormValues {
   email: string;

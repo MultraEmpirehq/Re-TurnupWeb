@@ -3,8 +3,6 @@ import SectionContainer from "@/components/layouts/section-container/section-con
 import { Button } from "@/components/ui/button";
 import InputField from "@/components/ui/input-field";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-
-export const dynamic = "force-dynamic";
 import React, { memo, useCallback } from "react";
 import joi from "joi";
 import { joiResolver } from "@hookform/resolvers/joi";
@@ -15,6 +13,8 @@ import { toast } from "sonner";
 import { TUserDetails } from "@/stores/user-store";
 import useAuth from "@/hooks/use-auth";
 import { ROUTES } from "@/lib/variables";
+
+export const dynamic = "force-dynamic";
 
 interface IFormValues {
   password: string;

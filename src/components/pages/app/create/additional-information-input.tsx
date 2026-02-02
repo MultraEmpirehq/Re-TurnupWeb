@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import TextareaField from "@/components/ui/textarea-field";
 import { cn } from "@/lib/utils";
 import { PlusIcon, TrashIcon } from "lucide-react";
-import React, { memo, useCallback, useMemo, useState } from "react";
+import React, { memo, useCallback, useMemo, useRef, useState } from "react";
 
 interface IAdditionalInformationProps {
   additionalInformation: string[];
@@ -18,6 +18,7 @@ const AdditionalInformation: React.FC<IAdditionalInformationProps> = ({
   error,
   errorClassName,
 }) => {
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [showTextArea, setShowTextArea] = useState(false);
   const parsedAdditionalInformation = useMemo(() => {
     return additionalInformation.filter(Boolean);
@@ -78,6 +79,7 @@ const AdditionalInformation: React.FC<IAdditionalInformationProps> = ({
         <>
           <TextareaField
             value={additionalInformationInput}
+            ref={inputRef}
             placeholder="Enter additional information"
             onChange={(e) =>
               setAdditionalInformationInput(e?.target?.value || "")
@@ -107,7 +109,12 @@ const AdditionalInformation: React.FC<IAdditionalInformationProps> = ({
         <div className="flex justify-end">
           <Button
             variant="outline"
-            onClick={() => setShowTextArea(true)}
+            onClick={() => {
+              setShowTextArea(true);
+              setTimeout(() => {
+                inputRef?.current?.focus();
+              }, 100);
+            }}
             className={"text-xs inline-flex items-center gap-2"}
           >
             Add Additional Information <PlusIcon className="size-4" />

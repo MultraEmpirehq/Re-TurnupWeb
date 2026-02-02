@@ -1,3 +1,4 @@
+"use client";
 import React, { memo } from "react";
 import dynamic from "next/dynamic";
 import Joi from "joi";
@@ -14,6 +15,7 @@ const ComboboxSelect = dynamic(
 );
 import GuestNamesInput from "./guest-names-input";
 import EventActivitiesInput, { IEventActivity } from "./event-activities-input";
+import { Controller, useFormContext } from "react-hook-form";
 
 export interface IBasicFormValues {
   eventName: string;
@@ -83,40 +85,117 @@ export const basicInformationSchema = Joi.object({
     "any.required": "Additional information is required",
   }),
 });
-const BasicForm = () => {
+const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
+  handleNextStep,
+}) => {
+  const {
+    register,
+    watch,
+    control,
+    formState: { errors, isValid, isSubmitting },
+  } = useFormContext<IBasicFormValues>();
+  const eventDate = watch("eventDate");
   return (
     <form className="space-y-10">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <InputField label="Event Name" />
-        <DateSelect label="Event Date" date={new Date()} setDate={() => {}} />
-        <ComboboxSelect
-          label="Venue"
-          placeholder="Select a venue"
-          items={[]}
-          emptyText="No venue found."
-          item={""}
-          setItem={() => {}}
+        <InputField
+          label="Event Name"
+          error={errors?.eventName?.message}
+          {...register("eventName")}
         />
-        <ComboboxSelect
-          label="Category"
-          placeholder="Select a category"
-          items={[]}
-          emptyText="No category found."
-          item={""}
-          setItem={() => {}}
+
+        <Controller
+          control={control}
+          name="eventDate"
+          render={({ field, fieldState }) => (
+            <DateSelect
+              label="Event Date"
+              date={field.value}
+              error={fieldState?.error?.message}
+              setDate={field.onChange}
+            />
+          )}
         />
-        <EventActivitiesInput
-          eventActivities={[]}
-          setEventActivities={() => {}}
+        <Controller
+          control={control}
+          name="venueId"
+          render={({ field, fieldState }) => (
+            <ComboboxSelect
+              label="Venue"
+              error={fieldState?.error?.message}
+              placeholder="Select a venue"
+              items={[]}
+              item={field.value}
+              setItem={field.onChange}
+            />
+          )}
         />
-        <AdditionalInformationInput
-          additionalInformation={[]}
-          setAdditionalInformation={() => {}}
+
+        <Controller
+          control={control}
+          name="categoryId"
+          render={({ field, fieldState }) => (
+            <ComboboxSelect
+              label="Category"
+              error={fieldState?.error?.message}
+              placeholder="Select a category"
+              items={[]}
+              item={field.value}
+              setItem={field.onChange}
+            />
+          )}
         />
-        <GuestNamesInput guestNames={[]} setGuestNames={() => {}} />
-        <TextareaField label="About Event" className="col-span-2" />
+
+        <Controller
+          control={control}
+          name="eventActivities"
+          render={({ field, fieldState }) => (
+            <EventActivitiesInput
+              selectedDate={eventDate}
+              eventActivities={field.value}
+              setEventActivities={field.onChange}
+              error={fieldState?.error?.message}
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="additionalInformation"
+          render={({ field, fieldState }) => (
+            <AdditionalInformationInput
+              error={fieldState?.error?.message}
+              additionalInformation={field.value}
+              setAdditionalInformation={field.onChange}
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="unRegisteredGuestNames"
+          render={({ field, fieldState }) => (
+            <GuestNamesInput
+              error={fieldState?.error?.message}
+              guestNames={field.value}
+              setGuestNames={field.onChange}
+            />
+          )}
+        />
+        <TextareaField
+          label="About Event"
+          className="col-span-2"
+          error={errors?.description?.message}
+          {...register("description")}
+        />
       </div>
-      <Button>Next</Button>
+      <Button
+        onClick={handleNextStep}
+        disabled={!isValid || isSubmitting}
+        loading={isSubmitting}
+      >
+        Next
+      </Button>
     </form>
   );
 };

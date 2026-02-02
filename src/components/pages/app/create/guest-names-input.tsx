@@ -4,7 +4,7 @@ import InputField from "@/components/ui/input-field";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { PlusIcon, TrashIcon } from "lucide-react";
-import React, { memo, useCallback, useMemo, useState } from "react";
+import React, { memo, useCallback, useMemo, useRef, useState } from "react";
 
 interface IAdditionalInformationProps {
   guestNames: string[];
@@ -19,6 +19,7 @@ const GuestNamesInput: React.FC<IAdditionalInformationProps> = ({
   error,
   errorClassName,
 }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
   const [showTextArea, setShowTextArea] = useState(false);
   const parsedGuestNames = useMemo(() => {
     return guestNames?.filter(Boolean);
@@ -71,6 +72,7 @@ const GuestNamesInput: React.FC<IAdditionalInformationProps> = ({
       {shouldShowTextArea && (
         <>
           <InputField
+            ref={inputRef}
             value={guestNamesInput}
             placeholder="Enter guest name"
             onChange={(e) => setGuestNamesInput(e?.target?.value || "")}
@@ -99,7 +101,12 @@ const GuestNamesInput: React.FC<IAdditionalInformationProps> = ({
         <div className="flex justify-end">
           <Button
             variant="outline"
-            onClick={() => setShowTextArea(true)}
+            onClick={() => {
+              setShowTextArea(true);
+              setTimeout(() => {
+                inputRef?.current?.focus();
+              }, 100);
+            }}
             className={"text-xs inline-flex items-center gap-2"}
           >
             Add Guest <PlusIcon className="size-4" />
