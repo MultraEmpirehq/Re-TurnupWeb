@@ -12,7 +12,9 @@ import MediaUploadForm, {
   mediaUploadFormSchema,
 } from "@/components/pages/app/create/media-upload-form";
 import Steps from "@/components/pages/app/create/steps";
-import TicketForm from "@/components/pages/app/create/ticket-form";
+import TicketForm, {
+  ticketFormSchema,
+} from "@/components/pages/app/create/ticket-form";
 import DashboardBanner from "@/components/pages/app/dashboard-banner";
 import { joiResolver } from "@hookform/resolvers/joi";
 import Joi from "joi";
@@ -28,6 +30,7 @@ export type TFormValues = IBasicFormValues &
 const schemas = {
   1: basicInformationSchema,
   2: coverFormSchema,
+  3: ticketFormSchema,
   4: mediaUploadFormSchema,
 } as const;
 
@@ -46,7 +49,7 @@ export const defaultValues: TFormValues = {
 };
 
 const CreateEvent = () => {
-  const [step, setStep] = useState(4);
+  const [step, setStep] = useState(3);
   const schema = useMemo(() => {
     return schemas[step as keyof typeof schemas] as Joi.Schema;
   }, [step]);
