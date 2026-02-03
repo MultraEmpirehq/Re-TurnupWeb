@@ -65,6 +65,7 @@ const AdditionalInformation: React.FC<IAdditionalInformationProps> = ({
                 <p className="text-xs">{information}</p>
               </div>
               <Button
+                type="button"
                 onClick={() => handleRemoveAdditionalInformation(index)}
                 variant="ghost"
                 className="text-xs inline-flex items-center gap-2 text-red-500"
@@ -89,6 +90,7 @@ const AdditionalInformation: React.FC<IAdditionalInformationProps> = ({
             {parsedAdditionalInformation.length > 0 && (
               <Button
                 variant="outline"
+                type="button"
                 onClick={() => setShowTextArea(false)}
                 className="text-xs inline-flex items-center gap-2 text-red-500 border-red-300"
               >
@@ -96,6 +98,7 @@ const AdditionalInformation: React.FC<IAdditionalInformationProps> = ({
               </Button>
             )}
             <Button
+              type="button"
               onClick={handleAddAdditionalInformation}
               variant="outline"
               className="text-xs inline-flex items-center gap-2"
@@ -109,6 +112,7 @@ const AdditionalInformation: React.FC<IAdditionalInformationProps> = ({
         <div className="flex justify-end">
           <Button
             variant="outline"
+            type="button"
             onClick={() => {
               setShowTextArea(true);
               setTimeout(() => {

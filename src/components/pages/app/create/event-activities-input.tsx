@@ -75,6 +75,7 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
     register,
     control,
     handleSubmit,
+    reset,
     formState: { errors, isValid, isSubmitting },
     setFocus,
   } = useForm({
@@ -101,8 +102,9 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
     (data: IEventActivity) => {
       setEventActivities([...eventActivities, data]);
       setShowActivityInput(false);
+      reset();
     },
-    [eventActivities, setEventActivities, setShowActivityInput]
+    [eventActivities, setEventActivities, setShowActivityInput, reset]
   );
   return (
     <div className="space-y-6 col-span-2">
@@ -125,6 +127,7 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
             </div>
             <Button
               variant="ghost"
+              type="button"
               className="text-xs inline-flex items-center gap-2 text-red-500"
               onClick={() => handleRemoveActivity(index)}
             >
@@ -175,6 +178,7 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
             {parsedEventActivities?.length > 0 && (
               <Button
                 variant="outline"
+                type="button"
                 className="text-xs inline-flex items-center gap-2 border-red-300 text-red-500"
                 onClick={() => {
                   setShowActivityInput(false);
@@ -186,6 +190,7 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
             <Button
               disabled={isSubmitting || !isValid}
               variant="outline"
+              type="button"
               className="text-xs inline-flex items-center gap-2"
               onClick={handleSubmit(handleAddActivity)}
             >
@@ -197,6 +202,7 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
       {!shouldShowActivityInput && (
         <div className="flex justify-end">
           <Button
+            type="button"
             variant="outline"
             onClick={() => {
               setShowActivityInput(true);
