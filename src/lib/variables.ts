@@ -32,11 +32,6 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Signup",
     href: "/auth?type=signup",
   },
-  CREATE_EVENT: {
-    shouldShowIn: [],
-    label: "Create Event",
-    href: "/create-event",
-  },
   COMPLETE_USER_INFORMATION: {
     shouldShowIn: [],
     label: "Complete User Information",
@@ -167,7 +162,7 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Profile",
     href: "/app/profile",
   },
-  CREATE: {
+  CREATE_EVENT: {
     shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV],
     label: "Create Event",
     href: "/app/create",
