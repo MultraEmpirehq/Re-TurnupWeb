@@ -1,6 +1,6 @@
 "use client";
 import nextDynamic from "next/dynamic";
-import { getData, postData } from "@/api";
+import { getData, patchData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import { Button } from "@/components/ui/button";
@@ -33,11 +33,11 @@ interface IFormValues {
   firstName: string;
   lastName: string;
   username: string;
-  dob: Date;
+  dateOfBirth: Date;
   gender: EUserGenders;
   country: string;
   postalCode: string;
-  address: string;
+  // address: string;
   isUserNameValid: boolean;
 }
 
@@ -56,7 +56,7 @@ const schema = Joi.object({
     "string.empty": "Username is required",
     "any.required": "Username is required",
   }),
-  dob: Joi.date().required().messages({
+  dateOfBirth: Joi.date().required().messages({
     "date.empty": "Date of birth is required",
     "any.required": "Date of birth is required",
   }),
@@ -72,10 +72,10 @@ const schema = Joi.object({
     "string.empty": "Postal code is required",
     "any.required": "Postal code is required",
   }),
-  address: Joi.string().required().messages({
-    "string.empty": "Address is required",
-    "any.required": "Address is required",
-  }),
+  // address: Joi.string().required().messages({
+  //   "string.empty": "Address is required",
+  //   "any.required": "Address is required",
+  // }),
   isUserNameValid: Joi.boolean().valid(true).required().messages({
     "boolean.valid": "Username is not available",
     "boolean.empty": "Username validation is required",
@@ -88,11 +88,11 @@ const defaultValues: IFormValues = {
   firstName: "",
   lastName: "",
   username: "",
-  dob: new Date(),
+  dateOfBirth: new Date(),
   gender: EUserGenders.MALE,
   country: "",
   postalCode: "",
-  address: "",
+  // address: "",
   isUserNameValid: false,
 };
 const CompleteUser = () => {
@@ -117,7 +117,7 @@ const CompleteUser = () => {
       setIsValidatingUserName(true);
       setValue("isUserNameValid", false);
       try {
-        await getData(`/auth?email=${username}`);
+        await getData(`/auth/username?username=${username}`);
         setValue("isUserNameValid", true);
       } catch (error) {
         setError("username", {
@@ -137,11 +137,12 @@ const CompleteUser = () => {
 
   const onSubmit = useCallback(
     async (body: IFormValues) => {
+      const { username, isUserNameValid, ...payload } = body;
       try {
-        const { data } = await postData<IFormValues, TUserDetails>(
-          "/user",
-          body
-        );
+        const { data } = await patchData<
+          Omit<IFormValues, "isUserNameValid">,
+          TUserDetails
+        >("/user", { ...payload, username: username?.trim()?.toLowerCase() });
         await performAuthOperation(data?.data);
         toast.success("Account completed successfully");
         router.push(ROUTES.HOME.href);
@@ -215,7 +216,7 @@ const CompleteUser = () => {
           />
           <Controller
             control={control}
-            name="dob"
+            name="dateOfBirth"
             render={({ field, fieldState }) => (
               <DateSelect
                 date={field.value}
@@ -275,14 +276,14 @@ const CompleteUser = () => {
             {...register("postalCode")}
             error={errors?.postalCode?.message}
           />
-          <InputField
+          {/* <InputField
             inputClassName="bg-black/10"
             placeholder="Enter your address"
             label="Address"
             type="text"
             {...register("address")}
             error={errors?.address?.message}
-          />
+          /> */}
           <Button
             className="w-full mt-4"
             type="submit"

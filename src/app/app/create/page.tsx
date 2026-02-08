@@ -57,7 +57,7 @@ export const defaultValues: TFormValues = {
 };
 
 const CreateEvent = () => {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(2);
   const schema = useMemo(() => {
     return schemas[step as keyof typeof schemas] as Joi.Schema;
   }, [step]);
