@@ -15,6 +15,10 @@ import useAuth from "@/hooks/use-auth";
 import { TUserDetails } from "@/stores/user-store";
 import { IUserCheckedCredentials } from "@/lib/types";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { ROUTES } from "@/lib/variables";
+
+export const dynamic = "force-dynamic";
 
 interface IFormValues {
   email: string;
@@ -57,6 +61,7 @@ const loginDefaultValues: IFormValues = {
 };
 
 const AuthPage = () => {
+  const router = useRouter();
   const { performAuthOperation } = useAuth();
   const [magicLinkEmail, setMagicLinkEmail] = useState<string | null>(null);
   const [checkedCredentials, setCheckedCredentials] =
@@ -125,7 +130,9 @@ const AuthPage = () => {
           "/auth/login",
           body,
         );
+        console.log(data?.data?.user);
         await performAuthOperation(data?.data?.user);
+        router.push(ROUTES.HOME.href);
       } catch (error) {
         toast.error(
           constructErrorMessage(
@@ -135,7 +142,7 @@ const AuthPage = () => {
         );
       }
     },
-    [checkedCredentials, performAuthOperation],
+    [checkedCredentials, performAuthOperation, router],
   );
 
   return (

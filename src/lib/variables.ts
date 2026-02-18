@@ -18,7 +18,7 @@ export const ROUTES: { [key: string]: RouteProps } = {
     href: "/contact",
   },
   LOGIN: {
-    shouldShowIn: [ROUTE_TYPE.NAV_ROUTE],
+    shouldShowIn: [ROUTE_TYPE.NAV_ROUTE, ROUTE_TYPE.HIDE_ON_LOGIN],
     label: "Login",
     href: "/auth",
   },
@@ -28,14 +28,14 @@ export const ROUTES: { [key: string]: RouteProps } = {
     href: "/auth/otp",
   },
   SIGNUP: {
-    shouldShowIn: [ROUTE_TYPE.NAV_ROUTE],
+    shouldShowIn: [ROUTE_TYPE.NAV_ROUTE, ROUTE_TYPE.HIDE_ON_LOGIN],
     label: "Signup",
-    href: "/auth/signup",
+    href: "/auth?type=signup",
   },
-  CREATE_EVENT: {
+  COMPLETE_USER_INFORMATION: {
     shouldShowIn: [],
-    label: "Create Event",
-    href: "/create-event",
+    label: "Complete User Information",
+    href: "/auth/complete-user",
   },
 
   // Company Info Routes
@@ -149,5 +149,57 @@ export const ROUTES: { [key: string]: RouteProps } = {
     shouldShowIn: [ROUTE_TYPE.FOOTER_FOLLOW_US_ROUTE],
     label: "Youtube",
     href: "https://youtube.com",
+  },
+
+  // App Routes
+  DASHBOARD: {
+    shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV],
+    label: "Dashboard",
+    href: "/app",
+  },
+  PROFILE: {
+    shouldShowIn: [ROUTE_TYPE.APP_ROUTE],
+    label: "Profile",
+    href: "/app/profile",
+  },
+  CREATE_EVENT: {
+    shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV],
+    label: "Create Event",
+    href: "/app/create",
+  },
+  EVENTS: {
+    shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV],
+    label: "Manage Posts",
+    href: "/app/events",
+  },
+  MESSAGES: {
+    shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV],
+    label: "Chats",
+    href: "/app/messages",
+  },
+  ANALYSIS: {
+    shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV],
+    label: "Analysis",
+    href: "/app/analysis",
+  },
+  WALLET: {
+    shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV],
+    label: "Wallet",
+    href: "/app/wallet",
+  },
+  TICKETS: {
+    shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV],
+    label: "Tickets",
+    href: "/app/tickets",
+  },
+  SETTINGS: {
+    shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV],
+    label: "Settings",
+    href: "/app/settings",
+  },
+  NOTIFICATIONS: {
+    shouldShowIn: [ROUTE_TYPE.APP_ROUTE],
+    label: "Notifications",
+    href: "/app/notifications",
   },
 };

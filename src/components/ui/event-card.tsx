@@ -1,33 +1,48 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import CustomImageComponent from "./custom-image.component";
 import { formatDate } from "date-fns";
 import { Skeleton } from "./skeleton";
-import { EventDetailsType } from "@/lib/types";
+import { IEventDetailsType } from "@/lib/types";
+import Link from "next/link";
+import { ROUTES } from "@/lib/variables";
 
-const EventCardComponent: React.FC<EventDetailsType> = ({
-  name,
-  image,
-  description,
-}) => {
+const EventCardComponent: React.FC<
+  IEventDetailsType & { isDashboard?: boolean }
+> = ({ name, image, description, date, id, isDashboard = false }) => {
+  const eventDetailsURL = useMemo(() => {
+    return isDashboard
+      ? `${ROUTES.EVENTS.href}/${id}`
+      : `${ROUTES.EXPLORE.href}/event/${id}`;
+  }, [id, isDashboard]);
   return (
     <div className="flex-col flex items-start bg-white gap-4">
-      <div className="w-full aspect-video bg-cover relative rounded-lg overflow-hidden">
-        <CustomImageComponent src={image} alt={name} className="size-full" />
-      </div>
+      <Link
+        href={eventDetailsURL}
+        className="w-full aspect-video bg-cover relative rounded-lg overflow-hidden border border-black/5"
+      >
+        <CustomImageComponent
+          fill
+          src={image}
+          alt={name}
+          className="size-full"
+        />
+      </Link>
       <div className="w-full flex flex-row items-center gap-4">
         <div className="flex flex-col text-xl md:text-2xl">
           <span className="font-bold text-secondary">
-            {formatDate(new Date(), "dd")}
+            {formatDate(new Date(date || ""), "dd")}
           </span>
           <span>{formatDate(new Date(), "MMM")}</span>
         </div>
         <div className="flex-col gap-1 flex items-start flex-1">
-          <h3>{name || "Event Name"}</h3>
+          <Link href={eventDetailsURL}>
+            <h3>{name || "Event Name"}</h3>
+          </Link>
           <p className="text-sm opacity-60">
             {description || "Event Description"}
           </p>
           <p className="text-xs opacity-60">
-            {formatDate(new Date(), "hh:mm a")}
+            {formatDate(new Date(date || ""), "hh:mm a")}
           </p>
         </div>
       </div>

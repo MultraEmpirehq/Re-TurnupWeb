@@ -6,8 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
 import React, { memo, useMemo } from "react";
 
-const authsToRemoveNav = ["/auth"];
-const authsToRemoveFooter = ["/auth"];
+const authsToRemoveNav = ["/auth", "/app"];
+const authsToRemoveFooter = ["/auth", "/app"];
 
 const queryClient = new QueryClient();
 

@@ -7,19 +7,18 @@ import { useForm } from "react-hook-form";
 import React, { memo, useCallback } from "react";
 import joi from "joi";
 import { toast } from "sonner";
-import { getData, postData } from "@/api";
+import { getData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { IUserCheckedCredentials, OTP_VERIFICATION_TYPE } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/variables";
 
+export const dynamic = "force-dynamic";
+
 interface IFormValues {
   email: string;
 }
 
-interface IResponse {
-  message: string;
-}
 const schema = joi.object({
   email: joi.string().email().required().messages({
     "string.email": "Invalid email address",

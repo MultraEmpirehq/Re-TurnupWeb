@@ -7,6 +7,9 @@ export enum ROUTE_TYPE {
   FOOTER_HELP_ROUTE = "FOOTER_HELP_ROUTE",
   FOOTER_CATEGORIES_ROUTE = "FOOTER_CATEGORIES_ROUTE",
   FOOTER_FOLLOW_US_ROUTE = "FOOTER_FOLLOW_US_ROUTE",
+  HIDE_ON_LOGIN = "HIDE_ON_LOGIN",
+  APP_ROUTE = "APP_ROUTE",
+  SHOW_ON_APP_SIDE_NAV = "SHOW_ON_APP_SIDE_NAV",
 }
 
 export enum OTP_VERIFICATION_TYPE {
@@ -24,32 +27,33 @@ export interface RouteProps {
   icon?: React.ReactNode;
 }
 
-export interface VenueDetailsType {
+export interface IVenueDetailsType {
   id: string;
   name: string;
   longitude?: number;
   latitude?: number;
   address: string;
+  rating: number;
   totalAvailableSeat: number;
   description?: string;
   creator?: TUserDetails;
   images: string[];
 }
 
-export interface EventActivityDetails {
+export interface IEventActivityDetails {
   name: string;
   description?: string;
   date: Date;
 }
-export interface EventDetailsType {
+export interface IEventDetailsType {
   id: string;
   name: string;
   date: Date;
-  venue?: VenueDetailsType;
+  venue?: IVenueDetailsType;
   image: string;
   totalTickets: number;
   description?: string;
-  activities?: EventActivityDetails[];
+  activities?: IEventActivityDetails[];
   additionalInformation?: string[];
   eventGuestsOfHonour?: ({ name: string } | TUserDetails)[];
   medias?: string[];
@@ -61,4 +65,18 @@ export interface IUserCheckedCredentials {
   isEmailVerified: boolean;
   shouldRequestPassword: boolean;
   isAccountCreationCompleted: boolean;
+}
+
+export interface ITicketDetailsType {
+  id: string;
+  event: IEventDetailsType;
+  name: string;
+  type: string;
+  link: string;
+  price: number;
+}
+
+export interface ICategoryDetailsType {
+  id: string;
+  name: string;
 }

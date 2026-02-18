@@ -1,7 +1,5 @@
 import React, { memo, useMemo } from "react";
 import { CalendarDays } from "lucide-react";
-import { EventDetailsType } from "@/lib/types";
-import { EventCardSkeleton } from "@/components/ui/event-card";
 import { useSearchParams } from "next/navigation";
 import HappeningNowCard from "@/components/ui/happening-now-card";
 import EventCardTwo, {
@@ -9,21 +7,14 @@ import EventCardTwo, {
 } from "@/components/ui/event-card-two";
 import EmptyContainer from "@/components/ui/empty-container";
 import { Button } from "@/components/ui/button";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { getData } from "@/api";
+import { useEvents } from "@/hooks/use-event";
 import ErrorContainer from "@/components/ui/error-container";
 import { constructErrorMessage } from "@/api/functions";
 
-const getEvents = async ({ page = 1 }) => {
-  const urlParams = new URLSearchParams();
-  urlParams.set("page", page.toString());
-  urlParams.set("limit", "10");
-  const url = `/events?${urlParams.toString()}`;
-  const { data } = await getData<EventDetailsType[]>(url);
-  return data;
-};
-
 const EventList = () => {
+  const searchParams = useSearchParams();
+  const startDate = searchParams?.get("startDate")?.toString();
+
   const {
     data,
     hasNextPage,
@@ -31,14 +22,8 @@ const EventList = () => {
     fetchNextPage,
     error,
     refetch,
-  } = useInfiniteQuery({
-    queryKey: ["events"],
-    queryFn: ({ pageParam }) => getEvents({ page: pageParam }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => lastPage?.pagination?.nextPage,
-  });
-  const searchParams = useSearchParams();
-  const startDate = searchParams?.get("startDate")?.toString();
+  } = useEvents({ limit: 10, startDate });
+
   const isToday = useMemo(
     () =>
       startDate
@@ -46,11 +31,14 @@ const EventList = () => {
         : false,
     [startDate],
   );
+
   const events = useMemo(
     () => data?.pages?.flatMap((page) => page?.data || []) || [],
     [data],
   );
+
   const isLoading = useMemo(() => !data, [data]);
+
   return (
     <div className="w-full">
       {(isLoading || (!isLoading && events && events?.length > 0)) &&

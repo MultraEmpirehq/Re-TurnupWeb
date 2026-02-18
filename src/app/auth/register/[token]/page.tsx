@@ -2,7 +2,7 @@
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import { Button } from "@/components/ui/button";
 import InputField from "@/components/ui/input-field";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import React, { memo, useCallback } from "react";
 import joi from "joi";
 import { joiResolver } from "@hookform/resolvers/joi";
@@ -12,6 +12,9 @@ import { constructErrorMessage } from "@/api/functions";
 import { toast } from "sonner";
 import { TUserDetails } from "@/stores/user-store";
 import useAuth from "@/hooks/use-auth";
+import { ROUTES } from "@/lib/variables";
+
+export const dynamic = "force-dynamic";
 
 interface IFormValues {
   password: string;
@@ -37,6 +40,7 @@ const defaultValues: IFormValues = {
 };
 
 const RegisterPage = () => {
+  const router = useRouter();
   const { performAuthOperation } = useAuth();
   const {
     register,
@@ -48,7 +52,9 @@ const RegisterPage = () => {
     mode: "onChange",
   });
   const params = useParams();
-  const { token, email } = params;
+  const searchParams = useSearchParams();
+  const email = searchParams?.get("email");
+  const { token } = params;
 
   const onSubmit = useCallback(
     async (body: IFormValues) => {
@@ -66,16 +72,18 @@ const RegisterPage = () => {
           email: email?.toString(),
         });
         await performAuthOperation(data?.data?.user);
+        toast.success("Account created successfully");
+        router.push(ROUTES.COMPLETE_USER_INFORMATION.href);
       } catch (error) {
         toast.error(
           constructErrorMessage(
             error as TApiErrorResponseType,
-            "Something went wrong while verifying your password",
-          ),
+            "Something went wrong while verifying your password"
+          )
         );
       }
     },
-    [token, email, performAuthOperation],
+    [token, email, performAuthOperation, router]
   );
   console.log(token);
   return (
