@@ -107,7 +107,7 @@ const AuthPage = () => {
       try {
         if (!checkedCredentials) {
           const { data } = await getData<IUserCheckedCredentials>(
-            `/auth?email=${body.email}`
+            `/auth?email=${body.email}`,
           );
           const credentials = data?.data;
           if (
@@ -128,7 +128,7 @@ const AuthPage = () => {
         }
         const { data } = await postData<IFormValues, IAuthResponse>(
           "/auth/login",
-          body
+          body,
         );
         console.log(data?.data?.user);
         await performAuthOperation(data?.data?.user);
@@ -137,12 +137,12 @@ const AuthPage = () => {
         toast.error(
           constructErrorMessage(
             error as TApiErrorResponseType,
-            "Something went wrong while accessing your account!"
-          )
+            "Something went wrong while accessing your account!",
+          ),
         );
       }
     },
-    [checkedCredentials, performAuthOperation]
+    [checkedCredentials, performAuthOperation, router],
   );
 
   return (

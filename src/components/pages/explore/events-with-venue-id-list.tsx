@@ -1,20 +1,17 @@
 import React, { memo, useMemo } from "react";
 import { CalendarDays } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import HappeningNowCard from "@/components/ui/happening-now-card";
-import EventCardTwo, {
-  EventCardTwoCardLoader,
-} from "@/components/ui/event-card-two";
 import EmptyContainer from "@/components/ui/empty-container";
 import { Button } from "@/components/ui/button";
 import { useEvents } from "@/hooks/use-event";
 import ErrorContainer from "@/components/ui/error-container";
 import { constructErrorMessage } from "@/api/functions";
+import EventCard, { EventCardSkeleton } from "@/components/ui/event-card";
 
-const EventList = () => {
-  const searchParams = useSearchParams();
-  const startDate = searchParams?.get("startDate")?.toString();
+interface EventsWithVenueIdListProps {
+  venueId?: string;
+}
 
+const EventsWithVenueIdList = ({ venueId }: EventsWithVenueIdListProps) => {
   const {
     data,
     hasNextPage,
@@ -22,14 +19,9 @@ const EventList = () => {
     fetchNextPage,
     error,
     refetch,
-  } = useEvents({ limit: 10, startDate });
-
-  const isToday = useMemo(
-    () =>
-      startDate
-        ? new Date(startDate || "")?.toISOString() === new Date()?.toISOString()
-        : false,
-    [startDate],
+  } = useEvents(
+    { venueId, status: "UPCOMING", limit: 6 },
+    { enabled: venueId !== undefined },
   );
 
   const events = useMemo(
@@ -41,29 +33,24 @@ const EventList = () => {
 
   return (
     <div className="w-full">
-      {(isLoading || (!isLoading && events && events?.length > 0)) &&
-        !error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {isLoading &&
-              Array.from({ length: 6 }).map((_, index) => (
-                <EventCardTwoCardLoader key={index} />
-              ))}
-            {!isLoading &&
-              events.length > 0 &&
-              events.map((event, index) =>
-                isToday ? (
-                  <HappeningNowCard key={event?.id || index} {...event} />
-                ) : (
-                  <EventCardTwo key={event?.id || index} {...event} />
-                ),
-              )}
-          </div>
-        )}
-      {!isLoading && !error && events && events?.length === 0 && (
+      {(isLoading || (!isLoading && events?.length > 0)) && !error && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {isLoading &&
+            Array.from({ length: 6 }).map((_, index) => (
+              <EventCardSkeleton key={index} />
+            ))}
+          {!isLoading &&
+            events.length > 0 &&
+            events.map((event, index) => (
+              <EventCard key={event?.id || index} {...event} />
+            ))}
+        </div>
+      )}
+      {!isLoading && !error && events?.length === 0 && (
         <EmptyContainer
           icon={<CalendarDays className="size-10" />}
           title="No events found"
-          description="There is no events available at the moment"
+          description="There are no events at this venue at the moment"
         />
       )}
       {isLoading && error && (
@@ -91,4 +78,4 @@ const EventList = () => {
   );
 };
 
-export default memo(EventList);
+export default memo(EventsWithVenueIdList);

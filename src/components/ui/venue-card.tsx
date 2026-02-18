@@ -1,27 +1,36 @@
-import { VenueDetailsType } from "@/lib/types";
+import { IVenueDetailsType } from "@/lib/types";
 import React, { memo } from "react";
 import CustomImageComponent from "./custom-image.component";
 import { Skeleton } from "./skeleton";
+import { ROUTES } from "@/lib/variables";
+import Link from "next/link";
 
-const VenueCard: React.FC<VenueDetailsType> = ({
+const VenueCard: React.FC<IVenueDetailsType> = ({
   images,
   name,
   address,
   totalAvailableSeat,
+  id,
 }) => {
   return (
     <div className="space-y-3">
-      <div className="aspect-video w-full max-h-[300px]">
+      <Link
+        href={`${ROUTES.EXPLORE.href}/venue/${id}`}
+        className="aspect-video inline-flex w-full max-h-[300px] relative"
+      >
         <CustomImageComponent
           className="size-full"
           src={images?.[0] || ""}
           alt={name}
+          fill
         />
-      </div>
+      </Link>
       <div className="space-y-2">
-        <h1 className="font-medium uppercase">
-          {name || "Venue Name"} | {address || "Venue Address"}
-        </h1>
+        <Link href={`${ROUTES.EXPLORE.href}/venue/${id}`}>
+          <h1 className="font-medium uppercase">
+            {name || "Venue Name"} | {address || "Venue Address"}
+          </h1>
+        </Link>
         <p className="opacity-60 text-sm">Up to {totalAvailableSeat || 0}</p>
       </div>
     </div>

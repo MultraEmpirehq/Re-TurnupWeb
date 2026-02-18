@@ -26,7 +26,10 @@ export const dynamic = "force-dynamic";
 
 const CountrySelect = nextDynamic(
   () => import("@/components/ui/country-select"),
-  { ssr: false, loading: () => <Skeleton className="h-10 w-full rounded-md" /> }
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-10 w-full rounded-md" />,
+  },
 );
 
 interface IFormValues {
@@ -123,21 +126,21 @@ const CompleteUser = () => {
         setError("username", {
           message: constructErrorMessage(
             error as TApiErrorResponseType,
-            "Username is not available"
+            "Username is not available",
           ),
         });
       } finally {
         setIsValidatingUserName(false);
       }
     },
-    500
+    500,
   );
   const username = watch("username");
   const isUserNameValid = watch("isUserNameValid");
 
   const onSubmit = useCallback(
     async (body: IFormValues) => {
-      const { username, isUserNameValid, ...payload } = body;
+      const { username, isUserNameValid: _isUserNameValid, ...payload } = body;
       try {
         const { data } = await patchData<
           Omit<IFormValues, "isUserNameValid">,
@@ -150,12 +153,12 @@ const CompleteUser = () => {
         toast.error(
           constructErrorMessage(
             error as TApiErrorResponseType,
-            "Something went wrong while completing your account"
-          )
+            "Something went wrong while completing your account",
+          ),
         );
       }
     },
-    [router, performAuthOperation]
+    [router, performAuthOperation],
   );
   useEffect(() => {
     const trimmedUsername = username?.trim();

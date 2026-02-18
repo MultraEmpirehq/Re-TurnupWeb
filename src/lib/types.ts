@@ -27,32 +27,33 @@ export interface RouteProps {
   icon?: React.ReactNode;
 }
 
-export interface VenueDetailsType {
+export interface IVenueDetailsType {
   id: string;
   name: string;
   longitude?: number;
   latitude?: number;
   address: string;
+  rating: number;
   totalAvailableSeat: number;
   description?: string;
   creator?: TUserDetails;
   images: string[];
 }
 
-export interface EventActivityDetails {
+export interface IEventActivityDetails {
   name: string;
   description?: string;
   date: Date;
 }
-export interface EventDetailsType {
+export interface IEventDetailsType {
   id: string;
   name: string;
   date: Date;
-  venue?: VenueDetailsType;
+  venue?: IVenueDetailsType;
   image: string;
   totalTickets: number;
   description?: string;
-  activities?: EventActivityDetails[];
+  activities?: IEventActivityDetails[];
   additionalInformation?: string[];
   eventGuestsOfHonour?: ({ name: string } | TUserDetails)[];
   medias?: string[];
@@ -68,9 +69,14 @@ export interface IUserCheckedCredentials {
 
 export interface ITicketDetailsType {
   id: string;
-  event: EventDetailsType;
+  event: IEventDetailsType;
   name: string;
   type: string;
   link: string;
   price: number;
+}
+
+export interface ICategoryDetailsType {
+  id: string;
+  name: string;
 }

@@ -41,7 +41,7 @@ const schemas = {
 
 export const defaultValues: TFormValues = {
   eventName: "",
-  eventDate: new Date(),
+  eventDate: new Date(new Date().setDate(new Date().getDate() + 1)),
   venueId: "",
   categoryId: "",
   guestIds: [],
@@ -57,7 +57,7 @@ export const defaultValues: TFormValues = {
 };
 
 const CreateEvent = () => {
-  const [step, setStep] = useState(2);
+  const [step, setStep] = useState(1);
   const schema = useMemo(() => {
     return schemas[step as keyof typeof schemas] as Joi.Schema;
   }, [step]);
@@ -72,9 +72,10 @@ const CreateEvent = () => {
     }
     try {
       const body = form.getValues();
+      console.log("body", body);
       const formData = new FormData();
       formData.append("eventName", body.eventName);
-      formData.append("eventDate", body.eventDate.toDateString());
+      formData.append("eventDate", body.eventDate?.toString() ?? "");
       formData.append("venueId", body.venueId);
       formData.append("categoryId", body.categoryId);
       if (body?.guestIds && body?.guestIds?.length > 0) {
@@ -87,7 +88,7 @@ const CreateEvent = () => {
       ) {
         formData.append(
           "unRegisteredGuestNames",
-          JSON.stringify(body.unRegisteredGuestNames)
+          JSON.stringify(body.unRegisteredGuestNames),
         );
       }
       formData.append("description", body.description);
@@ -95,7 +96,7 @@ const CreateEvent = () => {
       if (body?.eventActivities && body?.eventActivities?.length > 0) {
         formData.append(
           "eventActivities",
-          JSON.stringify(body.eventActivities)
+          JSON.stringify(body.eventActivities),
         );
       }
       if (
@@ -104,7 +105,7 @@ const CreateEvent = () => {
       ) {
         formData.append(
           "additionalInformation",
-          JSON.stringify(body.additionalInformation)
+          JSON.stringify(body.additionalInformation),
         );
       }
       if (body?.eventTickets && body?.eventTickets?.length > 0) {
@@ -130,23 +131,45 @@ const CreateEvent = () => {
       form.reset();
       toast.success("Event created successfully");
     } catch (error) {
+      console.log("outer error", error);
       toast.error(
         constructErrorMessage(
           error as TApiErrorResponseType,
-          "Something went wrong while creating event"
-        )
+          "Something went wrong while creating event",
+        ),
       );
     }
   }, [step, form]);
+
+  const handlePreviousStep = useCallback(() => {
+    if (step > 1) {
+      return setStep(step - 1);
+    }
+  }, [step]);
   return (
     <div className="space-y-10">
       <DashboardBanner />
       <Steps currentStep={step} />
       <FormProvider {...form}>
         {step === 1 && <BasicForm handleNextStep={handleNextStep} />}
-        {step === 2 && <CoverForm handleNextStep={handleNextStep} />}
-        {step === 3 && <TicketForm handleNextStep={handleNextStep} />}
-        {step === 4 && <MediaUploadForm handleNextStep={handleNextStep} />}
+        {step === 2 && (
+          <CoverForm
+            handleNextStep={handleNextStep}
+            handlePreviousStep={handlePreviousStep}
+          />
+        )}
+        {step === 3 && (
+          <TicketForm
+            handleNextStep={handleNextStep}
+            handlePreviousStep={handlePreviousStep}
+          />
+        )}
+        {step === 4 && (
+          <MediaUploadForm
+            handleNextStep={handleNextStep}
+            handlePreviousStep={handlePreviousStep}
+          />
+        )}
       </FormProvider>
     </div>
   );

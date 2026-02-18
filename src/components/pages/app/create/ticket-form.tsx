@@ -83,9 +83,10 @@ export const ticketFormSchema = Joi.object({
   }),
 }).unknown(true);
 
-const TicketForm: React.FC<{ handleNextStep: () => void }> = ({
-  handleNextStep,
-}) => {
+const TicketForm: React.FC<{
+  handleNextStep: () => Promise<void>;
+  handlePreviousStep?: () => void;
+}> = ({ handleNextStep, handlePreviousStep }) => {
   const {
     control,
     watch,
@@ -108,6 +109,7 @@ const TicketForm: React.FC<{ handleNextStep: () => void }> = ({
             <SelectField
               options={ticketSaleMethodOptions}
               label="Sale Method"
+              required={true}
               value={field.value}
               setValue={(value) => {
                 field?.onChange(value);
@@ -140,9 +142,18 @@ const TicketForm: React.FC<{ handleNextStep: () => void }> = ({
             )}
           />
         )}
-        <Button disabled={!isValid} loading={isSubmitting} type="submit">
-          Continue
-        </Button>
+        <div className="w-full mt-10 flex flex-row items-center justify-start gap-3">
+          <Button
+            onClick={handlePreviousStep}
+            variant="outline"
+            className="border-secondary-700 text-secondary-700"
+          >
+            Previous
+          </Button>
+          <Button disabled={!isValid} loading={isSubmitting} type="submit">
+            Continue
+          </Button>
+        </div>
       </form>
     </div>
   );

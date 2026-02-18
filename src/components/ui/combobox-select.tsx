@@ -9,9 +9,11 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "./combobox";
-import { CheckIcon } from "lucide-react";
+import { AlertTriangle, CheckIcon } from "lucide-react";
+import { Spinner } from "./spinner";
+import { Button } from "./button";
 
-type TComboboxItem = {
+export type TComboboxItem = {
   value: string;
   label: string;
 };
@@ -30,6 +32,10 @@ interface IComboboxSelectProps {
   helperText?: string;
   helperTextClassName?: string;
   emptyText?: string;
+  isLoading?: boolean;
+  refetch?: () => void;
+  fetchingError?: string;
+  required?: boolean;
 }
 
 const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
@@ -46,51 +52,81 @@ const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
   helperText,
   helperTextClassName,
   emptyText,
+  isLoading,
+  refetch,
+  fetchingError,
+  required,
 }) => {
   const [search, setSearch] = useState<string>("");
 
   useEffect(() => {
     const selectedItem = items.find(
-      (contentItem) => contentItem?.value === item
+      (contentItem) => contentItem?.value === item,
     );
     if (selectedItem) {
       setSearch(selectedItem?.label);
     }
   }, [item, items]);
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("space-y-1 relative", className)}>
       {label && (
-        <Label className={cn("opacity-70", labelClassName)}>{label}</Label>
+        <div className="flex items-center gap-2">
+          <Label className={cn("opacity-70", labelClassName)}>{label}</Label>
+          {required && <span className="text-destructive">*</span>}
+          {isLoading && (
+            <span className="">
+              {<Spinner className="w-4 h-4 animate-spin" />}
+            </span>
+          )}
+        </div>
       )}
-      <Combobox items={items}>
+      <Combobox items={fetchingError ? [] : items} disabled={isLoading}>
         <ComboboxInput
           placeholder={placeholder || "Select a value"}
           className={cn("w-full", inputClassName)}
           value={search}
           onChange={(e) => setSearch(e?.target?.value)}
+          disabled={isLoading}
         />
-        <ComboboxContent className="w-full">
-          <ComboboxEmpty>{emptyText || "No item found."}</ComboboxEmpty>
-          <ComboboxList className="w-full">
-            {(contentItem: TComboboxItem) => (
-              <ComboboxItem
-                key={contentItem?.value}
-                value={contentItem?.value}
-                onClick={() => setItem(contentItem?.value)}
-                className={cn(item === contentItem?.value && "bg-accent")}
-              >
-                <div className="inline-flex items-center gap-2 justify-between w-full">
-                  <span className="inline-flex items-center gap-2 text-sm">
-                    <span className="">{contentItem?.label}</span>
-                  </span>
-                  {item === contentItem?.value && (
-                    <CheckIcon className="w-4 h-4" />
-                  )}
-                </div>
-              </ComboboxItem>
-            )}
-          </ComboboxList>
-        </ComboboxContent>
+        {!fetchingError && (
+          <ComboboxContent className="w-full">
+            <ComboboxEmpty>{emptyText || "No item found."}</ComboboxEmpty>
+            <ComboboxList className="w-full">
+              {(contentItem: TComboboxItem) => (
+                <ComboboxItem
+                  key={contentItem?.value}
+                  value={contentItem?.value}
+                  onClick={() => setItem(contentItem?.value)}
+                  className={cn(item === contentItem?.value && "bg-accent")}
+                >
+                  <div className="flex items-center gap-2 justify-between w-full">
+                    <span className="inline-flex items-center gap-2 text-sm">
+                      <span className="">{contentItem?.label}</span>
+                    </span>
+                    {item === contentItem?.value && (
+                      <CheckIcon className="w-4 h-4" />
+                    )}
+                  </div>
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        )}
+        {fetchingError && (
+          <ComboboxContent className="w-full">
+            <ComboboxEmpty className="flex flex-col items-center justify-center py-10 gap-2">
+              <div className="flex flex-col items-center justify-center gap-1">
+                <AlertTriangle className="size-10 text-destructive" />
+                <span className="text-sm text-destructive">
+                  {fetchingError}
+                </span>
+              </div>
+              <Button variant="link" size="sm" onClick={refetch}>
+                <span className="text-sm">Retry</span>
+              </Button>
+            </ComboboxEmpty>
+          </ComboboxContent>
+        )}
       </Combobox>
 
       {(error || helperText) && (
@@ -100,7 +136,7 @@ const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
             helperText && !error && "opacity-60",
             helperText && !error && helperTextClassName,
             error && errorClassName,
-            error && "text-destructive"
+            error && "text-destructive",
           )}
         >
           {error || helperText}

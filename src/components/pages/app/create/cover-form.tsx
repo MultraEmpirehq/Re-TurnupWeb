@@ -44,9 +44,10 @@ export const coverFormSchema = Joi.object({
       "any.required": "Please select a cover image",
     }),
 }).unknown(true);
-const CoverForm: React.FC<{ handleNextStep: () => void }> = ({
-  handleNextStep,
-}) => {
+const CoverForm: React.FC<{
+  handleNextStep: () => Promise<void>;
+  handlePreviousStep?: () => void;
+}> = ({ handleNextStep, handlePreviousStep }) => {
   const {
     handleSubmit,
     control,
@@ -71,7 +72,7 @@ const CoverForm: React.FC<{ handleNextStep: () => void }> = ({
         className={cn(
           "border border-dashed flex flex-col gap-3 items-center justify-center w-full max-w-[500px] rounded-xl relative overflow-hidden",
           !coverImage && "py-10 px-14",
-          coverImage && " p-5"
+          coverImage && " p-5",
         )}
       >
         <Controller
@@ -158,7 +159,14 @@ const CoverForm: React.FC<{ handleNextStep: () => void }> = ({
           {errorMessage}
         </p>
       )}
-      <div className="w-full max-w-[500px] mt-10">
+      <div className="w-full max-w-[500px] mt-10 flex flex-row items-center justify-start gap-3">
+        <Button
+          onClick={handlePreviousStep}
+          variant="outline"
+          className="border-secondary-700 text-secondary-700"
+        >
+          Previous
+        </Button>
         <Button
           onClick={handleSubmit(onSubmit)}
           disabled={!coverImage || !!errors?.coverImage}

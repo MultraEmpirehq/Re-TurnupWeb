@@ -1,4 +1,4 @@
-import { EventDetailsType } from "@/lib/types";
+import { IEventDetailsType } from "@/lib/types";
 import { formatDate } from "date-fns";
 import { BellIcon, InfoIcon, MapPinIcon, TicketIcon } from "lucide-react";
 import React, { memo } from "react";
@@ -22,7 +22,7 @@ SmallButton.displayName = "Small Button";
 const ICON_SIZE = 12,
   OPACITY = 0.6;
 
-const HappeningNowCard: React.FC<EventDetailsType> = ({
+const HappeningNowCard: React.FC<IEventDetailsType> = ({
   name,
   venue,
   date = new Date(),

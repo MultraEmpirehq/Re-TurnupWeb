@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import EmptyContainer from "@/components/ui/empty-container";
 import ErrorContainer from "@/components/ui/error-container";
 import VenueCard, { VenueCardSkeleton } from "@/components/ui/venue-card";
-import { VenueDetailsType } from "@/lib/types";
+import { IVenueDetailsType } from "@/lib/types";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Building2 } from "lucide-react";
 import React, { memo, useMemo } from "react";
@@ -13,7 +13,7 @@ const getVenues = async (page = 1) => {
   const urlSearchParams = new URLSearchParams();
   urlSearchParams.set("page", page?.toString());
   const url = `/venues?${urlSearchParams.toString()}`;
-  const { data } = await getData<VenueDetailsType[]>(url);
+  const { data } = await getData<IVenueDetailsType[]>(url);
   return data;
 };
 
