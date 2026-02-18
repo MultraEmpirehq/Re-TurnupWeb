@@ -30,7 +30,7 @@ const FooterLinkContent: React.FC<FooterLinkContentProps> = memo(
         </ul>
       </div>
     );
-  }
+  },
 );
 
 FooterLinkContent.displayName = "FooterLinkContent";
