@@ -2,7 +2,7 @@ import InputField from "@/components/ui/input-field";
 import { Label } from "@/components/ui/label";
 import TextareaField from "@/components/ui/textarea-field";
 import { cn } from "@/lib/utils";
-import React, { memo, useCallback, useMemo, useRef, useState } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import Joi from "joi";
 import { joiResolver } from "@hookform/resolvers/joi";
@@ -69,7 +69,7 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
 }) => {
   const baseDateForTime = useMemo(
     () => selectedDate ?? new Date(),
-    [selectedDate]
+    [selectedDate],
   );
   const {
     register,
@@ -96,7 +96,7 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
     (index: number) => {
       setEventActivities(eventActivities.filter((_, i) => i !== index));
     },
-    [eventActivities, setEventActivities]
+    [eventActivities, setEventActivities],
   );
   const handleAddActivity = useCallback(
     (data: IEventActivity) => {
@@ -104,7 +104,7 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
       setShowActivityInput(false);
       reset();
     },
-    [eventActivities, setEventActivities, setShowActivityInput, reset]
+    [eventActivities, setEventActivities, setShowActivityInput, reset],
   );
   return (
     <div className="space-y-6 col-span-2">
@@ -159,7 +159,7 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
                     const timeString = e?.target?.value;
                     if (timeString) {
                       field.onChange(
-                        timeStringToDate(timeString, baseDateForTime)
+                        timeStringToDate(timeString, baseDateForTime),
                       );
                     }
                   }}
@@ -221,7 +221,7 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
             "text-sm",
 
             error && errorClassName,
-            error && "text-destructive"
+            error && "text-destructive",
           )}
         >
           {error}

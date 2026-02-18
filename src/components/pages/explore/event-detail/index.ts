@@ -1,0 +1,9 @@
+export { default as EventDetailSkeleton } from "./event-detail-skeleton";
+export { default as EventDetailHero } from "./event-detail-hero";
+export { default as EventDetailTitleRow } from "./event-detail-title-row";
+export { default as EventDetailDateTime } from "./event-detail-date-time";
+export { default as EventDetailLocation } from "./event-detail-location";
+export { default as EventDetailGuests } from "./event-detail-guests";
+export { default as EventDetailDescription } from "./event-detail-description";
+export { default as EventDetailActivities } from "./event-detail-activities";
+export { default as EventDetailMedia } from "./event-detail-media";

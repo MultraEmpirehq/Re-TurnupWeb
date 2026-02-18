@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import CustomImageComponent from "@/components/ui/custom-image.component";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { constructErrorMessage } from "@/api/functions";
 import { cn } from "@/lib/utils";
 import Joi from "joi";
 import { TrashIcon, UploadIcon } from "lucide-react";
@@ -18,7 +19,7 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
 function validateFile(
   value: unknown,
-  helpers: Joi.CustomHelpers
+  helpers: Joi.CustomHelpers,
 ): File | Joi.ErrorReport {
   if (value == null) {
     return helpers.error("any.required");
@@ -52,9 +53,10 @@ export const mediaUploadFormSchema = Joi.object({
     }),
 }).unknown(true);
 
-const MediaUploadForm: React.FC<{ handleNextStep?: () => void }> = ({
-  handleNextStep,
-}) => {
+const MediaUploadForm: React.FC<{
+  handleNextStep?: () => Promise<void>;
+  handlePreviousStep?: () => void;
+}> = ({ handleNextStep, handlePreviousStep }) => {
   const {
     handleSubmit,
     watch,
@@ -101,7 +103,7 @@ const MediaUploadForm: React.FC<{ handleNextStep?: () => void }> = ({
         });
       }
     },
-    [getValues, setValue]
+    [getValues, setValue],
   );
 
   const removeFile = useCallback(
@@ -110,15 +112,25 @@ const MediaUploadForm: React.FC<{ handleNextStep?: () => void }> = ({
       const next = current.filter((_: File, i: number) => i !== index);
       setValue("mediaFiles", next, { shouldValidate: true });
     },
-    [getValues, setValue]
+    [getValues, setValue],
   );
 
   const hasMediaFiles = useMemo(() => {
     return mediaFiles.length > 0;
   }, [mediaFiles]);
 
-  const onSubmit = useCallback(() => {
-    handleNextStep?.();
+  const onSubmit = useCallback(async () => {
+    try {
+      await handleNextStep?.();
+    } catch (error) {
+      console.log("inner error", error);
+      toast.error(
+        constructErrorMessage(
+          error as TApiErrorResponseType,
+          "Something went wrong while creating event",
+        ),
+      );
+    }
   }, [handleNextStep]);
 
   return (
@@ -151,7 +163,7 @@ const MediaUploadForm: React.FC<{ handleNextStep?: () => void }> = ({
       )}
       <div
         className={cn(
-          "border border-dashed flex flex-col gap-3 items-center justify-center w-full max-w-[500px] rounded-xl relative overflow-hidden min-h-[140px] py-10 px-14"
+          "border border-dashed flex flex-col gap-3 items-center justify-center w-full max-w-[500px] rounded-xl relative overflow-hidden min-h-[140px] py-10 px-14",
         )}
       >
         <Input
@@ -192,11 +204,20 @@ const MediaUploadForm: React.FC<{ handleNextStep?: () => void }> = ({
           {errorMessage}
         </p>
       )}
-      <div className="w-full max-w-[500px] mt-10">
+      <div className="w-full max-w-[500px] mt-10 flex flex-row items-center justify-start gap-3">
+        <Button
+          onClick={handlePreviousStep}
+          variant="outline"
+          className="border-secondary-700 text-secondary-700"
+        >
+          Previous
+        </Button>
         <Button
           onClick={handleSubmit(onSubmit)}
           loading={isSubmitting}
-          disabled={mediaFiles.length === 0 || !!errors?.mediaFiles}
+          disabled={
+            mediaFiles.length === 0 || !!errors?.mediaFiles || isSubmitting
+          }
         >
           Create
         </Button>

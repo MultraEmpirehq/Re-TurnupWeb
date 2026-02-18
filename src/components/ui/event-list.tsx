@@ -3,11 +3,11 @@ import EventCard, { EventCardSkeleton } from "./event-card";
 import EmptyContainer from "./empty-container";
 import { Button } from "./button";
 import { CalendarDays } from "lucide-react";
-import { EventDetailsType } from "@/lib/types";
+import { IEventDetailsType } from "@/lib/types";
 import ErrorContainer from "./error-container";
 
 export interface EventListProps {
-  events: EventDetailsType[];
+  events: IEventDetailsType[];
   isLoading?: boolean;
   hasNextPage?: boolean;
   fetchNextPage?: () => void;

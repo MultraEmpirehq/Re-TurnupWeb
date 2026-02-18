@@ -1,6 +1,10 @@
-// /** @type {import('next').NextConfig} */
-// const nextConfig = {
-//   outputFileTracingRoot: __dirname,
-// };
+import type { NextConfig } from "next";
 
-// module.exports = nextConfig;
+const nextConfig: NextConfig = {
+  /* config options here */
+  images: {
+    remotePatterns: [new URL("https://res.cloudinary.com/**")],
+  },
+};
+
+module.exports = nextConfig;

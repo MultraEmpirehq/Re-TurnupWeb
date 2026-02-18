@@ -29,6 +29,7 @@ interface ISelectFieldProps {
   helperText?: string;
   helperTextClassName?: string;
   options: ISelectFieldOption[];
+  required?: boolean;
 }
 
 const SelectField: React.FC<ISelectFieldProps> = ({
@@ -44,11 +45,14 @@ const SelectField: React.FC<ISelectFieldProps> = ({
   helperText,
   helperTextClassName,
   options = [],
+  required,
 }) => {
   return (
     <div className={cn("space-y-2 w-full", className)}>
       {label && (
-        <Label className={cn("opacity-70", labelClassName)}>{label}</Label>
+        <Label className={cn("opacity-70", labelClassName)}>
+          {label} {required && <span className="text-destructive">*</span>}
+        </Label>
       )}
       <Select value={value} onValueChange={setValue}>
         <SelectTrigger className={cn("w-full", inputClassName)}>
@@ -79,7 +83,7 @@ const SelectField: React.FC<ISelectFieldProps> = ({
             helperText && !error && "opacity-60",
             helperText && !error && helperTextClassName,
             error && errorClassName,
-            error && "text-destructive"
+            error && "text-destructive",
           )}
         >
           {error || helperText}

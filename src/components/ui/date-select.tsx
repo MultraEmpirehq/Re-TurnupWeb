@@ -24,6 +24,8 @@ interface ICalendarSelectProps {
   errorClassName?: string;
   helperText?: string;
   helperTextClassName?: string;
+  dateModifiers?: React.ComponentProps<typeof Calendar>["modifiers"];
+  required?: boolean;
 }
 
 const DateSelect: React.FC<ICalendarSelectProps> = ({
@@ -38,11 +40,15 @@ const DateSelect: React.FC<ICalendarSelectProps> = ({
   errorClassName,
   helperText,
   helperTextClassName,
+  dateModifiers,
+  required,
 }) => {
   return (
     <div className={cn("space-y-2", className)}>
       {label && (
-        <Label className={cn("opacity-70", labelClassName)}>{label}</Label>
+        <Label className={cn("opacity-70", labelClassName)}>
+          {label} {required && <span className="text-destructive">*</span>}
+        </Label>
       )}
       <Popover>
         <PopoverTrigger asChild className="">
@@ -51,7 +57,7 @@ const DateSelect: React.FC<ICalendarSelectProps> = ({
             data-empty={!date}
             className={cn(
               "data-[empty=true]:text-muted-foreground w-full justify-start text-left font-normal",
-              inputClassName
+              inputClassName,
             )}
           >
             <CalendarIcon />
@@ -68,6 +74,7 @@ const DateSelect: React.FC<ICalendarSelectProps> = ({
             selected={date}
             captionLayout="dropdown"
             onSelect={setDate}
+            modifiers={dateModifiers}
           />
         </PopoverContent>
       </Popover>
@@ -78,7 +85,7 @@ const DateSelect: React.FC<ICalendarSelectProps> = ({
             helperText && !error && "opacity-60",
             helperText && !error && helperTextClassName,
             error && errorClassName,
-            error && "text-destructive"
+            error && "text-destructive",
           )}
         >
           {error || helperText}

@@ -1,5 +1,5 @@
 "use client";
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import dynamic from "next/dynamic";
 import Joi from "joi";
 import { Button } from "@/components/ui/button";
@@ -11,11 +11,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const ComboboxSelect = dynamic(
   () => import("@/components/ui/combobox-select"),
-  { ssr: false, loading: () => <Skeleton className="h-10 w-full rounded-md" /> }
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-10 w-full rounded-md" />,
+  },
 );
+const VenueSelect = dynamic(() => import("@/components/ui/venue-select"), {
+  ssr: false,
+  loading: () => <Skeleton className="h-10 w-full rounded-md" />,
+});
 import GuestNamesInput from "./guest-names-input";
 import EventActivitiesInput, { IEventActivity } from "./event-activities-input";
 import { Controller, useFormContext } from "react-hook-form";
+import useCategory from "@/hooks/use-category";
+import { TComboboxItem } from "@/components/ui/combobox-select";
+import { constructErrorMessage } from "@/api/functions";
 
 export interface IBasicFormValues {
   eventName: string;
@@ -73,7 +83,7 @@ export const basicInformationSchema = Joi.object({
           "string.empty": "Activity description is required",
           "any.required": "Activity description is required",
         }),
-      })
+      }),
     )
     .required()
     .messages({
@@ -96,11 +106,34 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
     formState: { errors, isValid, isSubmitting },
   } = useFormContext<IBasicFormValues>();
   const eventDate = watch("eventDate");
+  const {
+    data: categories,
+    isLoading,
+    error: categoriesError,
+    refetch,
+  } = useCategory();
+
+  const categoryItems: TComboboxItem[] = useMemo(() => {
+    return (categories || [])?.map((category) => ({
+      value: category?.id,
+      label: category?.name,
+    }));
+  }, [categories]);
+
+  const fetchingCategoryError = useMemo(() => {
+    return categoriesError
+      ? constructErrorMessage(
+          categoriesError as TApiErrorResponseType,
+          "Something went wrong while fetching categories",
+        )
+      : undefined;
+  }, [categoriesError]);
   return (
     <form className="space-y-10">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
         <InputField
           label="Event Name"
+          required={true}
           error={errors?.eventName?.message}
           {...register("eventName")}
         />
@@ -110,6 +143,10 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
           name="eventDate"
           render={({ field, fieldState }) => (
             <DateSelect
+              required={true}
+              dateModifiers={{
+                disabled: (date) => date <= new Date(),
+              }}
               label="Event Date"
               date={field.value}
               error={fieldState?.error?.message}
@@ -121,13 +158,16 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
           control={control}
           name="venueId"
           render={({ field, fieldState }) => (
-            <ComboboxSelect
+            <VenueSelect
               label="Venue"
+              required={true}
+              value={field.value}
+              onChange={(text) => {
+                field.onChange(text);
+                console.log("text venueid", text);
+              }}
               error={fieldState?.error?.message}
-              placeholder="Select a venue"
-              items={[]}
-              item={field.value}
-              setItem={field.onChange}
+              placeholder="Search venues..."
             />
           )}
         />
@@ -138,9 +178,13 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
           render={({ field, fieldState }) => (
             <ComboboxSelect
               label="Category"
+              required={true}
               error={fieldState?.error?.message}
+              fetchingError={fetchingCategoryError}
+              refetch={refetch}
+              isLoading={isLoading}
               placeholder="Select a category"
-              items={[]}
+              items={categoryItems || []}
               item={field.value}
               setItem={field.onChange}
             />
@@ -186,6 +230,7 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
         <TextareaField
           label="About Event"
           className="col-span-2"
+          required={true}
           error={errors?.description?.message}
           {...register("description")}
         />

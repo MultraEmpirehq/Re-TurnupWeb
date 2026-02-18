@@ -1,33 +1,21 @@
 "use client";
-import { getData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import EmptyContainer from "@/components/ui/empty-container";
 import ErrorContainer from "@/components/ui/error-container";
 import EventCard, { EventCardSkeleton } from "@/components/ui/event-card";
-import { EventDetailsType } from "@/lib/types";
+import { useEvents } from "@/hooks/use-event";
 import useUserStore from "@/stores/user-store";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { CalendarDays } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { memo, useMemo } from "react";
-
-const getEvents = async (page: number = 1, userId: string) => {
-  const urlParams = new URLSearchParams();
-  urlParams.set("page", page?.toString());
-  urlParams.set("limit", "12");
-  urlParams.set("userId", userId);
-
-  const url = `/events?${urlParams.toString()}`;
-  const { data } = await getData<EventDetailsType[]>(url);
-  return data;
-};
 
 const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
   isEventPage = false,
 }) => {
   const router = useRouter();
   const userId = useUserStore((state) => state?.userDetails?.id);
+
   const {
     data,
     error,
@@ -35,17 +23,16 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useInfiniteQuery({
-    queryKey: ["dashboard-events-list", userId],
-    queryFn: ({ pageParam }) => getEvents(pageParam, userId || ""),
-    enabled: !!userId,
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => lastPage?.pagination?.nextPage,
-  });
+  } = useEvents(
+    { limit: 12, userId: userId ?? undefined },
+    { enabled: !!userId },
+  );
+
   const events = useMemo(
     () => data?.pages?.flatMap((page) => page?.data || []) || [],
     [data],
   );
+
   return (
     <div className="space-y-4">
       <div className="flex flex-row items-center justify-between">
@@ -59,7 +46,9 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
             ))}
           {data &&
             events.length > 0 &&
-            events.map((event) => <EventCard key={event?.id} {...event} />)}
+            events.map((event) => (
+              <EventCard isDashboard key={event?.id} {...event} />
+            ))}
         </div>
       )}
       {error && !data && (
