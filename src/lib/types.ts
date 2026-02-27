@@ -20,6 +20,12 @@ export enum OTP_VERIFICATION_TYPE {
   ACCOUNT_CREATION = "ACCOUNT_CREATION",
 }
 
+export enum EOrderStatus {
+  PENDING = "PENDING",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+}
+
 export interface RouteProps {
   shouldShowIn: ROUTE_TYPE[];
   label: string;
@@ -73,7 +79,48 @@ export interface ITicketDetailsType {
   name: string;
   type: string;
   link: string;
-  price: number;
+  price: {
+    amount: number;
+    currency: {
+      code: string;
+      symbol: string;
+      name: string;
+      locale: string;
+    };
+    formatted: {
+      withCurrency: string;
+      withoutCurrency: string;
+    };
+    parts: {
+      whole: number;
+      subUnit: number;
+      smallestUnit: number;
+    };
+  };
+  description?: string;
+  quantity?: number;
+}
+
+export interface IOrderTicketType {
+  id: string;
+  name: string;
+  type: string;
+  link: string;
+  price: ITicketDetailsType["price"];
+}
+
+export interface IOrderDetailsType {
+  id: string;
+  status: EOrderStatus;
+  tickets: IOrderTicketType[];
+  event: IEventDetailsType;
+  quantity: number;
+  totalAmount: {
+    amount: number;
+    currency: ITicketDetailsType["price"]["currency"];
+    formatted: ITicketDetailsType["price"]["formatted"];
+  };
+  createdAt: Date;
 }
 
 export interface ICategoryDetailsType {
