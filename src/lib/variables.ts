@@ -219,4 +219,9 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Orders",
     href: "/profile/orders",
   },
+  PROFILE_HELP: {
+    shouldShowIn: [],
+    label: "Help",
+    href: "/profile/help",
+  },
 };

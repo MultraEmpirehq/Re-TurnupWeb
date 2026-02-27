@@ -101,26 +101,43 @@ export interface ITicketDetailsType {
   quantity?: number;
 }
 
+export enum ETicketStatus {
+  UN_USED = "UN_USED",
+  USED = "USED",
+  EXPIRED = "EXPIRED",
+  CANCELLED = "CANCELLED",
+}
+
 export interface IOrderTicketType {
   id: string;
   name: string;
   type: string;
-  link: string;
+  link: string | null;
+  event?: { data?: IEventDetailsType };
   price: ITicketDetailsType["price"];
+  quantity?: number;
+}
+
+export interface IUserTicketType {
+  id: string;
+  code: string;
+  createdAt: Date;
+  status: ETicketStatus;
+  ticket: IOrderTicketType;
 }
 
 export interface IOrderDetailsType {
   id: string;
   status: EOrderStatus;
-  tickets: IOrderTicketType[];
-  event: IEventDetailsType;
   quantity: number;
-  totalAmount: {
+  createdAt: Date;
+  ticket: IOrderTicketType;
+  userTickets: IUserTicketType[];
+  totalAmount?: {
     amount: number;
     currency: ITicketDetailsType["price"]["currency"];
     formatted: ITicketDetailsType["price"]["formatted"];
   };
-  createdAt: Date;
 }
 
 export interface ICategoryDetailsType {

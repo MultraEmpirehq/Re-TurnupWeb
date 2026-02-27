@@ -6,7 +6,6 @@ import SectionContainer from "@/components/layouts/section-container/section-con
 import { Button } from "@/components/ui/button";
 import ErrorContainer from "@/components/ui/error-container";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatCurrency } from "@/lib/functions";
 import { IOrderDetailsType } from "@/lib/types";
 import { ROUTES } from "@/lib/variables";
 import { useQuery } from "@tanstack/react-query";
@@ -21,8 +20,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import React, { memo, useCallback, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import ViewTicketsDialog from "@/components/ticket-design/view-tickets-dialog";
 
 const getOrder = async (orderId: string) => {
   const { data } = await getData<IOrderDetailsType>(`/order/${orderId}`);
@@ -33,6 +33,8 @@ const OrderSuccessPage = () => {
   const params = useParams();
   const orderId = params?.orderId?.toString() || "";
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showTicketsDialog, setShowTicketsDialog] = useState(false);
+  const [pendingDownloadAll, setPendingDownloadAll] = useState(false);
 
   const {
     data: order,
@@ -44,58 +46,73 @@ const OrderSuccessPage = () => {
     enabled: !!orderId,
   });
 
-  const handleDownloadTickets = useCallback(async () => {
-    if (!order?.tickets?.length) {
-      toast.error("No tickets available to download");
-      return;
-    }
+  const event = useMemo(
+    () => order?.ticket?.event?.data,
+    [order?.ticket?.event?.data],
+  );
+
+  const captureAndDownloadAll = useCallback(async () => {
+    if (!order?.userTickets?.length) return;
 
     setIsDownloading(true);
     try {
-      const JSZip = (await import("jszip")).default;
+      const [JSZip, html2canvas] = await Promise.all([
+        import("jszip").then((m) => m.default),
+        import("html2canvas").then((m) => m.default),
+      ]);
       const zip = new JSZip();
 
-      const downloadResults = await Promise.allSettled(
-        order.tickets.map(async (ticket, index) => {
-          if (!ticket.link) return null;
-          const response = await fetch(ticket.link);
-          if (!response.ok) throw new Error(`Failed to fetch ${ticket.name}`);
-          const blob = await response.blob();
-          const extension = getFileExtension(
-            ticket.link,
-            response.headers.get("content-type"),
-          );
-          const fileName = `ticket-${index + 1}-${sanitizeFileName(ticket.name)}${extension}`;
-          return { fileName, blob };
-        }),
+      const ticketCards = document.querySelectorAll<HTMLDivElement>(
+        "[data-ticket-card]",
       );
 
-      let addedCount = 0;
-      downloadResults.forEach((result) => {
-        if (result.status === "fulfilled" && result.value) {
-          zip.file(result.value.fileName, result.value.blob);
-          addedCount++;
-        }
-      });
-
-      if (addedCount === 0) {
-        toast.error("Could not download any tickets. Please try again.");
+      if (ticketCards.length === 0) {
+        toast.error("No ticket cards found to capture.");
         return;
       }
 
+      let addedCount = 0;
+      for (let i = 0; i < ticketCards.length; i++) {
+        try {
+          const canvas = await html2canvas(ticketCards[i], {
+            scale: 3,
+            useCORS: true,
+            backgroundColor: "#ffffff",
+            logging: false,
+          });
+          const blob = await new Promise<Blob>((resolve) =>
+            canvas.toBlob((b) => resolve(b!), "image/png"),
+          );
+          const code = order.userTickets[i]?.code ?? `ticket-${i + 1}`;
+          zip.file(`${code}.png`, blob);
+          addedCount++;
+        } catch {
+          /* skip failed ticket */
+        }
+      }
+
+      if (addedCount === 0) {
+        toast.error("Could not capture any tickets. Please try again.");
+        return;
+      }
+
+      const eventName = (event?.name ?? "tickets")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
       const zipBlob = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(zipBlob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `tickets-order-${orderId}.zip`;
+      anchor.download = `${eventName}-tickets.zip`;
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);
       URL.revokeObjectURL(url);
 
-      if (addedCount < order.tickets.length) {
+      if (addedCount < order.userTickets.length) {
         toast.warning(
-          `Downloaded ${addedCount} of ${order.tickets.length} tickets. Some failed.`,
+          `Downloaded ${addedCount} of ${order.userTickets.length} tickets.`,
         );
       } else {
         toast.success("Tickets downloaded successfully!");
@@ -104,8 +121,24 @@ const OrderSuccessPage = () => {
       toast.error("Failed to download tickets. Please try again.");
     } finally {
       setIsDownloading(false);
+      setPendingDownloadAll(false);
     }
-  }, [order, orderId]);
+  }, [order, event]);
+
+  const handleDownloadTickets = useCallback(() => {
+    if (!order?.userTickets?.length) {
+      toast.error("No tickets available to download");
+      return;
+    }
+    setShowTicketsDialog(true);
+    setPendingDownloadAll(true);
+  }, [order]);
+
+  useEffect(() => {
+    if (!pendingDownloadAll || !showTicketsDialog) return;
+    const timer = setTimeout(() => captureAndDownloadAll(), 600);
+    return () => clearTimeout(timer);
+  }, [pendingDownloadAll, showTicketsDialog, captureAndDownloadAll]);
 
   if (!order && !error) {
     return (
@@ -135,11 +168,11 @@ const OrderSuccessPage = () => {
     );
   }
 
-  const eventDate = order?.event?.date ? new Date(order.event.date) : null;
-  const { locale, code } = order?.totalAmount?.currency ?? {
-    locale: "en-NG",
-    code: "NGN",
-  };
+  const eventDate = event?.date ? new Date(event.date) : null;
+  const totalFormatted =
+    order?.totalAmount?.formatted?.withCurrency ??
+    order?.ticket?.price?.formatted?.withCurrency ??
+    "Free";
 
   return (
     <SectionContainer className="py-20 max-w-2xl space-y-10">
@@ -158,16 +191,16 @@ const OrderSuccessPage = () => {
           <h2 className="font-semibold text-lg">Order Summary</h2>
 
           <div className="space-y-3 text-sm">
-            {order?.event?.name && (
+            {event?.name && (
               <div className="flex items-start gap-3">
                 <TicketIcon className="size-4 mt-0.5 text-muted-foreground shrink-0" />
                 <div>
-                  <p className="font-medium">{order.event.name}</p>
-                  {order.tickets?.[0]?.name && (
+                  <p className="font-medium">{event.name}</p>
+                  {order?.userTickets?.[0]?.ticket?.name && (
                     <p className="text-muted-foreground">
-                      {order.tickets[0].name}
-                      {order.tickets.length > 1 &&
-                        ` + ${order.tickets.length - 1} more`}
+                      {order.userTickets[0].ticket.name}
+                      {order.userTickets.length > 1 &&
+                        ` + ${order.userTickets.length - 1} more`}
                     </p>
                   )}
                 </div>
@@ -181,13 +214,12 @@ const OrderSuccessPage = () => {
               </div>
             )}
 
-            {order?.event?.venue?.name && (
+            {event?.venue?.name && (
               <div className="flex items-center gap-3">
                 <MapPin className="size-4 text-muted-foreground shrink-0" />
                 <p>
-                  {order.event.venue.name}
-                  {order.event.venue.address &&
-                    ` — ${order.event.venue.address}`}
+                  {event.venue.name}
+                  {event.venue.address && ` — ${event.venue.address}`}
                 </p>
               </div>
             )}
@@ -198,7 +230,7 @@ const OrderSuccessPage = () => {
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Quantity</span>
             <span className="font-medium">
-              {order?.quantity ?? order?.tickets?.length ?? 0}
+              {order?.quantity ?? order?.userTickets?.length ?? 0}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm">
@@ -207,18 +239,24 @@ const OrderSuccessPage = () => {
           </div>
           <div className="border-t pt-3 flex items-center justify-between">
             <span className="font-semibold">Total</span>
-            <span className="font-bold text-lg">
-              {order?.totalAmount?.formatted?.withCurrency ??
-                formatCurrency(order?.totalAmount?.amount ?? 0, code, locale)}
-            </span>
+            <span className="font-bold text-lg">{totalFormatted}</span>
           </div>
         </div>
       </div>
 
+      {order?.userTickets && order.userTickets.length > 0 && (
+        <ViewTicketsDialog
+          open={showTicketsDialog}
+          onOpenChange={setShowTicketsDialog}
+          userTickets={order.userTickets}
+          event={event}
+        />
+      )}
+
       <div className="space-y-3">
         <Button
           onClick={handleDownloadTickets}
-          disabled={isDownloading || !order?.tickets?.length}
+          disabled={isDownloading || !order?.userTickets?.length}
           loading={isDownloading}
           className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white border-0"
         >
@@ -240,28 +278,5 @@ const OrderSuccessPage = () => {
     </SectionContainer>
   );
 };
-
-function getFileExtension(
-  url: string,
-  contentType: string | null,
-): string {
-  const mimeMap: Record<string, string> = {
-    "application/pdf": ".pdf",
-    "image/png": ".png",
-    "image/jpeg": ".jpg",
-    "image/webp": ".webp",
-  };
-  if (contentType && mimeMap[contentType]) return mimeMap[contentType];
-  const match = url.match(/\.(\w{2,5})(?:\?|$)/);
-  if (match) return `.${match[1]}`;
-  return ".pdf";
-}
-
-function sanitizeFileName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
 
 export default memo(OrderSuccessPage);
