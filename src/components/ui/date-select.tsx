@@ -26,6 +26,7 @@ interface ICalendarSelectProps {
   helperTextClassName?: string;
   dateModifiers?: React.ComponentProps<typeof Calendar>["modifiers"];
   required?: boolean;
+  disabled?: boolean;
 }
 
 const DateSelect: React.FC<ICalendarSelectProps> = ({
@@ -42,6 +43,7 @@ const DateSelect: React.FC<ICalendarSelectProps> = ({
   helperTextClassName,
   dateModifiers,
   required,
+  disabled,
 }) => {
   return (
     <div className={cn("space-y-2", className)}>
@@ -54,6 +56,7 @@ const DateSelect: React.FC<ICalendarSelectProps> = ({
         <PopoverTrigger asChild className="">
           <Button
             variant="outline"
+            disabled={disabled}
             data-empty={!date}
             className={cn(
               "data-[empty=true]:text-muted-foreground w-full justify-start text-left font-normal",

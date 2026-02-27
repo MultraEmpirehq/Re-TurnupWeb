@@ -20,6 +20,30 @@ export enum OTP_VERIFICATION_TYPE {
   ACCOUNT_CREATION = "ACCOUNT_CREATION",
 }
 
+export enum EOrderStatus {
+  PENDING = "PENDING",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+}
+
+export interface PriceDetailsType {
+  amount: number;
+  currency: {
+    code: string;
+    symbol: string;
+    name: string;
+    locale: string;
+  };
+  formatted: {
+    withCurrency: string;
+    withoutCurrency: string;
+  };
+  parts: {
+    whole: number;
+    subUnit: number;
+    smallestUnit: number;
+  };
+}
 export interface RouteProps {
   shouldShowIn: ROUTE_TYPE[];
   label: string;
@@ -73,7 +97,47 @@ export interface ITicketDetailsType {
   name: string;
   type: string;
   link: string;
-  price: number;
+  price: PriceDetailsType;
+  description?: string;
+  quantity?: number;
+  sold?: number;
+  available?: number;
+}
+
+export enum ETicketStatus {
+  UN_USED = "UN_USED",
+  USED = "USED",
+  EXPIRED = "EXPIRED",
+  CANCELLED = "CANCELLED",
+}
+
+export interface IOrderTicketType {
+  id: string;
+  name: string;
+  type: string;
+  link: string | null;
+  event?: { data?: IEventDetailsType };
+  price: PriceDetailsType;
+  quantity?: number;
+  sold?: number;
+  available?: number;
+}
+
+export interface IUserTicketType {
+  id: string;
+  code: string;
+  createdAt: Date;
+  status: ETicketStatus;
+  ticket: IOrderTicketType;
+}
+
+export interface IOrderDetailsType {
+  id: string;
+  status: EOrderStatus;
+  quantity: number;
+  createdAt: Date;
+  ticket: IOrderTicketType;
+  userTickets: IUserTicketType[];
 }
 
 export interface ICategoryDetailsType {

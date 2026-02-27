@@ -16,17 +16,15 @@ const api = axios.create({
 });
 
 api.interceptors.response.use(
-  (response) => {
+  (response) => response,
+  (error) => {
     if (
-      response.status === 401 &&
-      response.config.url !== "/auth/login/admin"
+      error?.response?.status === 401 &&
+      error?.config?.url !== "/auth/login/admin"
     ) {
       getResetUserDetails()();
       toast.error("Login expired! Please login again.");
     }
-    return response;
-  },
-  (error) => {
     return Promise.reject(error);
   },
 );
