@@ -73,12 +73,14 @@ const TicketPage = () => {
     setQuantity((prev) => Math.max(1, prev - 1));
   }, []);
 
+  const maxQuantity = useMemo(
+    () => selectedTicket?.available ?? selectedTicket?.quantity ?? 10,
+    [selectedTicket],
+  );
+
   const handleIncrement = useCallback(() => {
-    setQuantity((prev) => {
-      const max = selectedTicket?.quantity ?? 10;
-      return Math.min(max, prev + 1);
-    });
-  }, [selectedTicket]);
+    setQuantity((prev) => Math.min(maxQuantity, prev + 1));
+  }, [maxQuantity]);
 
   const handlePurchase = useCallback(async () => {
     if (!userDetails) {
@@ -275,13 +277,21 @@ const TicketPage = () => {
                   <button
                     type="button"
                     onClick={handleIncrement}
+                    disabled={quantity >= maxQuantity}
                     aria-label="Increase quantity"
-                    className="size-9 rounded-full bg-cyan-500 text-white flex items-center justify-center transition-colors hover:bg-cyan-600 cursor-pointer"
+                    className="size-9 rounded-full bg-cyan-500 text-white flex items-center justify-center transition-colors hover:bg-cyan-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <Plus className="size-4" />
                   </button>
                 </div>
               </div>
+
+              {selectedTicket?.available != null && (
+                <p className="text-sm text-muted-foreground text-right">
+                  {selectedTicket.available} ticket
+                  {selectedTicket.available !== 1 && "s"} available
+                </p>
+              )}
 
               <div className="border-t" />
 

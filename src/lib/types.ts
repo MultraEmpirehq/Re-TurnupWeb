@@ -26,6 +26,24 @@ export enum EOrderStatus {
   FAILED = "FAILED",
 }
 
+export interface PriceDetailsType {
+  amount: number;
+  currency: {
+    code: string;
+    symbol: string;
+    name: string;
+    locale: string;
+  };
+  formatted: {
+    withCurrency: string;
+    withoutCurrency: string;
+  };
+  parts: {
+    whole: number;
+    subUnit: number;
+    smallestUnit: number;
+  };
+}
 export interface RouteProps {
   shouldShowIn: ROUTE_TYPE[];
   label: string;
@@ -79,26 +97,11 @@ export interface ITicketDetailsType {
   name: string;
   type: string;
   link: string;
-  price: {
-    amount: number;
-    currency: {
-      code: string;
-      symbol: string;
-      name: string;
-      locale: string;
-    };
-    formatted: {
-      withCurrency: string;
-      withoutCurrency: string;
-    };
-    parts: {
-      whole: number;
-      subUnit: number;
-      smallestUnit: number;
-    };
-  };
+  price: PriceDetailsType;
   description?: string;
   quantity?: number;
+  sold?: number;
+  available?: number;
 }
 
 export enum ETicketStatus {
@@ -114,8 +117,10 @@ export interface IOrderTicketType {
   type: string;
   link: string | null;
   event?: { data?: IEventDetailsType };
-  price: ITicketDetailsType["price"];
+  price: PriceDetailsType;
   quantity?: number;
+  sold?: number;
+  available?: number;
 }
 
 export interface IUserTicketType {
@@ -133,11 +138,6 @@ export interface IOrderDetailsType {
   createdAt: Date;
   ticket: IOrderTicketType;
   userTickets: IUserTicketType[];
-  totalAmount?: {
-    amount: number;
-    currency: ITicketDetailsType["price"]["currency"];
-    formatted: ITicketDetailsType["price"]["formatted"];
-  };
 }
 
 export interface ICategoryDetailsType {

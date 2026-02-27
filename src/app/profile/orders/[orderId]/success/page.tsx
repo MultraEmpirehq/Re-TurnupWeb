@@ -170,9 +170,7 @@ const OrderSuccessPage = () => {
 
   const eventDate = event?.date ? new Date(event.date) : null;
   const totalFormatted =
-    order?.totalAmount?.formatted?.withCurrency ??
-    order?.ticket?.price?.formatted?.withCurrency ??
-    "Free";
+    order?.ticket?.price?.formatted?.withCurrency ?? "Free";
 
   return (
     <SectionContainer className="py-20 max-w-2xl space-y-10">

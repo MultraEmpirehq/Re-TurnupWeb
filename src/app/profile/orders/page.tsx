@@ -110,9 +110,7 @@ const OrdersPage = () => {
                   {order.status?.toLowerCase()}
                 </span>
                 <p className="font-semibold text-sm">
-                  {order.totalAmount?.formatted?.withCurrency ??
-                    order.ticket?.price?.formatted?.withCurrency ??
-                    "Free"}
+                  {order.ticket?.price?.formatted?.withCurrency ?? "Free"}
                 </p>
               </div>
             </div>

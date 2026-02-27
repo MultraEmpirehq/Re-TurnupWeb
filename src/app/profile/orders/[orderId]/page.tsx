@@ -176,9 +176,7 @@ const OrderDetailPage = () => {
   if (!order) return null;
 
   const totalFormatted =
-    order.totalAmount?.formatted?.withCurrency ??
-    order.ticket?.price?.formatted?.withCurrency ??
-    "Free";
+    order.ticket?.price?.formatted?.withCurrency ?? "Free";
 
   return (
     <div className="space-y-6">
