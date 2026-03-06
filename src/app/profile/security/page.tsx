@@ -57,13 +57,13 @@ const SecurityPage = () => {
   const onSubmit = useCallback(
     async (body: IPasswordFormValues) => {
       try {
-        await patchData<
-          { currentPassword: string; newPassword: string },
-          void
-        >("/auth/password", {
-          currentPassword: body.currentPassword,
-          newPassword: body.newPassword,
-        });
+        await patchData<{ oldPassword: string; password: string }, void>(
+          "/user/password",
+          {
+            oldPassword: body.currentPassword,
+            password: body.newPassword,
+          },
+        );
         toast.success("Password changed successfully");
         reset();
       } catch (error) {

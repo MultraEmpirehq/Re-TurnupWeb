@@ -1,17 +1,23 @@
 "use client";
 
 import { IEventDetailsType, IUserTicketType } from "@/lib/types";
+import { ROUTES } from "@/lib/variables";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Download } from "lucide-react";
+import { Download, SendHorizontal } from "lucide-react";
+import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import React, { memo, useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
+import html2canvas from "html2canvas-pro";
+import { jsPDF } from "jspdf";
 
 interface TicketCardProps {
   userTicket: IUserTicketType;
   event?: IEventDetailsType;
   index: number;
+  /** Show transfer button (default true) */
+  showTransfer?: boolean;
 }
 
 const getTicketColors = (type: string) => {
@@ -42,7 +48,12 @@ const getTicketColors = (type: string) => {
   };
 };
 
-const TicketCard: React.FC<TicketCardProps> = ({ userTicket, event: eventProp, index }) => {
+const TicketCard: React.FC<TicketCardProps> = ({
+  userTicket,
+  event: eventProp,
+  index,
+  showTransfer = true,
+}) => {
   const ticket = userTicket?.ticket;
   const ticketRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -50,33 +61,36 @@ const TicketCard: React.FC<TicketCardProps> = ({ userTicket, event: eventProp, i
   const event = eventProp ?? ticket?.event?.data;
   const eventDate = event?.date ? new Date(event.date) : null;
 
-  if (!ticket) return null;
-
   const handleDownload = useCallback(async () => {
     if (!ticketRef.current) return;
     setIsDownloading(true);
     try {
-      const html2canvas = (await import("html2canvas")).default;
+      await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 100)));
       const canvas = await html2canvas(ticketRef.current, {
-        scale: 3,
+        scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
         logging: false,
       });
-      const dataUrl = canvas.toDataURL("image/png");
-      const anchor = document.createElement("a");
-      anchor.href = dataUrl;
+      const imgData = canvas.toDataURL("image/png");
       const safeName = (ticket.name ?? "ticket")
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
-      anchor.download = `ticket-${index + 1}-${safeName}.png`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
+      const filename = `ticket-${index + 1}-${safeName}.pdf`;
+
+      const pdf = new jsPDF({
+        orientation: canvas.width > canvas.height ? "landscape" : "portrait",
+        unit: "px",
+        format: [canvas.width, canvas.height],
+      });
+      pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+      pdf.save(filename);
+      toast.success("Ticket downloaded");
     } catch {
       if (ticket.link) {
         window.open(ticket.link, "_blank");
+        toast.info("Opening ticket link");
       } else {
         toast.error("Failed to download ticket");
       }
@@ -84,6 +98,8 @@ const TicketCard: React.FC<TicketCardProps> = ({ userTicket, event: eventProp, i
       setIsDownloading(false);
     }
   }, [ticket, index]);
+
+  if (!ticket) return null;
 
   return (
     <div style={{ marginBottom: 16 }}>
@@ -413,14 +429,24 @@ const TicketCard: React.FC<TicketCardProps> = ({ userTicket, event: eventProp, i
         </div>
       </div>
 
-      {/* Download button - outside the captured area */}
+      {/* Actions - outside the captured area */}
       <div
         style={{
           display: "flex",
           justifyContent: "flex-end",
+          alignItems: "center",
+          gap: 8,
           marginTop: 12,
         }}
       >
+        {showTransfer && (
+          <Button variant="outline" size="sm" className="gap-2" asChild>
+            <Link href={`${ROUTES.PROFILE_TICKETS.href}/transfer/${userTicket.id}`}>
+              <SendHorizontal className="size-3.5" />
+              Transfer
+            </Link>
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"

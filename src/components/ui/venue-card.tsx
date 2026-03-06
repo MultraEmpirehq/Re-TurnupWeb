@@ -23,6 +23,7 @@ const VenueCard: React.FC<IVenueDetailsType> = ({
           src={images?.[0] || ""}
           alt={name}
           fill
+          imageClassName="object-cover"
         />
       </Link>
       <div className="space-y-2">

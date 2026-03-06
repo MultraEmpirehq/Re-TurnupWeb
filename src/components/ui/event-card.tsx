@@ -25,6 +25,7 @@ const EventCardComponent: React.FC<
           src={image}
           alt={name}
           className="size-full"
+          imageClassName="object-cover"
         />
       </Link>
       <div className="w-full flex flex-row items-center gap-4">
