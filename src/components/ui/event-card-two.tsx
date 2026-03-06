@@ -25,6 +25,7 @@ const EventCardTwo: React.FC<IEventDetailsType> = ({
           fill
           src={image}
           alt={name}
+          imageClassName="object-cover"
         />
         <button className="size-3 rounded-full bg-white items-center justify-center inline-flex absolute top-4 right-4">
           <span>

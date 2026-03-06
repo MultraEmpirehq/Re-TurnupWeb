@@ -21,8 +21,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+import TicketCard from "@/components/ticket-design/ticket-card";
 import ViewTicketsDialog from "@/components/ticket-design/view-tickets-dialog";
 
 const statusStyles: Record<EOrderStatus, string> = {
@@ -39,7 +40,6 @@ const OrderDetailPage = () => {
   const orderId = params?.orderId?.toString() ?? "";
   const [isDownloading, setIsDownloading] = useState(false);
   const [showTicketsDialog, setShowTicketsDialog] = useState(false);
-  const [pendingDownloadAll, setPendingDownloadAll] = useState(false);
 
   const {
     data: order,
@@ -65,15 +65,16 @@ const OrderDetailPage = () => {
 
     setIsDownloading(true);
     try {
-      const [JSZip, html2canvas] = await Promise.all([
+      const [JSZip, html2canvas, jspdfModule] = await Promise.all([
         import("jszip").then((m) => m.default),
-        import("html2canvas").then((m) => m.default),
+        import("html2canvas-pro").then((m) => m.default),
+        import("jspdf"),
       ]);
+      const jsPDF = jspdfModule.default ?? jspdfModule.jsPDF;
       const zip = new JSZip();
 
-      const ticketCards = document.querySelectorAll<HTMLDivElement>(
-        "[data-ticket-card]",
-      );
+      const ticketCards =
+        document.querySelectorAll<HTMLDivElement>("[data-ticket-card]");
 
       if (ticketCards.length === 0) {
         toast.error("No ticket cards found to capture.");
@@ -83,17 +84,24 @@ const OrderDetailPage = () => {
       let addedCount = 0;
       for (let i = 0; i < ticketCards.length; i++) {
         try {
+          await new Promise((r) => setTimeout(r, 50));
           const canvas = await html2canvas(ticketCards[i], {
-            scale: 3,
+            scale: 2,
             useCORS: true,
             backgroundColor: "#ffffff",
             logging: false,
           });
-          const blob = await new Promise<Blob>((resolve) =>
-            canvas.toBlob((b) => resolve(b!), "image/png"),
-          );
+          const imgData = canvas.toDataURL("image/png");
           const code = order.userTickets[i]?.code ?? `ticket-${i + 1}`;
-          zip.file(`${code}.png`, blob);
+
+          const pdf = new jsPDF({
+            orientation: canvas.width > canvas.height ? "landscape" : "portrait",
+            unit: "px",
+            format: [canvas.width, canvas.height],
+          });
+          pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+          const pdfBlob = pdf.output("blob");
+          zip.file(`${code}.pdf`, pdfBlob);
           addedCount++;
         } catch {
           /* skip failed ticket */
@@ -109,11 +117,13 @@ const OrderDetailPage = () => {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
+      const downloadDate = format(new Date(), "yyyy-MM-dd");
+      const zipFilename = `${eventName}-${downloadDate}-${orderId}.zip`;
       const zipBlob = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(zipBlob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `${eventName}-tickets.zip`;
+      anchor.download = zipFilename;
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);
@@ -130,24 +140,16 @@ const OrderDetailPage = () => {
       toast.error("Failed to download tickets");
     } finally {
       setIsDownloading(false);
-      setPendingDownloadAll(false);
     }
-  }, [order, event]);
+  }, [order, event, orderId]);
 
   const handleDownloadTickets = useCallback(() => {
     if (!order?.userTickets?.length) {
       toast.error("No tickets available to download");
       return;
     }
-    setShowTicketsDialog(true);
-    setPendingDownloadAll(true);
-  }, [order]);
-
-  useEffect(() => {
-    if (!pendingDownloadAll || !showTicketsDialog) return;
-    const timer = setTimeout(() => captureAndDownloadAll(), 600);
-    return () => clearTimeout(timer);
-  }, [pendingDownloadAll, showTicketsDialog, captureAndDownloadAll]);
+    setTimeout(() => captureAndDownloadAll(), 300);
+  }, [order, captureAndDownloadAll]);
 
   if (isLoading) {
     return (
@@ -175,8 +177,7 @@ const OrderDetailPage = () => {
 
   if (!order) return null;
 
-  const totalFormatted =
-    order.ticket?.price?.formatted?.withCurrency ?? "Free";
+  const totalFormatted = order.ticket?.price?.formatted?.withCurrency ?? "Free";
 
   return (
     <div className="space-y-6">
@@ -295,6 +296,23 @@ const OrderDetailPage = () => {
             </Button>
           </div>
         )}
+
+      {/* Off-screen ticket cards for "Download all" capture (painted but not visible) */}
+      {order?.userTickets?.length ? (
+        <div
+          aria-hidden="true"
+          className="fixed left-[-9999px] top-0 z-[-1] w-[400px]"
+        >
+          {(order.userTickets ?? []).map((ut, i) => (
+            <TicketCard
+              key={ut.id ?? i}
+              userTicket={ut}
+              event={event}
+              index={i}
+            />
+          ))}
+        </div>
+      ) : null}
 
       <ViewTicketsDialog
         open={showTicketsDialog}

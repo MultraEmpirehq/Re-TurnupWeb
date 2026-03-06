@@ -115,13 +115,15 @@ const AuthPage = () => {
             !credentials?.isAccountCreationCompleted ||
             !credentials?.isEmailVerified
           ) {
-            const registerUrl = new URL("http://localhost:3000/auth/register/{{token}}");
+            const registerUrl = new URL(
+              `${window.location.origin}/auth/register/{{token}}`,
+            );
             if (redirectTo) {
               registerUrl.searchParams.set("redirect", redirectTo);
             }
             await postData("/auth/register", {
               email: body.email,
-              url: registerUrl.toString(),
+              url: decodeURIComponent(registerUrl.toString()),
             });
             setMagicLinkEmail(body?.email);
             return;

@@ -13,7 +13,7 @@ const TrendingEvents = () => {
     isFetchingNextPage,
     error,
     refetch,
-  } = useEvents({ limit: 10 });
+  } = useEvents({ limit: 10, isTrending: true });
 
   const events = useMemo(
     () =>

@@ -131,6 +131,37 @@ export interface IUserTicketType {
   ticket: IOrderTicketType;
 }
 
+/** Response from GET /tickets/user - list of tickets the user has bought */
+export type TicketTransferResponseType = {
+  id: string;
+  status: string;
+  toEmail: string;
+  createdAt: Date;
+  claimedAt: Date | null;
+  recipientName: string | null;
+};
+
+export type UserTicketDetailsTicketType = {
+  id: string;
+  event: IEventDetailsType;
+  name: string;
+  type: string;
+  link: string;
+  price: PriceDetailsType;
+  quantity: number;
+  sold: number;
+  available: number;
+};
+
+export type UserTicketDetailsResponseType = {
+  id: string;
+  code: string;
+  createdAt: Date;
+  status: ETicketStatus | string;
+  ticket: UserTicketDetailsTicketType;
+  transfer?: TicketTransferResponseType;
+};
+
 export interface IOrderDetailsType {
   id: string;
   status: EOrderStatus;

@@ -122,21 +122,14 @@ const CreateEvent = () => {
           formData.append("medias", file);
         });
       }
-      await postData("/event", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      await postData("/event", formData);
       setStep(1);
       form.reset();
       toast.success("Event created successfully");
     } catch (error) {
-      console.log("outer error", error);
+      const err = error as TApiErrorResponseType;
       toast.error(
-        constructErrorMessage(
-          error as TApiErrorResponseType,
-          "Something went wrong while creating event",
-        ),
+        constructErrorMessage(err, "Something went wrong while creating event"),
       );
     }
   }, [step, form]);
