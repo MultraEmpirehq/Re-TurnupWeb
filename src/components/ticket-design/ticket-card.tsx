@@ -73,11 +73,15 @@ const TicketCard: React.FC<TicketCardProps> = ({
         logging: false,
       });
       const imgData = canvas.toDataURL("image/png");
-      const safeName = (ticket.name ?? "ticket")
+      const safeTicketName = (ticket.name ?? "ticket")
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
-      const filename = `ticket-${index + 1}-${safeName}.pdf`;
+      const safeEventName = (event?.name ?? "event")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      const filename = `${safeEventName}-ticket-${index + 1}-${safeTicketName}.pdf`;
 
       const pdf = new jsPDF({
         orientation: canvas.width > canvas.height ? "landscape" : "portrait",
@@ -97,7 +101,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
     } finally {
       setIsDownloading(false);
     }
-  }, [ticket, index]);
+  }, [ticket, index, event]);
 
   if (!ticket) return null;
 

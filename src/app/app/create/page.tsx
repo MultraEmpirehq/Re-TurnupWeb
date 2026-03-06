@@ -128,17 +128,8 @@ const CreateEvent = () => {
       toast.success("Event created successfully");
     } catch (error) {
       const err = error as TApiErrorResponseType;
-      if (err?.response?.status >= 200 && err?.response?.status < 300) {
-        setStep(1);
-        form.reset();
-        toast.success("Event created successfully");
-        return;
-      }
       toast.error(
-        constructErrorMessage(
-          err,
-          "Something went wrong while creating event",
-        ),
+        constructErrorMessage(err, "Something went wrong while creating event"),
       );
     }
   }, [step, form]);
