@@ -2,8 +2,6 @@ import useUserStore from "@/stores/user-store";
 import axios, { AxiosRequestConfig } from "axios";
 import { toast } from "sonner";
 
-const controller = new AbortController();
-
 const baseURL = `${process.env.NEXT_PUBLIC_BASE_URL}/${process.env.NEXT_PUBLIC_API_VERSION}`;
 
 // Lazy initialization to avoid circular dependency
@@ -11,7 +9,6 @@ const getResetUserDetails = () => useUserStore.getState().clearStore;
 
 const api = axios.create({
   baseURL,
-  signal: controller.signal,
   withCredentials: true,
 });
 
@@ -86,10 +83,6 @@ export const deleteData = <T>(
   options?: AxiosRequestConfig,
 ): TApiRequestResponseType<T | undefined> => {
   return api.delete(url, options);
-};
-
-export const abortOutgoingRequest = () => {
-  controller.abort();
 };
 
 export default api;

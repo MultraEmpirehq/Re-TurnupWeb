@@ -15,8 +15,10 @@ import { cn } from "@/lib/utils";
 import { useParams, useRouter } from "next/navigation";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Minus, Plus, TicketIcon } from "lucide-react";
+import { ArrowLeft, ExternalLink, Minus, Plus, TicketIcon } from "lucide-react";
 import { EOrderStatus } from "@/lib/types";
+
+const EXTERNAL_LINK_TYPE = "EXTERNAL_LINK";
 
 const TicketPage = () => {
   const params = useParams();
@@ -46,6 +48,25 @@ const TicketPage = () => {
     () => tickets.find((t) => t.id === selectedTicketId) ?? null,
     [tickets, selectedTicketId],
   );
+
+  const isExternalTicket = selectedTicket?.type === EXTERNAL_LINK_TYPE;
+
+  const externalLinkHost = useMemo(() => {
+    if (!isExternalTicket || !selectedTicket?.link) return null;
+    try {
+      return new URL(selectedTicket.link).hostname.replace(/^www\./, "");
+    } catch {
+      return null;
+    }
+  }, [isExternalTicket, selectedTicket]);
+
+  const handleOpenExternalLink = useCallback(() => {
+    if (!selectedTicket?.link) {
+      toast.error("No purchase link is available for this ticket");
+      return;
+    }
+    window.open(selectedTicket.link, "_blank", "noopener,noreferrer");
+  }, [selectedTicket]);
 
   const totalPrice = useMemo(
     () => (selectedTicket?.price?.amount ?? 0) * quantity,
@@ -116,7 +137,9 @@ const TicketPage = () => {
         return;
       }
       toast.success("Ticket purchased successfully!");
-      router.push(`${ROUTES.PROFILE_ORDERS.href}/${data?.data?.orderId}/success`);
+      router.push(
+        `${ROUTES.PROFILE_ORDERS.href}/${data?.data?.orderId}/success`,
+      );
     } catch (error) {
       toast.error(
         constructErrorMessage(
@@ -186,134 +209,173 @@ const TicketPage = () => {
         {tickets.length > 0 && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {tickets.map((ticket) => {
-                const isSelected = selectedTicketId === ticket.id;
-                const borderColor = isSelected
-                  ? "border-cyan-800 dark:border-cyan-600"
-                  : "border-border group-hover:border-cyan-400";
-                return (
-                  <button
-                    key={ticket.id}
-                    type="button"
-                    onClick={() => handleSelectTicket(ticket.id)}
-                    className="text-left cursor-pointer flex flex-col group transition-all"
-                  >
-                    <div
-                      className={cn(
-                        "border-2 border-b-0 border-dashed rounded-t-xl px-5 pt-5 pb-6 flex-1 flex flex-col gap-4",
-                        borderColor,
-                        isSelected && "bg-cyan-50/30 dark:bg-cyan-950/20",
-                      )}
+              {tickets
+                ?.filter((ticket) => ticket?.type !== EXTERNAL_LINK_TYPE)
+                .map((ticket) => {
+                  const isSelected = selectedTicketId === ticket.id;
+                  const isExternal = ticket.type === EXTERNAL_LINK_TYPE;
+                  const borderColor = isSelected
+                    ? "border-cyan-800 dark:border-cyan-600"
+                    : "border-border group-hover:border-cyan-400";
+                  return (
+                    <button
+                      key={ticket.id}
+                      type="button"
+                      onClick={() => handleSelectTicket(ticket.id)}
+                      className="text-left cursor-pointer flex flex-col group transition-all"
                     >
-                      <div className="size-12 rounded-xl bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
-                        <TicketIcon className="size-6 text-cyan-700 dark:text-cyan-400" />
+                      <div
+                        className={cn(
+                          "border-2 border-dashed px-5 pt-5 pb-6 flex-1 flex flex-col gap-4",
+                          isExternal ? "rounded-xl" : "border-b-0 rounded-t-xl",
+                          borderColor,
+                          isSelected && "bg-cyan-50/30 dark:bg-cyan-950/20",
+                        )}
+                      >
+                        <div className="size-12 rounded-xl bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
+                          <TicketIcon className="size-6 text-cyan-700 dark:text-cyan-400" />
+                        </div>
+                        <p className="font-bold text-lg">{ticket.name}</p>
                       </div>
-                      <p className="font-bold text-lg">{ticket.name}</p>
-                    </div>
 
-                    <div className="flex items-center">
-                      <div
-                        className={cn(
-                          "w-3 h-6 rounded-r-full border-2 border-l-0 border-dashed shrink-0 bg-background",
-                          borderColor,
-                        )}
-                      />
-                      <div
-                        className={cn(
-                          "flex-1 border-t-2 border-dashed",
-                          borderColor,
-                        )}
-                      />
-                      <div
-                        className={cn(
-                          "w-3 h-6 rounded-l-full border-2 border-r-0 border-dashed shrink-0 bg-background",
-                          borderColor,
-                        )}
-                      />
-                    </div>
+                      {!isExternal && (
+                        <>
+                          <div className="flex items-center">
+                            <div
+                              className={cn(
+                                "w-3 h-6 rounded-r-full border-2 border-l-0 border-dashed shrink-0 bg-background",
+                                borderColor,
+                              )}
+                            />
+                            <div
+                              className={cn(
+                                "flex-1 border-t-2 border-dashed",
+                                borderColor,
+                              )}
+                            />
+                            <div
+                              className={cn(
+                                "w-3 h-6 rounded-l-full border-2 border-r-0 border-dashed shrink-0 bg-background",
+                                borderColor,
+                              )}
+                            />
+                          </div>
 
-                    <div
-                      className={cn(
-                        "border-2 border-t-0 border-dashed rounded-b-xl px-5 pt-4 pb-5",
-                        borderColor,
-                        isSelected && "bg-cyan-50/30 dark:bg-cyan-950/20",
+                          <div
+                            className={cn(
+                              "border-2 border-t-0 border-dashed rounded-b-xl px-5 pt-4 pb-5",
+                              borderColor,
+                              isSelected && "bg-cyan-50/30 dark:bg-cyan-950/20",
+                            )}
+                          >
+                            <p className="font-semibold">
+                              <span className="text-cyan-700 dark:text-cyan-400 font-bold text-base">
+                                {ticket?.price?.amount > 0 &&
+                                  ticket?.price?.formatted?.withCurrency}
+                                {!ticket?.price?.amount && "Free"}
+                              </span>
+                              {ticket?.price?.amount > 0 && (
+                                <span className="text-muted-foreground font-normal text-sm">
+                                  {" "}
+                                  / person
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        </>
                       )}
-                    >
-                      <p className="font-semibold">
-                        <span className="text-cyan-700 dark:text-cyan-400 font-bold text-base">
-                          {ticket?.price?.amount > 0 &&
-                            ticket?.price?.formatted?.withCurrency}
-                          {!ticket?.price?.amount && "Free"}
-                        </span>
-                        {ticket?.price?.amount > 0 && (
-                          <span className="text-muted-foreground font-normal text-sm">
-                            {" "}
-                            / person
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
+                    </button>
+                  );
+                })}
             </div>
 
-            <div className="space-y-4 border rounded-xl p-6">
-              <div className="flex items-center justify-between">
-                <p className="font-semibold text-lg">Number of Seats</p>
-                <div className="flex items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={handleDecrement}
-                    disabled={quantity <= 1}
-                    aria-label="Decrease quantity"
-                    className="size-9 rounded-full border border-border flex items-center justify-center transition-colors hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    <Minus className="size-4" />
-                  </button>
-                  <span className="text-lg font-semibold w-8 text-center tabular-nums">
-                    {quantity}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleIncrement}
-                    disabled={quantity >= maxQuantity}
-                    aria-label="Increase quantity"
-                    className="size-9 rounded-full bg-cyan-500 text-white flex items-center justify-center transition-colors hover:bg-cyan-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    <Plus className="size-4" />
-                  </button>
+            {isExternalTicket ? (
+              <div className="space-y-4 border rounded-xl p-6 bg-cyan-50/30 dark:bg-cyan-950/10">
+                <div className="flex items-start gap-3">
+                  <ExternalLink className="size-5 text-cyan-700 dark:text-cyan-400 mt-0.5 shrink-0" />
+                  <div className="space-y-1">
+                    <p className="font-semibold">
+                      This ticket is sold externally
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Purchases for this ticket are handled outside Turnupz.
+                      Click the button below to be redirected to the
+                      organizer&apos;s site to complete your purchase.
+                    </p>
+                  </div>
                 </div>
               </div>
+            ) : (
+              <div className="space-y-4 border rounded-xl p-6">
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold text-lg">Number of Seats</p>
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={handleDecrement}
+                      disabled={quantity <= 1}
+                      aria-label="Decrease quantity"
+                      className="size-9 rounded-full border border-border flex items-center justify-center transition-colors hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <Minus className="size-4" />
+                    </button>
+                    <span className="text-lg font-semibold w-8 text-center tabular-nums">
+                      {quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleIncrement}
+                      disabled={quantity >= maxQuantity}
+                      aria-label="Increase quantity"
+                      className="size-9 rounded-full bg-cyan-500 text-white flex items-center justify-center transition-colors hover:bg-cyan-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <Plus className="size-4" />
+                    </button>
+                  </div>
+                </div>
 
-              {selectedTicket?.available != null && (
-                <p className="text-sm text-muted-foreground text-right">
-                  {selectedTicket.available} ticket
-                  {selectedTicket.available !== 1 && "s"} available
-                </p>
-              )}
+                {selectedTicket?.available != null && (
+                  <p className="text-sm text-muted-foreground text-right">
+                    {selectedTicket.available} ticket
+                    {selectedTicket.available !== 1 && "s"} available
+                  </p>
+                )}
 
-              <div className="border-t" />
+                <div className="border-t" />
 
-              <div className="flex items-center justify-between">
-                <p className="font-semibold text-lg">Total Price:</p>
-                <p className="text-xl font-bold text-cyan-600">
-                  {(selectedTicket?.price?.amount ?? 0) > 0 &&
-                    formattedTotalPrice}
-                  {selectedTicket && !selectedTicket?.price?.amount && "Free"}
-                  {!selectedTicket && formattedTotalPrice}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold text-lg">Total Price:</p>
+                  <p className="text-xl font-bold text-cyan-600">
+                    {(selectedTicket?.price?.amount ?? 0) > 0 &&
+                      formattedTotalPrice}
+                    {selectedTicket && !selectedTicket?.price?.amount && "Free"}
+                    {!selectedTicket && formattedTotalPrice}
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
-            <button
-              onClick={handlePurchase}
-              disabled={!selectedTicket || isPurchasing}
-              className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
-            >
-              {isPurchasing && "Processing..."}
-              {!isPurchasing && "Continue"}
-            </button>
+            {isExternalTicket ? (
+              <button
+                onClick={handleOpenExternalLink}
+                disabled={!selectedTicket?.link}
+                className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center justify-center gap-2"
+              >
+                <ExternalLink className="size-5" />
+                {externalLinkHost
+                  ? `Proceed to ${externalLinkHost}`
+                  : "Proceed to external site"}
+              </button>
+            ) : (
+              <button
+                onClick={handlePurchase}
+                disabled={!selectedTicket || isPurchasing}
+                className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
+              >
+                {isPurchasing && "Processing..."}
+                {!isPurchasing && "Continue"}
+              </button>
+            )}
           </>
         )}
       </div>

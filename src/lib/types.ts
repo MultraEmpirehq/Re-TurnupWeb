@@ -44,6 +44,20 @@ export interface PriceDetailsType {
     smallestUnit: number;
   };
 }
+
+export interface IMonthlyTicketsSold {
+  month: string;
+  label: string;
+  count: number;
+}
+
+export interface ITicketAnalytics {
+  totalSales: PriceDetailsType;
+  totalTicketsSold: number;
+  totalTicketsRemaining: number;
+  totalTicketsCreated: number;
+  monthlyTicketsSold: IMonthlyTicketsSold[];
+}
 export interface RouteProps {
   shouldShowIn: ROUTE_TYPE[];
   label: string;

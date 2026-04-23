@@ -116,7 +116,7 @@ const AuthPage = () => {
             !credentials?.isEmailVerified
           ) {
             const registerUrl = new URL(
-              `${window.location.origin}/auth/register/{{token}}`,
+              `${window.location.origin}/auth/register/{{token}}?email=${body.email}`,
             );
             if (redirectTo) {
               registerUrl.searchParams.set("redirect", redirectTo);
