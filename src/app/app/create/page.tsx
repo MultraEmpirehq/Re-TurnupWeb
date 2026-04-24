@@ -75,7 +75,10 @@ const CreateEvent = () => {
       console.log("body", body);
       const formData = new FormData();
       formData.append("eventName", body.eventName);
-      formData.append("eventDate", body.eventDate?.toString() ?? "");
+      formData.append(
+        "eventDate",
+        body.eventDate ? new Date(body.eventDate).toISOString() : "",
+      );
       formData.append("venueId", body.venueId);
       formData.append("categoryId", body.categoryId);
       if (body?.guestIds && body?.guestIds?.length > 0) {
@@ -128,6 +131,12 @@ const CreateEvent = () => {
       toast.success("Event created successfully");
     } catch (error) {
       const err = error as TApiErrorResponseType;
+      console.error("Create event failed", {
+        message: err?.message,
+        code: err?.code,
+        status: err?.response?.status,
+        data: err?.response?.data,
+      });
       toast.error(
         constructErrorMessage(err, "Something went wrong while creating event"),
       );

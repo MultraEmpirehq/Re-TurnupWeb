@@ -1,3 +1,4 @@
+import { HomepageBanner } from "@/assets/images";
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import CustomImageComponent from "@/components/ui/custom-image.component";
 import React, { memo } from "react";
@@ -8,7 +9,7 @@ const HomeBannerComponent = () => {
       <SectionContainer>
         <div className="w-full aspect-video bg-cover relative rounded-lg overflow-hidden">
           <CustomImageComponent
-            src={""}
+            src={HomepageBanner}
             alt="banner"
             fill
             className="rounded-none"

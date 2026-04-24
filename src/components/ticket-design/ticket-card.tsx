@@ -3,7 +3,7 @@
 import { IEventDetailsType, IUserTicketType } from "@/lib/types";
 import { ROUTES } from "@/lib/variables";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { Download, SendHorizontal } from "lucide-react";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
@@ -60,6 +60,9 @@ const TicketCard: React.FC<TicketCardProps> = ({
   const colors = getTicketColors(ticket?.type ?? "");
   const event = eventProp ?? ticket?.event?.data;
   const eventDate = event?.date ? new Date(event.date) : null;
+  const isEventPast = eventDate
+    ? startOfDay(eventDate) < startOfDay(new Date())
+    : false;
 
   const handleDownload = useCallback(async () => {
     if (!ticketRef.current) return;
@@ -443,24 +446,34 @@ const TicketCard: React.FC<TicketCardProps> = ({
           marginTop: 12,
         }}
       >
-        {showTransfer && (
-          <Button variant="outline" size="sm" className="gap-2" asChild>
-            <Link href={`${ROUTES.PROFILE_TICKETS.href}/transfer/${userTicket.id}`}>
-              <SendHorizontal className="size-3.5" />
-              Transfer
-            </Link>
-          </Button>
+        {isEventPast ? (
+          <p className="text-sm text-muted-foreground italic">
+            Event has passed
+          </p>
+        ) : (
+          <>
+            {showTransfer && (
+              <Button variant="outline" size="sm" className="gap-2" asChild>
+                <Link
+                  href={`${ROUTES.PROFILE_TICKETS.href}/transfer/${userTicket.id}`}
+                >
+                  <SendHorizontal className="size-3.5" />
+                  Transfer
+                </Link>
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownload}
+              loading={isDownloading}
+              className="gap-2"
+            >
+              <Download className="size-3.5" />
+              Download
+            </Button>
+          </>
         )}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleDownload}
-          loading={isDownloading}
-          className="gap-2"
-        >
-          <Download className="size-3.5" />
-          Download
-        </Button>
       </div>
     </div>
   );

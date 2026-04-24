@@ -1,3 +1,4 @@
+import { ExploreBanner } from "@/assets/images";
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import CustomImageComponent from "@/components/ui/custom-image.component";
 import InputField from "@/components/ui/input-field";
@@ -8,7 +9,7 @@ const ExploreBannerComponent = () => {
   return (
     <div className="aspect-video bg-cover relative rounded-lg overflow-hidden max-h-[700px] w-full">
       <CustomImageComponent
-        src={""}
+        src={ExploreBanner}
         alt="banner"
         fill
         className="rounded-none"

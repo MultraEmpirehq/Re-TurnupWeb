@@ -1,5 +1,7 @@
+"use client";
+import { useTicketAnalytics } from "@/hooks/use-ticket-analytics";
 import { TicketIcon } from "lucide-react";
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import DashboardTicketSalesChart from "./dashboard-ticket-sales-chart";
 
 const TicketSalesCard: React.FC<{
@@ -23,6 +25,18 @@ const TicketSalesCard: React.FC<{
 TicketSalesCard.displayName = "TicketSalesCard";
 
 const DashboardTicketSales = () => {
+  const { data: analytics, isLoading } = useTicketAnalytics();
+
+  const totalSalesValue = useMemo(() => {
+    if (isLoading) return "—";
+    return analytics?.data?.totalSales?.formatted?.withCurrency ?? "—";
+  }, [analytics, isLoading]);
+
+  const formatCount = (count: number | undefined) => {
+    if (isLoading) return "—";
+    return (count ?? 0).toLocaleString();
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-row items-center justify-between">
@@ -31,26 +45,28 @@ const DashboardTicketSales = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <TicketSalesCard
           title="Total Sales"
-          value="100"
+          value={totalSalesValue}
           icon={<TicketIcon />}
         />
         <TicketSalesCard
           title="Total Tickets Sold"
-          value="100"
+          value={formatCount(analytics?.data?.totalTicketsSold)}
           icon={<TicketIcon />}
         />
         <TicketSalesCard
           title="Total Tickets Remaining"
-          value="100"
+          value={formatCount(analytics?.data?.totalTicketsRemaining)}
           icon={<TicketIcon />}
         />
         <TicketSalesCard
           title="Total Tickets Created"
-          value="100"
+          value={formatCount(analytics?.data?.totalTicketsCreated)}
           icon={<TicketIcon />}
         />
       </div>
-      <DashboardTicketSalesChart />
+      <DashboardTicketSalesChart
+        data={analytics?.data?.monthlyTicketsSold ?? []}
+      />
     </div>
   );
 };

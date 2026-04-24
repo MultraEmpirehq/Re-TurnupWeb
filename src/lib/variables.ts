@@ -229,4 +229,9 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Help",
     href: "/profile/help",
   },
+  TICKET_CLAIM: {
+    shouldShowIn: [],
+    label: "Claim Ticket",
+    href: "/tickets/claim/:id",
+  },
 };
