@@ -36,6 +36,8 @@ interface IComboboxSelectProps {
   refetch?: () => void;
   fetchingError?: string;
   required?: boolean;
+  allowCreateOption?: boolean;
+  onCreateOption?: (label: string) => void;
 }
 
 const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
@@ -56,8 +58,11 @@ const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
   refetch,
   fetchingError,
   required,
+  allowCreateOption,
+  onCreateOption,
 }) => {
   const [search, setSearch] = useState<string>("");
+  const shouldDisable = !!isLoading && items.length === 0 && !fetchingError;
 
   useEffect(() => {
     const selectedItem = items.find(
@@ -80,17 +85,29 @@ const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
           )}
         </div>
       )}
-      <Combobox items={fetchingError ? [] : items} disabled={isLoading}>
+      <Combobox items={fetchingError ? [] : items} disabled={shouldDisable}>
         <ComboboxInput
           placeholder={placeholder || "Select a value"}
           className={cn("w-full", inputClassName)}
           value={search}
           onChange={(e) => setSearch(e?.target?.value)}
-          disabled={isLoading}
+          disabled={shouldDisable}
         />
         {!fetchingError && (
           <ComboboxContent className="w-full">
-            <ComboboxEmpty>{emptyText || "No item found."}</ComboboxEmpty>
+            <ComboboxEmpty className="space-y-2">
+              <p>{emptyText || "No item found."}</p>
+              {allowCreateOption && search.trim() && onCreateOption && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onCreateOption(search.trim())}
+                >
+                  Use &quot;{search.trim()}&quot;
+                </Button>
+              )}
+            </ComboboxEmpty>
             <ComboboxList className="w-full">
               {(contentItem: TComboboxItem) => (
                 <ComboboxItem

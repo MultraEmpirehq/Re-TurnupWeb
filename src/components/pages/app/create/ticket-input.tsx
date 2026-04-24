@@ -8,11 +8,15 @@ import InputField from "@/components/ui/input-field";
 import { Button } from "@/components/ui/button";
 import { TicketIcon, TrashIcon } from "lucide-react";
 import { formatCurrency } from "@/lib/functions";
+import SelectField from "@/components/ui/select-field";
 
 export interface ITicketType {
   ticketName: string;
   ticketPrice: number;
   ticketQuantity: number;
+  soldCount: number;
+  visibility: "public" | "private";
+  actionType: "paid" | "register";
 }
 
 const schema = Joi.object({
@@ -20,17 +24,30 @@ const schema = Joi.object({
     "string.empty": "Ticket name is required",
     "any.required": "Ticket name is required",
   }),
-  ticketPrice: Joi.number().allow(0).positive().required().messages({
+  ticketPrice: Joi.number().min(0).required().messages({
     "number.empty": "Ticket price is required",
     "any.required": "Ticket price is required",
-    "number.positive": "Ticket price must be positive",
+    "number.min": "Ticket price cannot be negative",
     "number.base": "Ticket price must be a number",
-    "number.integer": "Ticket price must be an integer",
   }),
   ticketQuantity: Joi.number().min(1).required().messages({
     "number.empty": "Ticket quantity is required",
     "any.required": "Ticket quantity is required",
     "number.min": "Ticket quantity must be at least 1",
+  }),
+  soldCount: Joi.number().min(0).required().messages({
+    "number.empty": "Sold count is required",
+    "any.required": "Sold count is required",
+    "number.min": "Sold count cannot be negative",
+    "number.base": "Sold count must be a number",
+  }),
+  visibility: Joi.string().valid("public", "private").required().messages({
+    "any.only": "Visibility must be public or private",
+    "any.required": "Visibility is required",
+  }),
+  actionType: Joi.string().valid("paid", "register").required().messages({
+    "any.only": "Action type is required",
+    "any.required": "Action type is required",
   }),
 });
 
@@ -38,6 +55,9 @@ const defaultValues: ITicketType = {
   ticketName: "",
   ticketPrice: 0,
   ticketQuantity: 0,
+  soldCount: 0,
+  visibility: "public",
+  actionType: "paid",
 };
 
 interface ITicketInputProps {
@@ -45,6 +65,7 @@ interface ITicketInputProps {
   setTickets: (tickets: ITicketType[]) => void;
   error?: string;
   errorClassName?: string;
+  mode: "paid" | "register";
 }
 
 const TicketInput: React.FC<ITicketInputProps> = ({
@@ -52,6 +73,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
   setTickets,
   error,
   errorClassName,
+  mode,
 }) => {
   const [showTicketInput, setShowTicketInput] = useState(false);
   const {
@@ -60,61 +82,83 @@ const TicketInput: React.FC<ITicketInputProps> = ({
     reset,
     setFocus,
     control,
+    setValue,
     formState: { errors, isValid },
-  } = useForm({
-    defaultValues,
+  } = useForm<ITicketType>({
+    defaultValues: { ...defaultValues, actionType: mode },
     resolver: joiResolver(schema),
     mode: "onChange",
   });
-  const parsedTickets = useMemo(() => {
-    return tickets?.filter(Boolean);
-  }, [tickets]);
-  const shouldShowTicketInput = useMemo(() => {
-    return (parsedTickets?.length || 0) < 1 || showTicketInput;
-  }, [parsedTickets, showTicketInput]);
+
+  const parsedTickets = useMemo(() => tickets.filter(Boolean), [tickets]);
+  const totalCapacity = useMemo(
+    () => parsedTickets.reduce((sum, ticket) => sum + (ticket.ticketQuantity || 0), 0),
+    [parsedTickets],
+  );
+
   const onSubmit = useCallback(
     (data: ITicketType) => {
-      setTickets([...tickets, data]);
-      reset();
+      setTickets([
+        ...tickets,
+        {
+          ...data,
+          actionType: mode,
+          ticketPrice: mode === "register" ? 0 : data.ticketPrice,
+        },
+      ]);
+      reset({ ...defaultValues, actionType: mode });
       setShowTicketInput(false);
     },
-    [tickets, setTickets, setShowTicketInput, reset]
+    [mode, reset, setTickets, tickets],
   );
+
   const handleRemoveTicket = useCallback(
     (index: number) => {
       setTickets(tickets.filter((_, i) => i !== index));
     },
-    [tickets, setTickets]
+    [tickets, setTickets],
   );
+
+  const shouldShowTicketInput = useMemo(() => {
+    return parsedTickets.length < 1 || showTicketInput;
+  }, [parsedTickets.length, showTicketInput]);
+
   return (
     <div className="space-y-4">
-      <Label htmlFor="ticketName" className="opacity-60">
-        Tickets
-      </Label>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <Label htmlFor="ticketName" className="opacity-60">
+            {mode === "register" ? "Registration Categories" : "Ticket Categories"}
+          </Label>
+          <p className="mt-1 text-xs text-secondary-500">
+            Total event capacity from these categories:{" "}
+            <span className="font-semibold text-secondary-900">{totalCapacity}</span>
+          </p>
+        </div>
+      </div>
 
-      {parsedTickets?.length > 0 && (
+      {parsedTickets.length > 0 && (
         <div className="space-y-2 mt-7">
-          {parsedTickets?.map((ticket, index) => (
+          {parsedTickets.map((ticket, index) => (
             <div
-              key={index}
-              className="flex items-center gap-6 justify-between flex-1 bg-muted rounded-md p-2"
+              key={`${ticket.ticketName}-${index}`}
+              className="flex items-center gap-6 justify-between flex-1 rounded-xl bg-muted p-3"
             >
-              <div
-                className={cn(
-                  "flex items-center gap-2 justify-between flex-1",
-                  index > 0 && "border-b"
-                )}
-              >
-                <span className="p-2 rounded-md bg-secondary-100 flex items-center justify-center">
+              <div className="flex items-center gap-3 flex-1">
+                <span className="rounded-md bg-secondary-100 p-2">
                   <TicketIcon />
                 </span>
                 <div className="space-y-1 flex-1">
-                  <p className="text-sm font-medium">{ticket?.ticketName}</p>
-                  <p className="text-xs opacity-60">
-                    {ticket?.ticketPrice > 0
-                      ? formatCurrency(ticket?.ticketPrice)
-                      : "Free"}{" "}
-                    per ticket x {ticket?.ticketQuantity}
+                  <p className="text-sm font-medium">{ticket.ticketName}</p>
+                  <p className="text-xs opacity-70">
+                    {ticket.actionType === "register"
+                      ? `${ticket.soldCount} registered of ${ticket.ticketQuantity}`
+                      : `${ticket.soldCount} sold of ${ticket.ticketQuantity} · ${
+                          ticket.ticketPrice > 0 ? formatCurrency(ticket.ticketPrice) : "Free"
+                        }`}
+                  </p>
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-secondary-400">
+                    {ticket.visibility}
                   </p>
                 </div>
               </div>
@@ -135,78 +179,92 @@ const TicketInput: React.FC<ITicketInputProps> = ({
 
       {shouldShowTicketInput && (
         <div className="space-y-3 mt-7">
-          <div className="text-xs bg-secondary-50 rounded-md p-2 text-secondary-900">
+          <div className="rounded-md bg-secondary-50 p-3 text-xs text-secondary-900">
             <p>
-              <span className="font-bold">Note:</span> Leave ticket price as 0
-              for free tickets and you can only add one free ticket.
+              <span className="font-bold">Note:</span> Each category can be public or private.
+              Private categories are meant to be shared by link only.
             </p>
           </div>
-          <div className="gap-6 grid grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <InputField
-              label="Ticket Name"
-              className="col-span-2"
-              placeholder="Enter ticket name"
+              label={mode === "register" ? "Registration Name" : "Ticket Name"}
+              className="md:col-span-2"
+              placeholder={mode === "register" ? "Regular registration" : "Diamond ticket"}
               error={errors?.ticketName?.message}
               {...register("ticketName")}
             />
-            <Controller
-              control={control}
-              name="ticketPrice"
-              render={({ field, fieldState }) => (
-                <InputField
-                  label="Ticket Price"
-                  value={field?.value?.toString() || ""}
-                  className=""
-                  leftIcon={
-                    <span className="border-r inline-flex items-center justify-center w-6 text-center">
-                      ₦
-                    </span>
-                  }
-                  type="number"
-                  onChange={(e) => {
-                    const value = e?.target?.value;
-                    const parsedValue = Number(value || "0");
-                    if (isNaN(parsedValue)) {
-                      return;
+
+            {mode === "paid" && (
+              <Controller
+                control={control}
+                name="ticketPrice"
+                render={({ field, fieldState }) => (
+                  <InputField
+                    label="Price"
+                    value={field.value?.toString() || ""}
+                    leftIcon={
+                      <span className="inline-flex w-6 items-center justify-center border-r text-center">
+                        N
+                      </span>
                     }
-                    if (parsedValue < 0) {
-                      return;
-                    }
-                    field.onChange(Number(parsedValue));
-                  }}
-                  //   leftButtonClassName="border-r px-3"
-                  placeholder="Enter ticket price"
-                  error={fieldState?.error?.message}
-                />
-              )}
-            />
+                    type="number"
+                    onChange={(e) => field.onChange(Number(e.target.value || "0"))}
+                    placeholder="Enter price"
+                    error={fieldState?.error?.message}
+                  />
+                )}
+              />
+            )}
+
             <Controller
               control={control}
               name="ticketQuantity"
               render={({ field, fieldState }) => (
                 <InputField
-                  label="Ticket Quantity"
-                  className=""
+                  label="Total Quantity"
                   type="number"
-                  value={field?.value?.toString() || ""}
-                  placeholder="Enter ticket quantity"
+                  value={field.value?.toString() || ""}
+                  placeholder="Enter quantity"
                   error={fieldState?.error?.message}
-                  onChange={(e) => {
-                    const value = e?.target?.value;
-                    const parsedValue = parseInt(value || "0", 10);
-                    if (isNaN(parsedValue)) {
-                      return;
-                    }
-                    if (parsedValue < 0) {
-                      return;
-                    }
-                    field.onChange(Number(parsedValue));
-                  }}
+                  onChange={(e) => field.onChange(Number(e.target.value || "0"))}
                 />
               )}
             />
-            <div className="col-span-2 flex-row justify-end flex gap-2">
-              {parsedTickets?.length > 0 && (
+
+            <Controller
+              control={control}
+              name="soldCount"
+              render={({ field, fieldState }) => (
+                <InputField
+                  label={mode === "register" ? "Already Registered" : "Already Sold"}
+                  type="number"
+                  value={field.value?.toString() || ""}
+                  placeholder="Enter current count"
+                  error={fieldState?.error?.message}
+                  onChange={(e) => field.onChange(Number(e.target.value || "0"))}
+                />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="visibility"
+              render={({ field, fieldState }) => (
+                <SelectField
+                  label="Visibility"
+                  value={field.value}
+                  setValue={(value) => field.onChange(value as "public" | "private")}
+                  error={fieldState?.error?.message}
+                  options={[
+                    { label: "Public", value: "public" },
+                    { label: "Private", value: "private" },
+                  ]}
+                />
+              )}
+            />
+
+            <div className="col-span-full flex justify-end gap-2">
+              {parsedTickets.length > 0 && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -225,7 +283,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                 className="text-xs inline-flex items-center gap-2"
                 onClick={handleSubmit(onSubmit)}
               >
-                Add
+                Add Category
               </Button>
             </div>
           </div>
@@ -240,12 +298,13 @@ const TicketInput: React.FC<ITicketInputProps> = ({
             type="button"
             onClick={() => {
               setShowTicketInput(true);
+              setValue("actionType", mode);
               setTimeout(() => {
                 setFocus("ticketName");
               }, 100);
             }}
           >
-            Add Ticket
+            Add Category
           </Button>
         </div>
       )}
@@ -254,9 +313,8 @@ const TicketInput: React.FC<ITicketInputProps> = ({
         <p
           className={cn(
             "text-sm",
-
             error && errorClassName,
-            error && "text-destructive"
+            error && "text-destructive",
           )}
         >
           {error}

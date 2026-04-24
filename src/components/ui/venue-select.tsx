@@ -41,6 +41,8 @@ export interface IVenueSelectProps {
   errorClassName?: string;
   emptyText?: string;
   required?: boolean;
+  allowCreateOption?: boolean;
+  onCreateOption?: (venueName: string) => void;
 }
 
 const VenueSelect: React.FC<IVenueSelectProps> = ({
@@ -55,15 +57,16 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
   errorClassName,
   emptyText = "No venue found.",
   required,
+  allowCreateOption,
+  onCreateOption,
 }) => {
   const [search, setSearch] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
 
   const debouncedSetSearch = useDebouncedCallback((q: string) => {
     setDebouncedQuery(q);
   }, DEBOUNCE_MS);
-
-  const [debouncedQuery, setDebouncedQuery] = useState("");
 
   const {
     data,
@@ -105,6 +108,7 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
         "Failed to load venues",
       )
     : null;
+  const shouldDisable = isLoading && venueItems.length === 0 && !fetchingError;
 
   const handleValueChange = useCallback(
     (v: string | null) => {
@@ -127,9 +131,7 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
       )}
       <Combobox
         items={fetchingError ? [] : venueItems}
-        // value={value ?? ""}
-        // onValueChange={handleValueChange}
-        disabled={isLoading}
+        disabled={shouldDisable}
       >
         <ComboboxInput
           placeholder={placeholder}
@@ -140,11 +142,23 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
             setSearch(v);
             debouncedSetSearch(v);
           }}
-          disabled={isLoading}
+          disabled={shouldDisable}
         />
         {!fetchingError && (
           <ComboboxContent className="w-full">
-            <ComboboxEmpty>{emptyText}</ComboboxEmpty>
+            <ComboboxEmpty className="space-y-2">
+              <p>{emptyText}</p>
+              {allowCreateOption && search.trim() && onCreateOption && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onCreateOption(search.trim())}
+                >
+                  Use &quot;{search.trim()}&quot;
+                </Button>
+              )}
+            </ComboboxEmpty>
             <div
               ref={scrollContainerRef}
               onScroll={handleScroll}

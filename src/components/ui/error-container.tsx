@@ -1,7 +1,16 @@
+"use client";
+
 import { ErrorAnimation } from "@/assets/lotties";
-import { Player } from "@lottiefiles/react-lottie-player";
+import dynamic from "next/dynamic";
 import React, { memo } from "react";
 import { Button } from "../ui/button";
+
+const Player = dynamic(
+  () => import("@lottiefiles/react-lottie-player").then((mod) => mod.Player),
+  {
+    ssr: false,
+  },
+);
 
 const ErrorContainer: React.FC<{
   retryFunction?: () => void;

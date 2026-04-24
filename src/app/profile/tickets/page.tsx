@@ -22,6 +22,7 @@ function toUserTicketType(ut: UserTicketDetailsResponseType): IUserTicketType {
     code: ut.code,
     createdAt: ut.createdAt,
     status: (ut.status as ETicketStatus) ?? ETicketStatus.UN_USED,
+    transfer: ut.transfer,
     ticket: {
       id: ut.ticket.id,
       name: ut.ticket.name,

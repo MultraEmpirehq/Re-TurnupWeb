@@ -83,18 +83,44 @@ export interface IEventActivityDetails {
   description?: string;
   date: Date;
 }
+
+export interface IEventTicketOptionDetails {
+  ticketName: string;
+  ticketPrice: number;
+  ticketQuantity: number;
+  soldCount?: number;
+  visibility?: "public" | "private";
+  actionType?: "paid" | "register";
+}
+
+export interface IEventPassAssignmentDetails {
+  passName: string;
+  quantity: number;
+  assigneeEmails: string[];
+}
+
 export interface IEventDetailsType {
   id: string;
   name: string;
   date: Date;
+  status?: "draft" | "published";
+  draftStep?: number;
+  draftSnapshot?: Record<string, unknown>;
   venue?: IVenueDetailsType;
   image: string;
   totalTickets: number;
+  organizerName?: string;
+  eventYear?: string;
   description?: string;
+  blogPost?: string;
   activities?: IEventActivityDetails[];
   additionalInformation?: string[];
   eventGuestsOfHonour?: ({ name: string } | TUserDetails)[];
   medias?: string[];
+  saleMethod?: string;
+  ticketUrl?: string;
+  eventTickets?: IEventTicketOptionDetails[];
+  passAssignments?: IEventPassAssignmentDetails[];
 }
 
 export interface IUserCheckedCredentials {
@@ -143,6 +169,7 @@ export interface IUserTicketType {
   createdAt: Date;
   status: ETicketStatus;
   ticket: IOrderTicketType;
+  transfer?: TicketTransferResponseType;
 }
 
 /** Response from GET /tickets/user - list of tickets the user has bought */

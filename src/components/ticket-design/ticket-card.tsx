@@ -458,7 +458,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
                   href={`${ROUTES.PROFILE_TICKETS.href}/transfer/${userTicket.id}`}
                 >
                   <SendHorizontal className="size-3.5" />
-                  Transfer
+                  {userTicket.transfer ? "View Transfer" : "Transfer"}
                 </Link>
               </Button>
             )}

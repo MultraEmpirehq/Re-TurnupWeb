@@ -1,73 +1,158 @@
 "use client";
-import { useTicketAnalytics } from "@/hooks/use-ticket-analytics";
-import { TicketIcon } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { useEvents } from "@/hooks/use-event";
+import { IEventDetailsType } from "@/lib/types";
+import useUserStore from "@/stores/user-store";
+import Link from "next/link";
 import React, { memo, useMemo } from "react";
-import DashboardTicketSalesChart from "./dashboard-ticket-sales-chart";
 
-const TicketSalesCard: React.FC<{
-  title: string;
-  value: string;
-  icon: React.ReactNode;
-}> = memo(({ title, value, icon }) => {
+const formatEventDate = (date: Date | string) => {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(date));
+};
+
+const isLiveOrUpcomingEvent = (event: IEventDetailsType) => {
+  return new Date(event.date).getTime() >= Date.now();
+};
+
+const getEngagementScore = (event: IEventDetailsType) => {
+  const ticketWeight = (event.totalTickets ?? 0) * 10;
+  const guestWeight = (event.eventGuestsOfHonour?.length ?? 0) * 5;
+  const activityWeight = (event.activities?.length ?? 0) * 4;
+  const mediaWeight = (event.medias?.length ?? 0) * 2;
+  const infoWeight = (event.additionalInformation?.length ?? 0) * 1;
+
   return (
-    <div className="p-4 rounded-lg bg-white shadow border flex flex-col items-start gap-4">
-      <div className="size-10 rounded-full bg-secondary-100 flex items-center justify-center">
-        {icon}
-      </div>
-      <div className="flex flex-col items-start gap-2 flex-1">
-        <h1 className="font-bold text-[clamp(1.1rem,5vw,1.2rem)]">{value}</h1>
-        <p className="text-xs opacity-60">{title}</p>
-      </div>
-    </div>
+    ticketWeight + guestWeight + activityWeight + mediaWeight + infoWeight
   );
-});
-
-TicketSalesCard.displayName = "TicketSalesCard";
+};
 
 const DashboardTicketSales = () => {
-  const { data: analytics, isLoading } = useTicketAnalytics();
+  const userId = useUserStore((state) => state?.userDetails?.id);
+  const { data } = useEvents({ limit: 20, userId: userId ?? undefined });
 
-  const totalSalesValue = useMemo(() => {
-    if (isLoading) return "—";
-    return analytics?.data?.totalSales?.formatted?.withCurrency ?? "—";
-  }, [analytics, isLoading]);
+  const events = useMemo(
+    () => data?.pages?.flatMap((page) => page?.data ?? []) ?? [],
+    [data],
+  );
 
-  const formatCount = (count: number | undefined) => {
-    if (isLoading) return "—";
-    return (count ?? 0).toLocaleString();
-  };
+  const spotlightEvent = useMemo<IEventDetailsType | null>(() => {
+    if (events.length === 0) {
+      return null;
+    }
+
+    const liveEvents = events.filter(isLiveOrUpcomingEvent);
+    const source = liveEvents.length > 0 ? liveEvents : events;
+
+    return [...source].sort((left, right) => {
+      const engagementDelta = getEngagementScore(right) - getEngagementScore(left);
+
+      if (engagementDelta !== 0) {
+        return engagementDelta;
+      }
+
+      return new Date(left.date).getTime() - new Date(right.date).getTime();
+    })[0];
+  }, [events]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-row items-center justify-between">
-        <h1 className="font-bold text-secondary-800">Ticket Sales</h1>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <TicketSalesCard
-          title="Total Sales"
-          value={totalSalesValue}
-          icon={<TicketIcon />}
-        />
-        <TicketSalesCard
-          title="Total Tickets Sold"
-          value={formatCount(analytics?.data?.totalTicketsSold)}
-          icon={<TicketIcon />}
-        />
-        <TicketSalesCard
-          title="Total Tickets Remaining"
-          value={formatCount(analytics?.data?.totalTicketsRemaining)}
-          icon={<TicketIcon />}
-        />
-        <TicketSalesCard
-          title="Total Tickets Created"
-          value={formatCount(analytics?.data?.totalTicketsCreated)}
-          icon={<TicketIcon />}
-        />
-      </div>
-      <DashboardTicketSalesChart
-        data={analytics?.data?.monthlyTicketsSold ?? []}
-      />
-    </div>
+    <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+      <article className="rounded-[1.6rem] border border-secondary-100 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:rounded-[2.2rem] sm:p-8">
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-secondary-400">
+            Event Spotlight
+          </p>
+          <h2 className="text-[clamp(1.7rem,3vw,2.35rem)] font-bold tracking-tight text-secondary-950">
+            {spotlightEvent?.name || "Your next headline event starts here"}
+          </h2>
+          <p className="max-w-2xl text-sm text-secondary-500 sm:text-base">
+            {spotlightEvent?.description ||
+              "Create and polish a headline event so your dashboard has a featured listing ready for attendees, creators, and sponsors."}
+          </p>
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 gap-5 text-sm text-secondary-500 sm:grid-cols-2 sm:gap-6">
+          <div className="space-y-1">
+            <p className="font-semibold text-secondary-950">Event Date</p>
+            <p>
+              {spotlightEvent
+                ? formatEventDate(spotlightEvent.date)
+                : "Choose a launch date"}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <p className="font-semibold text-secondary-950">Venue</p>
+            <p>{spotlightEvent?.venue?.name || "Assign a venue"}</p>
+          </div>
+          <div className="space-y-1">
+            <p className="font-semibold text-secondary-950">Tickets</p>
+            <p>
+              {spotlightEvent
+                ? `${(spotlightEvent.totalTickets ?? 0).toLocaleString()} published`
+                : "Add ticket types"}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <p className="font-semibold text-secondary-950">Status</p>
+            <p>
+              {spotlightEvent
+                ? isLiveOrUpcomingEvent(spotlightEvent)
+                  ? "Most active live event"
+                  : "Top archived event"
+                : "Draft your next event"}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Button
+            asChild
+            className="h-12 rounded-2xl bg-secondary-400 text-base font-semibold text-white hover:bg-secondary-500"
+          >
+            <Link href={spotlightEvent ? `/app/events/${spotlightEvent.id}/edit` : "/app/create"}>
+              {spotlightEvent ? "Edit Event" : "Create Event"}
+            </Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="h-12 rounded-2xl border-secondary-200 bg-secondary-50 text-base font-semibold text-secondary-950 hover:bg-secondary-100"
+          >
+            <Link href={spotlightEvent ? `/app/events/${spotlightEvent.id}` : "/app/events"}>
+              View
+            </Link>
+          </Button>
+        </div>
+      </article>
+
+      <article className="rounded-[1.6rem] bg-[#11172d] px-5 py-7 text-white shadow-[0_20px_50px_rgba(17,23,45,0.24)] sm:rounded-[2.2rem] sm:px-8 sm:py-9">
+        <div className="space-y-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/40">
+            Event Momentum
+          </p>
+          <h2 className="text-[clamp(1.8rem,3vw,2.55rem)] font-bold leading-tight tracking-tight">
+            Keep this listing polished and ready for the next turnout push.
+          </h2>
+          <p className="max-w-xl text-sm leading-7 text-white/72 sm:text-base sm:leading-8">
+            Use the edit screen to update the event story, tighten the venue
+            details, and keep attendees looking at the strongest version of
+            your listing.
+          </p>
+          <Button
+            asChild
+            className="mt-4 h-12 rounded-2xl bg-secondary-400 px-7 text-base font-semibold text-white hover:bg-secondary-500"
+          >
+            <Link href={spotlightEvent ? `/app/events/${spotlightEvent.id}/edit` : "/app/create"}>
+              Refine Event
+            </Link>
+          </Button>
+        </div>
+      </article>
+    </section>
   );
 };
 

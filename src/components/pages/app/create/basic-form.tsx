@@ -26,12 +26,20 @@ import { Controller, useFormContext } from "react-hook-form";
 import useCategory from "@/hooks/use-category";
 import { TComboboxItem } from "@/components/ui/combobox-select";
 import { constructErrorMessage } from "@/api/functions";
+import {
+  saveCustomCategory,
+  saveCustomVenue,
+} from "@/lib/custom-event-options";
 
 export interface IBasicFormValues {
   eventName: string;
+  organizerName: string;
+  eventYear: string;
   eventDate: Date;
   venueId: string;
+  venueName?: string;
   categoryId: string;
+  categoryName?: string;
   guestIds: string[];
   unRegisteredGuestNames: string[];
   description: string;
@@ -43,6 +51,14 @@ export const basicInformationSchema = Joi.object({
   eventName: Joi.string().required().messages({
     "string.empty": "Event name is required",
     "any.required": "Event name is required",
+  }),
+  organizerName: Joi.string().required().messages({
+    "string.empty": "Organizer name is required",
+    "any.required": "Organizer name is required",
+  }),
+  eventYear: Joi.string().required().messages({
+    "string.empty": "Event year is required",
+    "any.required": "Event year is required",
   }),
   eventDate: Joi.date().required().messages({
     "date.empty": "Event date is required",
@@ -103,6 +119,7 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
     register,
     watch,
     control,
+    setValue,
     formState: { errors, isValid, isSubmitting },
   } = useFormContext<IBasicFormValues>();
   const eventDate = watch("eventDate");
@@ -138,6 +155,22 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
           {...register("eventName")}
         />
 
+        <InputField
+          label="Organized By"
+          required={true}
+          placeholder="Turnupz Nigeria Ltd"
+          error={errors?.organizerName?.message}
+          {...register("organizerName")}
+        />
+
+        <InputField
+          label="Event Year"
+          required={true}
+          placeholder="2024"
+          error={errors?.eventYear?.message}
+          {...register("eventYear")}
+        />
+
         <Controller
           control={control}
           name="eventDate"
@@ -164,7 +197,14 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
               value={field.value}
               onChange={(text) => {
                 field.onChange(text);
-                console.log("text venueid", text);
+              }}
+              allowCreateOption={true}
+              onCreateOption={(venueName) => {
+                const nextVenue = saveCustomVenue(venueName);
+                if (nextVenue) {
+                  field.onChange(nextVenue.id);
+                  setValue("venueName", nextVenue.name, { shouldValidate: false });
+                }
               }}
               error={fieldState?.error?.message}
               placeholder="Search venues..."
@@ -186,7 +226,25 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
               placeholder="Select a category"
               items={categoryItems || []}
               item={field.value}
-              setItem={field.onChange}
+              setItem={(value) => {
+                field.onChange(value);
+                const selectedCategory = (categoryItems || []).find(
+                  (item) => item.value === value,
+                );
+                if (selectedCategory) {
+                  setValue("categoryName", selectedCategory.label, {
+                    shouldValidate: false,
+                  });
+                }
+              }}
+              allowCreateOption={true}
+              onCreateOption={(categoryName) => {
+                const nextCategory = saveCustomCategory(categoryName);
+                if (nextCategory) {
+                  field.onChange(nextCategory.id);
+                  setValue("categoryName", nextCategory.name, { shouldValidate: false });
+                }
+              }}
             />
           )}
         />

@@ -11,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import EmptyContainer from "@/components/ui/empty-container";
 import ErrorContainer from "@/components/ui/error-container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEvents } from "@/hooks/use-event";
@@ -25,7 +24,6 @@ import { IEventDetailsType } from "@/lib/types";
 import useUserStore from "@/stores/user-store";
 import { CalendarDays, MapPin, Ticket } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -41,36 +39,34 @@ const isUpcomingEvent = (date: Date | string) => {
   return new Date(date).getTime() >= Date.now();
 };
 
-const EventManagementCard: React.FC<{
+const EventListingCard: React.FC<{
   event: IEventDetailsType;
   onDeleteRequest: (event: IEventDetailsType) => void;
 }> = ({ event, onDeleteRequest }) => {
-  const badgeLabel = isUpcomingEvent(event.date) ? "Upcoming" : "Past";
-  const eventDescription =
-    event.description || "Complete this event listing so attendees know what to expect.";
+  const isDraft = event.status === "draft";
+  const badgeLabel = isDraft ? "Draft" : isUpcomingEvent(event.date) ? "Upcoming" : "Past";
+  const editHref = isDraft ? `/app/create?draftId=${event.id}` : `/app/events/${event.id}/edit`;
+  const previewHref = `/app/events/${event.id}`;
 
   return (
     <article className="rounded-[1.35rem] border border-secondary-100 bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition-transform hover:-translate-y-1 sm:rounded-[1.6rem] sm:p-5">
       <div className="mb-4 flex flex-col gap-3">
-        <div className="space-y-3">
-          <h3 className="text-[1.2rem] font-semibold leading-tight text-secondary-950 sm:text-[1.35rem]">
-            {event.name}
-          </h3>
-          <p className="line-clamp-2 max-w-md text-sm text-secondary-500">
-            {eventDescription}
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-secondary-400">
+            {badgeLabel} Event
           </p>
+          <h3 className="text-[1.2rem] font-semibold leading-tight text-secondary-950 sm:text-[1.3rem]">
+            {event.name || "Untitled event"}
+          </h3>
         </div>
         <span className="w-fit rounded-full bg-secondary-50 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-secondary-400">
           {badgeLabel}
         </span>
       </div>
 
-      <Link
-        href={`/app/events/${event.id}`}
-        className="mb-4 inline-flex text-xs font-semibold uppercase tracking-[0.28em] text-secondary-950 transition-colors hover:text-secondary-500"
-      >
-        More
-      </Link>
+      <p className="mb-4 line-clamp-2 text-sm text-secondary-500">
+        {event.description || "No event description has been added yet."}
+      </p>
 
       <div className="mb-5 overflow-hidden rounded-[1rem] border border-secondary-100 bg-secondary-50/70">
         <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0 text-sm">
@@ -95,12 +91,16 @@ const EventManagementCard: React.FC<{
           </div>
           <div className="flex items-center gap-2 border-b border-secondary-100 px-4 py-3 text-secondary-500">
             <Ticket className="size-4 shrink-0 text-secondary-400" />
-            <span>{(event.totalTickets ?? 0).toLocaleString()} available</span>
+            <span>{(event.totalTickets ?? 0).toLocaleString()} published</span>
           </div>
 
           <div className="px-4 py-3 font-semibold text-secondary-950">Status</div>
           <div className="px-4 py-3 text-secondary-500">
-            {badgeLabel === "Upcoming" ? "Ready to promote" : "Event has ended"}
+            {isDraft
+              ? "Incomplete draft"
+              : badgeLabel === "Upcoming"
+                ? "Ready to promote"
+                : "Archived event"}
           </div>
         </div>
       </div>
@@ -110,14 +110,14 @@ const EventManagementCard: React.FC<{
           asChild
           className="h-10 rounded-xl bg-secondary-400 px-3 text-sm font-semibold text-white hover:bg-secondary-500"
         >
-          <Link href={`/app/events/${event.id}/edit`}>Edit</Link>
+          <Link href={editHref}>{isDraft ? "Continue" : "Edit"}</Link>
         </Button>
         <Button
           asChild
           variant="outline"
           className="h-10 rounded-xl border-secondary-200 bg-white px-3 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
         >
-          <Link href={`/app/events/${event.id}`}>View</Link>
+          <Link href={previewHref}>Preview</Link>
         </Button>
         <Button
           type="button"
@@ -132,45 +132,79 @@ const EventManagementCard: React.FC<{
   );
 };
 
-const EventManagementSkeleton = () => {
+const ListingSection: React.FC<{
+  eyebrow: string;
+  title: string;
+  events: IEventDetailsType[];
+  emptyState: string;
+  onDeleteRequest: (event: IEventDetailsType) => void;
+}> = ({ eyebrow, title, events, emptyState, onDeleteRequest }) => {
   return (
-    <div className="rounded-[1.35rem] border border-secondary-100 bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:rounded-[1.6rem] sm:p-5">
-      <div className="space-y-4">
-        <div className="flex flex-col gap-3">
-          <div className="space-y-3">
-            <Skeleton className="h-7 w-32 rounded-xl sm:w-44" />
-            <Skeleton className="h-4 w-full max-w-[15rem] rounded-xl sm:w-56" />
-            <Skeleton className="h-4 w-full max-w-[12rem] rounded-xl sm:w-44" />
+    <div className="space-y-5">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-secondary-400">
+            {eyebrow}
+          </p>
+          <h2 className="mt-2 text-2xl font-bold text-secondary-950">
+            {title}
+          </h2>
+        </div>
+      </div>
+
+      {events.length === 0 ? (
+        <div className="rounded-[1.8rem] border border-secondary-100 bg-white p-8 text-secondary-500 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+          {emptyState}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {events.map((event) => (
+            <EventListingCard
+              key={event.id}
+              event={event}
+              onDeleteRequest={onDeleteRequest}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ListingsPageSkeleton = () => {
+  return (
+    <div className="space-y-10">
+      <div className="rounded-[2rem] border border-secondary-100 bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+        <Skeleton className="h-4 w-40 rounded-xl" />
+        <Skeleton className="mt-4 h-10 w-72 rounded-xl" />
+        <Skeleton className="mt-4 h-4 w-full max-w-2xl rounded-xl" />
+      </div>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="rounded-[1.8rem] border border-secondary-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)]"
+          >
+            <Skeleton className="h-4 w-24 rounded-xl" />
+            <Skeleton className="mt-4 h-8 w-52 rounded-xl" />
+            <Skeleton className="mt-4 h-4 w-full rounded-xl" />
+            <Skeleton className="mt-2 h-4 w-3/4 rounded-xl" />
+            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Skeleton className="h-14 rounded-2xl" />
+              <Skeleton className="h-14 rounded-2xl" />
+            </div>
+            <div className="mt-6 flex gap-3">
+              <Skeleton className="h-11 w-24 rounded-2xl" />
+              <Skeleton className="h-11 w-24 rounded-2xl" />
+            </div>
           </div>
-          <Skeleton className="h-7 w-24 rounded-full" />
-        </div>
-        <Skeleton className="h-4 w-16 rounded-xl" />
-        <div className="overflow-hidden rounded-[1rem] border border-secondary-100 bg-secondary-50/70">
-          <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0">
-            <Skeleton className="m-3 h-4 w-20 rounded-xl" />
-            <Skeleton className="m-3 h-4 rounded-xl" />
-            <Skeleton className="m-3 h-4 w-16 rounded-xl" />
-            <Skeleton className="m-3 h-4 rounded-xl" />
-            <Skeleton className="m-3 h-4 w-16 rounded-xl" />
-            <Skeleton className="m-3 h-4 rounded-xl" />
-            <Skeleton className="m-3 h-4 w-16 rounded-xl" />
-            <Skeleton className="m-3 h-4 rounded-xl" />
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          <Skeleton className="h-10 rounded-xl" />
-          <Skeleton className="h-10 rounded-xl" />
-          <Skeleton className="h-10 rounded-xl" />
-        </div>
+        ))}
       </div>
     </div>
   );
 };
 
-const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
-  isEventPage = false,
-}) => {
-  const router = useRouter();
+const VendorEventListingsPage = () => {
   const userId = useUserStore((state) => state?.userDetails?.id);
   const [devMockEvents, setDevMockEvents] = useState<IEventDetailsType[]>([]);
   const [hasMounted, setHasMounted] = useState(false);
@@ -180,15 +214,8 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const useDevMockData = process.env.NODE_ENV === "development" && !userId;
 
-  const {
-    data,
-    error,
-    refetch,
-    hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage,
-  } = useEvents(
-    { limit: isEventPage ? 24 : 6, userId: userId ?? undefined },
+  const { data, error, refetch } = useEvents(
+    { limit: 40, userId: userId ?? undefined },
     { enabled: !!userId || !useDevMockData },
   );
 
@@ -217,12 +244,22 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
     [data, devMockEvents, hasMounted, useDevMockData],
   );
 
+  const upcomingEvents = useMemo(
+    () => events.filter((event) => event.status !== "draft" && isUpcomingEvent(event.date)),
+    [events],
+  );
+
+  const pastEvents = useMemo(
+    () => events.filter((event) => event.status !== "draft" && !isUpcomingEvent(event.date)),
+    [events],
+  );
+  const draftEvents = useMemo(
+    () => events.filter((event) => event.status === "draft"),
+    [events],
+  );
+
   const isLoading = useDevMockData ? !hasMounted : !data && !error;
   const shouldShowError = !useDevMockData && !!error && !data;
-  const shouldShowEmpty = !isLoading && events.length === 0;
-  const sectionTitle = isEventPage
-    ? "Manage your published events"
-    : "Manage your published events";
 
   const handleDeleteEvent = async () => {
     if (!eventToDelete) {
@@ -251,77 +288,75 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
     }
   };
 
-  return (
-    <section className="space-y-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-secondary-400">
-            Your Events
-          </p>
-          <h2 className="text-[clamp(1.8rem,3vw,2.5rem)] font-bold leading-tight tracking-tight text-secondary-950">
-            {sectionTitle}
-          </h2>
-        </div>
-        {!isEventPage && (
-          <Link
-            href="/app/events"
-            className="text-sm font-medium text-secondary-950 transition-colors hover:text-secondary-500"
-          >
-            View Listed Events
-          </Link>
+  if (isLoading) {
+    return <ListingsPageSkeleton />;
+  }
+
+  if (shouldShowError) {
+    return (
+      <ErrorContainer
+        error={constructErrorMessage(
+          error as TApiErrorResponseType,
+          "Unable to load your event listings right now.",
         )}
-      </div>
+        retryFunction={refetch}
+      />
+    );
+  }
 
-      {(isLoading || events.length > 0) && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {isLoading &&
-            Array.from({ length: isEventPage ? 6 : 3 }).map((_, index) => (
-              <EventManagementSkeleton key={index} />
-            ))}
-          {!isLoading &&
-            events.length > 0 &&
-            events.map((event) => (
-              <EventManagementCard
-                key={event.id}
-                event={event}
-                onDeleteRequest={setEventToDelete}
-              />
-            ))}
+  return (
+    <main className="space-y-10">
+      <section>
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-secondary-950">
+              Event Listings
+            </p>
+            <h1 className="mt-3 text-[clamp(2rem,4vw,3rem)] font-bold leading-[0.96] tracking-tight text-secondary-950">
+              Manage your event listings
+            </h1>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button
+              asChild
+              variant="outline"
+              className="h-12 rounded-2xl border-secondary-200 px-5 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
+            >
+              <Link href="/app">Back to Dashboard</Link>
+            </Button>
+            <Button
+              asChild
+              className="h-12 rounded-2xl bg-secondary-400 px-5 text-sm font-semibold text-white hover:bg-secondary-500"
+            >
+              <Link href="/app/create">Create Event</Link>
+            </Button>
+          </div>
         </div>
-      )}
+      </section>
 
-      {shouldShowError && (
-        <ErrorContainer
-          error={constructErrorMessage(
-            error as TApiErrorResponseType,
-            "Unknown error occurred whilst getting events list",
-          )}
-          retryFunction={refetch}
-        />
-      )}
+      <ListingSection
+        eyebrow="Drafts"
+        title={`${draftEvents.length} draft event${draftEvents.length === 1 ? "" : "s"}`}
+        events={draftEvents}
+        emptyState="No event drafts yet."
+        onDeleteRequest={setEventToDelete}
+      />
 
-      {shouldShowEmpty && (
-        <EmptyContainer
-          icon={<CalendarDays className="size-10" />}
-          title="No events found"
-          description="Create your first event and it will show up in this management board."
-          action={() => router.push("/app/create")}
-          actionText="Create Event"
-        />
-      )}
+      <ListingSection
+        eyebrow="Upcoming"
+        title={`${upcomingEvents.length} upcoming event${upcomingEvents.length === 1 ? "" : "s"}`}
+        events={upcomingEvents}
+        emptyState="No upcoming events created yet."
+        onDeleteRequest={setEventToDelete}
+      />
 
-      {hasNextPage && fetchNextPage && isEventPage && (
-        <div className="flex items-center justify-start">
-          <Button
-            disabled={isFetchingNextPage}
-            variant="outline"
-            className="rounded-2xl border-secondary-200 px-6"
-            onClick={() => fetchNextPage?.()}
-          >
-            {isFetchingNextPage ? "Loading..." : "See more"}
-          </Button>
-        </div>
-      )}
+      <ListingSection
+        eyebrow="Archive"
+        title={`${pastEvents.length} past event${pastEvents.length === 1 ? "" : "s"}`}
+        events={pastEvents}
+        emptyState="No past events yet."
+        onDeleteRequest={setEventToDelete}
+      />
 
       <Dialog
         open={!!eventToDelete}
@@ -363,8 +398,8 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section>
+    </main>
   );
 };
 
-export default memo(DashboardEvents);
+export default memo(VendorEventListingsPage);
