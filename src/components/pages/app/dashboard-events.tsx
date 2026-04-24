@@ -38,7 +38,7 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
       <div className="flex flex-row items-center justify-between">
         <h1 className="font-bold text-secondary-800">Events</h1>
       </div>
-      {(!data || (data && events?.length > 0)) && (
+      {((!data && !error) || (data && events?.length > 0)) && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {!data &&
             Array.from({ length: 6 }).map((_, index) => (

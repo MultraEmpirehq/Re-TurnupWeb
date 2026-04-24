@@ -54,6 +54,7 @@ const RegisterPage = () => {
   const params = useParams();
   const searchParams = useSearchParams();
   const email = searchParams?.get("email");
+  const redirectTo = searchParams?.get("redirect");
   const { token } = params;
 
   const onSubmit = useCallback(
@@ -73,7 +74,10 @@ const RegisterPage = () => {
         });
         await performAuthOperation(data?.data?.user);
         toast.success("Account created successfully");
-        router.push(ROUTES.COMPLETE_USER_INFORMATION.href);
+        const completeUrl = redirectTo
+          ? `${ROUTES.COMPLETE_USER_INFORMATION.href}?redirect=${encodeURIComponent(redirectTo)}`
+          : ROUTES.COMPLETE_USER_INFORMATION.href;
+        router.push(completeUrl);
       } catch (error) {
         toast.error(
           constructErrorMessage(
@@ -83,9 +87,8 @@ const RegisterPage = () => {
         );
       }
     },
-    [token, email, performAuthOperation, router]
+    [token, email, performAuthOperation, router, redirectTo]
   );
-  console.log(token);
   return (
     <SectionContainer className="flex flex-col items-center justify-center min-h-full py-10 md:py-16">
       <div className="flex flex-col items-center justify-center w-full max-w-sm gap-10">

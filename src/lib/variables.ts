@@ -202,4 +202,36 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Notifications",
     href: "/app/notifications",
   },
+
+  // Profile Routes
+  USER_PROFILE: {
+    shouldShowIn: [],
+    label: "Profile",
+    href: "/profile",
+  },
+  PROFILE_SECURITY: {
+    shouldShowIn: [],
+    label: "Security",
+    href: "/profile/security",
+  },
+  PROFILE_ORDERS: {
+    shouldShowIn: [],
+    label: "Orders",
+    href: "/profile/orders",
+  },
+  PROFILE_TICKETS: {
+    shouldShowIn: [],
+    label: "Tickets",
+    href: "/profile/tickets",
+  },
+  PROFILE_HELP: {
+    shouldShowIn: [],
+    label: "Help",
+    href: "/profile/help",
+  },
+  TICKET_CLAIM: {
+    shouldShowIn: [],
+    label: "Claim Ticket",
+    href: "/tickets/claim/:id",
+  },
 };

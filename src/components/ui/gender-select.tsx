@@ -30,6 +30,7 @@ interface IGenderSelectProps {
   errorClassName?: string;
   helperText?: string;
   helperTextClassName?: string;
+  disabled?: boolean;
 }
 
 const GenderSelect: React.FC<IGenderSelectProps> = ({
@@ -44,6 +45,7 @@ const GenderSelect: React.FC<IGenderSelectProps> = ({
   errorClassName,
   helperText,
   helperTextClassName,
+  disabled,
 }) => {
   return (
     <div className={cn("space-y-2", className)}>
@@ -53,6 +55,7 @@ const GenderSelect: React.FC<IGenderSelectProps> = ({
       <Select
         value={gender}
         onValueChange={(v) => setGender(v as EUserGenders)}
+        disabled={disabled}
       >
         <SelectTrigger className={cn("w-[180px]", inputClassName)}>
           <SelectValue placeholder={placeholder} />

@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useState, useCallback } from "react";
 
 import {
   Popover,
@@ -26,6 +26,7 @@ interface ICalendarSelectProps {
   helperTextClassName?: string;
   dateModifiers?: React.ComponentProps<typeof Calendar>["modifiers"];
   required?: boolean;
+  disabled?: boolean;
 }
 
 const DateSelect: React.FC<ICalendarSelectProps> = ({
@@ -42,7 +43,22 @@ const DateSelect: React.FC<ICalendarSelectProps> = ({
   helperTextClassName,
   dateModifiers,
   required,
+  disabled,
 }) => {
+  const [open, setOpen] = useState(false);
+
+  const handleSelect = useCallback(
+    (newDate: Date | undefined) => {
+      if (newDate !== undefined) {
+        setDate(newDate);
+        setOpen(false);
+      }
+      // When newDate is undefined (e.g. user clicked the already selected date),
+      // do nothing so the selection is not cleared.
+    },
+    [setDate],
+  );
+
   return (
     <div className={cn("space-y-2", className)}>
       {label && (
@@ -50,10 +66,11 @@ const DateSelect: React.FC<ICalendarSelectProps> = ({
           {label} {required && <span className="text-destructive">*</span>}
         </Label>
       )}
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild className="">
           <Button
             variant="outline"
+            disabled={disabled}
             data-empty={!date}
             className={cn(
               "data-[empty=true]:text-muted-foreground w-full justify-start text-left font-normal",
@@ -73,7 +90,7 @@ const DateSelect: React.FC<ICalendarSelectProps> = ({
             mode="single"
             selected={date}
             captionLayout="dropdown"
-            onSelect={setDate}
+            onSelect={handleSelect}
             modifiers={dateModifiers}
           />
         </PopoverContent>

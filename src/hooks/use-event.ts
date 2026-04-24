@@ -12,6 +12,7 @@ interface IEventParams {
   categoryId?: string;
   status?: "UPCOMING" | "PAST";
   priceType?: "FREE" | "EXTERNAL_LINK" | "PAID";
+  isTrending?: boolean;
 }
 
 const getEvents = async (page: number = 1, params: IEventParams) => {
@@ -26,7 +27,8 @@ const getEvents = async (page: number = 1, params: IEventParams) => {
   if (params.categoryId) urlParams.set("categoryId", params.categoryId);
   if (params.status) urlParams.set("status", params.status);
   if (params.priceType) urlParams.set("priceType", params.priceType);
-
+  if (params.isTrending)
+    urlParams.set("isTrending", params.isTrending.toString());
   const url = `/events?${urlParams.toString()}`;
   const { data } = await getData<IEventDetailsType[]>(url);
   return data;
