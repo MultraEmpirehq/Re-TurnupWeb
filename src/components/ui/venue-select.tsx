@@ -62,6 +62,7 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
 }) => {
   const [search, setSearch] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const lastSyncedValueRef = useRef<string>("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
   const debouncedSetSearch = useDebouncedCallback((q: string) => {
@@ -87,10 +88,24 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
       label: venue.name,
     }));
   }, [data]);
+  const normalizedSearch = search.trim().toLowerCase();
+  const exactMatch = venueItems.find(
+    (venueItem) => venueItem.label.trim().toLowerCase() === normalizedSearch,
+  );
 
   useEffect(() => {
     const found = venueItems.find((i) => i.value === value);
-    if (found && search !== found.label) setSearch(found.label);
+    if (!found) return;
+
+    const valueChanged = lastSyncedValueRef.current !== value;
+    const searchAlreadyMatches = search === found.label;
+
+    if (valueChanged || searchAlreadyMatches || !search.trim()) {
+      setSearch((currentSearch) =>
+        currentSearch === found.label ? currentSearch : found.label,
+      );
+      lastSyncedValueRef.current = value;
+    }
   }, [value, venueItems, search]);
 
   const handleScroll = useCallback(() => {
@@ -120,6 +135,26 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
     [onChange, venueItems],
   );
 
+  const handleCommitTypedValue = useCallback(() => {
+    const trimmedSearch = search.trim();
+    if (!trimmedSearch) return;
+
+    if (exactMatch) {
+      handleValueChange(exactMatch.value);
+      return;
+    }
+
+    if (allowCreateOption && onCreateOption) {
+      onCreateOption(trimmedSearch);
+    }
+  }, [
+    allowCreateOption,
+    exactMatch,
+    handleValueChange,
+    onCreateOption,
+    search,
+  ]);
+
   return (
     <div className={cn("space-y-1 relative", className)}>
       {label && (
@@ -141,6 +176,13 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
             const v = e?.target?.value ?? "";
             setSearch(v);
             debouncedSetSearch(v);
+          }}
+          onBlur={handleCommitTypedValue}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleCommitTypedValue();
+            }
           }}
           disabled={shouldDisable}
         />

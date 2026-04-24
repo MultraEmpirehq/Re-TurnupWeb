@@ -207,7 +207,7 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
                 }
               }}
               error={fieldState?.error?.message}
-              placeholder="Search venues..."
+              placeholder="Search or type a new venue"
             />
           )}
         />
@@ -223,7 +223,7 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
               fetchingError={fetchingCategoryError}
               refetch={refetch}
               isLoading={isLoading}
-              placeholder="Select a category"
+              placeholder="Select or type a new category"
               items={categoryItems || []}
               item={field.value}
               setItem={(value) => {

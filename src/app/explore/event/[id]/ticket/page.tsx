@@ -9,6 +9,7 @@ import ErrorContainer from "@/components/ui/error-container";
 import { useEvent } from "@/hooks/use-event";
 import { useEventTickets } from "@/hooks/use-ticket.hook";
 import { formatCurrency } from "@/lib/functions";
+import { joinEventChatGroup } from "@/lib/event-chat";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
 import { cn } from "@/lib/utils";
@@ -65,8 +66,15 @@ const TicketPage = () => {
       toast.error("No purchase link is available for this ticket");
       return;
     }
+    if (event && userDetails) {
+      joinEventChatGroup({
+        event,
+        user: userDetails,
+        joinReason: "external",
+      });
+    }
     window.open(selectedTicket.link, "_blank", "noopener,noreferrer");
-  }, [selectedTicket]);
+  }, [event, selectedTicket, userDetails]);
 
   const totalPrice = useMemo(
     () => (selectedTicket?.price?.amount ?? 0) * quantity,
@@ -121,6 +129,20 @@ const TicketPage = () => {
       return;
     }
 
+    if (process.env.NODE_ENV === "development") {
+      if (event) {
+        joinEventChatGroup({
+          event,
+          user: userDetails,
+          joinReason:
+            (selectedTicket?.price?.amount ?? 0) > 0 ? "paid" : "registered",
+        });
+      }
+      toast.success("You joined the event group chat");
+      router.push(ROUTES.MESSAGES.href);
+      return;
+    }
+
     setIsPurchasing(true);
     try {
       const { data } = await postData<
@@ -150,7 +172,7 @@ const TicketPage = () => {
     } finally {
       setIsPurchasing(false);
     }
-  }, [userDetails, selectedTicket, quantity, router]);
+  }, [userDetails, selectedTicket, quantity, router, event]);
 
   const error = eventError || ticketsError;
   const isLoading = !event && !eventError;

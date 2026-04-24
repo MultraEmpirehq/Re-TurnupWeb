@@ -24,6 +24,7 @@ import {
   saveDevMockEvent,
   updateDevMockEvent,
 } from "@/lib/dev-mock-events";
+import { ensureEventChatGroup } from "@/lib/event-chat";
 import Joi from "joi";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -273,6 +274,7 @@ const CreateEvent = () => {
         } else {
           saveDevMockEvent(nextEvent);
         }
+        ensureEventChatGroup(nextEvent, userDetails);
         setStep(1);
         setDraftId(null);
         form.reset();

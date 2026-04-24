@@ -63,6 +63,10 @@ const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
 }) => {
   const [search, setSearch] = useState<string>("");
   const shouldDisable = !!isLoading && items.length === 0 && !fetchingError;
+  const normalizedSearch = search.trim().toLowerCase();
+  const exactMatch = items.find(
+    (contentItem) => contentItem.label.trim().toLowerCase() === normalizedSearch,
+  );
 
   useEffect(() => {
     const selectedItem = items.find(
@@ -72,6 +76,22 @@ const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
       setSearch(selectedItem?.label);
     }
   }, [item, items]);
+
+  const handleCommitTypedValue = () => {
+    const trimmedSearch = search.trim();
+    if (!trimmedSearch) return;
+
+    if (exactMatch) {
+      setItem(exactMatch.value);
+      setSearch(exactMatch.label);
+      return;
+    }
+
+    if (allowCreateOption && onCreateOption) {
+      onCreateOption(trimmedSearch);
+    }
+  };
+
   return (
     <div className={cn("space-y-1 relative", className)}>
       {label && (
@@ -91,6 +111,13 @@ const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
           className={cn("w-full", inputClassName)}
           value={search}
           onChange={(e) => setSearch(e?.target?.value)}
+          onBlur={handleCommitTypedValue}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleCommitTypedValue();
+            }
+          }}
           disabled={shouldDisable}
         />
         {!fetchingError && (

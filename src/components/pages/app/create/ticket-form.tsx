@@ -38,7 +38,6 @@ const ticketItemSchema = Joi.object({
   ticketName: Joi.string().required(),
   ticketPrice: Joi.number().min(0).required(),
   ticketQuantity: Joi.number().min(1).required(),
-  soldCount: Joi.number().min(0).required(),
   visibility: Joi.string().valid("public", "private").required(),
   actionType: Joi.string().valid("paid", "register").required(),
 });
@@ -211,13 +210,6 @@ const TicketForm: React.FC<{
     );
   }, [eventTickets]);
 
-  const totalSoldOrRegistered = useMemo(() => {
-    return (eventTickets ?? []).reduce(
-      (sum, ticket) => sum + Number(ticket.soldCount || 0),
-      0,
-    );
-  }, [eventTickets]);
-
   const onSubmit = useCallback(() => {
     handleNextStep?.();
   }, [handleNextStep]);
@@ -246,19 +238,11 @@ const TicketForm: React.FC<{
         />
 
         {saleMethod && saleMethod !== ESaleMethods.EXTERNAL_LINK && (
-          <div className="grid gap-4 rounded-2xl border border-secondary-100 bg-secondary-50 p-5 md:grid-cols-2">
+          <div className="grid gap-4 rounded-2xl border border-secondary-100 bg-secondary-50 p-5">
             <div>
               <p className="text-sm text-secondary-500">Total event capacity</p>
               <p className="mt-2 text-3xl font-bold text-secondary-950">
                 {totalConfiguredCapacity}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-secondary-500">
-                {saleMethod === ESaleMethods.REGISTER ? "Already registered" : "Already sold"}
-              </p>
-              <p className="mt-2 text-3xl font-bold text-secondary-950">
-                {totalSoldOrRegistered}
               </p>
             </div>
           </div>
@@ -332,11 +316,11 @@ const TicketForm: React.FC<{
           <ul className="mt-3 list-disc space-y-2 pl-5">
             <li>
               <span className="font-medium">Sell on Turnupz:</span> Create public or private
-              paid ticket categories and track sold quantity per category.
+              paid ticket categories so users can choose the available options on the event page.
             </li>
             <li>
               <span className="font-medium">Register:</span> Create public or private
-              registration categories for attendee data capture without payment.
+              registration categories so users can submit their details without payment.
             </li>
             <li>
               <span className="font-medium">External link:</span> Use a red preview CTA that

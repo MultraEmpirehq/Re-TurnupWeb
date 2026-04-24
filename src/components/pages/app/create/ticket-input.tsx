@@ -14,7 +14,7 @@ export interface ITicketType {
   ticketName: string;
   ticketPrice: number;
   ticketQuantity: number;
-  soldCount: number;
+  soldCount?: number;
   visibility: "public" | "private";
   actionType: "paid" | "register";
 }
@@ -35,12 +35,6 @@ const schema = Joi.object({
     "any.required": "Ticket quantity is required",
     "number.min": "Ticket quantity must be at least 1",
   }),
-  soldCount: Joi.number().min(0).required().messages({
-    "number.empty": "Sold count is required",
-    "any.required": "Sold count is required",
-    "number.min": "Sold count cannot be negative",
-    "number.base": "Sold count must be a number",
-  }),
   visibility: Joi.string().valid("public", "private").required().messages({
     "any.only": "Visibility must be public or private",
     "any.required": "Visibility is required",
@@ -55,7 +49,6 @@ const defaultValues: ITicketType = {
   ticketName: "",
   ticketPrice: 0,
   ticketQuantity: 0,
-  soldCount: 0,
   visibility: "public",
   actionType: "paid",
 };
@@ -92,7 +85,11 @@ const TicketInput: React.FC<ITicketInputProps> = ({
 
   const parsedTickets = useMemo(() => tickets.filter(Boolean), [tickets]);
   const totalCapacity = useMemo(
-    () => parsedTickets.reduce((sum, ticket) => sum + (ticket.ticketQuantity || 0), 0),
+    () =>
+      parsedTickets.reduce(
+        (sum, ticket) => sum + Number(ticket.ticketQuantity || 0),
+        0,
+      ),
     [parsedTickets],
   );
 
@@ -104,6 +101,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
           ...data,
           actionType: mode,
           ticketPrice: mode === "register" ? 0 : data.ticketPrice,
+          soldCount: 0,
         },
       ]);
       reset({ ...defaultValues, actionType: mode });
@@ -138,22 +136,22 @@ const TicketInput: React.FC<ITicketInputProps> = ({
       </div>
 
       {parsedTickets.length > 0 && (
-        <div className="space-y-2 mt-7">
+        <div className="mt-7 space-y-2">
           {parsedTickets.map((ticket, index) => (
             <div
               key={`${ticket.ticketName}-${index}`}
-              className="flex items-center gap-6 justify-between flex-1 rounded-xl bg-muted p-3"
+              className="flex flex-1 items-center justify-between gap-6 rounded-xl bg-muted p-3"
             >
-              <div className="flex items-center gap-3 flex-1">
+              <div className="flex flex-1 items-center gap-3">
                 <span className="rounded-md bg-secondary-100 p-2">
                   <TicketIcon />
                 </span>
-                <div className="space-y-1 flex-1">
+                <div className="flex-1 space-y-1">
                   <p className="text-sm font-medium">{ticket.ticketName}</p>
                   <p className="text-xs opacity-70">
                     {ticket.actionType === "register"
-                      ? `${ticket.soldCount} registered of ${ticket.ticketQuantity}`
-                      : `${ticket.soldCount} sold of ${ticket.ticketQuantity} · ${
+                      ? `${ticket.ticketQuantity} registration spots`
+                      : `${ticket.ticketQuantity} tickets · ${
                           ticket.ticketPrice > 0 ? formatCurrency(ticket.ticketPrice) : "Free"
                         }`}
                   </p>
@@ -167,7 +165,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                 variant="ghost"
                 size="sm"
                 type="button"
-                className="text-xs inline-flex items-center gap-2 text-red-500"
+                className="inline-flex items-center gap-2 text-xs text-red-500"
                 onClick={() => handleRemoveTicket(index)}
               >
                 <TrashIcon className="size-4" />
@@ -178,11 +176,11 @@ const TicketInput: React.FC<ITicketInputProps> = ({
       )}
 
       {shouldShowTicketInput && (
-        <div className="space-y-3 mt-7">
+        <div className="mt-7 space-y-3">
           <div className="rounded-md bg-secondary-50 p-3 text-xs text-secondary-900">
             <p>
-              <span className="font-bold">Note:</span> Each category can be public or private.
-              Private categories are meant to be shared by link only.
+              <span className="font-bold">Note:</span> Each category can be public or
+              private. Private categories are meant to be shared by link only.
             </p>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -233,21 +231,6 @@ const TicketInput: React.FC<ITicketInputProps> = ({
 
             <Controller
               control={control}
-              name="soldCount"
-              render={({ field, fieldState }) => (
-                <InputField
-                  label={mode === "register" ? "Already Registered" : "Already Sold"}
-                  type="number"
-                  value={field.value?.toString() || ""}
-                  placeholder="Enter current count"
-                  error={fieldState?.error?.message}
-                  onChange={(e) => field.onChange(Number(e.target.value || "0"))}
-                />
-              )}
-            />
-
-            <Controller
-              control={control}
               name="visibility"
               render={({ field, fieldState }) => (
                 <SelectField
@@ -269,7 +252,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                   variant="outline"
                   size="sm"
                   type="button"
-                  className="text-xs inline-flex items-center gap-2 text-red-500 border-red-300"
+                  className="inline-flex items-center gap-2 border-red-300 text-xs text-red-500"
                   onClick={() => setShowTicketInput(false)}
                 >
                   Cancel
@@ -280,7 +263,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                 variant="outline"
                 size="sm"
                 type="button"
-                className="text-xs inline-flex items-center gap-2"
+                className="inline-flex items-center gap-2 text-xs"
                 onClick={handleSubmit(onSubmit)}
               >
                 Add Category
