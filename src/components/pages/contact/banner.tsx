@@ -1,3 +1,4 @@
+import { ContactUsBanner } from "@/assets/images";
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import CustomImageComponent from "@/components/ui/custom-image.component";
 import React, { memo } from "react";
@@ -6,7 +7,7 @@ const Banner = () => {
   return (
     <div className="aspect-video bg-cover relative rounded-lg overflow-hidden max-h-[400px] w-full">
       <CustomImageComponent
-        src={""}
+        src={ContactUsBanner}
         alt="banner"
         fill
         className="rounded-none"

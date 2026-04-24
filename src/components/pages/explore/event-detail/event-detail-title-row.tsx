@@ -4,6 +4,7 @@ import React, { memo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Share2, ExternalLink, Check } from "lucide-react";
+import { ROUTES } from "@/lib/variables";
 
 interface EventDetailTitleRowProps {
   eventId: string;
@@ -36,7 +37,7 @@ const EventDetailTitleRow = ({
       </Button>
     </div>
     <Button asChild variant="destructive" className="shrink-0 gap-2">
-      <Link href={`/app/events?event=${eventId}`}>
+      <Link href={`${ROUTES.EXPLORE.href}/event/${eventId}/ticket`}>
         Book Now
         <ExternalLink className="size-4" />
       </Link>

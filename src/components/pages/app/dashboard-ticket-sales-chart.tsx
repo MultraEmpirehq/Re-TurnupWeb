@@ -1,16 +1,8 @@
 "use client";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
-import React, { memo } from "react";
+import { IMonthlyTicketsSold } from "@/lib/types";
+import React, { memo, useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-
-const chartData = [
-  { month: "January", sales: 186 },
-  { month: "February", sales: 305 },
-  { month: "March", sales: 237 },
-  { month: "April", sales: 73 },
-  { month: "May", sales: 209 },
-  { month: "June", sales: 214 },
-];
 
 const chartConfig = {
   sales: {
@@ -19,7 +11,18 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-const DashboardTicketChart = () => {
+const DashboardTicketChart: React.FC<{ data?: IMonthlyTicketsSold[] }> = ({
+  data = [],
+}) => {
+  const chartData = useMemo(
+    () =>
+      data.map((item) => ({
+        month: item.label,
+        sales: item.count,
+      })),
+    [data],
+  );
+
   return (
     <div className="w-full">
       <ChartContainer config={chartConfig} className="min-h-[200px] w-full">

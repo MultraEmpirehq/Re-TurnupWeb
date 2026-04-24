@@ -2,8 +2,6 @@ import useUserStore from "@/stores/user-store";
 import axios, { AxiosRequestConfig } from "axios";
 import { toast } from "sonner";
 
-const controller = new AbortController();
-
 const baseURL = `${process.env.NEXT_PUBLIC_BASE_URL}/${process.env.NEXT_PUBLIC_API_VERSION}`;
 
 // Lazy initialization to avoid circular dependency
@@ -11,22 +9,19 @@ const getResetUserDetails = () => useUserStore.getState().clearStore;
 
 const api = axios.create({
   baseURL,
-  signal: controller.signal,
   withCredentials: true,
 });
 
 api.interceptors.response.use(
-  (response) => {
+  (response) => response,
+  (error) => {
     if (
-      response.status === 401 &&
-      response.config.url !== "/auth/login/admin"
+      error?.response?.status === 401 &&
+      error?.config?.url !== "/auth/login/admin"
     ) {
       getResetUserDetails()();
       toast.error("Login expired! Please login again.");
     }
-    return response;
-  },
-  (error) => {
     return Promise.reject(error);
   },
 );
@@ -88,10 +83,6 @@ export const deleteData = <T>(
   options?: AxiosRequestConfig,
 ): TApiRequestResponseType<T | undefined> => {
   return api.delete(url, options);
-};
-
-export const abortOutgoingRequest = () => {
-  controller.abort();
 };
 
 export default api;

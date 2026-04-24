@@ -14,7 +14,7 @@ import { constructErrorMessage } from "@/api/functions";
 import useAuth from "@/hooks/use-auth";
 import { TUserDetails } from "@/stores/user-store";
 import { IUserCheckedCredentials } from "@/lib/types";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/variables";
 
@@ -62,6 +62,8 @@ const loginDefaultValues: IFormValues = {
 
 const AuthPage = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams?.get("redirect");
   const { performAuthOperation } = useAuth();
   const [magicLinkEmail, setMagicLinkEmail] = useState<string | null>(null);
   const [checkedCredentials, setCheckedCredentials] =
@@ -77,8 +79,6 @@ const AuthPage = () => {
       checkedCredentials?.isAccountCreationCompleted
     );
   }, [checkedCredentials]);
-
-  console.log(checkedCredentials);
 
   const schema = useMemo(() => {
     return shouldShowLoginForm ? loginSchema : checkAccountSchema;
@@ -115,9 +115,15 @@ const AuthPage = () => {
             !credentials?.isAccountCreationCompleted ||
             !credentials?.isEmailVerified
           ) {
+            const registerUrl = new URL(
+              `${window.location.origin}/auth/register/{{token}}?email=${body.email}`,
+            );
+            if (redirectTo) {
+              registerUrl.searchParams.set("redirect", redirectTo);
+            }
             await postData("/auth/register", {
               email: body.email,
-              url: "http://localhost:3000/auth/register/{{token}}",
+              url: decodeURIComponent(registerUrl.toString()),
             });
             setMagicLinkEmail(body?.email);
             return;
@@ -130,9 +136,8 @@ const AuthPage = () => {
           "/auth/login",
           body,
         );
-        console.log(data?.data?.user);
         await performAuthOperation(data?.data?.user);
-        router.push(ROUTES.HOME.href);
+        router.push(redirectTo || ROUTES.HOME.href);
       } catch (error) {
         toast.error(
           constructErrorMessage(
@@ -142,7 +147,7 @@ const AuthPage = () => {
         );
       }
     },
-    [checkedCredentials, performAuthOperation, router],
+    [checkedCredentials, performAuthOperation, router, redirectTo],
   );
 
   return (

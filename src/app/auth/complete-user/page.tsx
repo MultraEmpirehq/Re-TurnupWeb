@@ -16,7 +16,7 @@ import { EUserGenders, TUserDetails } from "@/stores/user-store";
 import { joiResolver } from "@hookform/resolvers/joi";
 import Joi from "joi";
 import { CheckIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { memo, useCallback, useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -102,6 +102,8 @@ const CompleteUser = () => {
   const [isValidatingUserName, setIsValidatingUserName] = useState(false);
   const { performAuthOperation } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams?.get("redirect");
   const {
     register,
     control,
@@ -148,7 +150,7 @@ const CompleteUser = () => {
         >("/user", { ...payload, username: username?.trim()?.toLowerCase() });
         await performAuthOperation(data?.data);
         toast.success("Account completed successfully");
-        router.push(ROUTES.HOME.href);
+        router.push(redirectTo || ROUTES.HOME.href);
       } catch (error) {
         toast.error(
           constructErrorMessage(
@@ -158,7 +160,7 @@ const CompleteUser = () => {
         );
       }
     },
-    [router, performAuthOperation],
+    [router, performAuthOperation, redirectTo],
   );
   useEffect(() => {
     const trimmedUsername = username?.trim();
