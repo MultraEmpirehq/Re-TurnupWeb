@@ -149,7 +149,7 @@ const CreateEvent = () => {
     }
   }, [step]);
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 md:space-y-10">
       <DashboardBanner />
       <Steps currentStep={step} />
       <FormProvider {...form}>

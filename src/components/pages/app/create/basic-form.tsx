@@ -129,8 +129,8 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
       : undefined;
   }, [categoriesError]);
   return (
-    <form className="space-y-10">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+    <form className="space-y-6 md:space-y-10">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
         <InputField
           label="Event Name"
           required={true}
@@ -229,7 +229,7 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
         />
         <TextareaField
           label="About Event"
-          className="col-span-2"
+          className="lg:col-span-2"
           required={true}
           error={errors?.description?.message}
           {...register("description")}

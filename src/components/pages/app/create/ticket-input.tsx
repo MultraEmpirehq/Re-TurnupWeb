@@ -97,7 +97,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
           {parsedTickets?.map((ticket, index) => (
             <div
               key={index}
-              className="flex items-center gap-6 justify-between flex-1 bg-muted rounded-md p-2"
+              className="flex items-center gap-3 sm:gap-6 justify-between flex-1 bg-muted rounded-md p-2"
             >
               <div
                 className={cn(
@@ -141,10 +141,10 @@ const TicketInput: React.FC<ITicketInputProps> = ({
               for free tickets and you can only add one free ticket.
             </p>
           </div>
-          <div className="gap-6 grid grid-cols-2">
+          <div className="gap-4 sm:gap-6 grid grid-cols-1 sm:grid-cols-2">
             <InputField
               label="Ticket Name"
-              className="col-span-2"
+              className="sm:col-span-2"
               placeholder="Enter ticket name"
               error={errors?.ticketName?.message}
               {...register("ticketName")}
@@ -205,7 +205,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                 />
               )}
             />
-            <div className="col-span-2 flex-row justify-end flex gap-2">
+            <div className="sm:col-span-2 flex-row justify-end flex gap-2">
               {parsedTickets?.length > 0 && (
                 <Button
                   variant="outline"
