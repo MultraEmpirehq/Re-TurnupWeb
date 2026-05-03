@@ -134,7 +134,7 @@ const MediaUploadForm: React.FC<{
   }, [handleNextStep]);
 
   return (
-    <div className="gap-3 flex flex-col items-center justify-center w-full py-20">
+    <div className="gap-3 flex flex-col items-center justify-center w-full py-10 md:py-20">
       {hasMediaFiles && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-[500px]">
           {mediaFiles.map((file, index) => (
@@ -163,7 +163,7 @@ const MediaUploadForm: React.FC<{
       )}
       <div
         className={cn(
-          "border border-dashed flex flex-col gap-3 items-center justify-center w-full max-w-[500px] rounded-xl relative overflow-hidden min-h-[140px] py-10 px-14",
+          "border border-dashed flex flex-col gap-3 items-center justify-center w-full max-w-[500px] rounded-xl relative overflow-hidden min-h-[140px] py-8 px-6 md:py-10 md:px-14",
         )}
       >
         <Input
@@ -204,7 +204,7 @@ const MediaUploadForm: React.FC<{
           {errorMessage}
         </p>
       )}
-      <div className="w-full max-w-[500px] mt-10 flex flex-row items-center justify-start gap-3">
+      <div className="w-full max-w-[500px] mt-6 md:mt-10 flex flex-row items-center justify-start gap-3">
         <Button
           onClick={handlePreviousStep}
           variant="outline"

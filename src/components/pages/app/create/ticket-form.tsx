@@ -100,8 +100,11 @@ const TicketForm: React.FC<{
     handleNextStep?.();
   }, [handleNextStep]);
   return (
-    <div className="space-y-10 w-full flex flex-col items-center justify-center">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-10 w-full">
+    <div className="space-y-6 md:space-y-10 w-full flex flex-col items-center justify-center">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-6 md:space-y-10 w-full"
+      >
         <Controller
           control={control}
           name="saleMethod"
@@ -142,7 +145,7 @@ const TicketForm: React.FC<{
             )}
           />
         )}
-        <div className="w-full mt-10 flex flex-row items-center justify-start gap-3">
+        <div className="w-full mt-6 md:mt-10 flex flex-row items-center justify-start gap-3">
           <Button
             onClick={handlePreviousStep}
             variant="outline"

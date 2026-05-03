@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 const DashboardPage = () => {
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 md:space-y-10">
       <DashboardBanner />
       <DashboardOverview />
       <DashboardEvents />

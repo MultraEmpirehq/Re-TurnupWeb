@@ -67,12 +67,12 @@ const CoverForm: React.FC<{
     handleNextStep?.();
   }, [handleNextStep]);
   return (
-    <div className="gap-3 flex flex-col items-center justify-center w-full py-20">
+    <div className="gap-3 flex flex-col items-center justify-center w-full py-10 md:py-20">
       <div
         className={cn(
           "border border-dashed flex flex-col gap-3 items-center justify-center w-full max-w-[500px] rounded-xl relative overflow-hidden",
-          !coverImage && "py-10 px-14",
-          coverImage && " p-5",
+          !coverImage && "py-8 px-6 md:py-10 md:px-14",
+          coverImage && "p-4 md:p-5",
         )}
       >
         <Controller
@@ -159,7 +159,7 @@ const CoverForm: React.FC<{
           {errorMessage}
         </p>
       )}
-      <div className="w-full max-w-[500px] mt-10 flex flex-row items-center justify-start gap-3">
+      <div className="w-full max-w-[500px] mt-6 md:mt-10 flex flex-row items-center justify-start gap-3">
         <Button
           onClick={handlePreviousStep}
           variant="outline"

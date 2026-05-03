@@ -18,7 +18,7 @@ api.interceptors.response.use(
     const userDetails = useUserStore.getState().userDetails;
     if (error?.response?.status === 401 && userDetails) {
       getResetUserDetails()();
-      toast.error("Login expired! Please login again.");
+      toast.error("red! Please login again.");
     }
     return Promise.reject(error);
   },

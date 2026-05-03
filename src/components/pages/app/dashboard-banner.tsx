@@ -9,8 +9,8 @@ const DashboardBanner = () => {
     return userDetails?.name || "Anonymous User";
   }, [userDetails]);
   return (
-    <div className="bg-secondary-800 p-4 px-3 rounded-lg space-y-1 text-white">
-      <h1 className="text-[clamp(1.1rem,5vw,1.25rem)] font-medium">
+    <div className="bg-secondary-800 p-4 sm:p-5 rounded-lg space-y-1 text-white">
+      <h1 className="text-base sm:text-lg md:text-xl font-medium">
         Hi, {fullName} 👋
       </h1>
       <p className="text-xs opacity-70">

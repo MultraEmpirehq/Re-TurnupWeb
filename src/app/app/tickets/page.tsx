@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 const TicketPage = () => {
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 md:space-y-10">
       <TicketSearch />
       <TicketList />
     </div>

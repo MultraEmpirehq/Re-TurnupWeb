@@ -64,7 +64,12 @@ const useUserStore = create(
     subscribeWithSelector<TUserStoreType>((set) => ({
       ...initialValue,
       setUserDetails: (userDetails) => set({ userDetails }),
-      clearStore: () => set({ ...initialValue }),
+      clearStore: () =>
+        set({
+          userDetails: null,
+          userToken: null,
+          fetchingUserDetailsError: null,
+        }),
       setIsLoading: (isLoading) => set({ isLoading }),
       setUserToken: (userToken) => set({ userToken }),
     })),
