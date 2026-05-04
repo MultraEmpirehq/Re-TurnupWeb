@@ -14,7 +14,11 @@ const EmptyContainer: React.FC<{
       <EmptyMedia variant="icon">{icon}</EmptyMedia>
       <EmptyTitle>{title}</EmptyTitle>
       <EmptyDescription>{description}</EmptyDescription>
-      {action && <Button>{actionText || "Continue"}</Button>}
+      {action && (
+        <Button onClick={action} type="button">
+          {actionText || "Continue"}
+        </Button>
+      )}
     </Empty>
   );
 };
