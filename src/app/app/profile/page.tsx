@@ -23,7 +23,7 @@ const ProfilePage = () => {
       "Turnupz Vendor";
 
     setVendorName(fullName);
-    setVendorEmail(userDetails?.email || "vendor@turnupz.dev");
+    setVendorEmail(userDetails?.email || "");
   }, [userDetails]);
 
   const initials = useMemo(() => {

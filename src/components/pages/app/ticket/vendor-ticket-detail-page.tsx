@@ -2,26 +2,90 @@
 
 import EmptyContainer from "@/components/ui/empty-container";
 import { Button } from "@/components/ui/button";
-import { useEvents } from "@/hooks/use-event";
-import useUserStore from "@/stores/user-store";
+import { useVendorTicketLedger, VendorTicketLedgerApiRecord } from "@/hooks/use-vendor-tickets";
 import { ArrowLeft, CalendarDays, Mail, MapPin, TicketIcon } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import React, { memo, useMemo } from "react";
-import { buildVendorTicketLedger } from "./ticket-ledger-data";
+import { VendorTicketLedgerRecord } from "./ticket-ledger-data";
+
+const getMoneyAmount = (value: VendorTicketLedgerApiRecord["price"]) =>
+  typeof value === "number" ? value : Number(value?.amount ?? 0);
+
+const getMoneyLabel = (value: VendorTicketLedgerApiRecord["price"]) => {
+  const amount = getMoneyAmount(value);
+  if (typeof value !== "number" && value?.formatted?.withCurrency) {
+    return value.formatted.withCurrency;
+  }
+  if (typeof value !== "number" && value?.currency?.code) {
+    return amount > 0
+      ? new Intl.NumberFormat(value.currency.locale || "en-US", {
+          style: "currency",
+          currency: value.currency.code,
+          maximumFractionDigits: 0,
+        }).format(amount)
+      : "Free";
+  }
+  return amount > 0
+    ? new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: 0,
+      }).format(amount)
+    : "Free";
+};
+
+const formatDate = (value?: string) =>
+  value
+    ? new Intl.DateTimeFormat("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(value))
+    : "";
+
+const mapLedgerApiRecord = (
+  record: VendorTicketLedgerApiRecord,
+): VendorTicketLedgerRecord => ({
+  id: record.ticketId,
+  eventId: record.eventId,
+  date: formatDate(record.issueDate),
+  purchaserName: record.purchaserName,
+  purchaserEmail: record.purchaserEmail,
+  currentHolderName: record.currentHolderName,
+  currentHolderEmail: record.currentHolderEmail,
+  event: record.eventName,
+  category: record.ticketCategory,
+  price: getMoneyLabel(record.price),
+  priceAmount: getMoneyAmount(record.price),
+  quantity: record.quantity,
+  amount: getMoneyLabel(record.amount),
+  amountNumber: getMoneyAmount(record.amount),
+  status:
+    record.transferStatus === "claimed" || record.transferStatus === "transferred"
+      ? "Transferred"
+      : "Not Transferred",
+  entryStatus: record.entryStatus === "checked_in" ? "Checked In" : "Not Checked In",
+  venue: [record.venueName, record.venueAddress].filter(Boolean).join(", "),
+  issueDate: formatDate(record.issueDate),
+  transferDate: undefined,
+  transferredToName: record.currentHolderName,
+  transferredToEmail: record.currentHolderEmail,
+  checkedInAt: formatDate(record.checkedInAt),
+  scannerEmail: record.scannerEmail,
+  ticketCode: record.ticketCode,
+  qrCodeValue: record.qrCodeValue,
+  barcodeValue: record.barcodeValue,
+});
 
 const VendorTicketDetailPage = () => {
   const params = useParams();
   const ticketId = params?.ticketId?.toString() ?? "";
-  const userId = useUserStore((state) => state?.userDetails?.id);
-  const { data } = useEvents({ limit: 50, userId: userId ?? undefined });
-
-  const events = useMemo(
-    () => data?.pages?.flatMap((page) => page?.data ?? []) ?? [],
-    [data],
+  const { data } = useVendorTicketLedger({ page: 1, limit: 100 });
+  const tickets = useMemo(
+    () => (data?.records ?? []).map(mapLedgerApiRecord),
+    [data?.records],
   );
-
-  const tickets = useMemo(() => buildVendorTicketLedger(events), [events]);
   const ticket = useMemo(
     () => tickets.find((entry) => entry.id === ticketId) ?? null,
     [ticketId, tickets],

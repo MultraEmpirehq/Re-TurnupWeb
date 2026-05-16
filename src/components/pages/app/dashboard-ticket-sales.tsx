@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Button } from "@/components/ui/button";
 import { useEvents } from "@/hooks/use-event";
@@ -31,14 +31,34 @@ const getEngagementScore = (event: IEventDetailsType) => {
   );
 };
 
+const compactDescription = (description?: string) => {
+  if (!description) {
+    return "Create and polish a headline event so your featured listing is ready for attendees.";
+  }
+
+  const words = description.trim().split(/\s+/);
+  return words.length > 34
+    ? `${words.slice(0, 34).join(" ")}...`
+    : description;
+};
+
 const DashboardTicketSales = () => {
   const userId = useUserStore((state) => state?.userDetails?.id);
-  const { data } = useEvents({ limit: 20, userId: userId ?? undefined });
-
-  const events = useMemo(
-    () => data?.pages?.flatMap((page) => page?.data ?? []) ?? [],
-    [data],
+  const { data } = useEvents(
+    { limit: 20 },
   );
+  const { data: userEventsData } = useEvents(
+    { limit: 20, userId: userId ?? undefined },
+    { enabled: !!userId },
+  );
+
+  const events = useMemo(() => {
+    const merged = [
+      ...(data?.pages?.flatMap((page) => page?.data ?? []) ?? []),
+      ...(userEventsData?.pages?.flatMap((page) => page?.data ?? []) ?? []),
+    ];
+    return Array.from(new Map(merged.map((event) => [event.id, event])).values());
+  }, [data, userEventsData]);
 
   const spotlightEvent = useMemo<IEventDetailsType | null>(() => {
     if (events.length === 0) {
@@ -69,9 +89,8 @@ const DashboardTicketSales = () => {
           <h2 className="text-[clamp(1.7rem,3vw,2.35rem)] font-bold tracking-tight text-secondary-950">
             {spotlightEvent?.name || "Your next headline event starts here"}
           </h2>
-          <p className="max-w-2xl text-sm text-secondary-500 sm:text-base">
-            {spotlightEvent?.description ||
-              "Create and polish a headline event so your dashboard has a featured listing ready for attendees, creators, and sponsors."}
+          <p className="line-clamp-3 max-w-2xl text-sm leading-6 text-secondary-500">
+            {compactDescription(spotlightEvent?.description)}
           </p>
         </div>
 

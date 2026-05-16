@@ -11,14 +11,25 @@ import {
 import { getRoutesByType } from "@/lib/functions";
 import { ROUTE_TYPE } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import useUserStore, { EUserRoles } from "@/stores/user-store";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React, { memo, useCallback } from "react";
+import { memo, useCallback, useMemo } from "react";
 
 const sideBarRoutes = getRoutesByType(ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV);
 
 const DashboardSideBar = () => {
   const pathname = usePathname();
+  const userDetails = useUserStore((state) => state.userDetails);
+  const isAdmin = userDetails?.role === EUserRoles.ADMIN;
+  const visibleRoutes = useMemo(
+    () =>
+      sideBarRoutes.filter(
+        (route) =>
+          isAdmin || !route.shouldShowIn.includes(ROUTE_TYPE.ADMIN_ONLY),
+      ),
+    [isAdmin],
+  );
   const getIsActive = useCallback(
     (href: string) => pathname === href,
     [pathname],
@@ -34,7 +45,7 @@ const DashboardSideBar = () => {
           />
         </SidebarHeader>
         <SidebarMenu className="space-y-6">
-          {sideBarRoutes.map((route) => {
+          {visibleRoutes.map((route) => {
             const isActive = getIsActive(route?.href);
             return (
               <SidebarMenuItem

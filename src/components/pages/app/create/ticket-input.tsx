@@ -1,5 +1,5 @@
-import Joi from "joi";
-import React, { memo, useCallback, useMemo, useState } from "react";
+﻿import Joi from "joi";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
 import { Label } from "@/components/ui/label";
@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 import InputField from "@/components/ui/input-field";
 import { Button } from "@/components/ui/button";
 import { TicketIcon, TrashIcon } from "lucide-react";
-import { formatCurrency } from "@/lib/functions";
 import SelectField from "@/components/ui/select-field";
+import { AppCurrency, formatAppMoney } from "@/lib/currency";
 
 export interface ITicketType {
   ticketName: string;
@@ -17,7 +17,19 @@ export interface ITicketType {
   soldCount?: number;
   visibility: "public" | "private";
   actionType: "paid" | "register";
+  transferable?: boolean;
+  privateAccessCode?: string;
 }
+
+const createPrivateAccessCode = (ticketName: string) => {
+  const slug = ticketName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 32);
+  return `${slug || "private"}-${Date.now().toString(36)}`;
+};
 
 const schema = Joi.object({
   ticketName: Joi.string().required().messages({
@@ -43,6 +55,8 @@ const schema = Joi.object({
     "any.only": "Action type is required",
     "any.required": "Action type is required",
   }),
+  transferable: Joi.boolean().optional(),
+  privateAccessCode: Joi.string().allow("").optional(),
 });
 
 const defaultValues: ITicketType = {
@@ -51,6 +65,8 @@ const defaultValues: ITicketType = {
   ticketQuantity: 0,
   visibility: "public",
   actionType: "paid",
+  transferable: false,
+  privateAccessCode: "",
 };
 
 interface ITicketInputProps {
@@ -59,6 +75,7 @@ interface ITicketInputProps {
   error?: string;
   errorClassName?: string;
   mode: "paid" | "register";
+  currency: AppCurrency;
 }
 
 const TicketInput: React.FC<ITicketInputProps> = ({
@@ -67,6 +84,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
   error,
   errorClassName,
   mode,
+  currency,
 }) => {
   const [showTicketInput, setShowTicketInput] = useState(false);
   const {
@@ -76,12 +94,16 @@ const TicketInput: React.FC<ITicketInputProps> = ({
     setFocus,
     control,
     setValue,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<ITicketType>({
     defaultValues: { ...defaultValues, actionType: mode },
     resolver: joiResolver(schema),
     mode: "onChange",
   });
+
+  useEffect(() => {
+    reset({ ...defaultValues, actionType: mode, ticketPrice: 0 });
+  }, [mode, reset]);
 
   const parsedTickets = useMemo(() => tickets.filter(Boolean), [tickets]);
   const totalCapacity = useMemo(
@@ -102,6 +124,10 @@ const TicketInput: React.FC<ITicketInputProps> = ({
           actionType: mode,
           ticketPrice: mode === "register" ? 0 : data.ticketPrice,
           soldCount: 0,
+          privateAccessCode:
+            data.visibility === "private"
+              ? data.privateAccessCode || createPrivateAccessCode(data.ticketName)
+              : "",
         },
       ]);
       reset({ ...defaultValues, actionType: mode });
@@ -151,13 +177,21 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                   <p className="text-xs opacity-70">
                     {ticket.actionType === "register"
                       ? `${ticket.ticketQuantity} registration spots`
-                      : `${ticket.ticketQuantity} tickets · ${
-                          ticket.ticketPrice > 0 ? formatCurrency(ticket.ticketPrice) : "Free"
+                      : `${ticket.ticketQuantity} tickets Â· ${
+                          ticket.ticketPrice > 0
+                            ? formatAppMoney(ticket.ticketPrice, currency)
+                            : formatAppMoney(0, currency)
                         }`}
                   </p>
                   <p className="text-[11px] uppercase tracking-[0.18em] text-secondary-400">
-                    {ticket.visibility}
+                    {ticket.visibility} -{" "}
+                    {ticket.transferable ? "transferable" : "non-transferable"}
                   </p>
+                  {ticket.visibility === "private" && ticket.privateAccessCode && (
+                    <p className="text-[11px] text-secondary-400">
+                      Access code: {ticket.privateAccessCode}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -201,8 +235,8 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                     label="Price"
                     value={field.value?.toString() || ""}
                     leftIcon={
-                      <span className="inline-flex w-6 items-center justify-center border-r text-center">
-                        N
+                      <span className="inline-flex min-w-12 items-center justify-center border-r px-2 text-center text-xs font-semibold text-secondary-500">
+                        {currency.code}
                       </span>
                     }
                     type="number"
@@ -246,6 +280,21 @@ const TicketInput: React.FC<ITicketInputProps> = ({
               )}
             />
 
+            <Controller
+              control={control}
+              name="transferable"
+              render={({ field }) => (
+                <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-white px-3 text-sm text-secondary-700">
+                  <input
+                    type="checkbox"
+                    checked={!!field.value}
+                    onChange={(event) => field.onChange(event.target.checked)}
+                  />
+                  <span>Allow attendees to transfer this category</span>
+                </label>
+              )}
+            />
+
             <div className="col-span-full flex justify-end gap-2">
               {parsedTickets.length > 0 && (
                 <Button
@@ -259,7 +308,6 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                 </Button>
               )}
               <Button
-                disabled={!isValid}
                 variant="outline"
                 size="sm"
                 type="button"

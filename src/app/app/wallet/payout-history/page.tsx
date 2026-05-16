@@ -1,41 +1,47 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useVendorPayoutHistory } from "@/hooks/use-vendor-wallet";
 import { ArrowLeft, Banknote, Clock3, Download, Landmark } from "lucide-react";
 import Link from "next/link";
 import React, { memo } from "react";
+import { PriceDetailsType } from "@/lib/types";
 
-const payoutRows = [
-  {
-    id: "PO-10021",
-    date: "Apr 22, 2026",
-    method: "Bank Transfer",
-    amount: "NGN 420,000",
-    fee: "NGN 1,500",
-    net: "NGN 418,500",
-    status: "Completed",
-  },
-  {
-    id: "PO-10016",
-    date: "Apr 18, 2026",
-    method: "Instant Cashout",
-    amount: "NGN 180,000",
-    fee: "NGN 1,500",
-    net: "NGN 178,500",
-    status: "Processing",
-  },
-  {
-    id: "PO-10009",
-    date: "Apr 10, 2026",
-    method: "Vendor Wallet",
-    amount: "NGN 250,000",
-    fee: "NGN 0",
-    net: "NGN 250,000",
-    status: "Completed",
-  },
-];
+const getMoneyAmount = (money?: PriceDetailsType | number) =>
+  typeof money === "number" ? money : Number(money?.amount ?? 0);
+
+const moneyFormatter = (money: PriceDetailsType | number, currency = "USD") => {
+  if (typeof money !== "number" && money.formatted?.withCurrency) {
+    return money.formatted.withCurrency;
+  }
+  const amount = getMoneyAmount(money);
+  const locale = typeof money !== "number" ? money.currency?.locale : "en-US";
+  const code = typeof money !== "number" ? money.currency?.code : currency;
+  return new Intl.NumberFormat(locale || "en-US", {
+    style: "currency",
+    currency: code || currency,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
+const dateFormatter = (value: string) =>
+  new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(value));
 
 const PayoutHistoryPage = () => {
+  const { data: payoutRows = [] } = useVendorPayoutHistory();
+  const totalPaidOut = payoutRows
+    .filter((row) => row.status.toLowerCase() === "completed")
+    .reduce((sum, row) => sum + getMoneyAmount(row.net), 0);
+  const pendingReview = payoutRows
+    .filter((row) => row.status.toLowerCase() !== "completed")
+    .reduce((sum, row) => sum + getMoneyAmount(row.net), 0);
+  const primaryMethod = payoutRows[0]?.method || "No payout method";
+  const primaryCurrency = payoutRows[0]?.net?.currency?.code ?? "USD";
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -71,17 +77,17 @@ const PayoutHistoryPage = () => {
           {
             icon: Banknote,
             label: "Total Paid Out",
-            value: "NGN 848,500",
+            value: moneyFormatter(totalPaidOut, primaryCurrency),
           },
           {
             icon: Clock3,
             label: "Pending Review",
-            value: "NGN 180,000",
+            value: moneyFormatter(pendingReview, primaryCurrency),
           },
           {
             icon: Landmark,
             label: "Primary Method",
-            value: "Bank Transfer",
+            value: primaryMethod,
           },
         ].map((item) => (
           <section
@@ -127,12 +133,18 @@ const PayoutHistoryPage = () => {
                   <td className="px-6 py-5 text-sm font-semibold text-secondary-950">
                     {row.id}
                   </td>
-                  <td className="px-6 py-5 text-sm text-secondary-500">{row.date}</td>
+                  <td className="px-6 py-5 text-sm text-secondary-500">
+                    {dateFormatter(row.date)}
+                  </td>
                   <td className="px-6 py-5 text-sm text-secondary-500">{row.method}</td>
-                  <td className="px-6 py-5 text-sm text-secondary-950">{row.amount}</td>
-                  <td className="px-6 py-5 text-sm text-secondary-500">{row.fee}</td>
+                  <td className="px-6 py-5 text-sm text-secondary-950">
+                    {moneyFormatter(row.amount, row.currency)}
+                  </td>
+                  <td className="px-6 py-5 text-sm text-secondary-500">
+                    {moneyFormatter(row.fee, row.currency)}
+                  </td>
                   <td className="px-6 py-5 text-sm font-semibold text-secondary-950">
-                    {row.net}
+                    {moneyFormatter(row.net, row.currency)}
                   </td>
                   <td className="px-6 py-5">
                     <span className="rounded-full bg-secondary-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-secondary-500">
@@ -141,6 +153,16 @@ const PayoutHistoryPage = () => {
                   </td>
                 </tr>
               ))}
+              {payoutRows.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-6 py-12 text-center text-sm text-secondary-500"
+                  >
+                    No payout history has been recorded yet.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

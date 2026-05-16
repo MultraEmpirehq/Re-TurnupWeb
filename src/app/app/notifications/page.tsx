@@ -1,32 +1,68 @@
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import React, { memo } from "react";
+"use client";
 
-const notificationItems = [
-  {
-    id: 1,
-    title: "New ticket purchase recorded",
-    description:
-      "A new attendee has secured a ticket for your upcoming Turnupz event.",
-    time: "2 hours ago",
-  },
-  {
-    id: 2,
-    title: "Transfer activity detected",
-    description:
-      "One of your purchased tickets was transferred to another attendee.",
-    time: "5 hours ago",
-  },
-  {
-    id: 3,
-    title: "Event performance moved up",
-    description:
-      "Your featured event is gaining stronger attention across the explore feed.",
-    time: "Yesterday",
-  },
-];
+import { Button } from "@/components/ui/button";
+import {
+  IEventNotification,
+  getEventNotifications,
+  subscribeToEventNotifications,
+} from "@/lib/event-notifications";
+import { useVendorNotifications } from "@/hooks/use-vendor-notifications";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import React, { memo, useEffect, useMemo, useState } from "react";
 
 const NotificationsPage = () => {
+  const searchParams = useSearchParams();
+  const [eventNotifications, setEventNotifications] = useState<
+    IEventNotification[]
+  >([]);
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get("q")?.trim() ?? "",
+  );
+  const { data: vendorNotifications = [] } = useVendorNotifications();
+
+  useEffect(() => {
+    const syncNotifications = () => setEventNotifications(getEventNotifications());
+    syncNotifications();
+    return subscribeToEventNotifications(syncNotifications);
+  }, []);
+
+  useEffect(() => {
+    setSearchQuery(searchParams.get("q")?.trim() ?? "");
+  }, [searchParams]);
+
+  const items = useMemo(
+    () =>
+      [
+        ...vendorNotifications,
+        ...eventNotifications.filter(
+          (notification) =>
+            !vendorNotifications.some((item) => item.id === notification.id),
+        ),
+      ].map((notification) => ({
+        id: notification.id,
+        title: notification.title,
+        description: notification.description,
+        time: new Intl.DateTimeFormat("en-US", {
+          month: "short",
+          day: "numeric",
+        }).format(new Date(notification.createdAt)),
+        href: notification.href,
+      })),
+    [eventNotifications, vendorNotifications],
+  );
+
+  const filteredItems = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return items;
+
+    return items.filter((item) =>
+      `${item.title} ${item.description} ${item.time}`
+        .toLowerCase()
+        .includes(query),
+    );
+  }, [items, searchQuery]);
+
   return (
     <section className="space-y-10 pb-24">
       <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -54,12 +90,9 @@ const NotificationsPage = () => {
 
       <div className="grid gap-6 xl:grid-cols-[1.7fr_0.9fr]">
         <div className="space-y-6">
-          {notificationItems.map((item) => (
-            <article
-              key={item.id}
-              className="rounded-[1.75rem] border border-secondary-100 bg-white p-7 shadow-[0_16px_40px_rgba(15,23,42,0.06)]"
-            >
-              <div className="flex items-start justify-between gap-4">
+          {filteredItems.map((item) => {
+            const content = (
+              <>
                 <div>
                   <h2 className="text-xl font-semibold text-secondary-950">
                     {item.title}
@@ -71,9 +104,35 @@ const NotificationsPage = () => {
                 <span className="whitespace-nowrap text-xs uppercase tracking-[0.2em] text-secondary-400">
                   {item.time}
                 </span>
+              </>
+            );
+
+            return item.href ? (
+              <Link
+                key={item.id}
+                href={item.href}
+                className="block rounded-[1.75rem] border border-secondary-100 bg-white p-7 shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition-transform hover:-translate-y-1"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  {content}
+                </div>
+              </Link>
+            ) : (
+              <article
+              key={item.id}
+              className="rounded-[1.75rem] border border-secondary-100 bg-white p-7 shadow-[0_16px_40px_rgba(15,23,42,0.06)]"
+            >
+              <div className="flex items-start justify-between gap-4">
+                {content}
               </div>
             </article>
-          ))}
+            );
+          })}
+          {filteredItems.length === 0 && (
+            <div className="rounded-[1.75rem] border border-dashed border-secondary-200 bg-white p-8 text-center text-sm text-secondary-500">
+              No notifications match your search.
+            </div>
+          )}
         </div>
 
         <aside className="rounded-[1.75rem] border border-secondary-100 bg-secondary-50 p-8 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">

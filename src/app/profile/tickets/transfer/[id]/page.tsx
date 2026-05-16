@@ -63,8 +63,30 @@ function toUserTicketType(ut: UserTicketDetailsResponseType): IUserTicketType {
       quantity: ut.ticket.quantity,
       sold: ut.ticket.sold,
       available: ut.ticket.available,
+      transferable: ut.ticket.transferable,
+      isTransferable: ut.ticket.isTransferable,
     },
   };
+}
+
+function isTicketTransferAllowed(ticket: IUserTicketType | null) {
+  if (!ticket) return false;
+  if (ticket.ticket.isTransferable !== undefined) {
+    return ticket.ticket.isTransferable;
+  }
+  if (ticket.ticket.transferable !== undefined) {
+    return ticket.ticket.transferable;
+  }
+
+  const eventTickets = ticket.ticket.event?.data?.eventTickets ?? [];
+  const matchingCategory = eventTickets.find((eventTicket) => {
+    const ticketName = ticket.ticket.name?.toLowerCase();
+    const ticketType = ticket.ticket.type?.toLowerCase();
+    const categoryName = eventTicket.ticketName?.toLowerCase();
+    return categoryName === ticketName || categoryName === ticketType;
+  });
+
+  return !!matchingCategory?.transferable;
 }
 
 function formatDisplayDate(value?: Date | string | null, pattern = "dd/MM/yyyy, hh:mm a") {
@@ -124,6 +146,7 @@ export default function TransferTicketPage() {
   }, [data, userTicketId]);
 
   const transfer = ticket?.transfer;
+  const transferAllowed = isTicketTransferAllowed(ticket);
   const event = ticket?.ticket?.event?.data;
   const quantity = 1;
   const priceAmount = ticket?.ticket?.price?.amount ?? 0;
@@ -159,6 +182,11 @@ export default function TransferTicketPage() {
   const onSubmit = useCallback(
     async (body: ITransferFormValues) => {
       try {
+        if (!transferAllowed) {
+          toast.error("This ticket category is not transferable");
+          return;
+        }
+
         const claimUrl = `${window.location.origin}/tickets/claim/{{transferId}}`;
         await postData<ITransferBody, unknown>("/ticket/transfer", {
           userTicketId,
@@ -176,7 +204,7 @@ export default function TransferTicketPage() {
         );
       }
     },
-    [userTicketId, router],
+    [userTicketId, router, transferAllowed],
   );
 
   if (isLoading) {
@@ -418,7 +446,7 @@ export default function TransferTicketPage() {
               </div>
             </div>
 
-            {!transfer ? (
+            {!transfer && transferAllowed ? (
               <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
                 <div>
                   <p className="text-sm font-semibold text-white">Send this ticket</p>
@@ -445,6 +473,23 @@ export default function TransferTicketPage() {
                   Transfer Ticket
                 </Button>
               </form>
+            ) : !transferAllowed ? (
+              <div className="mt-8 rounded-[24px] border border-amber-400/20 bg-white/5 p-5">
+                <p className="text-sm font-semibold text-white">
+                  Transfer disabled
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  The event organizer has not enabled transfers for this ticket
+                  category.
+                </p>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="mt-4 h-11 w-full rounded-full border-white/20 bg-transparent text-white hover:bg-white/10"
+                >
+                  <Link href={ROUTES.PROFILE_TICKETS.href}>Back to My Tickets</Link>
+                </Button>
+              </div>
             ) : (
               <div className="mt-8 rounded-[24px] border border-sky-400/20 bg-white/5 p-5">
                 <p className="text-sm font-semibold text-white">Transfer complete</p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useVendorPayoutHistory, useVendorWallet } from "@/hooks/use-vendor-wallet";
 import {
   ArrowLeft,
   Globe2,
@@ -10,8 +11,29 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import React, { memo } from "react";
+import { PriceDetailsType } from "@/lib/types";
+
+const moneyFormatter = (money: PriceDetailsType | number, currency = "USD") => {
+  if (typeof money !== "number" && money.formatted?.withCurrency) {
+    return money.formatted.withCurrency;
+  }
+  const amount = typeof money === "number" ? money : Number(money?.amount ?? 0);
+  const locale = typeof money !== "number" ? money.currency?.locale : "en-US";
+  const code = typeof money !== "number" ? money.currency?.code : currency;
+  return new Intl.NumberFormat(locale || "en-US", {
+    style: "currency",
+    currency: code || currency,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
 
 const TreasuryPage = () => {
+  const { data: wallet } = useVendorWallet();
+  const { data: payouts = [] } = useVendorPayoutHistory();
+  const currency = wallet?.balances.currency ?? "USD";
+  const configuredCards = wallet?.savedCards.length ?? 0;
+  const payoutMethods = new Set(payouts.map((payout) => payout.method).filter(Boolean));
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -41,26 +63,26 @@ const TreasuryPage = () => {
           {
             icon: WalletCards,
             title: "Liquidity Ready",
-            value: "NGN 2.45M",
+            value: moneyFormatter(wallet?.balances.availableBalance ?? 0, currency),
             text: "Available for withdrawal and transfer release.",
           },
           {
             icon: ShieldCheck,
             title: "Protected Reserve",
-            value: "NGN 180K",
+            value: moneyFormatter(wallet?.balances.reservedBalance ?? 0, currency),
             text: "Held for payout checks, refunds, and disputes.",
           },
           {
             icon: Globe2,
             title: "Cross-Border Capacity",
-            value: "6 countries",
-            text: "Configured routes ready for beneficiary transfers.",
+            value: `${payoutMethods.size} routes`,
+            text: "Active payout routes used for recent settlement activity.",
           },
           {
             icon: Landmark,
             title: "Settlement Accounts",
-            value: "3 accounts",
-            text: "Bank rails and internal wallets stored for release.",
+            value: `${configuredCards} cards`,
+            text: "Saved payment methods available for wallet operations.",
           },
         ].map((item) => (
           <section
@@ -104,13 +126,11 @@ const TreasuryPage = () => {
             Treasury Note
           </p>
           <h2 className="mt-3 text-2xl font-semibold">
-            Wallet APIs can plug into this screen later
+            Keep treasury controls ready before every payout
           </h2>
           <p className="mt-3 text-sm leading-6 text-white/75">
-            The structure is already here for balances, payout reviews,
-            reserve checks, card management, and multi-country transfers. A
-            live wallet API would mainly replace the demo values and action
-            handlers with real finance data.
+            Review balances, reserves, saved payment methods, and payout routes
+            before releasing funds to banks, venues, teams, or collaborators.
           </p>
         </section>
       </div>

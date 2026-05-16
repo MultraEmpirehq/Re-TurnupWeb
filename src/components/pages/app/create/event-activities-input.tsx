@@ -107,7 +107,7 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
     [eventActivities, setEventActivities, setShowActivityInput, reset],
   );
   return (
-    <div className="space-y-6 col-span-2">
+    <div className="space-y-6 lg:col-span-2">
       <Label className="opacity-70">Event Activities</Label>
 
       {parsedEventActivities?.length > 0 &&
@@ -137,7 +137,7 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
         ))}
       {shouldShowActivityInput && (
         <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <InputField
               label="Name"
               error={errors?.activityName?.message}

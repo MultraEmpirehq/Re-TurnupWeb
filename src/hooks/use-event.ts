@@ -1,5 +1,4 @@
 import { getData } from "@/api";
-import { getDevMockEventById, getDevMockEvents } from "@/lib/dev-mock-events";
 import { IEventDetailsType } from "@/lib/types";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
@@ -16,55 +15,71 @@ interface IEventParams {
   isTrending?: boolean;
 }
 
-const applyEventFilters = (
-  events: IEventDetailsType[],
-  params: IEventParams,
-): IEventDetailsType[] => {
-  const now = new Date();
-
-  return events.filter((event) => {
-    const eventDate = event.date ? new Date(event.date) : null;
-    const eventText = `${event.name ?? ""} ${event.description ?? ""} ${event.venue?.name ?? ""}`
-      .toLowerCase()
-      .trim();
-
-    if (params.q && !eventText.includes(params.q.toLowerCase())) {
-      return false;
-    }
-
-    if (params.venueId && event.venue?.id !== params.venueId) {
-      return false;
-    }
-
-    if (params.startDate && eventDate && eventDate < new Date(params.startDate)) {
-      return false;
-    }
-
-    if (params.endDate && eventDate && eventDate > new Date(params.endDate)) {
-      return false;
-    }
-
-    if (params.status === "PAST" && eventDate && eventDate >= now) {
-      return false;
-    }
-
-    if (params.status === "UPCOMING" && eventDate && eventDate < now) {
-      return false;
-    }
-
-    return true;
-  });
+type NormalizedEventsResponse = {
+  data: IEventDetailsType[];
+  pagination?: {
+    nextPage?: number;
+    page?: number;
+    totalPages?: number;
+  };
 };
 
-const getEvents = async (page: number = 1, params: IEventParams) => {
-  const devMockEvents =
-    process.env.NODE_ENV === "development"
-      ? applyEventFilters(getDevMockEvents(), params)
-      : [];
+const normalizeEventsResponse = (payload: any): NormalizedEventsResponse => {
+  if (Array.isArray(payload)) {
+    return { data: payload };
+  }
 
+  if (!payload || typeof payload !== "object") {
+    return { data: [] };
+  }
+
+  // Handles: { data: [...], meta: {...}, pagination: {...} }
+  if (Array.isArray(payload.data)) {
+    return {
+      data: payload.data,
+      pagination: payload.pagination || payload.meta,
+    };
+  }
+
+  // Handles Axios-style or custom wrapper: { data: { data: [...] } }
+  if (payload.data && typeof payload.data === "object") {
+    const inner = payload.data;
+
+    if (Array.isArray(inner.data)) {
+      return {
+        data: inner.data,
+        pagination: inner.pagination || inner.meta || payload.pagination,
+      };
+    }
+
+    if (Array.isArray(inner.events)) {
+      return {
+        data: inner.events,
+        pagination: inner.pagination || inner.meta || payload.pagination,
+      };
+    }
+  }
+
+  // Handles: { events: [...] }
+  if (Array.isArray(payload.events)) {
+    return {
+      data: payload.events,
+      pagination: payload.pagination || payload.meta,
+    };
+  }
+
+  return { data: [] };
+};
+
+const getEvents = async (
+  page: number = 1,
+  params: IEventParams = {},
+): Promise<NormalizedEventsResponse> => {
   const urlParams = new URLSearchParams();
+
   urlParams.set("page", page.toString());
   urlParams.set("limit", params.limit?.toString() || "10");
+
   if (params.q) urlParams.set("q", params.q);
   if (params.startDate) urlParams.set("startDate", params.startDate);
   if (params.endDate) urlParams.set("endDate", params.endDate);
@@ -73,45 +88,21 @@ const getEvents = async (page: number = 1, params: IEventParams) => {
   if (params.categoryId) urlParams.set("categoryId", params.categoryId);
   if (params.status) urlParams.set("status", params.status);
   if (params.priceType) urlParams.set("priceType", params.priceType);
-  if (params.isTrending)
+  if (params.isTrending !== undefined) {
     urlParams.set("isTrending", params.isTrending.toString());
-  const url = `/events?${urlParams.toString()}`;
-  try {
-    const { data } = await getData<IEventDetailsType[]>(url);
-
-    if (devMockEvents.length === 0) {
-      return data;
-    }
-
-    return {
-      ...data,
-      data: [...devMockEvents, ...(data?.data ?? [])],
-      pagination: {
-        ...data.pagination,
-        total: (data?.pagination?.total ?? 0) + devMockEvents.length,
-      },
-    };
-  } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      return {
-        data: devMockEvents,
-        meta: {
-          nextLink: null,
-          previousLink: null,
-          presentLink: null,
-        },
-        pagination: {
-          presentPage: page,
-          total: devMockEvents.length,
-          limit: params.limit ?? devMockEvents.length,
-          previousPage: null,
-          nextPage: null,
-          totalPage: 1,
-        },
-      };
-    }
-    throw error;
   }
+
+  const url = `/events?${urlParams.toString()}`;
+
+  const response = await getData<any>(url);
+
+  console.log("RAW EVENTS HOOK RESPONSE:", response);
+
+  const normalized = normalizeEventsResponse(response);
+
+  console.log("NORMALIZED EVENTS HOOK RESPONSE:", normalized);
+
+  return normalized;
 };
 
 export interface IUseEventsOptions {
@@ -124,24 +115,35 @@ export const useEvents = (
 ) => {
   return useInfiniteQuery({
     queryKey: ["events", params],
-    queryFn: ({ pageParam }) => getEvents(pageParam, params ?? {}),
+    queryFn: ({ pageParam = 1 }) => getEvents(Number(pageParam), params ?? {}),
     initialPageParam: 1,
-    getNextPageParam: (lastPage) => lastPage?.pagination?.nextPage,
+    getNextPageParam: (lastPage) => {
+      return lastPage?.pagination?.nextPage || undefined;
+    },
     enabled: options?.enabled ?? true,
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 };
 
-const getEvent = async (id: string) => {
-  if (process.env.NODE_ENV === "development") {
-    const mockEvent = getDevMockEventById(id);
-    if (mockEvent) {
-      return mockEvent;
-    }
-  }
+const normalizeSingleEventResponse = (payload: any): IEventDetailsType | null => {
+  if (!payload) return null;
 
+  if (payload.id) return payload;
+
+  if (payload.data?.id) return payload.data;
+
+  if (payload.data?.data?.id) return payload.data.data;
+
+  return null;
+};
+
+const getEvent = async (id: string) => {
   const url = `/event/${id}`;
-  const { data } = await getData<IEventDetailsType>(url);
-  return data?.data;
+
+  const response = await getData<any>(url);
+
+  return normalizeSingleEventResponse(response);
 };
 
 export const useEvent = (id: string) => {
@@ -149,5 +151,7 @@ export const useEvent = (id: string) => {
     queryKey: ["event", id],
     queryFn: () => getEvent(id),
     enabled: !!id,
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 };

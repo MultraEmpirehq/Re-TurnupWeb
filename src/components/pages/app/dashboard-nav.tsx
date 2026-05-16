@@ -1,14 +1,15 @@
-"use client";
+﻿"use client";
 
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
-import { BellIcon, MenuIcon, SettingsIcon } from "lucide-react";
+import { BellIcon, MenuIcon, SearchIcon, SettingsIcon } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import React, { memo, useMemo, useState } from "react";
 
 const dashboardLinks = [
@@ -22,8 +23,10 @@ const dashboardLinks = [
 
 const DashboardNav = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const userDetails = useUserStore((state) => state.userDetails);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [navSearchQuery, setNavSearchQuery] = useState("");
 
   const fallBackName = useMemo(() => {
     if (!userDetails) return "TZ";
@@ -38,9 +41,48 @@ const DashboardNav = () => {
     return userDetails?.name || "Turnupz Vendor";
   }, [userDetails]);
 
+  const getSearchTarget = (query: string) => {
+    const normalizedQuery = query.toLowerCase();
+
+    if (pathname.startsWith(ROUTES.TICKETS.href)) return ROUTES.TICKETS.href;
+    if (pathname.startsWith(ROUTES.MESSAGES.href)) return ROUTES.MESSAGES.href;
+    if (pathname.startsWith(ROUTES.WALLET.href)) return ROUTES.WALLET.href;
+    if (pathname.startsWith(ROUTES.NOTIFICATIONS.href)) {
+      return ROUTES.NOTIFICATIONS.href;
+    }
+
+    if (normalizedQuery.includes("ticket") || normalizedQuery.includes("scan")) {
+      return ROUTES.TICKETS.href;
+    }
+    if (normalizedQuery.includes("chat") || normalizedQuery.includes("message")) {
+      return ROUTES.MESSAGES.href;
+    }
+    if (
+      normalizedQuery.includes("wallet") ||
+      normalizedQuery.includes("payout") ||
+      normalizedQuery.includes("transfer")
+    ) {
+      return ROUTES.WALLET.href;
+    }
+    if (normalizedQuery.includes("notification") || normalizedQuery.includes("alert")) {
+      return ROUTES.NOTIFICATIONS.href;
+    }
+
+    return ROUTES.EVENTS.href;
+  };
+
+  const handleNavSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = navSearchQuery.trim();
+    if (!query) return;
+
+    setIsMobileMenuOpen(false);
+    router.push(`${getSearchTarget(query)}?q=${encodeURIComponent(query)}`);
+  };
+
   return (
     <div className="fixed inset-x-0 top-0 z-50 border-b border-secondary-100/80 bg-white/95 backdrop-blur-xl">
-      <SectionContainer className="py-3">
+      <SectionContainer className="max-w-[1800px] py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link
@@ -81,6 +123,24 @@ const DashboardNav = () => {
                 );
               })}
             </nav>
+          </div>
+
+          <div className="hidden min-w-[18rem] max-w-xl flex-1 xl:block">
+            <form onSubmit={handleNavSearch} className="relative">
+              <Input
+                value={navSearchQuery}
+                onChange={(event) => setNavSearchQuery(event.target.value)}
+                placeholder="Search events, tickets, chats"
+                className="h-11 rounded-2xl border-secondary-100 bg-secondary-50 pl-4 pr-11 text-sm shadow-none"
+              />
+              <button
+                type="submit"
+                className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-secondary-400 hover:bg-white hover:text-secondary-700"
+                aria-label="Search vendor workspace"
+              >
+                <SearchIcon className="size-4" />
+              </button>
+            </form>
           </div>
 
           <div className="flex items-center gap-2">
@@ -125,6 +185,21 @@ const DashboardNav = () => {
 
         {isMobileMenuOpen && (
           <div className="mt-3 flex flex-col gap-2 rounded-3xl border border-secondary-100 bg-white p-3 lg:hidden">
+            <form onSubmit={handleNavSearch} className="relative">
+              <Input
+                value={navSearchQuery}
+                onChange={(event) => setNavSearchQuery(event.target.value)}
+                placeholder="Search vendor workspace"
+                className="h-11 rounded-2xl border-secondary-100 bg-secondary-50 pl-4 pr-11 text-sm shadow-none"
+              />
+              <button
+                type="submit"
+                className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-secondary-400 hover:bg-white hover:text-secondary-700"
+                aria-label="Search vendor workspace"
+              >
+                <SearchIcon className="size-4" />
+              </button>
+            </form>
             {dashboardLinks.map((link) => {
               const isActive =
                 pathname === link.href || pathname.startsWith(`${link.href}/`);

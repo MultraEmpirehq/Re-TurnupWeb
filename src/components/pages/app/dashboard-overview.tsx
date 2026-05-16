@@ -1,12 +1,37 @@
-"use client";
+﻿"use client";
 
 import { useEvents } from "@/hooks/use-event";
+import { useVendorTicketAnalytics } from "@/hooks/use-vendor-tickets";
+import { AppCurrency, formatAppMoney, getCurrencyForCountry } from "@/lib/currency";
+import { PriceDetailsType } from "@/lib/types";
 import useUserStore from "@/stores/user-store";
 import Link from "next/link";
 import React, { memo, useMemo } from "react";
 
 const formatMetricValue = (value: number) => {
   return value.toLocaleString();
+};
+
+type RevenueValue = PriceDetailsType | number | undefined;
+
+const getMoneyAmount = (value: RevenueValue) => {
+  if (typeof value === "number") return value;
+  return Number(value?.amount ?? 0);
+};
+
+const formatMoney = (value: RevenueValue, fallbackCurrency: AppCurrency) => {
+  if (typeof value !== "number" && value?.formatted?.withCurrency) {
+    return value.formatted.withCurrency;
+  }
+  const amount = getMoneyAmount(value);
+  if (typeof value !== "number" && value?.currency?.code) {
+    return new Intl.NumberFormat(value.currency.locale || "en-US", {
+      style: "currency",
+      currency: value.currency.code,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  }
+  return formatAppMoney(amount, fallbackCurrency);
 };
 
 const OverviewMetricCard: React.FC<{
@@ -35,15 +60,78 @@ const OverviewMetricCard: React.FC<{
 };
 
 const DashboardOverview = () => {
-  const userId = useUserStore((state) => state?.userDetails?.id);
-  const { data } = useEvents({ limit: 50, userId: userId ?? undefined });
-
-  const events = useMemo(
-    () => data?.pages?.flatMap((page) => page?.data ?? []) ?? [],
-    [data],
+  const userDetails = useUserStore((state) => state?.userDetails);
+  const userId = userDetails?.id;
+  const platformCurrency = useMemo(
+    () =>
+      getCurrencyForCountry(
+        userDetails?.platformCurrency ||
+          userDetails?.countryCode ||
+          userDetails?.country,
+    ),
+    [userDetails?.country, userDetails?.countryCode, userDetails?.platformCurrency],
+  );
+  const { data } = useEvents({ limit: 50 });
+  const { data: userEventsData } = useEvents(
+    { limit: 50, userId: userId ?? undefined },
+    { enabled: !!userId },
+  );
+  const { data: ticketAnalyticsResponse } = useVendorTicketAnalytics({});
+  const ticketAnalytics = useMemo(
+    () => ticketAnalyticsResponse?.rows ?? [],
+    [ticketAnalyticsResponse?.rows],
   );
 
+  const events = useMemo(() => {
+    const merged = [
+      ...(data?.pages?.flatMap((page) => page?.data ?? []) ?? []),
+      ...(userEventsData?.pages?.flatMap((page) => page?.data ?? []) ?? []),
+    ];
+    return Array.from(new Map(merged.map((event) => [event.id, event])).values());
+  }, [data, userEventsData]);
+
   const metrics = useMemo(() => {
+    const totalAttendance =
+      ticketAnalytics.reduce(
+        (sum, item) => sum + (item.attended ?? item.totalAttended ?? 0),
+        0,
+      );
+    const totalRevenue = (() => {
+      const revenueByCurrency = ticketAnalyticsResponse?.revenueByCurrency ?? [];
+      if (revenueByCurrency.length > 0) {
+        return revenueByCurrency
+          .map((item) => {
+            if (item.revenue) return formatMoney(item.revenue, platformCurrency);
+            const amount = Number(item.amount ?? 0);
+            if (item.currency?.code || item.currencyCode) {
+              return new Intl.NumberFormat(
+                item.currency?.locale || platformCurrency.locale,
+                {
+                  style: "currency",
+                  currency:
+                    item.currency?.code ||
+                    item.currencyCode ||
+                    platformCurrency.code,
+                  maximumFractionDigits: 0,
+                },
+              ).format(amount);
+            }
+            return formatAppMoney(amount, platformCurrency);
+          })
+          .join(" + ");
+      }
+
+      if (ticketAnalyticsResponse?.revenue) {
+        return formatMoney(ticketAnalyticsResponse.revenue, platformCurrency);
+      }
+
+      const amount = ticketAnalytics.reduce(
+        (sum, item) => sum + getMoneyAmount(item.revenue),
+        0,
+      );
+      return formatAppMoney(amount, platformCurrency);
+    })();
+
     return [
       {
         title: "Total Events",
@@ -53,18 +141,18 @@ const DashboardOverview = () => {
       },
       {
         title: "Total Attendance",
-        value: "0",
-        pill: "Pending",
-        caption: "Attendance will update when backend registrations are connected",
+        value: formatMetricValue(totalAttendance),
+        pill: "Checked In",
+        caption: "Confirmed attendance from ticket scans and registrations",
       },
       {
         title: "Total Revenue",
-        value: "$0.00",
-        pill: "Pending",
-        caption: "Revenue will update when backend ticket sales are connected",
+        value: totalRevenue,
+        pill: "Sales",
+        caption: "Revenue from paid ticket activity across your events",
       },
     ];
-  }, [events]);
+  }, [events.length, platformCurrency, ticketAnalytics, ticketAnalyticsResponse]);
 
   return (
     <section className="space-y-8">

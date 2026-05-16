@@ -167,6 +167,34 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Create Event",
     href: "/app/create",
   },
+  VENUES: {
+    shouldShowIn: [
+      ROUTE_TYPE.APP_ROUTE,
+      ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV,
+      ROUTE_TYPE.ADMIN_ONLY,
+    ],
+    label: "Venues",
+    href: "/app/venues",
+  },
+  CATEGORIES: {
+    shouldShowIn: [
+      ROUTE_TYPE.APP_ROUTE,
+      ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV,
+      ROUTE_TYPE.ADMIN_ONLY,
+    ],
+    label: "Categories",
+    href: "/app/categories",
+  },
+  CREATE_VENUE: {
+    shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.ADMIN_ONLY],
+    label: "Create Venue",
+    href: "/app/create-venue",
+  },
+  CREATE_CATEGORY: {
+    shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.ADMIN_ONLY],
+    label: "Create Category",
+    href: "/app/create-category",
+  },
   EVENTS: {
     shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV],
     label: "Manage Posts",

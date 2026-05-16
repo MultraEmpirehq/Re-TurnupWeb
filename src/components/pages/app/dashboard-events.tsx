@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { deleteData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
@@ -15,18 +15,12 @@ import EmptyContainer from "@/components/ui/empty-container";
 import ErrorContainer from "@/components/ui/error-container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEvents } from "@/hooks/use-event";
-import {
-  deleteDevMockEvent,
-  getDevMockEvents,
-  isDevelopmentClient,
-  subscribeToDevMockEvents,
-} from "@/lib/dev-mock-events";
 import { IEventDetailsType } from "@/lib/types";
 import useUserStore from "@/stores/user-store";
 import { CalendarDays, MapPin, Ticket } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { memo, useEffect, useMemo, useState } from "react";
+import React, { memo, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 const formatEventDate = (date: Date | string) => {
@@ -50,8 +44,17 @@ const EventManagementCard: React.FC<{
     event.description || "Complete this event listing so attendees know what to expect.";
 
   return (
-    <article className="rounded-[1.35rem] border border-secondary-100 bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition-transform hover:-translate-y-1 sm:rounded-[1.6rem] sm:p-5">
-      <div className="mb-4 flex flex-col gap-3">
+    <article className="overflow-hidden rounded-[1.35rem] border border-secondary-100 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition-transform hover:-translate-y-1 sm:rounded-[1.6rem]">
+      <div
+        className="h-40 bg-secondary-50 bg-cover bg-center"
+        style={{
+          backgroundImage: event.image
+            ? `linear-gradient(180deg, rgba(15,23,42,0.04), rgba(15,23,42,0.22)), url(${event.image})`
+            : "linear-gradient(135deg, rgba(56,189,248,0.16), rgba(14,165,233,0.08))",
+        }}
+      />
+      <div className="px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+      <div className="mb-4 flex flex-col gap-2">
         <div className="space-y-3">
           <h3 className="text-[1.2rem] font-semibold leading-tight text-secondary-950 sm:text-[1.35rem]">
             {event.name}
@@ -60,17 +63,7 @@ const EventManagementCard: React.FC<{
             {eventDescription}
           </p>
         </div>
-        <span className="w-fit rounded-full bg-secondary-50 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-secondary-400">
-          {badgeLabel}
-        </span>
       </div>
-
-      <Link
-        href={`/app/events/${event.id}`}
-        className="mb-4 inline-flex text-xs font-semibold uppercase tracking-[0.28em] text-secondary-950 transition-colors hover:text-secondary-500"
-      >
-        More
-      </Link>
 
       <div className="mb-5 overflow-hidden rounded-[1rem] border border-secondary-100 bg-secondary-50/70">
         <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0 text-sm">
@@ -128,6 +121,7 @@ const EventManagementCard: React.FC<{
           Delete
         </Button>
       </div>
+      </div>
     </article>
   );
 };
@@ -172,13 +166,10 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
 }) => {
   const router = useRouter();
   const userId = useUserStore((state) => state?.userDetails?.id);
-  const [devMockEvents, setDevMockEvents] = useState<IEventDetailsType[]>([]);
-  const [hasMounted, setHasMounted] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<IEventDetailsType | null>(
     null,
   );
   const [isDeleting, setIsDeleting] = useState(false);
-  const useDevMockData = process.env.NODE_ENV === "development" && !userId;
 
   const {
     data,
@@ -188,37 +179,26 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
     fetchNextPage,
     isFetchingNextPage,
   } = useEvents(
+    { limit: isEventPage ? 24 : 6 },
+  );
+  const {
+    data: userEventsData,
+    refetch: refetchUserEvents,
+  } = useEvents(
     { limit: isEventPage ? 24 : 6, userId: userId ?? undefined },
-    { enabled: !!userId || !useDevMockData },
+    { enabled: !!userId },
   );
 
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
+  const events = useMemo(() => {
+    const merged = [
+      ...(data?.pages?.flatMap((page) => page?.data || []) || []),
+      ...(userEventsData?.pages?.flatMap((page) => page?.data || []) || []),
+    ];
+    return Array.from(new Map(merged.map((event) => [event.id, event])).values());
+  }, [data, userEventsData]);
 
-  useEffect(() => {
-    if (!useDevMockData || !isDevelopmentClient()) {
-      return;
-    }
-
-    const syncMockEvents = () => {
-      setDevMockEvents(getDevMockEvents());
-    };
-
-    syncMockEvents();
-    return subscribeToDevMockEvents(syncMockEvents);
-  }, [useDevMockData]);
-
-  const events = useMemo(
-    () =>
-      useDevMockData && hasMounted
-        ? devMockEvents
-        : data?.pages?.flatMap((page) => page?.data || []) || [],
-    [data, devMockEvents, hasMounted, useDevMockData],
-  );
-
-  const isLoading = useDevMockData ? !hasMounted : !data && !error;
-  const shouldShowError = !useDevMockData && !!error && !data;
+  const isLoading = !data && !error;
+  const shouldShowError = !!error && !data;
   const shouldShowEmpty = !isLoading && events.length === 0;
   const sectionTitle = isEventPage
     ? "Manage your published events"
@@ -231,15 +211,9 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
 
     setIsDeleting(true);
     try {
-      if (useDevMockData) {
-        const didDelete = deleteDevMockEvent(eventToDelete.id);
-        if (!didDelete) {
-          throw new Error("Unable to delete this event locally.");
-        }
-      } else {
-        await deleteData(`/event/${eventToDelete.id}`);
-        await refetch();
-      }
+      await deleteData(`/event/${eventToDelete.id}`);
+      await refetch();
+      await refetchUserEvents();
 
       toast.success("Event deleted successfully");
       setEventToDelete(null);
@@ -258,14 +232,20 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-secondary-400">
             Your Events
           </p>
-          <h2 className="text-[clamp(1.8rem,3vw,2.5rem)] font-bold leading-tight tracking-tight text-secondary-950">
-            {sectionTitle}
-          </h2>
+          <div className="space-y-1">
+            <h2 className="text-[clamp(2rem,4vw,3rem)] font-bold leading-[0.95] tracking-tight text-secondary-950">
+              {sectionTitle}
+            </h2>
+            <p className="max-w-2xl text-sm text-secondary-500">
+              Review your active listings, continue drafts, and keep each event
+              ready for promotion.
+            </p>
+          </div>
         </div>
         {!isEventPage && (
           <Link
             href="/app/events"
-            className="text-sm font-medium text-secondary-950 transition-colors hover:text-secondary-500"
+            className="text-sm font-medium text-secondary-500 transition-colors hover:text-secondary-400"
           >
             View Listed Events
           </Link>
@@ -273,7 +253,7 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
       </div>
 
       {(isLoading || events.length > 0) && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid max-w-[78rem] grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {isLoading &&
             Array.from({ length: isEventPage ? 6 : 3 }).map((_, index) => (
               <EventManagementSkeleton key={index} />

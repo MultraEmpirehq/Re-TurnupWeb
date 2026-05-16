@@ -42,7 +42,7 @@ export interface IVenueSelectProps {
   emptyText?: string;
   required?: boolean;
   allowCreateOption?: boolean;
-  onCreateOption?: (venueName: string) => void;
+  onCreateOption?: (venueName: string) => void | { id: string; name: string };
 }
 
 const VenueSelect: React.FC<IVenueSelectProps> = ({
@@ -123,7 +123,6 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
         "Failed to load venues",
       )
     : null;
-  const shouldDisable = isLoading && venueItems.length === 0 && !fetchingError;
 
   const handleValueChange = useCallback(
     (v: string | null) => {
@@ -145,12 +144,18 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
     }
 
     if (allowCreateOption && onCreateOption) {
-      onCreateOption(trimmedSearch);
+      const created = onCreateOption(trimmedSearch);
+      if (created) {
+        onChange(created.id);
+        setSearch(created.name);
+        lastSyncedValueRef.current = created.id;
+      }
     }
   }, [
     allowCreateOption,
     exactMatch,
     handleValueChange,
+    onChange,
     onCreateOption,
     search,
   ]);
@@ -164,10 +169,7 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
           {isLoading && <Spinner className="w-4 h-4 animate-spin" />}
         </div>
       )}
-      <Combobox
-        items={fetchingError ? [] : venueItems}
-        disabled={shouldDisable}
-      >
+      <Combobox items={fetchingError ? [] : venueItems}>
         <ComboboxInput
           placeholder={placeholder}
           className={cn("w-full", inputClassName)}
@@ -184,7 +186,6 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
               handleCommitTypedValue();
             }
           }}
-          disabled={shouldDisable}
         />
         {!fetchingError && (
           <ComboboxContent className="w-full">
@@ -195,7 +196,14 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => onCreateOption(search.trim())}
+                  onClick={() => {
+                    const created = onCreateOption(search.trim());
+                    if (created) {
+                      onChange(created.id);
+                      setSearch(created.name);
+                      lastSyncedValueRef.current = created.id;
+                    }
+                  }}
                 >
                   Use &quot;{search.trim()}&quot;
                 </Button>

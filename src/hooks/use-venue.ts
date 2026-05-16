@@ -16,77 +16,7 @@ interface IVenuesParam {
   state?: string;
 }
 
-const mockVenues: IVenueDetailsType[] = [
-  {
-    id: "mock-venue-downtown-hall",
-    name: "Downtown Hall",
-    address: "101 Jasper Ave, Edmonton, AB",
-    rating: 4.8,
-    totalAvailableSeat: 1200,
-    images: [],
-  },
-  {
-    id: "mock-venue-riverfront-arena",
-    name: "Riverfront Arena",
-    address: "250 Riverfront Dr, Edmonton, AB",
-    rating: 4.7,
-    totalAvailableSeat: 2400,
-    images: [],
-  },
-  {
-    id: "mock-venue-skyline-rooftop",
-    name: "Skyline Rooftop",
-    address: "88 Whyte Ave, Edmonton, AB",
-    rating: 4.5,
-    totalAvailableSeat: 300,
-    images: [],
-  },
-  {
-    id: "mock-venue-warehouse-loft",
-    name: "Warehouse Loft",
-    address: "19 104 St NW, Edmonton, AB",
-    rating: 4.4,
-    totalAvailableSeat: 450,
-    images: [],
-  },
-];
-
-const buildMockVenueResponse = (
-  page: number,
-  params?: IVenuesParam,
-): TApiCallResponseType<IVenueDetailsType[]> => {
-  const query = params?.q?.trim().toLowerCase();
-  const filteredVenues = query
-    ? mockVenues.filter(
-        (venue) =>
-          venue.name.toLowerCase().includes(query) ||
-          venue.address.toLowerCase().includes(query),
-      )
-    : mockVenues;
-
-  return {
-    data: filteredVenues,
-    meta: {
-      nextLink: null,
-      previousLink: null,
-      presentLink: null,
-    },
-    pagination: {
-      presentPage: page,
-      total: filteredVenues.length,
-      limit: filteredVenues.length,
-      previousPage: null,
-      nextPage: null,
-      totalPage: 1,
-    },
-  };
-};
-
 const getVenues = async (page: number = 1, params?: IVenuesParam) => {
-  if (process.env.NODE_ENV === "development") {
-    return buildMockVenueResponse(page, params);
-  }
-
   const urlParams = new URLSearchParams();
   urlParams.set("page", page.toString());
   if (params?.q) urlParams.set("q", params.q);
@@ -96,12 +26,8 @@ const getVenues = async (page: number = 1, params?: IVenuesParam) => {
   if (params?.city) urlParams.set("city", params.city);
   if (params?.state) urlParams.set("state", params.state);
   const url = `/venues?${urlParams.toString()}`;
-  try {
-    const { data } = await getData<IVenueDetailsType[]>(url);
-    return data;
-  } catch (error) {
-    throw error;
-  }
+  const { data } = await getData<IVenueDetailsType[]>(url);
+  return data;
 };
 
 export const useVenues = (params?: IVenuesParam) => {

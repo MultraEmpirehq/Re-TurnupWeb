@@ -25,12 +25,29 @@ const DashboardTicketChart: React.FC<{ data?: IMonthlyTicketsSold[] }> = ({
 
   return (
     <div className="w-full">
-      <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-        <BarChart accessibilityLayer data={chartData}>
+      <ChartContainer
+        config={chartConfig}
+        className="min-h-[200px] w-full max-h-[320px]"
+      >
+        <BarChart
+          accessibilityLayer
+          data={chartData}
+          margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+        >
           <Bar dataKey="sales" fill="#024C6B" radius={4} />
           <CartesianGrid vertical={false} />
-          <XAxis dataKey="month" />
-          <YAxis dataKey="sales" />
+          <XAxis
+            dataKey="month"
+            tick={{ fontSize: 11 }}
+            tickMargin={6}
+            interval="preserveStartEnd"
+          />
+          <YAxis
+            dataKey="sales"
+            tick={{ fontSize: 11 }}
+            width={32}
+            allowDecimals={false}
+          />
         </BarChart>
       </ChartContainer>
     </div>

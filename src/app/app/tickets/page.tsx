@@ -1,4 +1,4 @@
-import TicketList from "@/components/pages/app/ticket/ticket-list";
+﻿import TicketList from "@/components/pages/app/ticket/ticket-list";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React, { memo } from "react";
@@ -17,8 +17,8 @@ const TicketPage = () => {
             Track ticket records and attendee flow
           </h1>
           <p className="max-w-2xl text-sm leading-6 text-secondary-500 sm:text-base">
-            Review ticket activity, scan event-linked records, and keep the
-            vendor-side ticket board ready while backend order data is still being connected.
+            Review ticket activity, manage scanner access, validate entry, and
+            track attendance across your events.
           </p>
         </div>
         <Button

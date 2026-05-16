@@ -7,7 +7,7 @@ const HomeBannerComponent = () => {
   return (
     <div className="py-10 md:py-16">
       <SectionContainer>
-        <div className="w-full aspect-video bg-cover relative rounded-lg overflow-hidden">
+        <div className="w-full aspect-4/5 sm:aspect-16/10 md:aspect-video bg-cover relative rounded-lg overflow-hidden">
           <CustomImageComponent
             src={HomepageBanner}
             alt="banner"
@@ -15,11 +15,11 @@ const HomeBannerComponent = () => {
             className="rounded-none"
             imageClassName="object-cover object-center"
           />
-          <div className="size-full bg-black/60 z-10 flex-col flex text-center gap-6 items-center justify-center relative">
-            <h1 className="text-[clamp(1.1rem,5vw,2.5rem)] font-bold text-white">
+          <div className="size-full bg-black/60 z-10 flex-col flex text-center gap-3 md:gap-6 items-center justify-center relative px-6">
+            <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-bold text-white">
               Discover Amazing Events
             </h1>
-            <p className="text-white opacity-70">
+            <p className="text-white opacity-70 text-sm md:text-base max-w-md md:max-w-xl">
               Download the Turnupz App to find and book the perfect events that
               match your interests
             </p>

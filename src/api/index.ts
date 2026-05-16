@@ -10,15 +10,14 @@ const getResetUserDetails = () => useUserStore.getState().clearStore;
 const api = axios.create({
   baseURL,
   withCredentials: true,
+  timeout: 30000,
 });
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (
-      error?.response?.status === 401 &&
-      error?.config?.url !== "/auth/login/admin"
-    ) {
+    const userDetails = useUserStore.getState().userDetails;
+    if (error?.response?.status === 401 && userDetails) {
       getResetUserDetails()();
       toast.error("Login expired! Please login again.");
     }
@@ -28,11 +27,12 @@ api.interceptors.response.use(
 
 api.interceptors.request.use(
   (config) => {
-    // Not used.. Rely on cookie for authentication
-    // const authToken = useUserStore.getState().userToken;
-    // if (authToken) {
-    //   config.headers.Authorization = `Bearer ${authToken || ""}`;
-    // }
+    const authToken = useUserStore.getState().userToken;
+    if (authToken) {
+      config.headers.Authorization = authToken.startsWith("Bearer ")
+        ? authToken
+        : `Bearer ${authToken}`;
+    }
     return config;
   },
   (error) => {

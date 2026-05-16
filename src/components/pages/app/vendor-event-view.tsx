@@ -1,5 +1,6 @@
 "use client";
 
+import { getData, patchData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import ErrorContainer from "@/components/ui/error-container";
@@ -7,6 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useEvent } from "@/hooks/use-event";
 import {
   IEventActivityDetails,
+  IEventBlogPostDetails,
+  IEventDetailsType,
   IEventPassAssignmentDetails,
   IEventTicketOptionDetails,
 } from "@/lib/types";
@@ -15,11 +18,11 @@ import {
   Clock3,
   MapPin,
   PencilLine,
-  PlayCircle,
   Ticket,
 } from "lucide-react";
 import Link from "next/link";
-import React, { memo, useMemo } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 const formatEventDate = (date: Date | string) =>
   new Intl.DateTimeFormat("en-US", {
@@ -45,47 +48,181 @@ const formatActivityMonth = (date: Date | string) =>
     month: "short",
   }).format(new Date(date));
 
-const formatHeroDay = (date: Date | string) =>
-  new Intl.DateTimeFormat("en-US", {
-    day: "2-digit",
-  }).format(new Date(date));
+const getTicketPriceAmount = (
+  price: IEventTicketOptionDetails["ticketPrice"],
+) => (typeof price === "number" ? price : Number(price?.amount ?? 0));
 
-const formatHeroMonth = (date: Date | string) =>
-  new Intl.DateTimeFormat("en-US", {
-    month: "short",
-  }).format(new Date(date));
-
-const formatHeroTime = (date: Date | string) =>
-  new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    hour12: true,
-  })
-    .format(new Date(date))
-    .replace(/\s/g, "");
-
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
-    maximumFractionDigits: 0,
-  }).format(amount);
+const formatTicketPrice = (price: IEventTicketOptionDetails["ticketPrice"]) => {
+  const amount = getTicketPriceAmount(price);
+  if (amount === 0) return "Free";
+  if (typeof price !== "number" && price?.formatted?.withCurrency) {
+    return price.formatted.withCurrency;
+  }
+  if (typeof price !== "number" && price?.currency?.code) {
+    return new Intl.NumberFormat(price.currency.locale || "en-US", {
+      style: "currency",
+      currency: price.currency.code,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  }
+  return amount.toLocaleString();
+};
 
 const getGuestLabel = (guest: { name?: string; firstName?: string; lastName?: string }) => {
   const fullName = [guest.firstName, guest.lastName].filter(Boolean).join(" ").trim();
   return fullName || guest.name || "Special Guest";
 };
 
+interface PendingRegistration {
+  registrationId: string;
+  ticketId?: string;
+  attendeeTicketId?: string;
+  eventId: string;
+  attendeeName: string;
+  attendeeEmail: string;
+  quantity: number;
+  status: "pending" | "confirmed" | "rejected";
+  createdAt: string;
+}
+
 const TicketPreview: React.FC<{
+  eventId: string;
+  event?: IEventDetailsType;
   eventTickets?: IEventTicketOptionDetails[];
+  saleMethod?: string;
   ticketUrl?: string;
   totalTickets?: number;
   passAssignments?: IEventPassAssignmentDetails[];
-}> = ({ eventTickets, ticketUrl, totalTickets, passAssignments }) => {
+}> = ({
+  eventId,
+  event,
+  eventTickets,
+  saleMethod,
+  ticketUrl,
+  totalTickets,
+  passAssignments,
+}) => {
   const primaryTicket = eventTickets?.[0];
+  const hasTicketSections = (eventTickets?.length ?? 0) > 0;
+  const hasPassSections = (passAssignments?.length ?? 0) > 0;
+  const isRegisterOnly = saleMethod === "register";
+  const previewLabel = isRegisterOnly ? "Register on Turnupz" : "Sell on Turnupz";
+  const [showRegistrationDetails, setShowRegistrationDetails] = useState(false);
+  if (isRegisterOnly) {
+    return (
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={() => setShowRegistrationDetails(true)}
+          className="w-full rounded-[1.2rem] bg-secondary-50 px-4 py-4 text-left transition hover:bg-cyan-50"
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-secondary-400">
+            Registration
+          </p>
+          <p className="mt-2 text-sm font-semibold text-secondary-950">
+            {(event?.registrationCount ?? 0).toLocaleString()} registered
+          </p>
+          <div className="mt-3 grid gap-2 text-xs text-secondary-500">
+            <p>
+              {(event?.remainingRegistrationSpots ?? 0).toLocaleString()} spots left
+            </p>
+            <p>
+              Limit:{" "}
+              {(event?.registrationLimit ?? event?.totalTickets ?? 0).toLocaleString()}
+            </p>
+            <p className="capitalize">Status: {event?.registrationStatus ?? "open"}</p>
+            {event?.requiresApproval && <p>Registration requires approval</p>}
+          </div>
+        </button>
+
+        {showRegistrationDetails && (
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 px-4 py-8">
+            <div className="mx-auto max-w-lg rounded-[1.6rem] bg-white p-5 shadow-2xl">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-secondary-400">
+                    Registration Types
+                  </p>
+                  <h2 className="mt-2 text-xl font-bold text-secondary-950">
+                    {event?.name || "Event registration"}
+                  </h2>
+                  <p className="mt-1 text-sm text-secondary-500">
+                    Public types are shown to customers. Private types require an
+                    invite link.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowRegistrationDetails(false)}
+                  className="rounded-full px-3 py-1 text-sm font-semibold text-secondary-500 hover:bg-secondary-50"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {eventTickets?.map((ticket) => {
+                  const privateHref =
+                    ticket.visibility === "private" && ticket.privateAccessCode
+                      ? `/explore/event/${eventId}/ticket?access=${ticket.privateAccessCode}`
+                      : "";
+
+                  return (
+                  <div
+                    key={`${ticket.id ?? ticket.ticketName}-${ticket.privateAccessCode}`}
+                    className="rounded-xl bg-secondary-50 p-3 text-sm"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-secondary-950">
+                          {ticket.ticketName}
+                        </p>
+                        <p className="mt-1 text-xs text-secondary-500">
+                          {ticket.ticketQuantity} registration spots
+                        </p>
+                        <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-secondary-400">
+                          {ticket.visibility || "public"} - {ticket.soldCount ?? 0} registered
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-secondary-500">
+                        {ticket.visibility || "public"}
+                      </span>
+                    </div>
+                    {privateHref && (
+                      <Link
+                        href={privateHref}
+                        className="mt-3 block break-all rounded-xl bg-white px-3 py-2 text-xs font-medium text-secondary-500 underline"
+                      >
+                        {privateHref}
+                      </Link>
+                    )}
+                  </div>
+                  );
+                })}
+                {!eventTickets?.length && (
+                  <p className="rounded-xl bg-secondary-50 px-4 py-3 text-sm text-secondary-500">
+                    No registration types have been added yet.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (
+    saleMethod === "external_link" ||
+    (!ticketUrl && !hasTicketSections && !hasPassSections)
+  ) {
+    return null;
+  }
+
   const ticketSummary = primaryTicket
-    ? primaryTicket.ticketPrice === 0
+    ? getTicketPriceAmount(primaryTicket.ticketPrice) === 0
       ? "Free Ticket"
-      : `${formatCurrency(primaryTicket.ticketPrice)} Tickets`
+      : `${formatTicketPrice(primaryTicket.ticketPrice)} Tickets`
     : totalTickets
       ? `${totalTickets.toLocaleString()} Regular Tickets`
       : "Ticketing pending";
@@ -94,7 +231,7 @@ const TicketPreview: React.FC<{
     <div className="space-y-3">
       <div className="rounded-[1.2rem] bg-secondary-50 px-4 py-3">
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-secondary-400">
-          Sell on Turnupz
+          {previewLabel}
         </p>
         <p className="mt-2 text-sm font-semibold text-secondary-950">{ticketSummary}</p>
         <div className="mt-3 flex items-center gap-2 text-xs text-secondary-500">
@@ -118,6 +255,9 @@ const TicketPreview: React.FC<{
                 <p className="text-sm font-semibold text-secondary-950">{ticket.ticketName}</p>
                 <p className="text-xs text-secondary-500">{ticket.ticketQuantity} tickets</p>
                 <p className="text-[10px] uppercase tracking-[0.18em] text-secondary-400">
+                  {ticket.transferable ? "Transfer enabled" : "Transfer disabled"}
+                </p>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-secondary-400">
                   {ticket.visibility || "public"} · {ticket.soldCount ?? 0}{" "}
                   {ticket.actionType === "register" ? "registered" : "sold"}
                 </p>
@@ -125,9 +265,9 @@ const TicketPreview: React.FC<{
               <p className="text-sm font-semibold text-secondary-950">
                 {ticket.actionType === "register"
                   ? "Register"
-                  : ticket.ticketPrice === 0
+                  : getTicketPriceAmount(ticket.ticketPrice) === 0
                     ? "Free"
-                    : formatCurrency(ticket.ticketPrice)}
+                    : formatTicketPrice(ticket.ticketPrice)}
               </p>
             </div>
           ))}
@@ -145,6 +285,40 @@ const TicketPreview: React.FC<{
               className="rounded-[1rem] bg-white px-4 py-3 text-sm text-secondary-600"
             >
               <p className="font-semibold text-secondary-950">{pass.passName}</p>
+              <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-secondary-400">
+                {pass.transferable ? "Transfer enabled" : "Transfer disabled"}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold">
+                <span className="rounded-full bg-cyan-50 px-2.5 py-1 text-cyan-700">
+                  {pass.assignments?.filter(
+                    (assignment) => assignment.passClaimStatus === "invited",
+                  ).length ?? pass.emailedAssignees?.length ?? 0}{" "}
+                  invites sent
+                </span>
+                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">
+                  {pass.assignments?.filter(
+                    (assignment) => assignment.passClaimStatus === "claimed",
+                  ).length ?? 0}{" "}
+                  claimed
+                </span>
+              </div>
+              {!!pass.assignments?.length && (
+                <div className="mt-3 space-y-1 border-t border-secondary-100 pt-3">
+                  {pass.assignments.map((assignment) => (
+                    <div
+                      key={assignment.id}
+                      className="flex flex-wrap items-center justify-between gap-2 text-xs"
+                    >
+                      <span className="break-all text-secondary-600">
+                        {assignment.email}
+                      </span>
+                      <span className="rounded-full bg-secondary-50 px-2 py-0.5 font-semibold capitalize text-secondary-500">
+                        {assignment.passClaimStatus ?? "invited"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
               <p className="mt-1 text-xs text-secondary-500">
                 {pass.quantity} passes · {pass.assigneeEmails.length} assignee
                 {pass.assigneeEmails.length === 1 ? "" : "s"}
@@ -158,23 +332,194 @@ const TicketPreview: React.FC<{
 };
 
 const BookingChip: React.FC<{
+  eventId: string;
   saleMethod?: string;
   ticketUrl?: string;
   eventTickets?: IEventTicketOptionDetails[];
-}> = ({ saleMethod, ticketUrl, eventTickets }) => {
+}> = ({ eventId, saleMethod, ticketUrl, eventTickets }) => {
   const isExternal = saleMethod === "external_link" || !!ticketUrl;
-  const hasPaidTicket = (eventTickets ?? []).some((ticket) => ticket.ticketPrice > 0);
+  const hasPaidTicket = (eventTickets ?? []).some(
+    (ticket) => getTicketPriceAmount(ticket.ticketPrice) > 0,
+  );
   const label = isExternal ? "Book Now" : hasPaidTicket ? "Pay Now" : "Register Now";
   const chipClassName = isExternal
     ? "bg-rose-500 text-white shadow-rose-200/70"
     : "bg-secondary-400 text-white shadow-secondary-200/80";
 
+  const href = isExternal && ticketUrl ? ticketUrl : `/explore/event/${eventId}/ticket`;
+
   return (
-    <div
+    <Link
+      href={href}
+      target={isExternal && ticketUrl ? "_blank" : undefined}
       className={`inline-flex h-11 items-center justify-center rounded-2xl px-5 text-sm font-semibold shadow-[0_10px_24px_rgba(15,23,42,0.08)] ${chipClassName}`}
     >
       <span>{label}</span>
-    </div>
+    </Link>
+  );
+};
+
+const PrivateTicketLinks: React.FC<{
+  eventId: string;
+  eventTickets?: IEventTicketOptionDetails[];
+}> = ({ eventId, eventTickets }) => {
+  const privateTickets = (eventTickets ?? []).filter(
+    (ticket) => ticket.visibility === "private" && ticket.privateAccessCode,
+  );
+
+  if (privateTickets.length === 0) return null;
+
+  return (
+    <section className="space-y-3 rounded-[1.2rem] border border-secondary-100 bg-white p-4">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-secondary-400">
+          Vendor Private Links
+        </p>
+        <p className="mt-1 text-sm text-secondary-500">
+          Share these links only with invited customers. They are hidden from the
+          public customer preview.
+        </p>
+      </div>
+      <div className="space-y-2">
+        {privateTickets.map((ticket) => {
+          const href = `/explore/event/${eventId}/ticket?access=${ticket.privateAccessCode}`;
+          return (
+            <div
+              key={`${ticket.id ?? ticket.ticketName}-${ticket.privateAccessCode}`}
+              className="rounded-xl bg-secondary-50 p-3 text-sm"
+            >
+              <p className="font-semibold text-secondary-950">
+                {ticket.ticketName}
+              </p>
+              <Link
+                href={href}
+                className="mt-1 block break-all text-xs font-medium text-secondary-500 underline"
+              >
+                {href}
+              </Link>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+};
+
+const PendingRegistrationReview: React.FC<{
+  eventId: string;
+  enabled?: boolean;
+}> = ({ eventId, enabled }) => {
+  const [registrations, setRegistrations] = useState<PendingRegistration[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [reviewingId, setReviewingId] = useState("");
+
+  const loadPendingRegistrations = useCallback(async () => {
+    if (!enabled) return;
+    setIsLoading(true);
+    try {
+      const response = await getData<PendingRegistration[]>(
+        `/event/${eventId}/registrations/pending`,
+      );
+      setRegistrations(response.data.data ?? []);
+    } catch {
+      setRegistrations([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [enabled, eventId]);
+
+  useEffect(() => {
+    loadPendingRegistrations();
+  }, [loadPendingRegistrations]);
+
+  const reviewRegistration = async (
+    registrationId: string,
+    status: "confirmed" | "rejected",
+  ) => {
+    setReviewingId(registrationId);
+    try {
+      await patchData<{ status: "confirmed" | "rejected" }, PendingRegistration>(
+        `/event/${eventId}/registrations/${registrationId}/review`,
+        { status },
+      );
+      setRegistrations((current) =>
+        current.filter((registration) => registration.registrationId !== registrationId),
+      );
+      toast.success(
+        status === "confirmed" ? "Registration approved." : "Registration rejected.",
+      );
+    } catch (error) {
+      toast.error(
+        constructErrorMessage(
+          error as TApiErrorResponseType,
+          "Unable to review this registration.",
+        ),
+      );
+    } finally {
+      setReviewingId("");
+    }
+  };
+
+  if (!enabled) return null;
+
+  return (
+    <section className="space-y-4 rounded-[1.2rem] border border-secondary-100 bg-white p-4">
+      <div>
+        <h2 className="text-lg font-semibold text-secondary-950">
+          Pending Registrations
+        </h2>
+        <p className="mt-1 text-sm text-secondary-500">
+          Approve or reject attendees waiting for registration approval.
+        </p>
+      </div>
+      {isLoading && (
+        <p className="rounded-xl bg-secondary-50 px-4 py-3 text-sm text-secondary-500">
+          Loading pending registrations...
+        </p>
+      )}
+      {!isLoading && registrations.length === 0 && (
+        <p className="rounded-xl bg-secondary-50 px-4 py-3 text-sm text-secondary-500">
+          No pending registrations right now.
+        </p>
+      )}
+      {registrations.map((registration) => (
+        <div
+          key={registration.registrationId}
+          className="flex flex-col gap-3 rounded-xl bg-secondary-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <p className="text-sm font-semibold text-secondary-950">
+              {registration.attendeeName}
+            </p>
+            <p className="text-xs text-secondary-500">
+              {registration.attendeeEmail} - {registration.quantity} registration
+              {registration.quantity === 1 ? "" : "s"}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => reviewRegistration(registration.registrationId, "confirmed")}
+              disabled={reviewingId === registration.registrationId}
+              className="rounded-xl bg-secondary-400 text-white hover:bg-secondary-500"
+            >
+              Approve
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => reviewRegistration(registration.registrationId, "rejected")}
+              disabled={reviewingId === registration.registrationId}
+              className="rounded-xl border-red-100 text-red-600 hover:bg-red-50"
+            >
+              Reject
+            </Button>
+          </div>
+        </div>
+      ))}
+    </section>
   );
 };
 
@@ -307,21 +652,23 @@ const MediaStrip: React.FC<{
 const SponsorsBoard: React.FC<{
   organizerName?: string;
   eventYear?: string;
-}> = ({ organizerName, eventYear }) => {
-  const sponsors = [
-    "Access",
-    "Bolt",
-    "GUO",
-    "IrokoTV",
-    "Hotel.ng",
-    "Terra",
-    "UPS",
-    "Techpoint",
-    "Access",
-    "Native",
-    "Obeg",
-    "Paystack",
-  ];
+  sponsors?: string[];
+  sponsorImages?: string[];
+}> = ({ organizerName, eventYear, sponsors, sponsorImages }) => {
+  const sponsorItems = sponsors?.length
+    ? sponsors
+    : [
+        "Access",
+        "Bolt",
+        "GUO",
+        "IrokoTV",
+        "Hotel.ng",
+        "Terra",
+        "UPS",
+        "Techpoint",
+        "Native",
+        "Paystack",
+      ];
 
   return (
     <section className="space-y-4">
@@ -334,14 +681,22 @@ const SponsorsBoard: React.FC<{
 
       <div className="overflow-hidden rounded-[1rem] border border-secondary-100 bg-white shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-          {sponsors.map((sponsor, index) => (
+          {sponsorItems.map((sponsor, index) => (
             <div
               key={`${sponsor}-${index}`}
-              className="flex h-20 items-center justify-center border-b border-r border-secondary-100 px-4 text-center"
+              className="flex h-24 items-center justify-center border-b border-r border-secondary-100 px-4 text-center"
             >
-              <span className="text-sm font-semibold tracking-tight text-secondary-500">
-                {sponsor}
-              </span>
+              {sponsorImages?.[index] ? (
+                <div
+                  className="h-14 w-full rounded-lg bg-contain bg-center bg-no-repeat"
+                  style={{ backgroundImage: `url(${sponsorImages[index]})` }}
+                  aria-label={sponsor}
+                />
+              ) : (
+                <span className="text-sm font-semibold tracking-tight text-secondary-500">
+                  {sponsor}
+                </span>
+              )}
             </div>
           ))}
         </div>
@@ -354,13 +709,80 @@ const SponsorsBoard: React.FC<{
   );
 };
 
+const BlogPostsBoard: React.FC<{
+  eventId: string;
+  posts?: IEventBlogPostDetails[];
+}> = ({ eventId, posts }) => {
+  if (!posts?.length) {
+    return null;
+  }
+
+  return (
+    <section className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold text-secondary-950">Blog Posts</h2>
+        <p className="mt-1 text-sm text-secondary-500">
+          Stay updated with this event.
+        </p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {posts.map((post) => (
+          <Link
+            key={post.id}
+            href={`/app/events/${eventId}/blog/${post.id}`}
+            className="group overflow-hidden rounded-[1.2rem] border border-secondary-100 bg-white shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition-transform hover:-translate-y-1"
+          >
+            <div
+              className="h-40 bg-secondary-50 bg-cover bg-center"
+              style={{
+                backgroundImage:
+                  post.images?.[0] || post.image
+                    ? `url(${post.images?.[0] || post.image})`
+                    : undefined,
+              }}
+            />
+            <div className="space-y-2 p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-secondary-400">
+                Event Update
+              </p>
+              <h3 className="text-lg font-semibold leading-tight text-secondary-950 group-hover:text-secondary-500">
+                {post.title}
+              </h3>
+              <p className="line-clamp-3 text-sm leading-6 text-secondary-500">
+                {post.excerpt || post.body}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+};
+
 const VendorEventView: React.FC<{ id: string }> = ({ id }) => {
   const { data, error, refetch, isLoading } = useEvent(id);
 
-  const galleryImage = useMemo(() => {
+  const bannerImage = useMemo(() => {
     if (!data) return "";
-    return data.image || data.medias?.[0] || "";
+    return data.image || "";
   }, [data]);
+
+  const blogPosts = useMemo<IEventBlogPostDetails[]>(() => {
+    if (!data) return [];
+    if (data.blogPosts?.length) return data.blogPosts;
+    if (!data.blogPost) return [];
+
+    return [
+      {
+        id: `blog-${data.id}-legacy`,
+        title: "Event update",
+        excerpt: data.blogPost.slice(0, 140),
+        body: data.blogPost,
+        image: bannerImage || data.medias?.[0] || "",
+        createdAt: new Date().toISOString(),
+      },
+    ];
+  }, [bannerImage, data]);
 
   if (isLoading) {
     return (
@@ -386,81 +808,40 @@ const VendorEventView: React.FC<{ id: string }> = ({ id }) => {
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-secondary-400">
           Event Preview
         </p>
-        <Button
-          asChild
-          className="h-11 rounded-2xl bg-secondary-400 px-5 text-sm font-semibold text-white hover:bg-secondary-500"
-        >
-          <Link href={`/app/events/${data.id}/edit`}>
-            <PencilLine className="size-4" />
-            Edit Post
-          </Link>
-        </Button>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button
+            asChild
+            variant="outline"
+            className="h-11 rounded-2xl border-secondary-200 px-5 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
+          >
+            <Link href="/app/events">Back to Listings</Link>
+          </Button>
+          <Button
+            asChild
+            className="h-11 rounded-2xl bg-secondary-400 px-5 text-sm font-semibold text-white hover:bg-secondary-500"
+          >
+            <Link href={`/app/events/${data.id}/edit`}>
+              <PencilLine className="size-4" />
+              Edit Post
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <section className="overflow-hidden rounded-[1.8rem] border border-secondary-100 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
         <div className="px-4 pt-4 sm:px-6 sm:pt-6">
           <div
-            className="relative h-52 overflow-hidden rounded-[1.2rem] bg-cover bg-center sm:h-64"
+            className="h-52 overflow-hidden rounded-[1.2rem] bg-cover bg-center sm:h-64"
             style={{
-              backgroundImage: galleryImage
-                ? `linear-gradient(180deg, rgba(15,23,42,0.15), rgba(15,23,42,0.32)), url(${galleryImage})`
-                : "radial-gradient(circle at 30% 20%, rgba(251,191,36,0.3), transparent 24%), radial-gradient(circle at 70% 18%, rgba(244,114,182,0.24), transparent 22%), linear-gradient(135deg, rgba(88,28,135,0.96), rgba(30,64,175,0.88) 42%, rgba(15,23,42,0.96))",
+              backgroundImage: bannerImage
+                ? `url(${bannerImage})`
+                : "linear-gradient(135deg, rgba(56,189,248,0.16), rgba(14,165,233,0.08))",
             }}
-          >
-            <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.08)_0%,transparent_30%,transparent_70%,rgba(255,255,255,0.05)_100%)]" />
-            <div className="absolute inset-0 opacity-25">
-              <div className="absolute left-[15%] top-[18%] h-10 w-1 rounded-full bg-white/70 shadow-[0_0_18px_rgba(255,255,255,0.55)]" />
-              <div className="absolute left-[19%] top-[14%] h-14 w-1 rounded-full bg-white/70 shadow-[0_0_18px_rgba(255,255,255,0.55)]" />
-              <div className="absolute left-[23%] top-[10%] h-20 w-1 rounded-full bg-white/70 shadow-[0_0_18px_rgba(255,255,255,0.55)]" />
-              <div className="absolute right-[22%] top-[12%] h-16 w-1 rounded-full bg-white/65 shadow-[0_0_18px_rgba(255,255,255,0.45)]" />
-              <div className="absolute right-[18%] top-[16%] h-11 w-1 rounded-full bg-white/65 shadow-[0_0_18px_rgba(255,255,255,0.45)]" />
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="inline-flex items-center justify-center rounded-full bg-white/90 p-2 text-secondary-500 shadow-lg">
-                <PlayCircle className="size-10 fill-white text-red-500" />
-              </span>
-            </div>
-            <div className="absolute inset-x-0 top-0 flex items-start justify-between p-4 text-white">
-              <div className="flex items-start gap-3">
-                <div className="overflow-hidden rounded-[1rem] border border-white/15 bg-white/12 text-center backdrop-blur">
-                  <div className="border-b border-white/10 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-white/65">
-                    {formatHeroMonth(data.date)}
-                  </div>
-                  <div className="px-3 py-2 text-xl font-black leading-none">
-                    {formatHeroDay(data.date)}
-                  </div>
-                  <div className="border-t border-white/10 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-white/70">
-                    {formatHeroTime(data.date)}
-                  </div>
-                </div>
-                <div className="rounded-xl bg-black/25 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.24em] backdrop-blur">
-                  Your Logo
-                </div>
-              </div>
-              <div className="rounded-xl bg-black/25 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.24em] backdrop-blur">
-                Turnupz Presents
-              </div>
-            </div>
-            <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-              <div className="max-w-2xl">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/70">
-                  Live Event Preview
-                </p>
-                <p className="mt-2 max-w-xl text-3xl font-black uppercase leading-[0.92] tracking-tight text-white drop-shadow-[0_10px_24px_rgba(15,23,42,0.45)] sm:text-4xl">
-                  {data.name}
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">
-                  <span>{data.venue?.name || "Main stage"}</span>
-                  <span className="h-1 w-1 rounded-full bg-white/70" />
-                  <span>{formatEventDate(data.date)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          />
         </div>
 
         <div className="space-y-7 px-4 py-5 sm:px-6 sm:py-6">
@@ -473,6 +854,7 @@ const VendorEventView: React.FC<{ id: string }> = ({ id }) => {
 
             <div className="flex w-full max-w-xs justify-start md:justify-end">
               <BookingChip
+                eventId={data.id}
                 saleMethod={data.saleMethod}
                 ticketUrl={data.ticketUrl}
                 eventTickets={data.eventTickets}
@@ -504,53 +886,68 @@ const VendorEventView: React.FC<{ id: string }> = ({ id }) => {
                   )}
                 </div>
               </div>
-
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-secondary-950">Event Description</h2>
-                <div className="space-y-4 text-[11px] leading-6 text-secondary-500">
-                  <p className="font-medium text-secondary-700">
-                    Organized by {data.organizerName || "Turnupz Nigeria Ltd"}{" "}
-                    {data.eventYear || new Date(data.date).getFullYear()}
-                  </p>
-                  <p>
-                    {data.description ||
-                      "Add a fuller event story on the edit screen so attendees can quickly understand the experience."}
-                  </p>
-
-                  {!!data.additionalInformation?.length && (
-                    <div>
-                      <ol className="list-decimal space-y-1 pl-4">
-                        {data.additionalInformation.map((item, index) => (
-                          <li key={`${item}-${index}`}>{item}</li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
-
-                  {!!data.blogPost && <p>{data.blogPost}</p>}
-                </div>
-              </div>
-
-              <GuestRoster guests={data.eventGuestsOfHonour} />
-
-              <ActivityTimeline activities={data.activities} />
-
-              <MediaStrip media={data.medias} fallbackImage={galleryImage} />
-
-              <SponsorsBoard
-                organizerName={data.organizerName}
-                eventYear={data.eventYear}
-              />
             </div>
 
             <div className="space-y-4">
               <TicketPreview
+                eventId={data.id}
+                event={data}
                 totalTickets={data.totalTickets}
+                saleMethod={data.saleMethod}
                 ticketUrl={data.ticketUrl}
                 eventTickets={data.eventTickets}
                 passAssignments={data.passAssignments}
               />
+              {data.saleMethod !== "register" && (
+                <PrivateTicketLinks
+                  eventId={data.id}
+                  eventTickets={data.eventTickets}
+                />
+              )}
+              <PendingRegistrationReview
+                eventId={data.id}
+                enabled={data.saleMethod === "register" && data.requiresApproval}
+              />
             </div>
+          </div>
+
+          <div className="space-y-7">
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-secondary-950">
+                Event Description
+              </h2>
+              <div className="space-y-4 text-[13px] leading-6 text-secondary-700">
+                <p>
+                  {data.description ||
+                    "Add a fuller event story on the edit screen so attendees can quickly understand the experience."}
+                </p>
+
+                {!!data.additionalInformation?.length && (
+                  <div>
+                    <ol className="list-decimal space-y-1 pl-4">
+                      {data.additionalInformation.map((item, index) => (
+                        <li key={`${item}-${index}`}>{item}</li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <BlogPostsBoard eventId={data.id} posts={blogPosts} />
+
+            <GuestRoster guests={data.eventGuestsOfHonour} />
+
+            <ActivityTimeline activities={data.activities} />
+
+            <MediaStrip media={data.medias} />
+
+            <SponsorsBoard
+              organizerName={data.organizerName}
+              eventYear={data.eventYear}
+              sponsors={data.sponsors}
+              sponsorImages={data.sponsorImages}
+            />
           </div>
         </div>
       </section>

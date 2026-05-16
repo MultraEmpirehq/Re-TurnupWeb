@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import useUserStore from "@/stores/user-store";
+import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useMemo, useState } from "react";
 
@@ -23,7 +24,7 @@ const SettingsPage = () => {
     );
   }, [userDetails]);
 
-  const vendorEmail = userDetails?.email || "vendor@turnupz.dev";
+  const vendorEmail = userDetails?.email || "";
 
   const handleSave = () => {
     setProfileMessage("Your vendor settings have been updated.");
@@ -62,6 +63,32 @@ const SettingsPage = () => {
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_0.9fr]">
         <div className="space-y-6">
+          <Link
+            href="/app/settings/vendor-verification"
+            className="flex flex-col gap-4 rounded-[1.75rem] border border-cyan-100 bg-cyan-50/70 p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition hover:border-cyan-200 hover:bg-cyan-50 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <span className="flex items-start gap-4">
+              <span className="rounded-2xl bg-white p-3 text-cyan-700">
+                <ShieldCheck className="size-5" />
+              </span>
+              <span>
+                <span className="block text-sm font-bold uppercase tracking-[0.18em] text-cyan-700">
+                  Vendor Verification
+                </span>
+                <span className="mt-2 block text-lg font-bold text-secondary-950">
+                  Open verification form
+                </span>
+                <span className="mt-1 block text-sm leading-6 text-secondary-600">
+                  Complete approval details for paid tickets, payouts, and
+                  cross-border event hosting.
+                </span>
+              </span>
+            </span>
+            <span className="inline-flex h-11 items-center justify-center rounded-2xl bg-secondary-400 px-5 text-sm font-semibold text-white">
+              Continue
+            </span>
+          </Link>
+
           <div className="rounded-[1.75rem] border border-secondary-100 bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -74,7 +101,7 @@ const SettingsPage = () => {
                 <p className="mt-2 text-sm text-secondary-500">{vendorEmail}</p>
               </div>
               <div className="rounded-3xl bg-secondary-50 px-4 py-3 text-sm text-secondary-600">
-                {userDetails ? "Signed in" : "Frontend preview"}
+                {userDetails ? "Account active" : "Vendor account"}
               </div>
             </div>
           </div>
@@ -132,39 +159,6 @@ const SettingsPage = () => {
               ))}
             </div>
           </div>
-
-          <div className="rounded-[1.75rem] border border-secondary-100 bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-            <p className="text-sm uppercase tracking-[0.2em] text-secondary-400 font-bold">
-              Security
-            </p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl border border-secondary-100 bg-secondary-50 p-5">
-                <p className="text-sm text-secondary-500">Login status</p>
-                <p className="mt-3 text-sm text-secondary-700">
-                  Your vendor account is currently running in frontend preview mode while
-                  backend account controls are being connected.
-                </p>
-              </div>
-
-              <div className="rounded-3xl border border-secondary-100 bg-secondary-50 p-5">
-                <p className="text-sm text-secondary-500">Account access</p>
-                <p className="mt-3 text-sm text-secondary-700">
-                  Settings are safe to design now. Real persistence can be connected once the
-                  backend settings endpoints are ready.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={handleSave}
-                className="rounded-3xl bg-secondary-400 px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-secondary-500"
-              >
-                Save preferences
-              </button>
-            </div>
-          </div>
         </div>
 
         <aside className="space-y-6">
@@ -189,6 +183,39 @@ const SettingsPage = () => {
                 <span className="font-semibold text-secondary-950">Marketing:</span>{" "}
                 {marketingEmails ? "Enabled" : "Disabled"}
               </p>
+            </div>
+          </div>
+
+          <div className="rounded-[1.75rem] border border-secondary-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-secondary-400">
+              Security
+            </p>
+            <div className="mt-5 space-y-4">
+              <div className="rounded-3xl border border-secondary-100 bg-secondary-50 p-5">
+                <p className="text-sm text-secondary-500">Login status</p>
+                <p className="mt-3 text-sm text-secondary-700">
+                  Keep your account protected by signing out on shared devices
+                  and reviewing unusual activity before major event launches.
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-secondary-100 bg-secondary-50 p-5">
+                <p className="text-sm text-secondary-500">Account access</p>
+                <p className="mt-3 text-sm text-secondary-700">
+                  Use a strong password, keep your contact email current, and
+                  limit scanner or team access to people helping with a specific event.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <button
+                type="button"
+                onClick={handleSave}
+                className="rounded-3xl bg-secondary-400 px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-secondary-500"
+              >
+                Save preferences
+              </button>
             </div>
           </div>
 

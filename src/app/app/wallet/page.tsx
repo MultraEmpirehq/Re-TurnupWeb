@@ -4,6 +4,17 @@ import InputField from "@/components/ui/input-field";
 import SelectField from "@/components/ui/select-field";
 import { Button } from "@/components/ui/button";
 import {
+  useVendorVerificationSnapshot,
+  VendorVerificationNotice,
+} from "@/components/pages/app/vendor-verification";
+import {
+  useCreateVendorTransfer,
+  useDeleteVendorWalletCard,
+  useRequestVendorWithdrawal,
+  useSaveVendorWalletCard,
+  useVendorWallet,
+} from "@/hooks/use-vendor-wallet";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -27,17 +38,9 @@ import {
 import Link from "next/link";
 import React, { memo, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { PriceDetailsType } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
-
-type TSavedCard = {
-  id: string;
-  brand: string;
-  last4: string;
-  expiry: string;
-  holder: string;
-  type: "virtual" | "debit" | "credit";
-};
 
 type TTransferDestination = {
   code: string;
@@ -55,54 +58,56 @@ const transferDestinations: TTransferDestination[] = [
   { code: "ZA", label: "South Africa", currency: "ZAR", payout: "Bank transfer" },
 ];
 
-const initialCards: TSavedCard[] = [
-  {
-    id: "card-1",
-    brand: "Visa",
-    last4: "2048",
-    expiry: "08/28",
-    holder: "Turnupz Vendor",
-    type: "debit",
-  },
-  {
-    id: "card-2",
-    brand: "Mastercard",
-    last4: "7712",
-    expiry: "01/29",
-    holder: "Turnupz Vendor",
-    type: "credit",
-  },
-];
+const getMoneyAmount = (money?: PriceDetailsType | number) =>
+  typeof money === "number" ? money : Number(money?.amount ?? 0);
 
-const moneyFormatter = (amount: number, currency = "NGN") =>
-  new Intl.NumberFormat("en-NG", {
+const moneyFormatter = (
+  money: PriceDetailsType | number,
+  currency = "USD",
+) => {
+  if (typeof money !== "number" && money.formatted?.withCurrency) {
+    return money.formatted.withCurrency;
+  }
+  const amount = getMoneyAmount(money);
+  const locale = typeof money !== "number" ? money.currency?.locale : "en-US";
+  const code = typeof money !== "number" ? money.currency?.code : currency;
+  return new Intl.NumberFormat(locale || "en-US", {
     style: "currency",
-    currency,
+    currency: code || currency,
     maximumFractionDigits: 0,
   }).format(amount);
+};
 
 const WalletPage = () => {
-  const [savedCards, setSavedCards] = useState<TSavedCard[]>(initialCards);
   const [isWithdrawDialogOpen, setIsWithdrawDialogOpen] = useState(false);
-  const [withdrawAmount, setWithdrawAmount] = useState("250000");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawChannel, setWithdrawChannel] = useState("bank");
   const [transferCountry, setTransferCountry] = useState("NG");
-  const [transferAmount, setTransferAmount] = useState("150000");
-  const [recipientName, setRecipientName] = useState("Turnupz Partner");
-  const [recipientAccount, setRecipientAccount] = useState("0123456789");
+  const [transferAmount, setTransferAmount] = useState("");
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientAccount, setRecipientAccount] = useState("");
   const [cardHolder, setCardHolder] = useState("");
   const [cardLast4, setCardLast4] = useState("");
   const [cardBrand, setCardBrand] = useState("Visa");
+  const verification = useVendorVerificationSnapshot();
+  const walletQuery = useVendorWallet();
+  const withdrawalMutation = useRequestVendorWithdrawal();
+  const transferMutation = useCreateVendorTransfer();
+  const saveCardMutation = useSaveVendorWalletCard();
+  const deleteCardMutation = useDeleteVendorWalletCard();
+  const isPayoutLocked = verification.status !== "approved";
 
   const selectedDestination =
     transferDestinations.find((destination) => destination.code === transferCountry) ??
     transferDestinations[0];
 
-  const availableBalance = 2450000;
-  const pendingBalance = 420000;
-  const reservedBalance = 180000;
-  const withdrawalFee = 1500;
-  const transferFee = 2500;
+  const availableBalance = walletQuery.data?.balances.availableBalance;
+  const pendingBalance = walletQuery.data?.balances.pendingBalance;
+  const reservedBalance = walletQuery.data?.balances.reservedBalance;
+  const walletCurrency = walletQuery.data?.balances.currency ?? "USD";
+  const savedCards = walletQuery.data?.savedCards ?? [];
+  const withdrawalFee = 0;
+  const transferFee = 0;
 
   const withdrawNet = useMemo(() => {
     const amount = Number(withdrawAmount || 0);
@@ -115,13 +120,26 @@ const WalletPage = () => {
   }, [transferAmount]);
 
   const handleWithdraw = () => {
+    if (isPayoutLocked) {
+      toast.error("Complete vendor verification before requesting payouts.");
+      return;
+    }
+
     const amount = Number(withdrawAmount || 0);
     if (amount <= 0) {
       toast.error("Enter a valid withdrawal amount");
       return;
     }
-    setIsWithdrawDialogOpen(false);
-    toast.success("Withdrawal request created for review");
+    withdrawalMutation.mutate(
+      { amount, method: withdrawChannel },
+      {
+        onSuccess: () => {
+          setIsWithdrawDialogOpen(false);
+          toast.success("Withdrawal request created for review");
+        },
+        onError: () => toast.error("Unable to create withdrawal request."),
+      },
+    );
   };
 
   const handleTransfer = () => {
@@ -130,7 +148,19 @@ const WalletPage = () => {
       toast.error("Complete the transfer details first");
       return;
     }
-    toast.success(`Transfer draft created for ${selectedDestination.label}`);
+    transferMutation.mutate(
+      {
+        amount,
+        country: selectedDestination.code,
+        recipientName: recipientName.trim(),
+        recipientAccount: recipientAccount.trim(),
+      },
+      {
+        onSuccess: () =>
+          toast.success(`Transfer request created for ${selectedDestination.label}`),
+        onError: () => toast.error("Unable to create transfer request."),
+      },
+    );
   };
 
   const handleAddCard = () => {
@@ -139,25 +169,28 @@ const WalletPage = () => {
       return;
     }
 
-    setSavedCards((current) => [
+    saveCardMutation.mutate(
       {
-        id: `card-${Date.now()}`,
         brand: cardBrand,
         last4: cardLast4.trim(),
-        expiry: "12/30",
         holder: cardHolder.trim(),
-        type: "debit",
       },
-      ...current,
-    ]);
-    setCardHolder("");
-    setCardLast4("");
-    toast.success("Card saved to vendor wallet");
+      {
+        onSuccess: () => {
+          setCardHolder("");
+          setCardLast4("");
+          toast.success("Card saved to vendor wallet");
+        },
+        onError: () => toast.error("Unable to save card."),
+      },
+    );
   };
 
   const handleDeleteCard = (cardId: string) => {
-    setSavedCards((current) => current.filter((card) => card.id !== cardId));
-    toast.success("Saved card removed");
+    deleteCardMutation.mutate(cardId, {
+      onSuccess: () => toast.success("Saved card removed"),
+      onError: () => toast.error("Unable to remove saved card."),
+    });
   };
 
   const handleExportWalletReport = () => {
@@ -214,7 +247,7 @@ const WalletPage = () => {
                 type="number"
                 value={withdrawAmount}
                 onChange={(e) => setWithdrawAmount(e.target.value)}
-                placeholder="250000"
+                placeholder="Enter amount"
               />
               <SelectField
                 label="Payout Method"
@@ -232,19 +265,19 @@ const WalletPage = () => {
               <div className="flex items-center justify-between py-2 text-sm">
                 <span className="text-secondary-500">Requested</span>
                 <span className="font-semibold text-secondary-950">
-                  {moneyFormatter(Number(withdrawAmount || 0))}
+                {moneyFormatter(Number(withdrawAmount || 0), walletCurrency)}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2 text-sm">
                 <span className="text-secondary-500">Fee</span>
                 <span className="font-semibold text-secondary-950">
-                  {moneyFormatter(withdrawalFee)}
+                {moneyFormatter(withdrawalFee, walletCurrency)}
                 </span>
               </div>
               <div className="flex items-center justify-between border-t border-secondary-100 py-3 text-sm">
                 <span className="text-secondary-500">Net payout</span>
                 <span className="text-lg font-semibold text-secondary-950">
-                  {moneyFormatter(withdrawNet)}
+                  {moneyFormatter(withdrawNet, walletCurrency)}
                 </span>
               </div>
             </div>
@@ -269,6 +302,8 @@ const WalletPage = () => {
       </Dialog>
 
       <div className="space-y-5">
+      <VendorVerificationNotice context="wallet" />
+
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <span className="text-[0.75rem] font-bold uppercase tracking-[0.22em] text-secondary-400">
@@ -290,7 +325,7 @@ const WalletPage = () => {
             <div>
               <p className="text-sm text-secondary-500">Available Balance</p>
               <p className="mt-3 text-[2rem] font-bold tracking-tight text-secondary-950 xl:text-3xl">
-                {moneyFormatter(availableBalance)}
+                {moneyFormatter(availableBalance ?? 0, walletCurrency)}
               </p>
             </div>
             <span className="rounded-2xl bg-secondary-50 p-3 text-secondary-700">
@@ -307,7 +342,7 @@ const WalletPage = () => {
             <div>
               <p className="text-sm text-secondary-500">Pending Payouts</p>
               <p className="mt-3 text-[2rem] font-bold tracking-tight text-secondary-950 xl:text-3xl">
-                {moneyFormatter(pendingBalance)}
+                {moneyFormatter(pendingBalance ?? 0, walletCurrency)}
               </p>
             </div>
             <span className="rounded-2xl bg-secondary-50 p-3 text-secondary-700">
@@ -324,7 +359,7 @@ const WalletPage = () => {
             <div>
               <p className="text-sm text-secondary-500">Reserved Funds</p>
               <p className="mt-3 text-[2rem] font-bold tracking-tight text-secondary-950 xl:text-3xl">
-                {moneyFormatter(reservedBalance)}
+                {moneyFormatter(reservedBalance ?? 0, walletCurrency)}
               </p>
             </div>
             <span className="rounded-2xl bg-secondary-50 p-3 text-secondary-700">
@@ -366,7 +401,7 @@ const WalletPage = () => {
                     type="number"
                     value={withdrawAmount}
                     onChange={(e) => setWithdrawAmount(e.target.value)}
-                    placeholder="250000"
+                    placeholder="Enter amount"
                   />
                   <SelectField
                     label="Payout Method"
@@ -386,7 +421,7 @@ const WalletPage = () => {
                       Requested
                     </p>
                     <p className="mt-auto pt-5 text-[1.9rem] leading-[1.05] font-semibold tracking-tight text-secondary-950">
-                      {moneyFormatter(Number(withdrawAmount || 0))}
+                      {moneyFormatter(Number(withdrawAmount || 0), walletCurrency)}
                     </p>
                   </div>
                   <div className="flex min-h-[116px] min-w-0 flex-col rounded-[1.1rem] bg-secondary-50 px-4 py-4">
@@ -394,7 +429,7 @@ const WalletPage = () => {
                       Fee
                     </p>
                     <p className="mt-auto pt-5 text-[1.9rem] leading-[1.05] font-semibold tracking-tight text-secondary-950">
-                      {moneyFormatter(withdrawalFee)}
+                      {moneyFormatter(withdrawalFee, walletCurrency)}
                     </p>
                   </div>
                   <div className="flex min-h-[116px] min-w-0 flex-col rounded-[1.1rem] bg-secondary-50 px-4 py-4">
@@ -402,7 +437,7 @@ const WalletPage = () => {
                       Net Payout
                     </p>
                     <p className="mt-auto pt-5 text-[1.9rem] leading-[1.05] font-semibold tracking-tight text-secondary-950">
-                      {moneyFormatter(withdrawNet)}
+                      {moneyFormatter(withdrawNet, walletCurrency)}
                     </p>
                   </div>
                 </div>
@@ -410,7 +445,15 @@ const WalletPage = () => {
                 <div className="flex flex-wrap gap-3">
                   <Button
                     className="rounded-full bg-secondary-500 px-5 text-white hover:bg-secondary-600"
-                    onClick={() => setIsWithdrawDialogOpen(true)}
+                    onClick={() => {
+                      if (isPayoutLocked) {
+                        toast.error(
+                          "Complete vendor verification before requesting payouts.",
+                        );
+                        return;
+                      }
+                      setIsWithdrawDialogOpen(true);
+                    }}
                   >
                     <Banknote className="mr-2 size-4" />
                     Request Withdrawal
@@ -461,19 +504,19 @@ const WalletPage = () => {
                     type="number"
                     value={transferAmount}
                     onChange={(e) => setTransferAmount(e.target.value)}
-                    placeholder="150000"
+                    placeholder="Enter amount"
                   />
                   <InputField
                     label="Recipient Name"
                     value={recipientName}
                     onChange={(e) => setRecipientName(e.target.value)}
-                    placeholder="Turnupz Partner"
+                    placeholder="Recipient name"
                   />
                   <InputField
                     label="Account / Routing Reference"
                     value={recipientAccount}
                     onChange={(e) => setRecipientAccount(e.target.value)}
-                    placeholder="0123456789"
+                    placeholder="Account or routing reference"
                   />
                 </div>
 
@@ -507,7 +550,7 @@ const WalletPage = () => {
                       Total Debit
                     </p>
                     <p className="mt-auto pt-5 text-[1.35rem] leading-tight font-semibold tracking-tight text-secondary-950">
-                      {moneyFormatter(transferTotal)}
+                      {moneyFormatter(transferTotal, selectedDestination.currency)}
                     </p>
                   </div>
                 </div>
@@ -546,6 +589,11 @@ const WalletPage = () => {
             </div>
 
             <div className="mt-5 space-y-3">
+              {savedCards.length === 0 && (
+                <div className="rounded-[1.2rem] border border-dashed border-secondary-200 bg-secondary-50 p-5 text-sm text-secondary-500">
+                  No saved payment methods yet.
+                </div>
+              )}
               {savedCards.map((card) => (
                 <div
                   key={card.id}
@@ -571,6 +619,7 @@ const WalletPage = () => {
                       size="sm"
                       className="rounded-full border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600"
                       onClick={() => handleDeleteCard(card.id)}
+                      disabled={deleteCardMutation.isPending}
                     >
                       <Trash2 className="mr-2 size-4" />
                       Delete
@@ -585,7 +634,7 @@ const WalletPage = () => {
                 label="Card Holder"
                 value={cardHolder}
                 onChange={(e) => setCardHolder(e.target.value)}
-                placeholder="Turnupz Vendor"
+                placeholder="Card holder name"
               />
               <div className="grid gap-4 md:grid-cols-2">
                 <SelectField
@@ -602,7 +651,7 @@ const WalletPage = () => {
                   label="Last 4 Digits"
                   value={cardLast4}
                   onChange={(e) => setCardLast4(e.target.value)}
-                  placeholder="2048"
+                  placeholder="Last 4"
                   maxLength={4}
                 />
               </div>

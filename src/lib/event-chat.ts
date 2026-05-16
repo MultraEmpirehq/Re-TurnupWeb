@@ -8,7 +8,17 @@ export interface IEventChatParticipant {
   id: string;
   name: string;
   role: "vendor" | "member";
+  memberRole?: "vendor" | "scanner" | "attendee";
   email?: string;
+  avatar?: string;
+  isBlocked?: boolean;
+  reportedAt?: string;
+}
+
+export interface IEventChatReaction {
+  emoji: string;
+  count: number;
+  reactedBy: string[];
 }
 
 export interface IEventChatMessage {
@@ -18,9 +28,15 @@ export interface IEventChatMessage {
   role: "vendor" | "member";
   body: string;
   createdAt: string;
-  kind?: "text" | "event-update" | "image" | "audio" | "file";
+  kind?: "text" | "event-update" | "image" | "file";
   assetUrl?: string;
   assetName?: string;
+  href?: string;
+  senderAvatar?: string;
+  senderMemberRole?: IEventChatParticipant["memberRole"];
+  reactions?: IEventChatReaction[];
+  hiddenByVendor?: boolean;
+  reportedBy?: string[];
 }
 
 export interface IEventChatGroup {
@@ -31,6 +47,11 @@ export interface IEventChatGroup {
   createdAt: string;
   lastActivityAt: string;
   preview: string;
+  conversationType?: "group" | "private";
+  announcementMode?: boolean;
+  muted?: boolean;
+  memberListVisibility?: "visible" | "private";
+  pinnedMessageId?: string;
   vendor: IEventChatParticipant;
   members: IEventChatParticipant[];
   messages: IEventChatMessage[];
@@ -60,6 +81,7 @@ const getDefaultVendor = (): IEventChatParticipant => ({
   id: "turnupz-vendor",
   name: "Turnupz Vendor",
   role: "vendor",
+  memberRole: "vendor",
 });
 
 const toVendorParticipant = (user?: TUserDetails | null): IEventChatParticipant => ({
@@ -69,6 +91,8 @@ const toVendorParticipant = (user?: TUserDetails | null): IEventChatParticipant 
     [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
     "Turnupz Vendor",
   role: "vendor",
+  memberRole: "vendor",
+  avatar: user?.avatar,
   email: user?.email,
 });
 
@@ -82,24 +106,41 @@ const toMemberParticipant = (user?: TUserDetails | null): IEventChatParticipant 
       user.username ||
       "Turnupz Member",
     role: "member",
+    memberRole: "attendee",
     email: user.email,
+    avatar: user.avatar,
   };
 };
 
-const buildVendorLaunchMessage = (event: IEventDetailsType, vendor: IEventChatParticipant) => ({
-  id: `chat-message-${event.id}-launch`,
-  senderId: vendor.id,
-  senderName: vendor.name,
-  role: "vendor" as const,
-  kind: "event-update" as const,
-  createdAt: new Date().toISOString(),
-  body: `Welcome to the ${event.name} community. This group is now open for event updates, access information, and attendee questions.`,
-});
+const buildVendorLaunchMessage = (
+  event: IEventDetailsType,
+  vendor: IEventChatParticipant,
+) => {
+  const bannerImage =
+    event.image || (event as IEventDetailsType & { bannerImage?: string }).bannerImage;
+
+  return {
+    id: `chat-message-${event.id}-launch`,
+    senderId: vendor.id,
+    senderName: vendor.name,
+    role: "vendor" as const,
+    kind: "event-update" as const,
+    createdAt: new Date().toISOString(),
+    assetUrl: bannerImage,
+    assetName: event.name,
+    href: `/explore/event/${event.id}`,
+    senderAvatar: vendor.avatar,
+    body: `Welcome to the ${event.name} community. This group is now open for event updates, access information, and attendee questions.`,
+  };
+};
 
 export const getEventChatGroups = () => readGroups();
 
 export const getEventChatGroupByEventId = (eventId: string) =>
   readGroups().find((group) => group.eventId === eventId) ?? null;
+
+export const getEventChatGroupById = (id: string) =>
+  readGroups().find((group) => group.id === id) ?? null;
 
 export const ensureEventChatGroup = (
   event: IEventDetailsType,
@@ -112,10 +153,34 @@ export const ensureEventChatGroup = (
   const vendor = toVendorParticipant(vendorUser);
 
   if (existingGroup) {
+    const launchMessage = buildVendorLaunchMessage(event, vendor);
+    const hasLaunchMessage = existingGroup.messages.some(
+      (message) => message.id === launchMessage.id,
+    );
+    const messages = hasLaunchMessage
+      ? existingGroup.messages.map((message) =>
+          message.id === launchMessage.id
+            ? {
+                ...message,
+                assetUrl: message.assetUrl || launchMessage.assetUrl,
+                assetName: message.assetName || launchMessage.assetName,
+                href: message.href || launchMessage.href,
+                senderAvatar: message.senderAvatar || vendor.avatar,
+              }
+            : message,
+        )
+      : [launchMessage, ...existingGroup.messages];
+
     const updatedGroup: IEventChatGroup = {
       ...existingGroup,
       eventName: event.name,
+      conversationType: "group",
+      pinnedMessageId: existingGroup.pinnedMessageId || launchMessage.id,
+      announcementMode: existingGroup.announcementMode ?? false,
+      muted: existingGroup.muted ?? false,
+      memberListVisibility: existingGroup.memberListVisibility ?? "visible",
       vendor,
+      messages,
       preview:
         existingGroup.preview ||
         `Community chat for ${event.name} is now live on Turnupz.`,
@@ -135,6 +200,11 @@ export const ensureEventChatGroup = (
     createdAt: now,
     lastActivityAt: now,
     preview: `Community chat for ${event.name} is now live on Turnupz.`,
+    conversationType: "group",
+    announcementMode: false,
+    muted: false,
+    memberListVisibility: "visible",
+    pinnedMessageId: `chat-message-${event.id}-launch`,
     vendor: vendorUser?.id ? vendor : getDefaultVendor(),
     members: [],
     messages: [buildVendorLaunchMessage(event, vendorUser?.id ? vendor : getDefaultVendor())],
@@ -196,7 +266,9 @@ export const joinEventChatGroup = ({
             id: `chat-message-${event.id}-${member.id}-${Date.now()}`,
             senderId: member.id,
             senderName: member.name,
+            senderAvatar: member.avatar,
             role: "member",
+            senderMemberRole: member.memberRole,
             createdAt: new Date().toISOString(),
             body: `Joined the group after ${reasonText}.`,
           },
@@ -222,6 +294,7 @@ export const appendEventChatMessage = ({
   kind = "text",
   assetUrl,
   assetName,
+  href,
 }: {
   eventId: string;
   sender: IEventChatParticipant;
@@ -229,6 +302,7 @@ export const appendEventChatMessage = ({
   kind?: IEventChatMessage["kind"];
   assetUrl?: string;
   assetName?: string;
+  href?: string;
 }) => {
   if (!canUseStorage() || !eventId) return null;
 
@@ -246,6 +320,9 @@ export const appendEventChatMessage = ({
     kind,
     assetUrl,
     assetName,
+    href,
+    senderAvatar: sender.avatar,
+    senderMemberRole: sender.memberRole,
   };
 
   const nextGroup: IEventChatGroup = {
@@ -255,9 +332,7 @@ export const appendEventChatMessage = ({
     preview:
       kind === "image"
         ? `${sender.name} shared an image.`
-        : kind === "audio"
-          ? `${sender.name} shared an audio update.`
-          : kind === "file"
+        : kind === "file"
             ? `${sender.name} attached a file.`
             : body || existingGroup.preview,
     messages: [...existingGroup.messages, nextMessage],
@@ -268,3 +343,124 @@ export const appendEventChatMessage = ({
   );
   return nextMessage;
 };
+
+const updateGroupById = (
+  groupId: string,
+  updater: (group: IEventChatGroup) => IEventChatGroup,
+) => {
+  if (!canUseStorage() || !groupId) return null;
+  const groups = readGroups();
+  const existingGroup = groups.find((group) => group.id === groupId);
+  if (!existingGroup) return null;
+  const nextGroup = updater(existingGroup);
+  writeGroups(groups.map((group) => (group.id === groupId ? nextGroup : group)));
+  return nextGroup;
+};
+
+export const updateEventChatGroupSettings = (
+  groupId: string,
+  settings: Partial<
+    Pick<
+      IEventChatGroup,
+      "announcementMode" | "muted" | "memberListVisibility" | "pinnedMessageId"
+    >
+  >,
+) =>
+  updateGroupById(groupId, (group) => ({
+    ...group,
+    ...settings,
+  }));
+
+export const toggleEventChatReaction = ({
+  groupId,
+  messageId,
+  emoji,
+  userId,
+}: {
+  groupId: string;
+  messageId: string;
+  emoji: string;
+  userId: string;
+}) =>
+  updateGroupById(groupId, (group) => ({
+    ...group,
+    messages: group.messages.map((message) => {
+      if (message.id !== messageId) return message;
+
+      const reactions = message.reactions ?? [];
+      const existingReaction = reactions.find((reaction) => reaction.emoji === emoji);
+      if (!existingReaction) {
+        return {
+          ...message,
+          reactions: [
+            ...reactions,
+            {
+              emoji,
+              count: 1,
+              reactedBy: [userId],
+            },
+          ],
+        };
+      }
+
+      const hasReacted = existingReaction.reactedBy.includes(userId);
+      const nextReactedBy = hasReacted
+        ? existingReaction.reactedBy.filter((id) => id !== userId)
+        : [...existingReaction.reactedBy, userId];
+      const nextReactions = reactions
+        .map((reaction) =>
+          reaction.emoji === emoji
+            ? {
+                ...reaction,
+                count: nextReactedBy.length,
+                reactedBy: nextReactedBy,
+              }
+            : reaction,
+        )
+        .filter((reaction) => reaction.count > 0);
+
+      return {
+        ...message,
+        reactions: nextReactions,
+      };
+    }),
+  }));
+
+export const hideEventChatMessage = (groupId: string, messageId: string) =>
+  updateGroupById(groupId, (group) => ({
+    ...group,
+    messages: group.messages.map((message) =>
+      message.id === messageId
+        ? {
+            ...message,
+            hiddenByVendor: true,
+          }
+        : message,
+    ),
+  }));
+
+export const reportEventChatMember = (groupId: string, memberId: string) =>
+  updateGroupById(groupId, (group) => ({
+    ...group,
+    members: group.members.map((member) =>
+      member.id === memberId
+        ? {
+            ...member,
+            reportedAt: new Date().toISOString(),
+          }
+        : member,
+    ),
+  }));
+
+export const blockEventChatMember = (groupId: string, memberId: string) =>
+  updateGroupById(groupId, (group) => ({
+    ...group,
+    members: group.members.map((member) =>
+      member.id === memberId
+        ? {
+            ...member,
+            isBlocked: true,
+          }
+        : member,
+    ),
+  }));

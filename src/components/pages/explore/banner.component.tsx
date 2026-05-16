@@ -7,13 +7,13 @@ import React, { memo } from "react";
 
 const ExploreBannerComponent = () => {
   return (
-    <div className="aspect-video bg-cover relative rounded-lg overflow-hidden max-h-[700px] w-full">
+    <div className="aspect-video bg-cover relative overflow-hidden max-h-[700px] w-full">
       <CustomImageComponent
         src={ExploreBanner}
         alt="banner"
         fill
         className="rounded-none"
-        imageClassName="object-cover object-center"
+        imageClassName="object-cover object-center rounded-none"
       />
       <div className="size-full bg-black/50 z-10 relative">
         <SectionContainer className="flex-col flex text-center gap-6 items-center justify-center h-full">

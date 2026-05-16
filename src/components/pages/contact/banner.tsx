@@ -5,7 +5,7 @@ import React, { memo } from "react";
 
 const Banner = () => {
   return (
-    <div className="aspect-video bg-cover relative rounded-lg overflow-hidden max-h-[400px] w-full">
+    <div className="aspect-video bg-cover relative overflow-hidden max-h-[400px] w-full">
       <CustomImageComponent
         src={ContactUsBanner}
         alt="banner"

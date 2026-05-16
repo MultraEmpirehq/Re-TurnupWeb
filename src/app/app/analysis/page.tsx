@@ -1,151 +1,212 @@
 "use client";
 
-import { useEvents } from "@/hooks/use-event";
 import DashboardTicketSalesChart from "@/components/pages/app/dashboard-ticket-sales-chart";
 import { Button } from "@/components/ui/button";
-import { IEventDetailsType, IMonthlyTicketsSold } from "@/lib/types";
+import { useEvents } from "@/hooks/use-event";
+import {
+  useVendorTicketAnalytics,
+  VendorTicketAnalyticsApiRecord,
+  VendorTicketRevenueByCurrency,
+} from "@/hooks/use-vendor-tickets";
+import { AppCurrency, formatAppMoney, getCurrencyForCountry } from "@/lib/currency";
+import { IMonthlyTicketsSold, PriceDetailsType } from "@/lib/types";
 import useUserStore from "@/stores/user-store";
 import Link from "next/link";
 import React, { memo, useMemo } from "react";
 
-const formatMetricValue = (value: number) => {
-  return value.toLocaleString();
+type RevenueValue = PriceDetailsType | number | undefined;
+type RevenueByCurrencyRow = VendorTicketRevenueByCurrency;
+type AnalyticsTotals = {
+  purchased: number;
+  attended: number;
+  transferred: number;
+  remaining: number;
 };
 
-const isUpcomingEvent = (event: IEventDetailsType) => {
-  return new Date(event.date).getTime() >= Date.now();
+const formatMetricValue = (value: number) => value.toLocaleString();
+
+const getAnalyticsAmount = (value: RevenueValue) => {
+  if (typeof value === "number") return value;
+  return Number(value?.amount ?? 0);
 };
 
-const getEngagementScore = (event: IEventDetailsType) => {
-  const ticketWeight = (event.totalTickets ?? 0) * 10;
-  const guestWeight = (event.eventGuestsOfHonour?.length ?? 0) * 5;
-  const activityWeight = (event.activities?.length ?? 0) * 4;
-  const mediaWeight = (event.medias?.length ?? 0) * 2;
-  const infoWeight = (event.additionalInformation?.length ?? 0) * 1;
-
-  return (
-    ticketWeight + guestWeight + activityWeight + mediaWeight + infoWeight
-  );
+const getCurrencyMeta = (value: RevenueValue) => {
+  if (typeof value === "number" || !value?.currency?.code) return null;
+  return {
+    code: value.currency.code,
+    locale: value.currency.locale || "en-US",
+  };
 };
+
+const formatMoney = (
+  amount: number,
+  value?: RevenueValue,
+  fallbackCurrency?: AppCurrency,
+) => {
+  const currency = getCurrencyMeta(value);
+  if (amount === 0) {
+    return currency
+      ? new Intl.NumberFormat(currency.locale, {
+          style: "currency",
+          currency: currency.code,
+          maximumFractionDigits: 0,
+        }).format(0)
+      : formatAppMoney(0, fallbackCurrency);
+  }
+
+  if (typeof value !== "number" && value?.formatted?.withCurrency) {
+    return value.formatted.withCurrency;
+  }
+
+  if (currency) {
+    return new Intl.NumberFormat(currency.locale, {
+      style: "currency",
+      currency: currency.code,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  }
+
+  return formatAppMoney(amount, fallbackCurrency);
+};
+
+const summarizeRevenue = (
+  rows: VendorTicketAnalyticsApiRecord[],
+  fallbackCurrency: AppCurrency,
+  revenueByCurrency: RevenueByCurrencyRow[] = [],
+) => {
+  if (revenueByCurrency.length > 0) {
+    return revenueByCurrency
+      .map((item) => {
+        const money = item.revenue;
+        if (money && typeof money !== "number") {
+          return formatMoney(money.amount, money, fallbackCurrency);
+        }
+        const amount = Number(item.amount ?? 0);
+        const currency =
+          item.currency?.code || item.currencyCode
+            ? {
+                code: item.currency?.code || item.currencyCode || fallbackCurrency.code,
+                locale: item.currency?.locale || fallbackCurrency.locale,
+              }
+            : null;
+        return currency
+          ? new Intl.NumberFormat(currency.locale, {
+              style: "currency",
+              currency: currency.code,
+              maximumFractionDigits: 0,
+            }).format(amount)
+          : formatAppMoney(amount, fallbackCurrency);
+      })
+      .join(" + ");
+  }
+
+  const grouped = new Map<
+    string,
+    { amount: number; sample?: RevenueValue; label: string }
+  >();
+
+  rows.forEach((row) => {
+    const amount = getAnalyticsAmount(row.revenue);
+    const currency = getCurrencyMeta(row.revenue);
+    const key = currency?.code ?? "plain";
+    const label = currency?.code ?? "Total";
+    const existing = grouped.get(key);
+
+    grouped.set(key, {
+      amount: (existing?.amount ?? 0) + amount,
+      sample: existing?.sample ?? row.revenue,
+      label,
+    });
+  });
+
+  const values = Array.from(grouped.values());
+  if (values.length === 0) return formatAppMoney(0, fallbackCurrency);
+  if (values.length === 1) {
+    return formatMoney(values[0].amount, values[0].sample, fallbackCurrency);
+  }
+
+  return values
+    .map((item) =>
+      `${item.label} ${formatMoney(item.amount, item.sample, fallbackCurrency)}`,
+    )
+    .join(" + ");
+};
+
+const getPurchased = (row: VendorTicketAnalyticsApiRecord) =>
+  row.purchased ?? row.totalPurchased ?? 0;
+
+const getAttended = (row: VendorTicketAnalyticsApiRecord) =>
+  row.attended ?? row.totalAttended ?? 0;
+
+const getTransferred = (row: VendorTicketAnalyticsApiRecord) =>
+  row.transferred ?? row.totalTransferred ?? 0;
+
+const getRemaining = (row: VendorTicketAnalyticsApiRecord) =>
+  row.remaining ?? row.totalRemaining ?? 0;
+
+const getEventName = (row: VendorTicketAnalyticsApiRecord) =>
+  row.eventName ?? row.event ?? "Event";
+
+const getCategoryName = (row: VendorTicketAnalyticsApiRecord) =>
+  row.ticketCategory ?? row.category ?? "Ticket";
 
 const MetricCard: React.FC<{
   title: string;
   value: string;
   caption: string;
   pill: string;
-}> = ({ title, value, caption, pill }) => {
-  return (
-    <article className="relative overflow-hidden rounded-[1.6rem] border border-secondary-100 bg-white px-5 py-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:rounded-[2rem] sm:px-7 sm:py-6 lg:px-8 lg:py-7">
-      <div className="absolute -bottom-8 -right-8 size-24 rounded-full bg-secondary-50/80 sm:-bottom-10 sm:-right-10 sm:size-32" />
-      <div className="relative space-y-4">
-        <p className="text-sm text-secondary-500">{title}</p>
-        <p className="text-3xl font-bold tracking-tight text-secondary-950 sm:text-4xl">
-          {value}
-        </p>
-        <div className="flex flex-col items-start gap-2 text-sm text-secondary-400 sm:flex-row sm:items-center sm:gap-3">
-          <span className="rounded-full bg-secondary-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-secondary-500">
-            {pill}
-          </span>
-          <span>{caption}</span>
-        </div>
+}> = ({ title, value, caption, pill }) => (
+  <article className="relative overflow-hidden rounded-[1.6rem] border border-secondary-100 bg-white px-5 py-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:rounded-[2rem] sm:px-7 sm:py-6 lg:px-8 lg:py-7">
+    <div className="absolute -bottom-8 -right-8 size-24 rounded-full bg-secondary-50/80 sm:-bottom-10 sm:-right-10 sm:size-32" />
+    <div className="relative space-y-4">
+      <p className="text-sm text-secondary-500">{title}</p>
+      <p className="text-3xl font-bold tracking-tight text-secondary-950 sm:text-4xl">
+        {value}
+      </p>
+      <div className="flex flex-col items-start gap-2 text-sm text-secondary-400 sm:flex-row sm:items-center sm:gap-3">
+        <span className="rounded-full bg-secondary-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-secondary-500">
+          {pill}
+        </span>
+        <span>{caption}</span>
       </div>
-    </article>
-  );
-};
+    </div>
+  </article>
+);
 
 const InsightCard: React.FC<{
   title: string;
   subtitle: string;
   value: string;
   caption: string;
-}> = ({ title, subtitle, value, caption }) => {
-  return (
-    <article className="rounded-[1.8rem] border border-secondary-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-secondary-400">
-        {subtitle}
-      </p>
-      <h2 className="mt-3 text-xl font-bold text-secondary-950">{title}</h2>
-      <p className="mt-5 text-3xl font-bold tracking-tight text-secondary-950">
-        {value}
-      </p>
-      <p className="mt-3 text-sm leading-7 text-secondary-500">{caption}</p>
-    </article>
-  );
-};
+}> = ({ title, subtitle, value, caption }) => (
+  <article className="rounded-[1.8rem] border border-secondary-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-secondary-400">
+      {subtitle}
+    </p>
+    <h2 className="mt-3 text-xl font-bold text-secondary-950">{title}</h2>
+    <p className="mt-5 text-3xl font-bold tracking-tight text-secondary-950">
+      {value}
+    </p>
+    <p className="mt-3 text-sm leading-7 text-secondary-500">{caption}</p>
+  </article>
+);
 
-const EventReactionCard: React.FC<{ event: IEventDetailsType }> = ({ event }) => {
-  const engagementScore = getEngagementScore(event);
-
-  return (
-    <article className="rounded-[1.8rem] border border-secondary-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-secondary-400">
-            User Reaction
-          </p>
-          <h3 className="mt-3 text-xl font-bold leading-tight text-secondary-950">
-            {event.name}
-          </h3>
-        </div>
-        <span className="rounded-full bg-secondary-50 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-secondary-400">
-          {isUpcomingEvent(event) ? "Live" : "Archive"}
-        </span>
-      </div>
-
-      <div className="mt-5 overflow-hidden rounded-[1rem] border border-secondary-100 bg-secondary-50/70">
-        <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0 text-sm">
-          <div className="border-b border-secondary-100 px-4 py-3 font-semibold text-secondary-950">
-            Interest Score
-          </div>
-          <div className="border-b border-secondary-100 px-4 py-3 text-secondary-500">
-            {engagementScore.toLocaleString()}
-          </div>
-
-          <div className="border-b border-secondary-100 px-4 py-3 font-semibold text-secondary-950">
-            Guests
-          </div>
-          <div className="border-b border-secondary-100 px-4 py-3 text-secondary-500">
-            {(event.eventGuestsOfHonour?.length ?? 0).toLocaleString()}
-          </div>
-
-          <div className="border-b border-secondary-100 px-4 py-3 font-semibold text-secondary-950">
-            Activities
-          </div>
-          <div className="border-b border-secondary-100 px-4 py-3 text-secondary-500">
-            {(event.activities?.length ?? 0).toLocaleString()}
-          </div>
-
-          <div className="border-b border-secondary-100 px-4 py-3 font-semibold text-secondary-950">
-            Media
-          </div>
-          <div className="border-b border-secondary-100 px-4 py-3 text-secondary-500">
-            {(event.medias?.length ?? 0).toLocaleString()}
-          </div>
-
-          <div className="px-4 py-3 font-semibold text-secondary-950">Tickets</div>
-          <div className="px-4 py-3 text-secondary-500">
-            {(event.totalTickets ?? 0).toLocaleString()} published
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-};
-
-const TopPerformingEventCard: React.FC<{ event: IEventDetailsType | null }> = ({
-  event,
-}) => {
-  if (!event) {
+const TopTicketEventCard: React.FC<{
+  row: VendorTicketAnalyticsApiRecord | null;
+  fallbackCurrency: AppCurrency;
+}> = ({ row, fallbackCurrency }) => {
+  if (!row) {
     return (
       <article className="rounded-[1.8rem] border border-secondary-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-8">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-secondary-400">
-          Top Performer
+          Top Ticket Event
         </p>
         <h2 className="mt-3 text-2xl font-bold text-secondary-950">
-          No live event yet
+          No ticket analytics yet
         </h2>
         <p className="mt-3 text-sm leading-7 text-secondary-500">
-          Create and publish an event to unlock a featured live-performance block here.
+          Ticket sales, registrations, and check-ins will appear here once
+          attendees start booking and arriving.
         </p>
       </article>
     );
@@ -156,52 +217,42 @@ const TopPerformingEventCard: React.FC<{ event: IEventDetailsType | null }> = ({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-secondary-400">
-            Top Performing Live Event
+            Top Ticket Event
           </p>
           <h2 className="mt-3 text-2xl font-bold leading-tight text-secondary-950">
-            {event.name}
+            {getEventName(row)}
           </h2>
           <p className="mt-3 text-sm leading-7 text-secondary-500">
-            {event.description ||
-              "This event is currently carrying the strongest live momentum in your Turnupz vendor workspace."}
+            This event currently has the strongest ticket movement across your
+            published listings.
           </p>
         </div>
         <span className="rounded-full bg-secondary-50 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-secondary-400">
-          Live
+          Tickets
         </span>
       </div>
 
       <div className="mt-6 overflow-hidden rounded-[1rem] border border-secondary-100 bg-secondary-50/70">
         <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0 text-sm">
-          <div className="border-b border-secondary-100 px-4 py-3 font-semibold text-secondary-950">
-            Engagement
-          </div>
-          <div className="border-b border-secondary-100 px-4 py-3 text-secondary-500">
-            {getEngagementScore(event).toLocaleString()} score
-          </div>
-
-          <div className="border-b border-secondary-100 px-4 py-3 font-semibold text-secondary-950">
-            Event Date
-          </div>
-          <div className="border-b border-secondary-100 px-4 py-3 text-secondary-500">
-            {new Intl.DateTimeFormat("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            }).format(new Date(event.date))}
-          </div>
-
-          <div className="border-b border-secondary-100 px-4 py-3 font-semibold text-secondary-950">
-            Venue
-          </div>
-          <div className="border-b border-secondary-100 px-4 py-3 text-secondary-500">
-            {event.venue?.name || "Venue pending"}
-          </div>
-
-          <div className="px-4 py-3 font-semibold text-secondary-950">Tickets</div>
-          <div className="px-4 py-3 text-secondary-500">
-            {(event.totalTickets ?? 0).toLocaleString()} published
-          </div>
+          {[
+            ["Purchased", formatMetricValue(getPurchased(row))],
+            ["Attended", formatMetricValue(getAttended(row))],
+            ["Transferred", formatMetricValue(getTransferred(row))],
+            ["Remaining", formatMetricValue(getRemaining(row))],
+            [
+              "Revenue",
+              formatMoney(getAnalyticsAmount(row.revenue), row.revenue, fallbackCurrency),
+            ],
+          ].map(([label, value]) => (
+            <React.Fragment key={label}>
+              <div className="border-b border-secondary-100 px-4 py-3 font-semibold text-secondary-950 last:border-b-0">
+                {label}
+              </div>
+              <div className="border-b border-secondary-100 px-4 py-3 text-secondary-500 last:border-b-0">
+                {value}
+              </div>
+            </React.Fragment>
+          ))}
         </div>
       </div>
     </article>
@@ -211,125 +262,118 @@ const TopPerformingEventCard: React.FC<{ event: IEventDetailsType | null }> = ({
 export const dynamic = "force-dynamic";
 
 const AnalysisPage = () => {
-  const userId = useUserStore((state) => state?.userDetails?.id);
+  const userDetails = useUserStore((state) => state?.userDetails);
+  const userId = userDetails?.id;
+  const platformCurrency = useMemo(
+    () =>
+      getCurrencyForCountry(
+        userDetails?.platformCurrency ||
+          userDetails?.countryCode ||
+          userDetails?.country,
+      ),
+    [userDetails?.country, userDetails?.countryCode, userDetails?.platformCurrency],
+  );
   const { data: eventsData } = useEvents({
     limit: 50,
     userId: userId ?? undefined,
   });
+  const { data: ticketAnalyticsResponse } = useVendorTicketAnalytics({});
+  const ticketAnalytics = useMemo(
+    () => ticketAnalyticsResponse?.rows ?? [],
+    [ticketAnalyticsResponse?.rows],
+  );
+  const revenueByCurrency = useMemo(
+    () => ticketAnalyticsResponse?.revenueByCurrency ?? [],
+    [ticketAnalyticsResponse?.revenueByCurrency],
+  );
 
   const events = useMemo(
     () => eventsData?.pages?.flatMap((page) => page?.data ?? []) ?? [],
     [eventsData],
   );
 
+  const totals = useMemo<AnalyticsTotals>(() => {
+    return ticketAnalytics.reduce<AnalyticsTotals>(
+      (summary, row) => ({
+        purchased: summary.purchased + getPurchased(row),
+        attended: summary.attended + getAttended(row),
+        transferred: summary.transferred + getTransferred(row),
+        remaining: summary.remaining + getRemaining(row),
+      }),
+      { purchased: 0, attended: 0, transferred: 0, remaining: 0 },
+    );
+  }, [ticketAnalytics]);
+
   const metrics = useMemo(
     () => [
       {
         title: "Total Events",
         value: formatMetricValue(events.length),
-        pill: "Live",
-        caption: "Published across your Turnupz workspace",
+        pill: "Events",
+        caption: "Events currently linked to your vendor profile",
       },
       {
-        title: "Total Attendance",
-        value: "0",
-        pill: "Pending",
-        caption: "Attendance metrics will activate once backend registrations are connected",
+        title: "Tickets Purchased",
+        value: formatMetricValue(totals.purchased),
+        pill: "Purchased",
+        caption: "Paid tickets and confirmed registration records",
       },
       {
         title: "Total Revenue",
-        value: "$0.00",
-        pill: "Pending",
-        caption: "Revenue metrics will activate once backend ticket sales are connected",
+        value: summarizeRevenue(
+          ticketAnalytics,
+          platformCurrency,
+          revenueByCurrency,
+        ),
+        pill: "Revenue",
+        caption: "Revenue from ticket and registration activity",
       },
     ],
-    [events.length],
+    [
+      events.length,
+      platformCurrency,
+      revenueByCurrency,
+      ticketAnalytics,
+      totals.purchased,
+    ],
   );
 
-  const liveEvents = useMemo(
-    () => events.filter((event) => isUpcomingEvent(event)),
-    [events],
-  );
+  const attendanceRate = useMemo(() => {
+    if (totals.purchased === 0) return 0;
+    return Math.round((totals.attended / totals.purchased) * 100);
+  }, [totals.attended, totals.purchased]);
 
-  const audienceReactionLeader = useMemo(() => {
-    const source = liveEvents.length > 0 ? liveEvents : events;
-    if (source.length === 0) {
-      return null;
-    }
+  const transferRate = useMemo(() => {
+    if (totals.purchased === 0) return 0;
+    return Math.round((totals.transferred / totals.purchased) * 100);
+  }, [totals.purchased, totals.transferred]);
 
-    return [...source].sort(
-      (left, right) => getEngagementScore(right) - getEngagementScore(left),
-    )[0];
-  }, [events, liveEvents]);
-
-  const topPerformingLiveEvent = useMemo(() => {
-    if (liveEvents.length === 0) {
-      return null;
-    }
-
-    return [...liveEvents].sort(
-      (left, right) => getEngagementScore(right) - getEngagementScore(left),
-    )[0];
-  }, [liveEvents]);
-
-  const averageEngagementPerEvent = useMemo(() => {
-    if (events.length === 0) {
-      return 0;
-    }
-
-    const totalScore = events.reduce(
-      (sum, event) => sum + getEngagementScore(event),
-      0,
-    );
-
-    return Math.round(totalScore / events.length);
-  }, [events]);
-
-  const liveEventShare = useMemo(() => {
-    if (events.length === 0) {
-      return 0;
-    }
-
-    return Math.round((liveEvents.length / events.length) * 100);
-  }, [events.length, liveEvents.length]);
-
-  const publishedTickets = useMemo(() => {
-    return events.reduce((sum, event) => sum + (event.totalTickets ?? 0), 0);
-  }, [events]);
-
-  const monthlyEventActivity = useMemo<IMonthlyTicketsSold[]>(() => {
-    const bucket = new Map<string, number>();
-
-    events.forEach((event) => {
-      const eventDate = new Date(event.date);
-      const key = `${eventDate.getFullYear()}-${eventDate.getMonth()}`;
-      bucket.set(key, (bucket.get(key) ?? 0) + 1);
-    });
-
-    return [...bucket.entries()]
-      .map(([key, count]) => {
-        const [year, month] = key.split("-").map(Number);
-        const date = new Date(year, month, 1);
-        const label = new Intl.DateTimeFormat("en-US", {
-          month: "short",
-        }).format(date);
-
-        return {
-          month: key,
-          label,
-          count,
-        };
-      })
-      .sort((left, right) => left.month.localeCompare(right.month));
-  }, [events]);
-
-  const strongestEvents = useMemo(
+  const chartRows = useMemo<IMonthlyTicketsSold[]>(
     () =>
-      [...events]
-        .sort((left, right) => getEngagementScore(right) - getEngagementScore(left))
-        .slice(0, 4),
-    [events],
+      ticketAnalytics
+        .map((row, index) => ({
+          month: row.eventId || `${getEventName(row)}-${index}`,
+          label: getEventName(row).slice(0, 14),
+          count: getPurchased(row),
+        }))
+        .filter((row) => row.count > 0)
+        .slice(0, 8),
+    [ticketAnalytics],
   );
+
+  const topTicketEvent = useMemo(() => {
+    if (ticketAnalytics.length === 0) return null;
+    return [...ticketAnalytics].sort(
+      (left, right) => getPurchased(right) - getPurchased(left),
+    )[0];
+  }, [ticketAnalytics]);
+
+  const topAttendanceEvent = useMemo(() => {
+    if (ticketAnalytics.length === 0) return null;
+    return [...ticketAnalytics].sort(
+      (left, right) => getAttended(right) - getAttended(left),
+    )[0];
+  }, [ticketAnalytics]);
 
   const latestEvents = useMemo(
     () =>
@@ -350,11 +394,11 @@ const AnalysisPage = () => {
             Event Analytics
           </p>
           <h1 className="text-[clamp(2rem,4vw,3rem)] font-bold leading-[0.96] tracking-tight text-secondary-950">
-            Frontend event analytics preview
+            Event performance analytics
           </h1>
           <p className="max-w-3xl text-sm leading-7 text-secondary-500 sm:text-base">
-            This page is currently running in frontend-only mode. It uses your
-            local event data and safe placeholder values until the backend is connected.
+            Review purchases, attendance, transfers, remaining capacity, and
+            revenue across your events.
           </p>
         </div>
         <Button
@@ -379,84 +423,90 @@ const AnalysisPage = () => {
               Performance Overview
             </p>
             <h2 className="mt-3 text-[clamp(1.9rem,3vw,2.6rem)] font-bold tracking-tight text-secondary-950">
-              Event growth and audience response
+              Ticket movement and attendance
             </h2>
           </div>
           <Link
-            href="/app/events"
+            href="/app/tickets"
             className="text-sm font-medium text-secondary-500 transition-colors hover:text-secondary-400"
           >
-            View All Events
+            View Ticket Ledger
           </Link>
         </div>
 
         <article className="rounded-[1.8rem] border border-secondary-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-8">
-          <div>
-            <p className="text-sm leading-7 text-secondary-500">
-              These frontend insights are derived from your created events,
-              guests, activities, media, and published ticket counts.
-            </p>
-          </div>
+          <p className="text-sm leading-7 text-secondary-500">
+            These numbers focus on ticket and registration activity. Audience
+            views, likes, and reactions will appear here once they are available.
+          </p>
 
           <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
             <InsightCard
-              title="Average engagement per event"
-              subtitle="Audience"
-              value={averageEngagementPerEvent.toLocaleString()}
-              caption="Average local engagement score across your created events."
+              title="Attendance rate"
+              subtitle="Check-ins"
+              value={`${attendanceRate}%`}
+              caption="Checked-in attendees compared with purchased or registered tickets."
             />
             <InsightCard
-              title="Live event share"
-              subtitle="Momentum"
-              value={`${liveEventShare}%`}
-              caption="How much of your current event board is still upcoming."
+              title="Transfer rate"
+              subtitle="Transfers"
+              value={`${transferRate}%`}
+              caption="Transferred tickets compared with total purchased tickets."
             />
             <InsightCard
-              title="Published tickets"
+              title="Remaining capacity"
               subtitle="Inventory"
-              value={publishedTickets.toLocaleString()}
-              caption="Total ticket inventory currently attached to your created events."
+              value={formatMetricValue(totals.remaining)}
+              caption="Ticket inventory still available across your events."
             />
           </div>
 
           <div className="mt-8 rounded-[1.6rem] border border-secondary-100 bg-secondary-50/50 p-4 sm:p-6">
-            <DashboardTicketSalesChart data={monthlyEventActivity} />
+            {chartRows.length > 0 ? (
+              <DashboardTicketSalesChart data={chartRows} />
+            ) : (
+              <div className="rounded-[1.25rem] border border-dashed border-secondary-200 bg-white px-4 py-10 text-center text-sm text-secondary-500">
+                Ticket purchase chart will appear once attendees begin booking.
+              </div>
+            )}
           </div>
         </article>
       </section>
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <TopPerformingEventCard event={topPerformingLiveEvent} />
+        <TopTicketEventCard
+          row={topTicketEvent}
+          fallbackCurrency={platformCurrency}
+        />
 
         <div className="space-y-6">
-          {audienceReactionLeader ? (
-            <EventReactionCard event={audienceReactionLeader} />
-          ) : (
-            <article className="rounded-[1.8rem] border border-secondary-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-secondary-400">
-                User Reaction
-              </p>
-              <h2 className="mt-3 text-xl font-bold text-secondary-950">
-                No event reaction data yet
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-secondary-500">
-                Create your first event and frontend reaction signals will begin
-                to build here.
-              </p>
-            </article>
-          )}
+          <article className="rounded-[1.8rem] border border-secondary-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-secondary-400">
+              Best Attendance
+            </p>
+            <h2 className="mt-3 text-xl font-bold text-secondary-950">
+              {topAttendanceEvent ? getEventName(topAttendanceEvent) : "No check-ins yet"}
+            </h2>
+            <p className="mt-5 text-3xl font-bold tracking-tight text-secondary-950">
+              {topAttendanceEvent
+                ? formatMetricValue(getAttended(topAttendanceEvent))
+                : "0"}
+            </p>
+            <p className="mt-3 text-sm leading-7 text-secondary-500">
+              Highest checked-in attendance from your scanner activity.
+            </p>
+          </article>
 
           <article className="rounded-[1.8rem] bg-[#11172d] p-6 text-white shadow-[0_20px_50px_rgba(17,23,45,0.24)] sm:p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/40">
-              Frontend Mode
+              Operations View
             </p>
             <h2 className="mt-4 text-3xl font-bold leading-tight">
-              This analytics view is safe to design with now and easy to connect later.
+              Track sales, check-ins, transfers, and remaining inventory.
             </h2>
             <p className="mt-4 text-sm leading-7 text-white/72 sm:text-base sm:leading-8">
-              Once the backend is available, we can replace the placeholder
-              attendance and revenue values with real registrations, sales,
-              clicks, and reaction metrics without reworking the page design.
+              Use this page to decide where to promote more, which events need
+              scanner support, and how much ticket capacity is still available.
             </p>
           </article>
         </div>
@@ -467,39 +517,52 @@ const AnalysisPage = () => {
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold text-secondary-950">
-                Strongest event reactions
+                Ticket analytics by category
               </h2>
               <p className="mt-2 text-sm leading-7 text-secondary-500">
-                Events with the strongest current frontend reaction signals.
+                Purchases, check-ins, transfers, remaining inventory, and
+                revenue by event and ticket category.
               </p>
             </div>
             <span className="rounded-full bg-secondary-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-secondary-500">
-              {strongestEvents.length} tracked
+              {ticketAnalytics.length} rows
             </span>
           </div>
 
           <div className="mt-6 space-y-4">
-            {strongestEvents.length === 0 && (
+            {ticketAnalytics.length === 0 && (
               <p className="text-sm text-secondary-500">
-                No created events yet.
+                No ticket activity has been recorded yet.
               </p>
             )}
-            {strongestEvents.map((event) => (
+            {ticketAnalytics.map((row, index) => (
               <div
-                key={event.id}
+                key={`${row.eventId}-${getCategoryName(row)}-${index}`}
                 className="rounded-[1.4rem] border border-secondary-100 bg-secondary-50/50 p-5"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="font-semibold text-secondary-950">
-                      {event.name}
+                      {getEventName(row)}
                     </p>
                     <p className="mt-1 text-sm text-secondary-500">
-                      {isUpcomingEvent(event) ? "Upcoming event" : "Past event"}
+                      {getCategoryName(row)}
                     </p>
                   </div>
                   <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-secondary-500">
-                    Score {getEngagementScore(event)}
+                    {formatMetricValue(getPurchased(row))} bought
+                  </span>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-secondary-500 sm:grid-cols-4">
+                  <span>{formatMetricValue(getAttended(row))} attended</span>
+                  <span>{formatMetricValue(getTransferred(row))} transferred</span>
+                  <span>{formatMetricValue(getRemaining(row))} remaining</span>
+                  <span>
+                    {formatMoney(
+                      getAnalyticsAmount(row.revenue),
+                      row.revenue,
+                      platformCurrency,
+                    )}
                   </span>
                 </div>
               </div>
@@ -514,7 +577,7 @@ const AnalysisPage = () => {
                 Latest created events
               </h2>
               <p className="mt-2 text-sm leading-7 text-secondary-500">
-                Most recent event entries published into your Turnupz vendor workspace.
+                Recent events linked to your vendor profile.
               </p>
             </div>
             <span className="rounded-full bg-secondary-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-secondary-500">
@@ -547,7 +610,7 @@ const AnalysisPage = () => {
                     </p>
                   </div>
                   <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-secondary-500">
-                    {(event.totalTickets ?? 0).toLocaleString()} tickets
+                    {(event.totalTickets ?? 0).toLocaleString()} capacity
                   </span>
                 </div>
               </div>

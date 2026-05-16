@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import SelectField, { ISelectFieldOption } from "@/components/ui/select-field";
 import React, { memo, useCallback, useMemo, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
@@ -8,6 +8,8 @@ import TextareaField from "@/components/ui/textarea-field";
 import { Button } from "@/components/ui/button";
 import TicketInput, { ITicketType } from "./ticket-input";
 import { TrashIcon } from "lucide-react";
+import { getCurrencyForCountry } from "@/lib/currency";
+import useUserStore from "@/stores/user-store";
 
 export enum ESaleMethods {
   SELL_ON_TURNUP = "on_turnup",
@@ -19,6 +21,7 @@ export interface IAccessPassType {
   passName: string;
   quantity: number;
   assigneeEmails: string[];
+  transferable?: boolean;
 }
 
 export interface ITicketFormValues {
@@ -26,6 +29,8 @@ export interface ITicketFormValues {
   ticketUrl?: string;
   eventTickets?: ITicketType[];
   passAssignments?: IAccessPassType[];
+  eventCountry?: string;
+  eventCountryCode?: string;
 }
 
 const ticketSaleMethodOptions: ISelectFieldOption[] = [
@@ -40,6 +45,8 @@ const ticketItemSchema = Joi.object({
   ticketQuantity: Joi.number().min(1).required(),
   visibility: Joi.string().valid("public", "private").required(),
   actionType: Joi.string().valid("paid", "register").required(),
+  transferable: Joi.boolean().optional(),
+  privateAccessCode: Joi.string().allow("").optional(),
 });
 
 const passItemSchema = Joi.object({
@@ -52,6 +59,7 @@ const passItemSchema = Joi.object({
     "any.required": "Pass quantity is required",
   }),
   assigneeEmails: Joi.array().items(Joi.string().email({ tlds: false })).required(),
+  transferable: Joi.boolean().optional(),
 });
 
 export const ticketFormSchema = Joi.object({
@@ -90,6 +98,7 @@ const PassAssignmentsInput: React.FC<{
     passName: "",
     quantity: "1",
     assigneeEmails: "",
+    transferable: false,
   });
 
   const addPass = () => {
@@ -106,9 +115,15 @@ const PassAssignmentsInput: React.FC<{
         passName: draft.passName.trim(),
         quantity: Number(draft.quantity || "1"),
         assigneeEmails: emails,
+        transferable: draft.transferable,
       },
     ]);
-    setDraft({ passName: "", quantity: "1", assigneeEmails: "" });
+    setDraft({
+      passName: "",
+      quantity: "1",
+      assigneeEmails: "",
+      transferable: false,
+    });
   };
 
   return (
@@ -131,8 +146,11 @@ const PassAssignmentsInput: React.FC<{
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-secondary-950">{pass.passName}</p>
                 <p className="text-xs text-secondary-500">
-                  {pass.quantity} passes · {pass.assigneeEmails.length} email
+                  {pass.quantity} passes Â· {pass.assigneeEmails.length} email
                   {pass.assigneeEmails.length === 1 ? "" : "s"}
+                </p>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-secondary-400">
+                  {pass.transferable ? "Transferable" : "Non-transferable"}
                 </p>
                 {pass.assigneeEmails.length > 0 && (
                   <p className="text-[11px] leading-5 text-secondary-400">
@@ -177,6 +195,19 @@ const PassAssignmentsInput: React.FC<{
             setDraft((current) => ({ ...current, assigneeEmails: e.target.value }))
           }
         />
+        <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-white px-3 text-sm text-secondary-700 md:col-span-2">
+          <input
+            type="checkbox"
+            checked={draft.transferable}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                transferable: event.target.checked,
+              }))
+            }
+          />
+          <span>Allow recipients to transfer these passes</span>
+        </label>
       </div>
 
       <Button type="button" variant="outline" onClick={addPass}>
@@ -190,33 +221,116 @@ const TicketForm: React.FC<{
   handleNextStep: () => Promise<void>;
   handlePreviousStep?: () => void;
 }> = ({ handleNextStep, handlePreviousStep }) => {
+  const userDetails = useUserStore((state) => state.userDetails);
   const {
     control,
     watch,
     register,
-    handleSubmit,
     setValue,
-    formState: { errors, isValid, isSubmitting },
+    setError,
+    clearErrors,
+    formState: { errors, isSubmitting },
   } = useFormContext<ITicketFormValues>();
 
   const saleMethod = watch("saleMethod");
+  const eventCountry = watch("eventCountry");
+  const eventCountryCode = watch("eventCountryCode");
   const watchedEventTickets = watch("eventTickets");
+  const watchedPassAssignments = watch("passAssignments");
   const eventTickets = useMemo(() => watchedEventTickets ?? [], [watchedEventTickets]);
+  const passAssignments = useMemo(
+    () => watchedPassAssignments ?? [],
+    [watchedPassAssignments],
+  );
 
   const totalConfiguredCapacity = useMemo(() => {
-    return (eventTickets ?? []).reduce(
+    const ticketCapacity = (eventTickets ?? []).reduce(
       (sum, ticket) => sum + Number(ticket.ticketQuantity || 0),
       0,
     );
-  }, [eventTickets]);
+    const passCapacity = (passAssignments ?? []).reduce(
+      (sum, pass) => sum + Number(pass.quantity || 0),
+      0,
+    );
+    return ticketCapacity + passCapacity;
+  }, [eventTickets, passAssignments]);
 
-  const onSubmit = useCallback(() => {
-    handleNextStep?.();
-  }, [handleNextStep]);
+  const ticketCurrency = useMemo(
+    () =>
+      getCurrencyForCountry(
+        eventCountryCode ||
+          eventCountry ||
+          userDetails?.platformCurrency ||
+          userDetails?.countryCode ||
+          userDetails?.country,
+      ),
+    [
+      eventCountry,
+      eventCountryCode,
+      userDetails?.country,
+      userDetails?.countryCode,
+      userDetails?.platformCurrency,
+    ],
+  );
+
+  const handleContinue = useCallback(async () => {
+    clearErrors(["saleMethod", "ticketUrl", "eventTickets"]);
+
+    if (!saleMethod) {
+      setError("saleMethod", {
+        type: "manual",
+        message: "Sale method is required",
+      });
+      return;
+    }
+
+    if (saleMethod === ESaleMethods.EXTERNAL_LINK) {
+      const ticketUrl = watch("ticketUrl")?.trim();
+      if (!ticketUrl) {
+        setError("ticketUrl", {
+          type: "manual",
+          message: "Please provide your external ticket link",
+        });
+        return;
+      }
+      await handleNextStep();
+      return;
+    }
+
+    if (
+      (saleMethod === ESaleMethods.SELL_ON_TURNUP ||
+        saleMethod === ESaleMethods.REGISTER) &&
+      eventTickets.length === 0
+    ) {
+      setError("eventTickets", {
+        type: "manual",
+        message:
+          saleMethod === ESaleMethods.REGISTER
+            ? "Please add at least one registration category"
+            : "Please add at least one ticket category",
+      });
+      return;
+    }
+
+    await handleNextStep();
+  }, [
+    clearErrors,
+    eventTickets.length,
+    handleNextStep,
+    saleMethod,
+    setError,
+    watch,
+  ]);
 
   return (
     <div className="space-y-10 w-full flex flex-col items-center justify-center">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 w-full">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          handleContinue();
+        }}
+        className="space-y-8 w-full"
+      >
         <Controller
           control={control}
           name="saleMethod"
@@ -240,7 +354,9 @@ const TicketForm: React.FC<{
         {saleMethod && saleMethod !== ESaleMethods.EXTERNAL_LINK && (
           <div className="grid gap-4 rounded-2xl border border-secondary-100 bg-secondary-50 p-5">
             <div>
-              <p className="text-sm text-secondary-500">Total event capacity</p>
+              <p className="text-sm text-secondary-500">
+                Total event capacity from tickets and passes
+              </p>
               <p className="mt-2 text-3xl font-bold text-secondary-950">
                 {totalConfiguredCapacity}
               </p>
@@ -265,9 +381,16 @@ const TicketForm: React.FC<{
               render={({ field, fieldState }) => (
                 <TicketInput
                   tickets={field.value ?? []}
-                  setTickets={field.onChange}
+                  setTickets={(tickets) => {
+                    field.onChange(tickets);
+                    setValue("eventTickets", tickets, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }}
                   error={fieldState?.error?.message}
                   mode="paid"
+                  currency={ticketCurrency}
                 />
               )}
             />
@@ -286,15 +409,32 @@ const TicketForm: React.FC<{
 
         {saleMethod === ESaleMethods.REGISTER && (
           <>
+            <div className="rounded-2xl border border-secondary-100 bg-secondary-50 p-5 text-sm text-secondary-600">
+              <p className="font-semibold text-secondary-950">
+                Registration-only event
+              </p>
+              <p className="mt-2 leading-6">
+                Create free registration categories like Regular, VIP Guest,
+                Press, or Invite Only. Categories can be public or private and
+                their quantities add up to the event capacity.
+              </p>
+            </div>
             <Controller
               control={control}
               name="eventTickets"
               render={({ field, fieldState }) => (
                 <TicketInput
                   tickets={field.value ?? []}
-                  setTickets={field.onChange}
+                  setTickets={(tickets) => {
+                    field.onChange(tickets);
+                    setValue("eventTickets", tickets, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }}
                   error={fieldState?.error?.message}
                   mode="register"
+                  currency={ticketCurrency}
                 />
               )}
             />
@@ -320,24 +460,40 @@ const TicketForm: React.FC<{
             </li>
             <li>
               <span className="font-medium">Register:</span> Create public or private
-              registration categories so users can submit their details without payment.
+              registration records so users can submit their details without payment.
             </li>
             <li>
               <span className="font-medium">External link:</span> Use a red preview CTA that
               sends users outside the app to your uploaded ticketing URL.
+            </li>
+            <li>
+              <span className="font-medium">Access passes:</span> Passes add to event
+              attendance. A recipient should receive passes through a user account and
+              distribute individual passes by entering each attendee&apos;s email.
+            </li>
+            <li>
+              <span className="font-medium">Transfers:</span> Ticket transfer belongs on
+              the user side after purchase. Vendors configure transferable inventory;
+              attendees transfer owned tickets from their account.
             </li>
           </ul>
         </div>
 
         <div className="w-full mt-4 flex flex-row items-center justify-start gap-3">
           <Button
+            type="button"
             onClick={handlePreviousStep}
             variant="outline"
             className="border-secondary-700 text-secondary-700"
           >
             Previous
           </Button>
-          <Button disabled={!isValid} loading={isSubmitting} type="submit">
+          <Button
+            disabled={isSubmitting}
+            loading={isSubmitting}
+            type="button"
+            onClick={handleContinue}
+          >
             Continue
           </Button>
         </div>
