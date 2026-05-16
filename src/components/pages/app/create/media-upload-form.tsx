@@ -11,18 +11,30 @@ import { useFormContext } from "react-hook-form";
 import { toast } from "sonner";
 
 export interface IMediaUploadFormValues {
-  mediaFiles: File[];
+  mediaFiles: (File | string)[];
+  sponsorNames: string[];
+  sponsorImages: (File | string)[];
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
+const getImagePreviewUrl = (image: File | string | null | undefined) => {
+  if (!image) return "";
+  if (typeof image === "string") return image;
+  if (image instanceof Blob) return URL.createObjectURL(image);
+  return "";
+};
+
 function validateFile(
   value: unknown,
   helpers: Joi.CustomHelpers,
-): File | Joi.ErrorReport {
+): File | string | Joi.ErrorReport {
   if (value == null) {
     return helpers.error("any.required");
+  }
+  if (typeof value === "string" && value.trim()) {
+    return value;
   }
   if (!(value instanceof File)) {
     return helpers.error("any.custom", {
@@ -45,12 +57,13 @@ function validateFile(
 export const mediaUploadFormSchema = Joi.object({
   mediaFiles: Joi.array()
     .items(Joi.any().custom(validateFile))
-    .min(1)
-    .required()
+    .optional()
     .messages({
       "array.min": "Please add at least one image",
       "any.required": "Please add at least one image",
     }),
+  sponsorNames: Joi.array().items(Joi.string().allow("")).optional(),
+  sponsorImages: Joi.array().items(Joi.any().custom(validateFile)).optional(),
 }).unknown(true);
 
 const MediaUploadForm: React.FC<{
@@ -65,7 +78,14 @@ const MediaUploadForm: React.FC<{
     formState: { errors, isSubmitting },
   } = useFormContext<IMediaUploadFormValues>();
 
-  const mediaFiles = watch("mediaFiles") ?? [];
+  const watchedMediaFiles = watch("mediaFiles");
+  const watchedSponsorImages = watch("sponsorImages");
+  const mediaFiles = useMemo(() => watchedMediaFiles ?? [], [watchedMediaFiles]);
+  const sponsorNames = watch("sponsorNames") ?? [];
+  const sponsorImages = useMemo(
+    () => watchedSponsorImages ?? [],
+    [watchedSponsorImages],
+  );
 
   const errorMessage = useMemo(() => {
     if (errors?.mediaFiles?.message) {
@@ -109,8 +129,56 @@ const MediaUploadForm: React.FC<{
   const removeFile = useCallback(
     (index: number) => {
       const current = getValues("mediaFiles") ?? [];
-      const next = current.filter((_: File, i: number) => i !== index);
+      const next = current.filter((_, i: number) => i !== index);
       setValue("mediaFiles", next, { shouldValidate: true });
+    },
+    [getValues, setValue],
+  );
+
+  const addSponsor = useCallback(() => {
+    setValue("sponsorNames", [...(getValues("sponsorNames") ?? []), ""], {
+      shouldValidate: true,
+    });
+    setValue("sponsorImages", [...(getValues("sponsorImages") ?? [])], {
+      shouldValidate: true,
+    });
+  }, [getValues, setValue]);
+
+  const updateSponsorName = useCallback(
+    (index: number, value: string) => {
+      const next = [...(getValues("sponsorNames") ?? [])];
+      next[index] = value;
+      setValue("sponsorNames", next, { shouldValidate: true });
+    },
+    [getValues, setValue],
+  );
+
+  const updateSponsorImage = useCallback(
+    (index: number, file?: File | null) => {
+      if (!file) return;
+      if (!file.type.includes("image")) {
+        toast.error("Please select an image file");
+        return;
+      }
+      const next = [...(getValues("sponsorImages") ?? [])];
+      next[index] = file;
+      setValue("sponsorImages", next, { shouldValidate: true });
+    },
+    [getValues, setValue],
+  );
+
+  const removeSponsor = useCallback(
+    (index: number) => {
+      setValue(
+        "sponsorNames",
+        (getValues("sponsorNames") ?? []).filter((_, i) => i !== index),
+        { shouldValidate: true },
+      );
+      setValue(
+        "sponsorImages",
+        (getValues("sponsorImages") ?? []).filter((_, i) => i !== index),
+        { shouldValidate: true },
+      );
     },
     [getValues, setValue],
   );
@@ -118,6 +186,14 @@ const MediaUploadForm: React.FC<{
   const hasMediaFiles = useMemo(() => {
     return mediaFiles.length > 0;
   }, [mediaFiles]);
+  const mediaPreviewUrls = useMemo(
+    () => mediaFiles.map(getImagePreviewUrl).filter(Boolean),
+    [mediaFiles],
+  );
+  const sponsorImagePreviewUrls = useMemo(
+    () => sponsorImages.map(getImagePreviewUrl),
+    [sponsorImages],
+  );
 
   const onSubmit = useCallback(async () => {
     try {
@@ -137,13 +213,13 @@ const MediaUploadForm: React.FC<{
     <div className="gap-3 flex flex-col items-center justify-center w-full py-10 md:py-20">
       {hasMediaFiles && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-[500px]">
-          {mediaFiles.map((file, index) => (
+          {mediaPreviewUrls.map((previewUrl, index) => (
             <div
-              key={`${file.name}-${index}`}
+              key={`${previewUrl}-${index}`}
               className="aspect-video relative rounded-lg overflow-hidden bg-secondary-100"
             >
               <CustomImageComponent
-                src={URL.createObjectURL(file)}
+                src={previewUrl}
                 alt={`Media ${index + 1}`}
                 className="size-full"
                 fill
@@ -204,6 +280,72 @@ const MediaUploadForm: React.FC<{
           {errorMessage}
         </p>
       )}
+      <div className="w-full max-w-[720px] space-y-4 rounded-2xl border border-secondary-100 bg-white p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-secondary-950">Sponsors</p>
+            <p className="text-xs leading-5 text-secondary-500">
+              Add sponsor names or logos. These connect to the event preview sponsor board.
+            </p>
+          </div>
+          <Button type="button" variant="outline" onClick={addSponsor}>
+            Add Sponsor
+          </Button>
+        </div>
+
+        {sponsorNames.length === 0 && (
+          <div className="rounded-xl border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
+            No sponsors added yet.
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {sponsorNames.map((name, index) => (
+            <div
+              key={`sponsor-${index}`}
+              className="grid gap-3 rounded-xl bg-secondary-50 p-4 md:grid-cols-[1fr_1fr_auto]"
+            >
+              <Input
+                value={name}
+                onChange={(event) => updateSponsorName(index, event.target.value)}
+                placeholder="Sponsor name"
+                className="h-11 rounded-xl bg-white"
+              />
+              <Input
+                type="file"
+                accept=".jpg, .png, .webp"
+                className="h-11 rounded-xl bg-white"
+                onChange={(event) => {
+                  updateSponsorImage(index, event.target.files?.[0]);
+                  event.currentTarget.value = "";
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl bg-white"
+                onClick={() => removeSponsor(index)}
+              >
+                Remove
+              </Button>
+              {sponsorImagePreviewUrls[index] && (
+                <div className="h-24 rounded-xl border border-secondary-100 bg-white p-3 md:col-span-3">
+                  <div className="relative h-full w-full">
+                    <CustomImageComponent
+                      src={sponsorImagePreviewUrls[index]}
+                      alt={`${name || "Sponsor"} logo`}
+                      fill
+                      className="size-full"
+                      imageClassName="object-contain"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="w-full max-w-[500px] mt-6 md:mt-10 flex flex-row items-center justify-start gap-3">
         <Button
           onClick={handlePreviousStep}
@@ -215,11 +357,9 @@ const MediaUploadForm: React.FC<{
         <Button
           onClick={handleSubmit(onSubmit)}
           loading={isSubmitting}
-          disabled={
-            mediaFiles.length === 0 || !!errors?.mediaFiles || isSubmitting
-          }
+          disabled={!!errors?.mediaFiles || isSubmitting}
         >
-          Create
+          Continue
         </Button>
       </div>
     </div>

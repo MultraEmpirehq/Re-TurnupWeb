@@ -13,6 +13,7 @@ import {
 import { ROUTES } from "@/lib/variables";
 import { TicketIcon } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import React, { memo } from "react";
 
 /** Map API user ticket to the shape expected by TicketCard (IUserTicketType) */
@@ -20,8 +21,17 @@ function toUserTicketType(ut: UserTicketDetailsResponseType): IUserTicketType {
   return {
     id: ut.id,
     code: ut.code,
+    ticketCode: ut.ticketCode,
+    qrCodeValue: ut.qrCodeValue,
+    barcodeValue: ut.barcodeValue,
     createdAt: ut.createdAt,
     status: (ut.status as ETicketStatus) ?? ETicketStatus.UN_USED,
+    registrationStatus: ut.registrationStatus,
+    currentHolderName: ut.currentHolderName,
+    currentHolderEmail: ut.currentHolderEmail,
+    checkedInAt: ut.checkedInAt,
+    scannerEmail: ut.scannerEmail,
+    transfer: ut.transfer,
     ticket: {
       id: ut.ticket.id,
       name: ut.ticket.name,
@@ -32,12 +42,16 @@ function toUserTicketType(ut: UserTicketDetailsResponseType): IUserTicketType {
       quantity: ut.ticket.quantity,
       sold: ut.ticket.sold,
       available: ut.ticket.available,
+      transferable: ut.ticket.transferable,
+      isTransferable: ut.ticket.isTransferable,
     },
   };
 }
 
 const TicketsPage = () => {
   const { data, error, refetch, isLoading } = useUserTickets();
+  const searchParams = useSearchParams();
+  const passInviteToken = searchParams.get("passInviteToken");
   const tickets = data?.data ?? [];
 
   if (isLoading) {
@@ -68,6 +82,16 @@ const TicketsPage = () => {
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold">My Tickets</h2>
+
+      {passInviteToken && (
+        <div className="rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
+          <p className="font-semibold">Access pass invite detected</p>
+          <p className="mt-1">
+            If this pass has already been claimed by your account, it will appear
+            below. If it is missing, refresh after signing in with the invited email.
+          </p>
+        </div>
+      )}
 
       {tickets.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">

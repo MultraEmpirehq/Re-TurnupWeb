@@ -11,5 +11,15 @@ export const useTicketAnalytics = () => {
   return useQuery({
     queryKey: ["ticket-analytics"],
     queryFn: getTicketAnalytics,
+    retry: 0,
+  });
+};
+
+export const useScopedTicketAnalytics = (enabled: boolean) => {
+  return useQuery({
+    queryKey: ["ticket-analytics"],
+    queryFn: getTicketAnalytics,
+    enabled,
+    retry: 0,
   });
 };

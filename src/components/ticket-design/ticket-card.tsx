@@ -48,6 +48,25 @@ const getTicketColors = (type: string) => {
   };
 };
 
+function isTicketTransferAllowed(userTicket: IUserTicketType) {
+  if (userTicket.ticket.isTransferable !== undefined) {
+    return userTicket.ticket.isTransferable;
+  }
+  if (userTicket.ticket.transferable !== undefined) {
+    return userTicket.ticket.transferable;
+  }
+
+  const eventTickets = userTicket.ticket.event?.data?.eventTickets ?? [];
+  const matchingCategory = eventTickets.find((eventTicket) => {
+    const ticketName = userTicket.ticket.name?.toLowerCase();
+    const ticketType = userTicket.ticket.type?.toLowerCase();
+    const categoryName = eventTicket.ticketName?.toLowerCase();
+    return categoryName === ticketName || categoryName === ticketType;
+  });
+
+  return !!matchingCategory?.transferable;
+}
+
 const TicketCard: React.FC<TicketCardProps> = ({
   userTicket,
   event: eventProp,
@@ -59,6 +78,18 @@ const TicketCard: React.FC<TicketCardProps> = ({
   const [isDownloading, setIsDownloading] = useState(false);
   const colors = getTicketColors(ticket?.type ?? "");
   const event = eventProp ?? ticket?.event?.data;
+  const transferAllowed = isTicketTransferAllowed(userTicket);
+  const registrationStatus = userTicket.registrationStatus;
+  const isPendingRegistration = registrationStatus === "PENDING";
+  const isRejectedRegistration = registrationStatus === "REJECTED";
+  const isRegistrationTicket =
+    ticket?.name?.toLowerCase() === "registration" ||
+    ticket?.type?.toLowerCase() === "registration" ||
+    ticket?.event?.data?.saleMethod === "register";
+  const isRegistrationBlocked =
+    isRegistrationTicket && (isPendingRegistration || isRejectedRegistration);
+  const scanValue =
+    userTicket.qrCodeValue || userTicket.ticketCode || userTicket.code;
   const eventDate = event?.date ? new Date(event.date) : null;
   const isEventPast = eventDate
     ? startOfDay(eventDate) < startOfDay(new Date())
@@ -110,6 +141,22 @@ const TicketCard: React.FC<TicketCardProps> = ({
 
   return (
     <div style={{ marginBottom: 16 }}>
+      {isPendingRegistration && (
+        <div className="mb-3 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <p className="font-semibold">Registration Pending Approval</p>
+          <p className="mt-1">
+            This registration is waiting for the organizer to approve it.
+          </p>
+        </div>
+      )}
+      {isRejectedRegistration && (
+        <div className="mb-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <p className="font-semibold">Registration Rejected</p>
+          <p className="mt-1">
+            This registration was not approved by the organizer.
+          </p>
+        </div>
+      )}
       <div
         ref={ticketRef}
         data-ticket-card
@@ -119,6 +166,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
           overflow: "hidden",
           minHeight: 210,
           fontFamily: "system-ui, -apple-system, sans-serif",
+          opacity: isRegistrationBlocked ? 0.72 : 1,
         }}
       >
         {/* Main section */}
@@ -187,7 +235,11 @@ const TicketCard: React.FC<TicketCardProps> = ({
                 color: "rgba(255,255,255,0.9)",
               }}
             >
-              {ticket.type}
+              {isPendingRegistration
+                ? "Pending"
+                : isRejectedRegistration
+                  ? "Rejected"
+                  : ticket.type}
             </span>
             <h3
               style={{
@@ -409,16 +461,33 @@ const TicketCard: React.FC<TicketCardProps> = ({
                 padding: 6,
                 display: "inline-block",
                 lineHeight: 0,
+                filter: isRegistrationBlocked ? "grayscale(1) blur(1px)" : "none",
+                opacity: isRegistrationBlocked ? 0.45 : 1,
               }}
             >
               <QRCodeSVG
-                value={userTicket.code}
+                value={scanValue}
                 size={80}
                 level="M"
                 bgColor="#ffffff"
                 fgColor="#000000"
               />
             </div>
+
+            {isRegistrationBlocked && (
+              <p
+                style={{
+                  fontSize: 9,
+                  fontWeight: 800,
+                  color: "#ffffff",
+                  margin: "6px 0 0 0",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                }}
+              >
+                Not scannable yet
+              </p>
+            )}
 
             <p
               style={{
@@ -430,7 +499,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
                 lineHeight: 1.3,
               }}
             >
-              {userTicket.code}
+              {scanValue}
             </p>
           </div>
         </div>
@@ -452,13 +521,13 @@ const TicketCard: React.FC<TicketCardProps> = ({
           </p>
         ) : (
           <>
-            {showTransfer && (
+            {showTransfer && transferAllowed && !isRegistrationBlocked && (
               <Button variant="outline" size="sm" className="gap-2" asChild>
                 <Link
                   href={`${ROUTES.PROFILE_TICKETS.href}/transfer/${userTicket.id}`}
                 >
                   <SendHorizontal className="size-3.5" />
-                  Transfer
+                  {userTicket.transfer ? "View Transfer" : "Transfer"}
                 </Link>
               </Button>
             )}
@@ -467,6 +536,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
               size="sm"
               onClick={handleDownload}
               loading={isDownloading}
+              disabled={isRegistrationBlocked}
               className="gap-2"
             >
               <Download className="size-3.5" />

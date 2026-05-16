@@ -36,6 +36,8 @@ interface IComboboxSelectProps {
   refetch?: () => void;
   fetchingError?: string;
   required?: boolean;
+  allowCreateOption?: boolean;
+  onCreateOption?: (label: string) => void;
 }
 
 const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
@@ -56,8 +58,15 @@ const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
   refetch,
   fetchingError,
   required,
+  allowCreateOption,
+  onCreateOption,
 }) => {
   const [search, setSearch] = useState<string>("");
+  const shouldDisable = !!isLoading && items.length === 0 && !fetchingError;
+  const normalizedSearch = search.trim().toLowerCase();
+  const exactMatch = items.find(
+    (contentItem) => contentItem.label.trim().toLowerCase() === normalizedSearch,
+  );
 
   useEffect(() => {
     const selectedItem = items.find(
@@ -67,6 +76,22 @@ const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
       setSearch(selectedItem?.label);
     }
   }, [item, items]);
+
+  const handleCommitTypedValue = () => {
+    const trimmedSearch = search.trim();
+    if (!trimmedSearch) return;
+
+    if (exactMatch) {
+      setItem(exactMatch.value);
+      setSearch(exactMatch.label);
+      return;
+    }
+
+    if (allowCreateOption && onCreateOption) {
+      onCreateOption(trimmedSearch);
+    }
+  };
+
   return (
     <div className={cn("space-y-1 relative", className)}>
       {label && (
@@ -80,17 +105,36 @@ const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
           )}
         </div>
       )}
-      <Combobox items={fetchingError ? [] : items} disabled={isLoading}>
+      <Combobox items={fetchingError ? [] : items} disabled={shouldDisable}>
         <ComboboxInput
           placeholder={placeholder || "Select a value"}
           className={cn("w-full", inputClassName)}
           value={search}
           onChange={(e) => setSearch(e?.target?.value)}
-          disabled={isLoading}
+          onBlur={handleCommitTypedValue}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleCommitTypedValue();
+            }
+          }}
+          disabled={shouldDisable}
         />
         {!fetchingError && (
           <ComboboxContent className="w-full">
-            <ComboboxEmpty>{emptyText || "No item found."}</ComboboxEmpty>
+            <ComboboxEmpty className="space-y-2">
+              <p>{emptyText || "No item found."}</p>
+              {allowCreateOption && search.trim() && onCreateOption && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onCreateOption(search.trim())}
+                >
+                  Use &quot;{search.trim()}&quot;
+                </Button>
+              )}
+            </ComboboxEmpty>
             <ComboboxList className="w-full">
               {(contentItem: TComboboxItem) => (
                 <ComboboxItem

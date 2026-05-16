@@ -41,6 +41,8 @@ export interface IVenueSelectProps {
   errorClassName?: string;
   emptyText?: string;
   required?: boolean;
+  allowCreateOption?: boolean;
+  onCreateOption?: (venueName: string) => void | { id: string; name: string };
 }
 
 const VenueSelect: React.FC<IVenueSelectProps> = ({
@@ -55,15 +57,17 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
   errorClassName,
   emptyText = "No venue found.",
   required,
+  allowCreateOption,
+  onCreateOption,
 }) => {
   const [search, setSearch] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const lastSyncedValueRef = useRef<string>("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
 
   const debouncedSetSearch = useDebouncedCallback((q: string) => {
     setDebouncedQuery(q);
   }, DEBOUNCE_MS);
-
-  const [debouncedQuery, setDebouncedQuery] = useState("");
 
   const {
     data,
@@ -84,10 +88,24 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
       label: venue.name,
     }));
   }, [data]);
+  const normalizedSearch = search.trim().toLowerCase();
+  const exactMatch = venueItems.find(
+    (venueItem) => venueItem.label.trim().toLowerCase() === normalizedSearch,
+  );
 
   useEffect(() => {
     const found = venueItems.find((i) => i.value === value);
-    if (found && search !== found.label) setSearch(found.label);
+    if (!found) return;
+
+    const valueChanged = lastSyncedValueRef.current !== value;
+    const searchAlreadyMatches = search === found.label;
+
+    if (valueChanged || searchAlreadyMatches || !search.trim()) {
+      setSearch((currentSearch) =>
+        currentSearch === found.label ? currentSearch : found.label,
+      );
+      lastSyncedValueRef.current = value;
+    }
   }, [value, venueItems, search]);
 
   const handleScroll = useCallback(() => {
@@ -116,6 +134,32 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
     [onChange, venueItems],
   );
 
+  const handleCommitTypedValue = useCallback(() => {
+    const trimmedSearch = search.trim();
+    if (!trimmedSearch) return;
+
+    if (exactMatch) {
+      handleValueChange(exactMatch.value);
+      return;
+    }
+
+    if (allowCreateOption && onCreateOption) {
+      const created = onCreateOption(trimmedSearch);
+      if (created) {
+        onChange(created.id);
+        setSearch(created.name);
+        lastSyncedValueRef.current = created.id;
+      }
+    }
+  }, [
+    allowCreateOption,
+    exactMatch,
+    handleValueChange,
+    onChange,
+    onCreateOption,
+    search,
+  ]);
+
   return (
     <div className={cn("space-y-1 relative", className)}>
       {label && (
@@ -125,12 +169,7 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
           {isLoading && <Spinner className="w-4 h-4 animate-spin" />}
         </div>
       )}
-      <Combobox
-        items={fetchingError ? [] : venueItems}
-        // value={value ?? ""}
-        // onValueChange={handleValueChange}
-        disabled={isLoading}
-      >
+      <Combobox items={fetchingError ? [] : venueItems}>
         <ComboboxInput
           placeholder={placeholder}
           className={cn("w-full", inputClassName)}
@@ -140,11 +179,36 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
             setSearch(v);
             debouncedSetSearch(v);
           }}
-          disabled={isLoading}
+          onBlur={handleCommitTypedValue}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleCommitTypedValue();
+            }
+          }}
         />
         {!fetchingError && (
           <ComboboxContent className="w-full">
-            <ComboboxEmpty>{emptyText}</ComboboxEmpty>
+            <ComboboxEmpty className="space-y-2">
+              <p>{emptyText}</p>
+              {allowCreateOption && search.trim() && onCreateOption && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const created = onCreateOption(search.trim());
+                    if (created) {
+                      onChange(created.id);
+                      setSearch(created.name);
+                      lastSyncedValueRef.current = created.id;
+                    }
+                  }}
+                >
+                  Use &quot;{search.trim()}&quot;
+                </Button>
+              )}
+            </ComboboxEmpty>
             <div
               ref={scrollContainerRef}
               onScroll={handleScroll}

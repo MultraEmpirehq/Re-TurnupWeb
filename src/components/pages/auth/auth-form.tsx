@@ -12,7 +12,7 @@ import MagicLinkModal from "@/components/pages/auth/magic-link-modal";
 import { toast } from "sonner";
 import { constructErrorMessage } from "@/api/functions";
 import useAuth from "@/hooks/use-auth";
-import { TUserDetails } from "@/stores/user-store";
+import useUserStore, { TUserDetails } from "@/stores/user-store";
 import { IUserCheckedCredentials } from "@/lib/types";
 import { useParams, useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
@@ -25,6 +25,9 @@ interface IFormValues {
 
 interface IAuthResponse {
   user: TUserDetails;
+  token?: string;
+  accessToken?: string;
+  authToken?: string;
 }
 
 const checkAccountSchema = joi
@@ -63,6 +66,7 @@ const AuthForm = () => {
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get("redirect");
   const { performAuthOperation } = useAuth();
+  const setUserToken = useUserStore((state) => state.setUserToken);
   const [magicLinkEmail, setMagicLinkEmail] = useState<string | null>(null);
   const [checkedCredentials, setCheckedCredentials] =
     useState<IUserCheckedCredentials | null>(null);
@@ -133,7 +137,13 @@ const AuthForm = () => {
           "/auth/login",
           body,
         );
-        await performAuthOperation(data?.data?.user);
+        const authPayload = data?.data;
+        const authToken =
+          authPayload?.token || authPayload?.accessToken || authPayload?.authToken;
+        if (authToken) {
+          setUserToken(authToken.replace(/^Bearer\s+/i, ""));
+        }
+        await performAuthOperation(authPayload?.user);
         router.push(redirectTo || ROUTES.HOME.href);
       } catch (error) {
         toast.error(
@@ -144,7 +154,7 @@ const AuthForm = () => {
         );
       }
     },
-    [checkedCredentials, performAuthOperation, router, redirectTo],
+    [checkedCredentials, performAuthOperation, router, redirectTo, setUserToken],
   );
 
   return (

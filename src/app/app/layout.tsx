@@ -1,8 +1,7 @@
-import RequireAuth from "@/components/auth/require-auth";
+﻿import RequireAuth from "@/components/auth/require-auth";
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import AppLayout from "@/components/pages/app/app-layout";
 import DashboardNav from "@/components/pages/app/dashboard-nav";
-import DashboardSidebar from "@/components/pages/app/dashboard-sidebar";
 import React, { memo } from "react";
 
 const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
@@ -11,14 +10,11 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
   return (
     <RequireAuth>
       <AppLayout>
-        <div className="flex-row flex items-start w-full min-w-0">
-          <DashboardSidebar />
-          <div className="flex-1 relative min-w-0">
-            <DashboardNav />
-            <SectionContainer className="flex-1 relative py-6 md:py-10">
-              {children}
-            </SectionContainer>
-          </div>
+        <div className="min-h-screen bg-[linear-gradient(180deg,rgba(244,248,255,0.92)_0%,rgba(255,255,255,1)_30%)]">
+          <DashboardNav />
+          <SectionContainer className="relative max-w-[1800px] pt-28 pb-10 md:pt-32 md:pb-14">
+            {children}
+          </SectionContainer>
         </div>
       </AppLayout>
     </RequireAuth>

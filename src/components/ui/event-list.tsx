@@ -47,7 +47,7 @@ const EventList: React.FC<EventListProps> = ({
           description="There is no events available at the moment"
         />
       )}
-      {error && <ErrorContainer error={error} retryFunction={refetch} />}
+      {error && <ErrorContainer error={String(error)} retryFunction={refetch} />}
       {hasNextPage && fetchNextPage && (
         <div className="flex flex-row items-center gap-2 justify-between">
           <Button
