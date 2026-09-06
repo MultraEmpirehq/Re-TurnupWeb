@@ -84,18 +84,97 @@ export interface IEventActivityDetails {
   description?: string;
   date: Date;
 }
+
+export interface IEventTicketOptionDetails {
+  id?: string;
+  eventId?: string;
+  ticketName: string;
+  ticketPrice: number | PriceDetailsType;
+  ticketQuantity: number;
+  soldCount?: number;
+  visibility?: "public" | "private";
+  actionType?: "paid" | "register";
+  transferable?: boolean;
+  privateAccessCode?: string;
+}
+
+export interface IEventPassAssignmentDetails {
+  id?: string;
+  eventId?: string;
+  passName: string;
+  quantity: number;
+  assigneeEmails: string[];
+  emailedAssignees?: string[];
+  assignments?: {
+    id: string;
+    email: string;
+    userId?: string | null;
+    passClaimStatus?: "invited" | "claimed" | "revoked";
+    passEmailSentAt?: string | null;
+    claimedAt?: string | null;
+    revokedAt?: string | null;
+  }[];
+  transferable?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface IEventBlogPostDetails {
+  id: string;
+  title: string;
+  excerpt?: string;
+  body: string;
+  image?: string | File;
+  images?: (string | File)[];
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface IEventDetailsType {
   id: string;
   name: string;
   date: Date;
+  status?: "draft" | "published";
+  draftStep?: number;
+  draftSnapshot?: Record<string, unknown>;
   venue?: IVenueDetailsType;
   image: string;
   totalTickets: number;
+  organizerName?: string;
+  eventYear?: string;
   description?: string;
+  blogPost?: string;
+  blogPosts?: IEventBlogPostDetails[];
   activities?: IEventActivityDetails[];
   additionalInformation?: string[];
   eventGuestsOfHonour?: ({ name: string } | TUserDetails)[];
   medias?: string[];
+  sponsors?: string[];
+  sponsorImages?: string[];
+  saleMethod?: string;
+  ticketUrl?: string;
+  venueName?: string;
+  venueAddress?: string;
+  eventCountry?: string;
+  eventCountryCode?: string;
+  eventState?: string;
+  eventStateCode?: string;
+  eventCity?: string;
+  country?: string;
+  countryCode?: string;
+  state?: string;
+  stateCode?: string;
+  city?: string;
+  registrationCount?: number;
+  registrationLimit?: number;
+  remainingRegistrationSpots?: number;
+  registrationStatus?: "open" | "closed" | "full";
+  requiresApproval?: boolean;
+  eventTickets?: IEventTicketOptionDetails[];
+  passAssignments?: IEventPassAssignmentDetails[];
+  accessPasses?: IEventPassAssignmentDetails[];
+  eventPasses?: IEventPassAssignmentDetails[];
+  passes?: IEventPassAssignmentDetails[];
 }
 
 export interface IUserCheckedCredentials {
@@ -117,6 +196,12 @@ export interface ITicketDetailsType {
   quantity?: number;
   sold?: number;
   available?: number;
+  transferable?: boolean;
+  isTransferable?: boolean;
+  visibility?: "public" | "private";
+  privateAccessCode?: string;
+  accessCode?: string;
+  privateToken?: string;
 }
 
 export enum ETicketStatus {
@@ -136,14 +221,25 @@ export interface IOrderTicketType {
   quantity?: number;
   sold?: number;
   available?: number;
+  transferable?: boolean;
+  isTransferable?: boolean;
 }
 
 export interface IUserTicketType {
   id: string;
   code: string;
+  ticketCode?: string;
+  qrCodeValue?: string;
+  barcodeValue?: string;
   createdAt: Date;
   status: ETicketStatus;
+  registrationStatus?: "PENDING" | "CONFIRMED" | "REJECTED";
+  currentHolderName?: string;
+  currentHolderEmail?: string;
+  checkedInAt?: string | null;
+  scannerEmail?: string | null;
   ticket: IOrderTicketType;
+  transfer?: TicketTransferResponseType;
 }
 
 /** Response from GET /tickets/user - list of tickets the user has bought */
@@ -166,13 +262,23 @@ export type UserTicketDetailsTicketType = {
   quantity: number;
   sold: number;
   available: number;
+  transferable?: boolean;
+  isTransferable?: boolean;
 };
 
 export type UserTicketDetailsResponseType = {
   id: string;
   code: string;
+  ticketCode?: string;
+  qrCodeValue?: string;
+  barcodeValue?: string;
   createdAt: Date;
   status: ETicketStatus | string;
+  registrationStatus?: "PENDING" | "CONFIRMED" | "REJECTED";
+  currentHolderName?: string;
+  currentHolderEmail?: string;
+  checkedInAt?: string | null;
+  scannerEmail?: string | null;
   ticket: UserTicketDetailsTicketType;
   transfer?: TicketTransferResponseType;
 };

@@ -10,6 +10,7 @@ const getResetUserDetails = () => useUserStore.getState().clearStore;
 const api = axios.create({
   baseURL,
   withCredentials: true,
+  timeout: 30000,
 });
 
 api.interceptors.response.use(
@@ -26,11 +27,12 @@ api.interceptors.response.use(
 
 api.interceptors.request.use(
   (config) => {
-    // Not used.. Rely on cookie for authentication
-    // const authToken = useUserStore.getState().userToken;
-    // if (authToken) {
-    //   config.headers.Authorization = `Bearer ${authToken || ""}`;
-    // }
+    const authToken = useUserStore.getState().userToken;
+    if (authToken) {
+      config.headers.Authorization = authToken.startsWith("Bearer ")
+        ? authToken
+        : `Bearer ${authToken}`;
+    }
     return config;
   },
   (error) => {

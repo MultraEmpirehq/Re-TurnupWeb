@@ -1,6 +1,11 @@
 import { getData } from "@/api";
+import {
+  getCustomVenues,
+  subscribeToCustomOptions,
+} from "@/lib/custom-event-options";
 import { IVenueDetailsType } from "@/lib/types";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
 interface IVenuesParam {
   q?: string;
@@ -26,12 +31,51 @@ const getVenues = async (page: number = 1, params?: IVenuesParam) => {
 };
 
 export const useVenues = (params?: IVenuesParam) => {
-  return useInfiniteQuery({
+  const [customVenues, setCustomVenues] = useState<IVenueDetailsType[]>([]);
+
+  useEffect(() => {
+    const sync = () => setCustomVenues(getCustomVenues());
+    sync();
+    return subscribeToCustomOptions(sync);
+  }, []);
+
+  const query = useInfiniteQuery({
     queryKey: ["venues", ...Object.values(params || {})],
     queryFn: ({ pageParam }) => getVenues(pageParam, params),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage?.pagination?.nextPage,
+    retry: 0,
   });
+  const filteredCustomVenues = params?.q?.trim()
+    ? customVenues.filter(
+        (venue) =>
+          venue.name.toLowerCase().includes(params.q!.trim().toLowerCase()) ||
+          venue.address.toLowerCase().includes(params.q!.trim().toLowerCase()),
+      )
+    : customVenues;
+
+  if (!query.data) {
+    return query;
+  }
+
+  const [firstPage, ...restPages] = query.data.pages;
+  const mergedFirstPage = {
+    ...firstPage,
+    data: [...filteredCustomVenues, ...(firstPage?.data ?? [])].filter(
+      (venue, index, list) =>
+        list.findIndex(
+          (item) => item.name.toLowerCase() === venue.name.toLowerCase(),
+        ) === index,
+    ),
+  };
+
+  return {
+    ...query,
+    data: {
+      ...query.data,
+      pages: [mergedFirstPage, ...restPages],
+    },
+  };
 };
 
 const getVenue = async (id: string) => {

@@ -9,13 +9,17 @@ import { ROUTES } from "@/lib/variables";
 const EventCardComponent: React.FC<
   IEventDetailsType & { isDashboard?: boolean }
 > = ({ name, image, description, date, id, isDashboard = false }) => {
+  const eventDate = useMemo(() => {
+    const parsedDate = date ? new Date(date) : null;
+    return parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate : null;
+  }, [date]);
   const eventDetailsURL = useMemo(() => {
     return isDashboard
       ? `${ROUTES.EVENTS.href}/${id}`
       : `${ROUTES.EXPLORE.href}/event/${id}`;
   }, [id, isDashboard]);
   return (
-    <div className="flex-col flex items-start bg-white gap-4">
+    <div className="flex-col flex items-start bg-white dark:bg-secondary-950 gap-4 text-secondary-950 dark:text-white">
       <Link
         href={eventDetailsURL}
         className="w-full aspect-video bg-cover relative rounded-lg overflow-hidden border border-black/5"
@@ -30,20 +34,24 @@ const EventCardComponent: React.FC<
       </Link>
       <div className="w-full flex flex-row items-center gap-4">
         <div className="flex flex-col text-xl md:text-2xl">
-          <span className="font-bold text-secondary">
-            {formatDate(new Date(date || ""), "dd")}
+          <span className="font-bold text-secondary dark:text-white">
+            {eventDate ? formatDate(eventDate, "dd") : "--"}
           </span>
-          <span>{formatDate(new Date(), "MMM")}</span>
+          <span className="text-secondary-950 dark:text-white">
+            {eventDate ? formatDate(eventDate, "MMM") : "TBD"}
+          </span>
         </div>
         <div className="flex-col gap-1 flex items-start flex-1">
           <Link href={eventDetailsURL}>
-            <h3>{name || "Event Name"}</h3>
+            <h3 className="font-semibold text-secondary-950 dark:text-white">
+              {name || "Event Name"}
+            </h3>
           </Link>
-          <p className="text-sm opacity-60">
+          <p className="text-sm text-secondary-700 dark:text-secondary-300">
             {description || "Event Description"}
           </p>
-          <p className="text-xs opacity-60">
-            {formatDate(new Date(date || ""), "hh:mm a")}
+          <p className="text-xs text-secondary-600 dark:text-secondary-300">
+            {eventDate ? formatDate(eventDate, "hh:mm a") : "Time pending"}
           </p>
         </div>
       </div>
