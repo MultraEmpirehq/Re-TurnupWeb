@@ -2,10 +2,10 @@ import { cn } from "@/lib/utils";
 import React, { memo } from "react";
 
 const STEP_CONFIG = [
-  { step: 1, title: "Basic Information" },
-  { step: 2, title: "Cover" },
-  { step: 3, title: "Tickets" },
-  { step: 4, title: "Media Upload" },
+  { step: 1, title: "Event Details" },
+  { step: 2, title: "Tickets" },
+  { step: 3, title: "Media & Sponsors" },
+  { step: 4, title: "Preview & Publish" },
 ] as const;
 
 type StepStatus = "completed" | "current" | "upcoming";

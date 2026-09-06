@@ -11,12 +11,20 @@ const RequireAuth: React.FC<{ children: React.ReactNode }> = ({
   const userDetails = useUserStore((state) => state.userDetails);
   const isLoading = useUserStore((state) => state.isLoading);
   const router = useRouter();
+  const isDevelopment = process.env.NODE_ENV === "development";
 
   useEffect(() => {
+    if (isDevelopment) {
+      return;
+    }
     if (!isLoading && !userDetails) {
       router.replace(ROUTES.LOGIN.href);
     }
-  }, [isLoading, userDetails, router]);
+  }, [isDevelopment, isLoading, userDetails, router]);
+
+  if (isDevelopment) {
+    return <>{children}</>;
+  }
 
   if (isLoading) {
     return (

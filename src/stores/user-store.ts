@@ -30,6 +30,9 @@ export type TUserDetails = {
   gender?: EUserGenders;
   username?: string;
   dateOfBirth?: Date;
+  country?: string;
+  countryCode?: string;
+  platformCurrency?: string;
   avatar?: string;
 };
 

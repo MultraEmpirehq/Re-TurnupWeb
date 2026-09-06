@@ -1,5 +1,5 @@
 import { IEventDetailsType } from "@/lib/types";
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import CustomImageComponent from "./custom-image.component";
 import { format } from "date-fns";
 import { StarIcon } from "lucide-react";
@@ -14,8 +14,13 @@ const EventCardTwo: React.FC<IEventDetailsType> = ({
   image,
   id,
 }) => {
+  const eventDate = useMemo(() => {
+    const parsedDate = date ? new Date(date) : null;
+    return parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate : null;
+  }, [date]);
+
   return (
-    <div className="bg-white p-1 rounded-md shadow-sm flex flex-row items-start gap-2">
+    <div className="bg-white dark:bg-secondary-950 p-1 rounded-md shadow-sm flex flex-row items-start gap-2 text-secondary-950 dark:text-white">
       <Link
         href={`${ROUTES.EXPLORE.href}/event/${id}`}
         className="w-1/2 max-w-[200px] aspect-video relative flex"
@@ -36,14 +41,14 @@ const EventCardTwo: React.FC<IEventDetailsType> = ({
       </Link>
       <div className="space-y-2">
         <Link href={`${ROUTES.EXPLORE.href}/event/${id}`}>
-          <h2 className="font-bold">{name || "Event name"}</h2>
+          <h2 className="font-bold text-secondary-950 dark:text-white">{name || "Event name"}</h2>
         </Link>
-        <p className="font-medium text-sm opacity-60">
-          {format(new Date(date || ""), "do MMM yy")} |{" "}
+        <p className="font-medium text-sm text-secondary-700 dark:text-secondary-300">
+          {eventDate ? format(eventDate, "do MMM yy") : "Date pending"} |{" "}
           {venue?.address || "Event location"}
         </p>
-        <p className="opacity-60 text-sm">
-          {format(new Date(date || ""), "HH:mm a")}
+        <p className="text-secondary-600 dark:text-secondary-300 text-sm">
+          {eventDate ? format(eventDate, "HH:mm a") : "Time pending"}
         </p>
       </div>
     </div>
