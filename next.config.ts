@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
 const nextConfig: NextConfig = {
-  distDir: ".next-dev-cache",
   images: {
     remotePatterns: [
       new URL("https://res.cloudinary.com/**"),
@@ -17,4 +17,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-module.exports = nextConfig;
+// Keep the dev server's output out of `.next` so it never clashes with a
+// production build. `next build` must emit to `.next` — Vercel looks there.
+export default (phase: string): NextConfig =>
+  phase === PHASE_DEVELOPMENT_SERVER
+    ? { ...nextConfig, distDir: ".next-dev-cache" }
+    : nextConfig;
