@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useState } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Label } from "./label";
 import {
@@ -68,13 +68,17 @@ const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
     (contentItem) => contentItem.label.trim().toLowerCase() === normalizedSearch,
   );
 
+  const previousItemRef = useRef(item);
   useEffect(() => {
     const selectedItem = items.find(
       (contentItem) => contentItem?.value === item,
     );
     if (selectedItem) {
       setSearch(selectedItem?.label);
+    } else if (!item && previousItemRef.current) {
+      setSearch("");
     }
+    previousItemRef.current = item;
   }, [item, items]);
 
   const handleCommitTypedValue = () => {

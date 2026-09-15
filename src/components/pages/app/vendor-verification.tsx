@@ -4,7 +4,7 @@ import { getData, patchData, postData, putData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import SelectField from "@/components/ui/select-field";
+import ComboboxSelect from "@/components/ui/combobox-select";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle2, Clock3, ShieldCheck } from "lucide-react";
 import Link from "next/link";
@@ -1058,11 +1058,12 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
           />
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Payout country">
-              <SelectField
-                value={form.payoutCountry}
-                setValue={updatePayoutCountry}
-                options={countryOptions}
+              <ComboboxSelect
+                item={form.payoutCountry}
+                setItem={updatePayoutCountry}
+                items={countryOptions}
                 placeholder="Select payout country"
+                emptyText="No country found."
                 inputClassName="h-11 rounded-xl"
               />
             </Field>
