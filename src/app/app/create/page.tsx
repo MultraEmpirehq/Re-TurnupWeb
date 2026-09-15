@@ -48,10 +48,12 @@ const schemas = {
   4: previewPublishSchema,
 } as const;
 
+const getEventYear = (date?: Date | string | null) =>
+  `${(date ? new Date(date) : new Date()).getFullYear()}`;
+
 const defaultValues: TFormValues = {
   eventName: "",
   organizerName: "",
-  eventYear: `${new Date().getFullYear()}`,
   eventDate: new Date(new Date().setDate(new Date().getDate() + 1)),
   eventCountry: "",
   eventCountryCode: "",
@@ -93,6 +95,9 @@ const getTicketPriceValue = (price: unknown) => {
   return Number(price || 0);
 };
 
+const isLocallyCreatedOption = (id?: string) =>
+  !!id && (id.startsWith("custom-venue-") || id.startsWith("custom-category-"));
+
 const buildEventFormData = (body: TFormValues, status: "draft" | "published") => {
   const formData = new FormData();
   const eventCurrency = getCurrencyForCountry(
@@ -101,7 +106,6 @@ const buildEventFormData = (body: TFormValues, status: "draft" | "published") =>
   formData.append("status", status);
   formData.append("eventName", body.eventName);
   formData.append("organizerName", body.organizerName);
-  formData.append("eventYear", body.eventYear);
   formData.append(
     "eventDate",
     body.eventDate ? new Date(body.eventDate).toISOString() : "",
@@ -111,18 +115,22 @@ const buildEventFormData = (body: TFormValues, status: "draft" | "published") =>
   formData.append("eventState", body.eventState);
   formData.append("eventStateCode", body.eventStateCode);
   formData.append("eventCity", body.eventCity);
-  formData.append("country", body.eventCountry);
-  formData.append("countryCode", body.eventCountryCode);
-  formData.append("state", body.eventState);
-  formData.append("stateCode", body.eventStateCode);
-  formData.append("city", body.eventCity);
   formData.append("currency", eventCurrency.code);
   formData.append("ticketCurrency", eventCurrency.code);
   formData.append("eventCurrency", eventCurrency.code);
-  formData.append("venueId", body.venueId);
-  formData.append("categoryId", body.categoryId);
+  if (isLocallyCreatedOption(body.venueId) && body.venueName) {
+    formData.append("customVenueName", body.venueName);
+  } else if (body.venueId) {
+    formData.append("venueId", body.venueId);
+  }
+  if (isLocallyCreatedOption(body.categoryId) && body.categoryName) {
+    formData.append("customCategoryName", body.categoryName);
+  } else if (body.categoryId) {
+    formData.append("categoryId", body.categoryId);
+  }
   formData.append("description", body.description);
   formData.append("saleMethod", body.saleMethod);
+  formData.append("acceptedTerms", String(!!body.acceptedTerms));
 
   if (body.guestIds?.length) {
     formData.append("guestIds", JSON.stringify(body.guestIds));
@@ -145,7 +153,6 @@ const buildEventFormData = (body: TFormValues, status: "draft" | "published") =>
     formData.append("ticketUrl", body.ticketUrl);
   }
   if (body.passAssignments?.length) {
-    formData.append("passAssignments", JSON.stringify(body.passAssignments));
     formData.append("accessPasses", JSON.stringify(body.passAssignments));
   }
   if (body.coverImage instanceof File) {
@@ -158,8 +165,12 @@ const buildEventFormData = (body: TFormValues, status: "draft" | "published") =>
       }
     });
   }
-  if (body.sponsorNames?.length) {
-    formData.append("sponsors", JSON.stringify(body.sponsorNames.filter(Boolean)));
+  const sponsorNames = body.sponsorNames?.filter(Boolean) ?? [];
+  if (sponsorNames.length) {
+    formData.append(
+      "sponsors",
+      JSON.stringify(sponsorNames.map((name) => ({ name }))),
+    );
   }
   if (body.sponsorImages?.length) {
     body.sponsorImages.forEach((file) => {
@@ -230,7 +241,6 @@ const CreateEvent = () => {
             ...defaultValues,
             eventName: draftEvent.name ?? "",
             organizerName: draftEvent.organizerName ?? "",
-            eventYear: `${draftEvent.eventYear ?? new Date().getFullYear()}`,
             eventDate: draftEvent.date ? new Date(draftEvent.date) : defaultValues.eventDate,
             eventCountry: draftEvent.eventCountry ?? draftEvent.country ?? "",
             eventCountryCode:
@@ -240,7 +250,9 @@ const CreateEvent = () => {
             eventCity: draftEvent.eventCity ?? draftEvent.city ?? "",
             venueId: draftEvent.venue?.id ?? "",
             venueName: draftEvent.venue?.name ?? "",
-            categoryId: "",
+            categoryId: draftEvent.category?.id ?? "",
+            categoryName:
+              draftEvent.category?.name ?? draftEvent.customCategoryName ?? "",
             description: draftEvent.description ?? "",
             eventActivities: (draftEvent.activities ?? []).map((activity) => ({
               activityName: activity.name,
@@ -329,7 +341,7 @@ const CreateEvent = () => {
         draftSnapshot: body as unknown as Record<string, unknown>,
         name: body.eventName || "Untitled Draft",
         organizerName: body.organizerName || "Turnupz Nigeria Ltd",
-        eventYear: body.eventYear || `${new Date().getFullYear()}`,
+        eventYear: getEventYear(body.eventDate),
         date: body.eventDate || new Date(),
         eventCountry: body.eventCountry,
         eventCountryCode: body.eventCountryCode,
@@ -413,7 +425,7 @@ const CreateEvent = () => {
           draftSnapshot: undefined,
           name: body.eventName,
           organizerName: body.organizerName,
-          eventYear: body.eventYear,
+          eventYear: getEventYear(body.eventDate),
           date: body.eventDate,
           eventCountry: body.eventCountry,
           eventCountryCode: body.eventCountryCode,

@@ -12,11 +12,17 @@ import MagicLinkModal from "@/components/pages/auth/magic-link-modal";
 import { toast } from "sonner";
 import { constructErrorMessage } from "@/api/functions";
 import useAuth from "@/hooks/use-auth";
+import useSocialAuth, {
+  APPLE_SCRIPT_SRC,
+  GOOGLE_SCRIPT_SRC,
+  ISocialAuthResponse,
+} from "@/hooks/use-social-auth";
 import useUserStore, { TUserDetails } from "@/stores/user-store";
 import { IUserCheckedCredentials } from "@/lib/types";
 import { useParams, useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/variables";
+import Script from "next/script";
 
 interface IFormValues {
   email: string;
@@ -104,6 +110,55 @@ const AuthForm = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email]);
+
+  const handleAuthSuccess = useCallback(
+    async (authPayload?: IAuthResponse | ISocialAuthResponse) => {
+      const payload = authPayload as IAuthResponse | undefined;
+      const authToken =
+        payload?.token || payload?.accessToken || payload?.authToken;
+      if (authToken) {
+        setUserToken(authToken.replace(/^Bearer\s+/i, ""));
+      }
+      await performAuthOperation(payload?.user);
+
+      if (payload?.user && payload.user.isAccountCreationCompleted === false) {
+        const completeUrl = redirectTo
+          ? `${ROUTES.COMPLETE_USER_INFORMATION.href}?redirect=${encodeURIComponent(redirectTo)}`
+          : ROUTES.COMPLETE_USER_INFORMATION.href;
+        router.push(completeUrl);
+        return;
+      }
+
+      router.push(redirectTo || ROUTES.HOME.href);
+    },
+    [performAuthOperation, redirectTo, router, setUserToken],
+  );
+
+  const handleAuthError = useCallback((error: unknown) => {
+    toast.error(
+      constructErrorMessage(
+        error as TApiErrorResponseType,
+        "Something went wrong while accessing your account!",
+      ),
+    );
+  }, []);
+
+  const {
+    googleButtonRef,
+    isGoogleConfigured,
+    isAppleConfigured,
+    isAppleScriptReady,
+    isSubmitting: isSocialSubmitting,
+    onGoogleScriptReady,
+    onAppleScriptReady,
+    signInWithApple,
+  } = useSocialAuth({
+    onSuccess: handleAuthSuccess,
+    onError: handleAuthError,
+  });
+
+  const isBusy = isSubmitting || isSocialSubmitting;
+
   const onSubmit = useCallback(
     async (body: IFormValues) => {
       try {
@@ -137,28 +192,30 @@ const AuthForm = () => {
           "/auth/login",
           body,
         );
-        const authPayload = data?.data;
-        const authToken =
-          authPayload?.token || authPayload?.accessToken || authPayload?.authToken;
-        if (authToken) {
-          setUserToken(authToken.replace(/^Bearer\s+/i, ""));
-        }
-        await performAuthOperation(authPayload?.user);
-        router.push(redirectTo || ROUTES.HOME.href);
+        await handleAuthSuccess(data?.data);
       } catch (error) {
-        toast.error(
-          constructErrorMessage(
-            error as TApiErrorResponseType,
-            "Something went wrong while accessing your account!",
-          ),
-        );
+        handleAuthError(error);
       }
     },
-    [checkedCredentials, performAuthOperation, router, redirectTo, setUserToken],
+    [checkedCredentials, redirectTo, handleAuthSuccess, handleAuthError],
   );
 
   return (
     <>
+      {isGoogleConfigured && (
+        <Script
+          src={GOOGLE_SCRIPT_SRC}
+          strategy="afterInteractive"
+          onReady={onGoogleScriptReady}
+        />
+      )}
+      {isAppleConfigured && (
+        <Script
+          src={APPLE_SCRIPT_SRC}
+          strategy="afterInteractive"
+          onReady={onAppleScriptReady}
+        />
+      )}
       <SectionContainer className="flex flex-col items-center justify-center min-h-full py-10 md:py-16">
         <div className="flex flex-col items-center justify-center w-full max-w-sm gap-10">
           <div className="flex flex-col items-center justify-center text-center">
@@ -191,7 +248,7 @@ const AuthForm = () => {
               />
             )}
             <Button
-              disabled={!isValid}
+              disabled={!isValid || isBusy}
               loading={isSubmitting}
               type="submit"
               className="w-full"
@@ -199,29 +256,36 @@ const AuthForm = () => {
               Continue
             </Button>
           </form>
-          <div className="flex flex-row items-center gap-2 w-full max-w-sm">
-            <Separator className="flex-1" />
-            <p className="text-sm opacity-60">OR</p>
-            <Separator className="flex-1" />
-          </div>
-          <div className="flex flex-col items-center justify-center gap-4 w-full">
-            <Button
-              disabled={isSubmitting}
-              variant="outline"
-              className="w-full"
-              size="lg"
-            >
-              Continue with Google
-            </Button>
-            <Button
-              disabled={isSubmitting}
-              variant="outline"
-              className="w-full"
-              size="lg"
-            >
-              Continue with Apple
-            </Button>
-          </div>
+          {(isGoogleConfigured || isAppleConfigured) && (
+            <>
+              <div className="flex flex-row items-center gap-2 w-full max-w-sm">
+                <Separator className="flex-1" />
+                <p className="text-sm opacity-60">OR</p>
+                <Separator className="flex-1" />
+              </div>
+              <div className="flex flex-col items-center justify-center gap-4 w-full">
+                {isGoogleConfigured && (
+                  <div
+                    ref={googleButtonRef}
+                    className="w-full flex justify-center min-h-10"
+                    aria-busy={isSocialSubmitting}
+                  />
+                )}
+                {isAppleConfigured && (
+                  <Button
+                    disabled={isBusy || !isAppleScriptReady}
+                    onClick={signInWithApple}
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    size="lg"
+                  >
+                    Continue with Apple
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </SectionContainer>
       <MagicLinkModal

@@ -2,6 +2,7 @@
 
 import InputField from "@/components/ui/input-field";
 import SelectField from "@/components/ui/select-field";
+import ComboboxSelect from "@/components/ui/combobox-select";
 import { Button } from "@/components/ui/button";
 import {
   useVendorVerificationSnapshot,
@@ -490,11 +491,13 @@ const WalletPage = () => {
 
               <div className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
-                  <SelectField
+                  <ComboboxSelect
                     label="Destination Country"
-                    value={transferCountry}
-                    setValue={setTransferCountry}
-                    options={transferDestinations.map((destination) => ({
+                    item={transferCountry}
+                    setItem={setTransferCountry}
+                    placeholder="Select destination country"
+                    emptyText="No country found."
+                    items={transferDestinations.map((destination) => ({
                       label: `${destination.label} (${destination.currency})`,
                       value: destination.code,
                     }))}

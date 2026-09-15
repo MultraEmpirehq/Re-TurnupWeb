@@ -34,6 +34,7 @@ export type TUserDetails = {
   countryCode?: string;
   platformCurrency?: string;
   avatar?: string;
+  isAccountCreationCompleted?: boolean;
 };
 
 type TStoreState = {
