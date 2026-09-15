@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import DateSelect from "@/components/ui/date-select";
 import TextareaField from "@/components/ui/textarea-field";
 import { Skeleton } from "@/components/ui/skeleton";
-import SelectField from "@/components/ui/select-field";
 import { TrashIcon, UploadIcon } from "lucide-react";
 import { City, Country, State } from "country-state-city";
 
@@ -40,7 +39,6 @@ export interface IBasicFormValues {
   coverImage: File | string | null;
   eventName: string;
   organizerName: string;
-  eventYear: string;
   eventDate: Date;
   eventCountry: string;
   eventCountryCode: string;
@@ -103,10 +101,6 @@ export const basicInformationSchema = Joi.object({
   organizerName: Joi.string().required().messages({
     "string.empty": "Organizer name is required",
     "any.required": "Organizer name is required",
-  }),
-  eventYear: Joi.string().required().messages({
-    "string.empty": "Event year is required",
-    "any.required": "Event year is required",
   }),
   eventDate: Joi.date().required().messages({
     "date.empty": "Event date is required",
@@ -339,14 +333,6 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
           {...register("organizerName")}
         />
 
-        <InputField
-          label="Event Year"
-          required={true}
-          placeholder="2024"
-          error={errors?.eventYear?.message}
-          {...register("eventYear")}
-        />
-
         <Controller
           control={control}
           name="eventDate"
@@ -368,11 +354,11 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
           control={control}
           name="eventCountryCode"
           render={({ field, fieldState }) => (
-            <SelectField
+            <ComboboxSelect
               label="Event Country"
               required={true}
-              value={field.value}
-              setValue={(countryCode) => {
+              item={field.value}
+              setItem={(countryCode) => {
                 const selectedCountry = Country.getCountryByCode(countryCode);
                 field.onChange(countryCode);
                 setValue("eventCountry", selectedCountry?.name ?? "", {
@@ -392,9 +378,10 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
                   shouldDirty: true,
                 });
               }}
-              options={countryOptions}
+              items={countryOptions}
               error={fieldState?.error?.message}
               placeholder="Select event country"
+              emptyText="No country found."
               inputClassName="h-10"
             />
           )}
@@ -404,11 +391,11 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
           control={control}
           name="eventStateCode"
           render={({ field, fieldState }) => (
-            <SelectField
+            <ComboboxSelect
               label="Province / State"
               required={true}
-              value={field.value}
-              setValue={(stateCode) => {
+              item={field.value}
+              setItem={(stateCode) => {
                 const selectedState = State.getStateByCodeAndCountry(
                   stateCode,
                   eventCountryCode,
@@ -423,13 +410,14 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
                   shouldDirty: true,
                 });
               }}
-              options={stateOptions}
+              items={stateOptions}
               error={fieldState?.error?.message}
               placeholder={
                 eventCountryCode
                   ? "Select province or state"
                   : "Select country first"
               }
+              emptyText="No province or state found."
               inputClassName="h-10"
             />
           )}
@@ -439,16 +427,17 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
           control={control}
           name="eventCity"
           render={({ field, fieldState }) => (
-            <SelectField
+            <ComboboxSelect
               label="City"
               required={true}
-              value={field.value}
-              setValue={field.onChange}
-              options={cityOptions}
+              item={field.value}
+              setItem={field.onChange}
+              items={cityOptions}
               error={fieldState?.error?.message}
               placeholder={
                 eventStateCode ? "Select event city" : "Select province first"
               }
+              emptyText="No city found."
               inputClassName="h-10"
             />
           )}

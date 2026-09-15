@@ -160,6 +160,8 @@ export interface IEventDetailsType {
   eventState?: string;
   eventStateCode?: string;
   eventCity?: string;
+  category?: { id: string; name: string };
+  customCategoryName?: string;
   country?: string;
   countryCode?: string;
   state?: string;

@@ -24,6 +24,14 @@ const RedirectWatcher = () => {
     if (isCompleteUserRoute) return;
     if (!isLoading && userDetails) {
       const redirectTo = searchParams?.get("redirect");
+      if (userDetails.isAccountCreationCompleted === false) {
+        router.replace(
+          redirectTo
+            ? `${ROUTES.COMPLETE_USER_INFORMATION.href}?redirect=${encodeURIComponent(redirectTo)}`
+            : ROUTES.COMPLETE_USER_INFORMATION.href,
+        );
+        return;
+      }
       router.replace(redirectTo || ROUTES.HOME.href);
     }
   }, [isLoading, userDetails, router, searchParams, isCompleteUserRoute]);
