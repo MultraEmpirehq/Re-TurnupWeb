@@ -219,7 +219,14 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
       setEventToDelete(null);
     } catch (deleteError) {
       console.error("Delete event failed", deleteError);
-      toast.error("Unable to delete the event right now.");
+      // The api explains why when it refuses, such as an event that already has
+      // ticket holders, and that reason is more use than a generic failure.
+      toast.error(
+        constructErrorMessage(
+          deleteError as TApiErrorResponseType,
+          "Unable to delete the event right now.",
+        ),
+      );
     } finally {
       setIsDeleting(false);
     }

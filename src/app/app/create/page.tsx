@@ -31,6 +31,8 @@ import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { IEventBlogPostDetails, IEventDetailsType } from "@/lib/types";
 import { getCurrencyForCountry } from "@/lib/currency";
+import { uploadAttachment } from "@/api/attachments";
+import { TAttachment, TAttachmentPurpose } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -98,7 +100,34 @@ const getTicketPriceValue = (price: unknown) => {
 const isLocallyCreatedOption = (id?: string) =>
   !!id && (id.startsWith("custom-venue-") || id.startsWith("custom-category-"));
 
-const buildEventFormData = (body: TFormValues, status: "draft" | "published") => {
+/**
+ * Files already sent to the attachment endpoint, so saving a draft a second time
+ * re-uses the attachment instead of storing the same file again.
+ */
+const uploadedAttachments = new WeakMap<File, TAttachment>();
+
+const uploadOnce = async (file: File, purpose: TAttachmentPurpose) => {
+  const existing = uploadedAttachments.get(file);
+  if (existing) {
+    return existing;
+  }
+  const attachment = await uploadAttachment(file, purpose);
+  uploadedAttachments.set(file, attachment);
+  return attachment;
+};
+
+const uploadEachOnce = async (files: File[], purpose: TAttachmentPurpose) => {
+  const attachments: TAttachment[] = [];
+  for (const file of files) {
+    attachments.push(await uploadOnce(file, purpose));
+  }
+  return attachments;
+};
+
+const buildEventFormData = async (
+  body: TFormValues,
+  status: "draft" | "published",
+) => {
   const formData = new FormData();
   const eventCurrency = getCurrencyForCountry(
     body.eventCountryCode || body.eventCountry,
@@ -156,14 +185,18 @@ const buildEventFormData = (body: TFormValues, status: "draft" | "published") =>
     formData.append("accessPasses", JSON.stringify(body.passAssignments));
   }
   if (body.coverImage instanceof File) {
-    formData.append("image", body.coverImage);
+    const cover = await uploadOnce(body.coverImage, "EVENT_COVER");
+    formData.append("coverImageId", cover.id);
   }
-  if (body.mediaFiles.length > 0) {
-    body.mediaFiles.forEach((file) => {
-      if (file instanceof File) {
-        formData.append("medias", file);
-      }
-    });
+  const mediaFiles = body.mediaFiles.filter(
+    (file): file is File => file instanceof File,
+  );
+  if (mediaFiles.length > 0) {
+    const medias = await uploadEachOnce(mediaFiles, "EVENT_MEDIA");
+    formData.append(
+      "mediaIds",
+      JSON.stringify(medias.map((media) => media.id)),
+    );
   }
   const sponsorNames = body.sponsorNames?.filter(Boolean) ?? [];
   if (sponsorNames.length) {
@@ -172,12 +205,18 @@ const buildEventFormData = (body: TFormValues, status: "draft" | "published") =>
       JSON.stringify(sponsorNames.map((name) => ({ name }))),
     );
   }
-  if (body.sponsorImages?.length) {
-    body.sponsorImages.forEach((file) => {
-      if (file instanceof File) {
-        formData.append("sponsorImages", file);
-      }
-    });
+  const sponsorImageFiles = (body.sponsorImages ?? []).filter(
+    (file): file is File => file instanceof File,
+  );
+  if (sponsorImageFiles.length) {
+    const sponsorImages = await uploadEachOnce(
+      sponsorImageFiles,
+      "EVENT_SPONSOR",
+    );
+    formData.append(
+      "sponsorImageIds",
+      JSON.stringify(sponsorImages.map((image) => image.id)),
+    );
   }
   if (body.blogPosts?.length) {
     const blogPosts = body.blogPosts.map((post) => ({
@@ -188,13 +227,16 @@ const buildEventFormData = (body: TFormValues, status: "draft" | "published") =>
       ),
     }));
     formData.append("blogPosts", JSON.stringify(blogPosts));
-    body.blogPosts.forEach((post) => {
-      (post.images ?? []).forEach((image) => {
-        if (image instanceof File) {
-          formData.append("blogImages", image);
-        }
-      });
-    });
+    const blogImageFiles = body.blogPosts.flatMap((post) =>
+      (post.images ?? []).filter((image): image is File => image instanceof File),
+    );
+    if (blogImageFiles.length) {
+      const blogImages = await uploadEachOnce(blogImageFiles, "EVENT_BLOG");
+      formData.append(
+        "blogImageIds",
+        JSON.stringify(blogImages.map((image) => image.id)),
+      );
+    }
   }
 
   return formData;
@@ -313,7 +355,7 @@ const CreateEvent = () => {
 
       if (process.env.NODE_ENV !== "development") {
         try {
-          const formData = buildEventFormData(body, "draft");
+          const formData = await buildEventFormData(body, "draft");
           const response = draftId
             ? await putData<FormData, IEventDetailsType>(`/event/${draftId}`, formData)
             : await postData<FormData, IEventDetailsType>("/event", formData);
@@ -414,7 +456,7 @@ const CreateEvent = () => {
     try {
       const body = form.getValues();
       console.log("body", body);
-      const formData = buildEventFormData(body, "published");
+      const formData = await buildEventFormData(body, "published");
 
       if (process.env.NODE_ENV === "development" && !userDetails?.id) {
         const nextEventId = draftId || `mock-event-${Date.now()}`;

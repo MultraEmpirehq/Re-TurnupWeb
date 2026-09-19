@@ -18,6 +18,7 @@ import {
   EventDetailActivities,
   EventDetailMedia,
 } from "@/components/pages/explore/event-detail";
+import { resolveAttachmentUrl, resolveAttachmentUrls } from "@/lib/functions";
 
 const EventDetails = () => {
   const params = useParams();
@@ -73,12 +74,15 @@ const EventDetails = () => {
     );
 
   const eventDate = data?.date ? new Date(data.date) : null;
-  const mediaList =
-    data?.medias && data.medias.length > 0
-      ? data.medias
-      : data?.image
-        ? [data.image]
-        : [];
+  // Prefers the attachment list, which also says what each file is, and falls back
+  // to the plain urls for an event saved before attachments.
+  const coverImageUrl = resolveAttachmentUrl(data?.imageDetails, data?.image);
+  const eventMedias = resolveAttachmentUrls(data?.mediaDetails, data?.medias);
+  const mediaList = eventMedias.length
+    ? eventMedias
+    : coverImageUrl
+      ? [coverImageUrl]
+      : [];
 
   const hasDescription =
     data?.description ||
@@ -87,7 +91,7 @@ const EventDetails = () => {
   return (
     <SectionContainer className="space-y-14 py-20">
       <EventDetailHero
-        image={data?.image}
+        image={coverImageUrl}
         name={data?.name}
         venueName={data?.venue?.name}
         date={eventDate}

@@ -50,3 +50,26 @@ export const formatCurrency = (
     currency: currency,
   }).format(amount);
 };
+
+/**
+ * The url of an attachment, preferring the attachment the api now returns and
+ * falling back to the plain url field it has always returned. Either shape works,
+ * so a screen does not have to know which one it was given.
+ */
+export const resolveAttachmentUrl = (
+  details?: { url?: string } | null,
+  fallback?: string | null,
+): string | undefined => details?.url ?? fallback ?? undefined;
+
+export const resolveAttachmentUrls = (
+  details?: { url?: string }[] | null,
+  fallback?: (string | undefined)[] | null,
+): string[] => {
+  const fromDetails = (details ?? [])
+    .map((item) => item?.url)
+    .filter((url): url is string => Boolean(url));
+  if (fromDetails.length) {
+    return fromDetails;
+  }
+  return (fallback ?? []).filter((url): url is string => Boolean(url));
+};

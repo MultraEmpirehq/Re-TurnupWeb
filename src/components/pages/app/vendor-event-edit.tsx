@@ -22,6 +22,7 @@ import { Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { uploadAttachment, uploadAttachments } from "@/api/attachments";
 
 const toDatetimeInputValue = (date: Date | string) => {
   const nextDate = new Date(date);
@@ -549,19 +550,42 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
           "sponsors",
           JSON.stringify(sponsors.map((sponsor) => sponsor.trim()).filter(Boolean)),
         );
+        // Files go to the attachment endpoint first; the event only carries ids.
         if (bannerImageFile) {
-          formData.append("image", bannerImageFile);
-          formData.append("banner", bannerImageFile);
+          const banner = await uploadAttachment(bannerImageFile, "EVENT_COVER");
+          formData.append("coverImageId", banner.id);
         }
-        mediaImageFiles.forEach((file) => {
-          formData.append("medias", file);
-        });
-        Object.values(sponsorImageFiles).forEach((file) => {
-          formData.append("sponsorImages", file);
-        });
-        blogImageFiles.forEach((file) => {
-          formData.append("blogImages", file);
-        });
+        if (mediaImageFiles.length) {
+          const medias = await uploadAttachments(
+            mediaImageFiles,
+            "EVENT_MEDIA",
+          );
+          formData.append(
+            "mediaIds",
+            JSON.stringify(medias.map((media) => media.id)),
+          );
+        }
+        const sponsorImageList = Object.values(sponsorImageFiles);
+        if (sponsorImageList.length) {
+          const sponsorImages = await uploadAttachments(
+            sponsorImageList,
+            "EVENT_SPONSOR",
+          );
+          formData.append(
+            "sponsorImageIds",
+            JSON.stringify(sponsorImages.map((image) => image.id)),
+          );
+        }
+        if (blogImageFiles.length) {
+          const blogImages = await uploadAttachments(
+            blogImageFiles,
+            "EVENT_BLOG",
+          );
+          formData.append(
+            "blogImageIds",
+            JSON.stringify(blogImages.map((image) => image.id)),
+          );
+        }
         await putData<FormData, unknown>(`/event/${id}`, formData);
         queryClient.invalidateQueries({ queryKey: ["event", id] });
         queryClient.invalidateQueries({ queryKey: ["events"] });
