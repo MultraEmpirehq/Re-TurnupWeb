@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
-import { BellIcon, MenuIcon, SearchIcon, SettingsIcon } from "lucide-react";
+import { MenuIcon, SearchIcon, SettingsIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { memo, useMemo, useState } from "react";
+import { NovuInbox } from "@/components/notifications/novu-inbox";
 
 const dashboardLinks = [
   { label: "Create Event", href: ROUTES.CREATE_EVENT.href },
@@ -144,16 +145,7 @@ const DashboardNav = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              asChild
-              size="icon"
-              variant="outline"
-              className="rounded-full border-secondary-100 bg-white text-secondary-600 shadow-none hover:bg-secondary-50"
-            >
-              <Link href={ROUTES.NOTIFICATIONS.href}>
-                <BellIcon className="size-4" />
-              </Link>
-            </Button>
+            <NovuInbox />
             <Button
               asChild
               size="icon"

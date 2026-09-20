@@ -34,6 +34,8 @@ export type TUserDetails = {
   countryCode?: string;
   platformCurrency?: string;
   avatar?: string;
+  profileImage?: string;
+  profileImageDetails?: { id: string | null; url: string; type: string } | null;
   isAccountCreationCompleted?: boolean;
 };
 

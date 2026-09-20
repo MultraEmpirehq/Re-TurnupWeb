@@ -3,6 +3,7 @@
 import { postData } from "@/api";
 import { TUserDetails } from "@/stores/user-store";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { env } from "@/lib/env";
 
 export const GOOGLE_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
 export const APPLE_SCRIPT_SRC =
@@ -25,9 +26,9 @@ interface ISocialLoginBody {
   lastName?: string;
 }
 
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-const APPLE_CLIENT_ID = process.env.NEXT_PUBLIC_APPLE_WEB_CLIENT_ID;
-const APPLE_REDIRECT_URI = process.env.NEXT_PUBLIC_APPLE_REDIRECT_URI;
+const GOOGLE_CLIENT_ID = env.NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+const APPLE_CLIENT_ID = env.NEXT_PUBLIC_APPLE_WEB_CLIENT_ID;
+const APPLE_REDIRECT_URI = env.NEXT_PUBLIC_APPLE_REDIRECT_URI;
 
 const APPLE_USER_CANCELLED = "popup_closed_by_user";
 

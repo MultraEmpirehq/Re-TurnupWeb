@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "./input";
 import { Label } from "./label";
 import { Spinner } from "./spinner";
+import { env } from "@/lib/env";
 import {
   Popover,
   PopoverAnchor,
@@ -53,7 +54,7 @@ let placesLibPromise: Promise<google.maps.PlacesLibrary> | null = null;
 let geocodingLibPromise: Promise<google.maps.GeocodingLibrary> | null = null;
 
 const ensureOptionsConfigured = () => {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const apiKey = env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
     throw new Error(
       "Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY. Add it to .env.local and enable the Places API.",

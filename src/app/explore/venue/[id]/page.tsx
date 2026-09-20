@@ -18,6 +18,7 @@ import {
 import StarList from "@/components/ui/star-list";
 import { MapPinIcon } from "lucide-react";
 import EventsWithVenueIdList from "@/components/pages/explore/events-with-venue-id-list";
+import { resolveAttachmentUrls } from "@/lib/functions";
 
 const EventDetails = () => {
   const params = useParams();
@@ -66,13 +67,15 @@ const EventDetails = () => {
       </SectionContainer>
     );
 
+  const venueImages = resolveAttachmentUrls(data?.imageDetails, data?.images);
+
   return (
     <SectionContainer className="space-y-14 py-20">
       <div className="w-full aspect-video relative bg-black/5 rounded-lg overflow-hidden">
-        {data?.images && data?.images?.length > 1 && (
+        {venueImages.length > 1 && (
           <Carousel className="aspect-video w-full">
             <CarouselContent className="aspect-video w-full">
-              {(data?.images || [])?.map((image) => (
+              {venueImages.map((image) => (
                 <CarouselItem key={image} className="aspect-video w-full">
                   <CustomImageComponent
                     src={image || ""}
@@ -88,9 +91,9 @@ const EventDetails = () => {
             <CarouselNext />
           </Carousel>
         )}
-        {data?.images && data?.images?.length < 2 && (
+        {venueImages.length < 2 && (
           <CustomImageComponent
-            src={data?.images?.[0] || ""}
+            src={venueImages[0] || ""}
             alt={data?.name || ""}
             fill
             className="size-full"

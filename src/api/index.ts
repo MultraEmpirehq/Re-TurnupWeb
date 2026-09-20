@@ -1,14 +1,13 @@
+import { apiBaseUrl } from "@/lib/env";
 import useUserStore from "@/stores/user-store";
 import axios, { AxiosRequestConfig } from "axios";
 import { toast } from "sonner";
-
-const baseURL = `${process.env.NEXT_PUBLIC_BASE_URL}/${process.env.NEXT_PUBLIC_API_VERSION}`;
 
 // Lazy initialization to avoid circular dependency
 const getResetUserDetails = () => useUserStore.getState().clearStore;
 
 const api = axios.create({
-  baseURL,
+  baseURL: apiBaseUrl,
   withCredentials: true,
   timeout: 30000,
 });

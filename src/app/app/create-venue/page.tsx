@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import React, { memo, useCallback } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { uploadAttachments } from "@/api/attachments";
 
 export const dynamic = "force-dynamic";
 
@@ -54,9 +55,11 @@ const CreateVenue = () => {
       formData.append("longitude", String(body.longitude));
       formData.append("totalAvailableSeat", String(body.totalAvailableSeat));
       formData.append("description", body.description);
-      body.images.forEach((file) => {
-        formData.append("images", file);
-      });
+      const images = await uploadAttachments(body.images, "VENUE_IMAGE");
+      formData.append(
+        "imageIds",
+        JSON.stringify(images.map((image) => image.id)),
+      );
       await postData("/venue", formData);
       await queryClient.invalidateQueries({ queryKey: ["venues"] });
       form.reset(defaultValues);

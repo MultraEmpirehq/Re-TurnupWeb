@@ -21,6 +21,40 @@ export enum OTP_VERIFICATION_TYPE {
   ACCOUNT_CREATION = "ACCOUNT_CREATION",
 }
 
+export type TAttachmentType =
+  | "IMAGE"
+  | "VIDEO"
+  | "DOCUMENT"
+  | "AUDIO"
+  | "OTHER";
+
+export type TAttachmentPurpose =
+  | "EVENT_COVER"
+  | "EVENT_MEDIA"
+  | "EVENT_SPONSOR"
+  | "EVENT_BLOG"
+  | "VENUE_IMAGE"
+  | "ID_DOCUMENT"
+  | "SUPPORTING_DOCUMENT"
+  | "CHAT_ASSET"
+  | "AVATAR";
+
+/**
+ * A stored file. `id` is null for anything uploaded before attachments existed,
+ * which the api still returns in this shape so one field can be read everywhere.
+ */
+export interface TAttachment {
+  id: string;
+  url: string;
+  type: TAttachmentType;
+}
+
+export interface TAttachmentDetails {
+  id: string | null;
+  url: string;
+  type: TAttachmentType;
+}
+
 export enum EOrderStatus {
   PENDING = "PENDING",
   COMPLETED = "COMPLETED",
@@ -77,6 +111,7 @@ export interface IVenueDetailsType {
   description?: string;
   creator?: TUserDetails;
   images: string[];
+  imageDetails?: TAttachmentDetails[];
 }
 
 export interface IEventActivityDetails {
@@ -139,6 +174,7 @@ export interface IEventDetailsType {
   draftSnapshot?: Record<string, unknown>;
   venue?: IVenueDetailsType;
   image: string;
+  imageDetails?: TAttachmentDetails | null;
   totalTickets: number;
   organizerName?: string;
   eventYear?: string;
@@ -149,6 +185,7 @@ export interface IEventDetailsType {
   additionalInformation?: string[];
   eventGuestsOfHonour?: ({ name: string } | TUserDetails)[];
   medias?: string[];
+  mediaDetails?: TAttachmentDetails[];
   sponsors?: string[];
   sponsorImages?: string[];
   saleMethod?: string;
