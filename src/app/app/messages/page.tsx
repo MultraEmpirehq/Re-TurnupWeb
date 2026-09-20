@@ -258,12 +258,12 @@ const MessagesPage = () => {
       if (!file || !activeConversation) return;
 
       if (selectedConversationIsBackend) {
-        const assetUrl = await uploadAssetMutation.mutateAsync(file);
+        const attachment = await uploadAssetMutation.mutateAsync(file);
         await sendMessageMutation.mutateAsync({
           groupId: activeConversation.id,
           body: `${bodyPrefix}${file.name}`,
           kind: kind === "image" ? "IMAGE" : "FILE",
-          assetUrl,
+          attachmentId: attachment.id,
           assetName: file.name,
         });
       } else {

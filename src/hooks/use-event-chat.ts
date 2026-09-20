@@ -5,6 +5,7 @@ import {
   IEventChatParticipant,
 } from "@/lib/event-chat";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { uploadAttachment } from "@/api/attachments";
 
 type BackendSenderRole = "vendor" | "scanner" | "attendee" | "system";
 type BackendMessageKind = "text" | "event-update" | "image" | "file";
@@ -40,6 +41,7 @@ export interface BackendChatMessage {
   body: string;
   kind: BackendMessageKind;
   assetUrl?: string;
+  attachmentDetails?: { id: string | null; url: string; type: string } | null;
   assetName?: string;
   href?: string;
   reactions?: Array<{ reaction: string; count: number }>;
@@ -120,6 +122,7 @@ export const mapBackendMessage = (message: BackendChatMessage): IEventChatMessag
   createdAt: message.createdAt,
   kind: message.kind,
   assetUrl:
+    message.attachmentDetails?.url ||
     message.assetUrl ||
     (typeof message.metadata?.bannerImageUrl === "string"
       ? message.metadata.bannerImageUrl
@@ -285,7 +288,7 @@ export const useSendEventChatMessage = () => {
       groupId,
       body,
       kind,
-      assetUrl,
+      attachmentId,
       assetName,
       href,
       metadata,
@@ -293,7 +296,7 @@ export const useSendEventChatMessage = () => {
       groupId: string;
       body: string;
       kind: BackendRequestMessageKind;
-      assetUrl?: string;
+      attachmentId?: string;
       assetName?: string;
       href?: string;
       metadata?: Record<string, unknown>;
@@ -302,7 +305,7 @@ export const useSendEventChatMessage = () => {
         {
           body: string;
           kind: BackendRequestMessageKind;
-          assetUrl?: string;
+          attachmentId?: string;
           assetName?: string;
           href?: string;
           metadata?: Record<string, unknown>;
@@ -311,7 +314,7 @@ export const useSendEventChatMessage = () => {
       >(`/chats/${groupId}/messages`, {
         body,
         kind,
-        assetUrl,
+        attachmentId,
         assetName,
         href,
         metadata,
@@ -329,18 +332,7 @@ export const useSendEventChatMessage = () => {
 
 export const useUploadEventChatAsset = () =>
   useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await postData<FormData, { assetUrl: string }>(
-        "/chats/upload",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        },
-      );
-      return response.data.data.assetUrl;
-    },
+    mutationFn: (file: File) => uploadAttachment(file, "CHAT_ASSET"),
   });
 
 export const useReportEventChatMember = () => {

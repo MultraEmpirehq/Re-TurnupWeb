@@ -15,6 +15,8 @@ import { Camera, Pencil } from "lucide-react";
 import React, { memo, useCallback, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { uploadAttachment } from "@/api/attachments";
+import { resolveAttachmentUrl } from "@/lib/functions";
 
 interface IProfileFormValues {
   firstName: string;
@@ -111,12 +113,10 @@ const ProfilePage = () => {
 
       setIsUploadingAvatar(true);
       try {
-        const formData = new FormData();
-        formData.append("avatar", file);
-        const { data } = await postData<FormData, TUserDetails>(
+        const attachment = await uploadAttachment(file, "AVATAR");
+        const { data } = await postData<{ attachmentId: string }, TUserDetails>(
           "/user/avatar",
-          formData,
-          { headers: { "Content-Type": "multipart/form-data" } },
+          { attachmentId: attachment.id },
         );
         await performAuthOperation(data?.data);
         toast.success("Profile photo updated");
@@ -167,7 +167,15 @@ const ProfilePage = () => {
       <div className="flex flex-col items-center gap-4">
         <div className="relative">
           <Avatar className="size-24 border-4 border-background shadow-lg">
-            <AvatarImage src={userDetails?.avatar} alt={displayName} />
+            <AvatarImage
+              src={
+                resolveAttachmentUrl(
+                  userDetails?.profileImageDetails,
+                  userDetails?.profileImage,
+                ) ?? userDetails?.avatar
+              }
+              alt={displayName}
+            />
             <AvatarFallback className="text-2xl font-bold bg-cyan-100 text-cyan-700">
               {initials}
             </AvatarFallback>
