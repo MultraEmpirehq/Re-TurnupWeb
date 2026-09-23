@@ -6,7 +6,6 @@ import CategoryForm, {
   ICategoryFormValues,
   categoryFormSchema,
 } from "@/components/pages/app/create-category/category-form";
-import DashboardBanner from "@/components/pages/app/dashboard-banner";
 import { ICategoryDetailsType } from "@/lib/types";
 import { joiResolver } from "@hookform/resolvers/joi";
 import { useQueryClient } from "@tanstack/react-query";
@@ -60,7 +59,6 @@ const CreateCategory = () => {
   return (
     <RequireAdmin>
       <div className="space-y-6 md:space-y-10">
-        <DashboardBanner />
         <FormProvider {...form}>
           <CategoryForm onSubmit={handleSubmit} />
         </FormProvider>

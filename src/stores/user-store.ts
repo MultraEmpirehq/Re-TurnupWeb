@@ -7,6 +7,7 @@ import {
 
 export enum EUserRoles {
   ADMIN = "ADMIN",
+  VENDOR = "VENDOR",
   USER = "USER",
 }
 

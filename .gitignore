@@ -45,3 +45,8 @@ next-env.d.ts
 
 # Local working notes (not tracked)
 .dev-notes/
+
+# Local backups and throwaway scratch files
+*.bak
+*.bak-*
+.tmp-*
