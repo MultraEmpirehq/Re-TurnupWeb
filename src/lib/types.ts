@@ -1,4 +1,4 @@
-import { TUserDetails } from "@/stores/user-store";
+import { EUserRoles, TUserDetails } from "@/stores/user-store";
 
 export enum ROUTE_TYPE {
   NAV_ROUTE = "NAV_ROUTE",
@@ -334,4 +334,98 @@ export interface IOrderDetailsType {
 export interface ICategoryDetailsType {
   id: string;
   name: string;
+}
+
+// ---------------------------------------------------------------------------
+// Admin console
+// ---------------------------------------------------------------------------
+
+export type TAdminUserType = "all" | "vendors" | "users";
+
+export type TVerificationStatus =
+  | "not_started"
+  | "in_progress"
+  | "submitted"
+  | "approved"
+  | "rejected"
+  | "needs_more_info";
+
+export type TVerificationDecision = "approved" | "rejected" | "needs_more_info";
+
+export type TApprovalLevel =
+  | "basic_verified"
+  | "paid_verified"
+  | "cross_border_verified"
+  | "high_risk_review";
+
+export interface IAdminUserListItem {
+  id: string;
+  email?: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  role?: EUserRoles;
+  country?: string;
+  createdAt?: string;
+  profileImage?: string;
+}
+
+export interface IVendorVerificationSummary {
+  reference: string | null;
+  status: TVerificationStatus;
+  approvalLevel: TApprovalLevel | null;
+  vendorType: "individual" | "business" | null;
+  submittedAt: string | null;
+  reviewedAt: string | null;
+  rejectionReason: string | null;
+  needsMoreInfoMessage: string | null;
+  stepStatuses: Record<string, string>;
+}
+
+export interface IAdminUserDetails extends IAdminUserListItem {
+  isEmailVerified?: boolean;
+  isAccountDisabled: boolean;
+  isAccountCreationCompleted?: boolean;
+  dateOfBirth?: string;
+  gender?: string;
+  platformCurrency?: string;
+  vendorVerification?: IVendorVerificationSummary;
+}
+
+export interface IVendorVerification {
+  id: string;
+  reference: string | null;
+  vendorId: string;
+  vendor?: IAdminUserListItem;
+  status: TVerificationStatus;
+  approvalLevel: TApprovalLevel | null;
+  vendorType: "individual" | "business" | null;
+  legalFirstName: string | null;
+  legalLastName: string | null;
+  dateOfBirth: string | null;
+  countryOfResidence: string | null;
+  address: string | null;
+  phoneNumber: string | null;
+  idDocumentDetails: { id?: string | null; url: string } | null;
+  supportingDocumentDetails: { id?: string | null; url: string } | null;
+  businessName: string | null;
+  businessRegistrationNumber: string | null;
+  businessAddress: string | null;
+  payoutCountry: string | null;
+  payoutCurrency: string | null;
+  accountHolderName: string | null;
+  bankName: string | null;
+  accountNumberLast4: string | null;
+  payoutAccountLast4: string | null;
+  ibanLast4: string | null;
+  swiftCode: string | null;
+  crossBorderCountries: string[];
+  crossBorderReason: string | null;
+  submittedAt: string | null;
+  reviewedAt: string | null;
+  rejectionReason: string | null;
+  needsMoreInfoMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
