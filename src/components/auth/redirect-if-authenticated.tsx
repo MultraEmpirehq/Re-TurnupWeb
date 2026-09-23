@@ -12,7 +12,7 @@ import { Suspense, useEffect } from "react";
 const landingRouteFor = (role?: EUserRoles) => {
   switch (role) {
     case EUserRoles.ADMIN:
-      return ROUTES.ADMIN_USERS.href;
+      return ROUTES.ADMIN_OVERVIEW.href;
     case EUserRoles.VENDOR:
       return ROUTES.DASHBOARD.href;
     default:

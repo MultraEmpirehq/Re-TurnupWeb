@@ -47,6 +47,20 @@ export const useAdminVerifications = ({
     retry: 0,
   });
 
+export const useAdminVerification = (id: string) =>
+  useQuery({
+    // Under the list's key, so a review invalidates the open application too.
+    queryKey: ["admin-verifications", "detail", id],
+    queryFn: async () => {
+      const { data } = await getData<IVendorVerification>(
+        `/admin/vendor-verifications/${id}`,
+      );
+      return data?.data;
+    },
+    enabled: !!id,
+    retry: 0,
+  });
+
 export const useReviewVerification = () => {
   const queryClient = useQueryClient();
 

@@ -157,6 +157,11 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Dashboard",
     href: "/app",
   },
+  ADMIN_OVERVIEW: {
+    shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.ADMIN_ONLY],
+    label: "Overview",
+    href: "/app/admin",
+  },
   ADMIN_USERS: {
     shouldShowIn: [
       ROUTE_TYPE.APP_ROUTE,

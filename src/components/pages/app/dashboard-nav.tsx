@@ -3,14 +3,28 @@
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
-import { MenuIcon, SearchIcon, SettingsIcon } from "lucide-react";
+import {
+  LogOut,
+  MenuIcon,
+  SearchIcon,
+  SettingsIcon,
+  User,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import React, { memo, useMemo, useState } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 import { NovuInbox } from "@/components/notifications/novu-inbox";
 
 const dashboardLinks = [
@@ -26,6 +40,7 @@ const DashboardNav = () => {
   const pathname = usePathname();
   const router = useRouter();
   const userDetails = useUserStore((state) => state.userDetails);
+  const clearStore = useUserStore((state) => state.clearStore);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [navSearchQuery, setNavSearchQuery] = useState("");
 
@@ -41,6 +56,11 @@ const DashboardNav = () => {
     if (!userDetails) return "Turnupz Vendor";
     return userDetails?.name || "Turnupz Vendor";
   }, [userDetails]);
+
+  const handleLogout = useCallback(() => {
+    clearStore();
+    router.push(ROUTES.HOME.href);
+  }, [clearStore, router]);
 
   const getSearchTarget = (query: string) => {
     const normalizedQuery = query.toLowerCase();
@@ -156,14 +176,58 @@ const DashboardNav = () => {
                 <SettingsIcon className="size-4" />
               </Link>
             </Button>
-            <Link href={ROUTES.PROFILE.href} className="block">
-              <Avatar className="size-10 border border-secondary-100 bg-secondary-50 shadow-sm">
-                <AvatarImage src={userDetails?.avatar} />
-                <AvatarFallback className="bg-secondary-50 text-sm font-semibold text-secondary-800">
-                  {fallBackName}
-                </AvatarFallback>
-              </Avatar>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Account menu"
+                  className="block cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-secondary-300"
+                >
+                  <Avatar className="size-10 border border-secondary-100 bg-secondary-50 shadow-sm">
+                    <AvatarImage src={userDetails?.avatar} />
+                    <AvatarFallback className="bg-secondary-50 text-sm font-semibold text-secondary-800">
+                      {fallBackName}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-semibold">{fullName}</p>
+                    {userDetails?.email && (
+                      <p className="truncate text-xs text-muted-foreground">
+                        {userDetails.email}
+                      </p>
+                    )}
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => router.push(ROUTES.PROFILE.href)}
+                  className="cursor-pointer"
+                >
+                  <User className="size-4" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => router.push(ROUTES.SETTINGS.href)}
+                  className="cursor-pointer"
+                >
+                  <SettingsIcon className="size-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  variant="destructive"
+                  className="cursor-pointer"
+                >
+                  <LogOut className="size-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               size="icon"
               variant="outline"

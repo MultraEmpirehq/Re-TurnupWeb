@@ -393,6 +393,20 @@ export interface IAdminUserDetails extends IAdminUserListItem {
   vendorVerification?: IVendorVerificationSummary;
 }
 
+export type TVerificationStepKey =
+  | "vendorType"
+  | "identity"
+  | "business"
+  | "payout"
+  | "crossBorder"
+  | "review";
+
+export interface IVerificationDocument {
+  id?: string | null;
+  url: string;
+  type?: string | null;
+}
+
 export interface IVendorVerification {
   id: string;
   reference: string | null;
@@ -407,8 +421,8 @@ export interface IVendorVerification {
   countryOfResidence: string | null;
   address: string | null;
   phoneNumber: string | null;
-  idDocumentDetails: { id?: string | null; url: string } | null;
-  supportingDocumentDetails: { id?: string | null; url: string } | null;
+  idDocumentDetails: IVerificationDocument | null;
+  supportingDocumentDetails: IVerificationDocument | null;
   businessName: string | null;
   businessRegistrationNumber: string | null;
   businessAddress: string | null;
@@ -426,6 +440,7 @@ export interface IVendorVerification {
   reviewedAt: string | null;
   rejectionReason: string | null;
   needsMoreInfoMessage: string | null;
+  stepStatuses?: Partial<Record<TVerificationStepKey, TVerificationStatus>>;
   createdAt: string;
   updatedAt: string;
 }

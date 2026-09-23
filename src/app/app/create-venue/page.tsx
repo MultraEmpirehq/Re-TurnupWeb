@@ -2,7 +2,6 @@
 import { postData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import RequireAdmin from "@/components/auth/require-admin";
-import DashboardBanner from "@/components/pages/app/dashboard-banner";
 import VenueForm, {
   IVenueFormValues,
   venueFormSchema,
@@ -82,7 +81,6 @@ const CreateVenue = () => {
   return (
     <RequireAdmin>
       <div className="space-y-6 md:space-y-10">
-        <DashboardBanner />
         <FormProvider {...form}>
           <VenueForm onSubmit={handleSubmit} />
         </FormProvider>

@@ -16,13 +16,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAdminVerifications } from "@/hooks/use-admin-verifications";
-import { IVendorVerification, TVerificationStatus } from "@/lib/types";
+import { TVerificationStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { BadgeCheck, Search } from "lucide-react";
+import { ROUTES } from "@/lib/variables";
+import { BadgeCheck, ChevronRight, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import StatusPill from "../status-pill";
-import VerificationReviewSheet from "./verification-review-sheet";
+import { formatDate, vendorName, vendorTypeLabel } from "./verification-utils";
 
 type TFilter = TVerificationStatus | "all";
 
@@ -34,14 +35,6 @@ const FILTERS: { value: TFilter; label: string }[] = [
   { value: "all", label: "All" },
 ];
 
-const vendorName = (verification: IVendorVerification) => {
-  const vendor = verification.vendor;
-  const legal = [verification.legalFirstName, verification.legalLastName]
-    .filter(Boolean)
-    .join(" ");
-  return vendor?.name?.trim() || legal || vendor?.username || "Unnamed vendor";
-};
-
 const VerificationsList = () => {
   // Defaults to the queue actually awaiting a decision, which is why an admin opens
   // this page at all.
@@ -49,7 +42,7 @@ const VerificationsList = () => {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [openId, setOpenId] = useState<string | undefined>();
+  const router = useRouter();
 
   useEffect(() => {
     const timer = setTimeout(() => setSearch(searchInput.trim()), 400);
@@ -70,7 +63,8 @@ const VerificationsList = () => {
   const pagination = data?.pagination;
   const showSkeleton = isLoading && !data;
   const isEmpty = !!data && verifications.length === 0;
-  const openVerification = verifications.find((item) => item.id === openId);
+  const openVerification = (id: string) =>
+    router.push(`${ROUTES.ADMIN_VERIFICATIONS.href}/${id}`);
 
   return (
     <div className="space-y-6">
@@ -79,7 +73,7 @@ const VerificationsList = () => {
           Vendor verifications
         </h1>
         <p className="text-sm text-muted-foreground">
-          Applications vendors have sent in. Open one to approve it or send it back.
+          Vendors who have sent in their documents. Open one to review and verify it.
         </p>
       </div>
 
@@ -151,12 +145,13 @@ const VerificationsList = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Reference</TableHead>
+                <TableHead className="hidden sm:table-cell">Reference</TableHead>
                 <TableHead>Vendor</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Country</TableHead>
-                <TableHead>Submitted</TableHead>
+                <TableHead className="hidden md:table-cell">Type</TableHead>
+                <TableHead className="hidden lg:table-cell">Country</TableHead>
+                <TableHead className="hidden sm:table-cell">Submitted</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="hidden w-8 sm:table-cell" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -165,16 +160,16 @@ const VerificationsList = () => {
                   key={verification.id}
                   role="button"
                   tabIndex={0}
-                  onClick={() => setOpenId(verification.id)}
+                  onClick={() => openVerification(verification.id)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
-                      setOpenId(verification.id);
+                      openVerification(verification.id);
                     }
                   }}
                   className="cursor-pointer"
                 >
-                  <TableCell className="font-mono text-xs">
+                  <TableCell className="hidden font-mono text-xs sm:table-cell">
                     {verification.reference ?? "—"}
                   </TableCell>
                   <TableCell>
@@ -187,23 +182,20 @@ const VerificationsList = () => {
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {verification.vendorType === "business"
-                      ? "Business"
-                      : verification.vendorType === "individual"
-                        ? "Individual"
-                        : "—"}
+                  <TableCell className="hidden text-muted-foreground md:table-cell">
+                    {vendorTypeLabel(verification.vendorType)}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="hidden text-muted-foreground lg:table-cell">
                     {verification.countryOfResidence ?? "—"}
                   </TableCell>
-                  <TableCell className="text-muted-foreground whitespace-nowrap">
-                    {verification.submittedAt
-                      ? format(new Date(verification.submittedAt), "d MMM yyyy")
-                      : "—"}
+                  <TableCell className="hidden whitespace-nowrap text-muted-foreground sm:table-cell">
+                    {formatDate(verification.submittedAt)}
                   </TableCell>
                   <TableCell>
                     <StatusPill status={verification.status} />
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    <ChevronRight className="size-4 text-muted-foreground" />
                   </TableCell>
                 </TableRow>
               ))}
@@ -219,12 +211,6 @@ const VerificationsList = () => {
           onPageChange={setPage}
         />
       )}
-
-      <VerificationReviewSheet
-        verification={openVerification}
-        open={!!openVerification}
-        onOpenChange={(open) => !open && setOpenId(undefined)}
-      />
     </div>
   );
 };
