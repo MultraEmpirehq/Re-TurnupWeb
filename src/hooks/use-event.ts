@@ -138,18 +138,21 @@ const normalizeSingleEventResponse = (payload: any): IEventDetailsType | null =>
   return null;
 };
 
-const getEvent = async (id: string) => {
-  const url = `/event/${id}`;
+// A private ticket is only returned when its access code is sent along.
+const getEvent = async (id: string, access?: string) => {
+  const url = access
+    ? `/event/${id}?${new URLSearchParams({ access }).toString()}`
+    : `/event/${id}`;
 
   const response = await getData<any>(url);
 
   return normalizeSingleEventResponse(response);
 };
 
-export const useEvent = (id: string) => {
+export const useEvent = (id: string, access?: string) => {
   return useQuery({
-    queryKey: ["event", id],
-    queryFn: () => getEvent(id),
+    queryKey: access ? ["event", id, access] : ["event", id],
+    queryFn: () => getEvent(id, access),
     enabled: !!id,
     retry: false,
     refetchOnWindowFocus: false,

@@ -820,15 +820,17 @@ const VendorEventView: React.FC<{ id: string }> = ({ id }) => {
           >
             <Link href="/app/events">Back to Listings</Link>
           </Button>
-          <Button
-            asChild
-            className="h-11 rounded-2xl bg-secondary-400 px-5 text-sm font-semibold text-white hover:bg-secondary-500"
-          >
-            <Link href={`/app/events/${data.id}/edit`}>
-              <PencilLine className="size-4" />
-              Edit Post
-            </Link>
-          </Button>
+          {data.isOwner && (
+            <Button
+              asChild
+              className="h-11 rounded-2xl bg-secondary-400 px-5 text-sm font-semibold text-white hover:bg-secondary-500"
+            >
+              <Link href={`/app/events/${data.id}/edit`}>
+                <PencilLine className="size-4" />
+                Edit Post
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -898,16 +900,20 @@ const VendorEventView: React.FC<{ id: string }> = ({ id }) => {
                 eventTickets={data.eventTickets}
                 passAssignments={data.passAssignments}
               />
-              {data.saleMethod !== "register" && (
+              {data.isOwner && data.saleMethod !== "register" && (
                 <PrivateTicketLinks
                   eventId={data.id}
                   eventTickets={data.eventTickets}
                 />
               )}
-              <PendingRegistrationReview
-                eventId={data.id}
-                enabled={data.saleMethod === "register" && data.requiresApproval}
-              />
+              {data.isOwner && (
+                <PendingRegistrationReview
+                  eventId={data.id}
+                  enabled={
+                    data.saleMethod === "register" && data.requiresApproval
+                  }
+                />
+              )}
             </div>
           </div>
 

@@ -40,6 +40,7 @@ const EventManagementCard: React.FC<{
   onDeleteRequest: (event: IEventDetailsType) => void;
 }> = ({ event, onDeleteRequest }) => {
   const badgeLabel = isUpcomingEvent(event.date) ? "Upcoming" : "Past";
+  const canManage = event.isOwner === true;
   const eventDescription =
     event.description || "Complete this event listing so attendees know what to expect.";
 
@@ -98,13 +99,15 @@ const EventManagementCard: React.FC<{
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        <Button
-          asChild
-          className="h-10 rounded-xl bg-secondary-400 px-3 text-sm font-semibold text-white hover:bg-secondary-500"
-        >
-          <Link href={`/app/events/${event.id}/edit`}>Edit</Link>
-        </Button>
+      <div className={`grid gap-2 ${canManage ? "grid-cols-3" : "grid-cols-1"}`}>
+        {canManage && (
+          <Button
+            asChild
+            className="h-10 rounded-xl bg-secondary-400 px-3 text-sm font-semibold text-white hover:bg-secondary-500"
+          >
+            <Link href={`/app/events/${event.id}/edit`}>Edit</Link>
+          </Button>
+        )}
         <Button
           asChild
           variant="outline"
@@ -112,14 +115,16 @@ const EventManagementCard: React.FC<{
         >
           <Link href={`/app/events/${event.id}`}>View</Link>
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-10 rounded-xl border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100"
-          onClick={() => onDeleteRequest(event)}
-        >
-          Delete
-        </Button>
+        {canManage && (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-10 rounded-xl border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100"
+            onClick={() => onDeleteRequest(event)}
+          >
+            Delete
+          </Button>
+        )}
       </div>
       </div>
     </article>
