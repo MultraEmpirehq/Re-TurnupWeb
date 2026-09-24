@@ -143,13 +143,13 @@ const TicketPage = () => {
     data: event,
     error: eventError,
     refetch: refetchEvent,
-  } = useEvent(eventId);
+  } = useEvent(eventId, privateAccessCode || undefined);
 
   const {
     data: ticketsData,
     error: ticketsError,
     refetch: refetchTickets,
-  } = useEventTickets(eventId);
+  } = useEventTickets(eventId, privateAccessCode || undefined);
 
   const tickets = useMemo(() => ticketsData?.data || [], [ticketsData]);
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { getData, patchData, postData, putData } from "@/api";
+import { uploadAttachment } from "@/api/attachments";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { CheckCircle2, Clock3, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { IVerificationDocument } from "@/lib/types";
 
 export type VerificationStatus =
   | "not_started"
@@ -79,7 +81,22 @@ type VendorVerificationApiResponse = Partial<VerificationFormState> & {
   stepStatuses?: Partial<Record<VerificationStepKey, VerificationStatus>>;
   needsMoreInfoMessage?: string | null;
   rejectionReason?: string | null;
+  idDocumentDetails?: IVerificationDocument | null;
+  supportingDocumentDetails?: IVerificationDocument | null;
 };
+
+// The document names are only labels for the file pickers; the API takes the
+// uploaded attachment ids instead and rejects any field it does not know.
+type VerificationApiPayload = Partial<
+  Omit<VerificationFormState, "idDocumentName" | "supportingDocumentName">
+> & {
+  idDocumentId?: string;
+  supportingDocumentId?: string;
+};
+
+type VerificationDocumentKey = "idDocument" | "supportingDocument";
+
+const uploadedDocumentLabel = "Uploaded document";
 
 const storageKey = "turnupz-vendor-verification";
 
@@ -270,7 +287,7 @@ const buildFormFromApi = (
     countryOfResidence: data.countryOfResidence ?? "",
     address: data.address ?? "",
     phoneNumber: data.phoneNumber ?? "",
-    idDocumentName: data.idDocumentName ?? "",
+    idDocumentName: data.idDocumentDetails ? uploadedDocumentLabel : "",
     businessName: data.businessName ?? "",
     businessRegistrationNumber: data.businessRegistrationNumber ?? "",
     businessAddress: data.businessAddress ?? "",
@@ -291,7 +308,9 @@ const buildFormFromApi = (
       ? data.crossBorderCountries.join(", ")
       : (data.crossBorderCountries ?? ""),
     crossBorderReason: data.crossBorderReason ?? "",
-    supportingDocumentName: data.supportingDocumentName ?? "",
+    supportingDocumentName: data.supportingDocumentDetails
+      ? uploadedDocumentLabel
+      : "",
     acceptedTerms: !!data.acceptedTerms,
   };
 };
@@ -452,6 +471,14 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
     payoutAccountLast4: "",
     payoutAccountRef: "",
   });
+  // Files picked but not yet saved, and the attachment ids they became once
+  // uploaded, so a retry after a failed save does not upload the file again.
+  const [documentFiles, setDocumentFiles] = useState<
+    Partial<Record<VerificationDocumentKey, File>>
+  >({});
+  const [uploadedDocumentIds, setUploadedDocumentIds] = useState<
+    Partial<Record<VerificationDocumentKey, string>>
+  >({});
   const [stepStatuses, setStepStatuses] = useState<
     Record<VerificationStepKey, VerificationStatus>
   >({
@@ -588,30 +615,60 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
     );
   };
 
-  const buildVerificationPayload = () => {
-    const payload: Partial<VerificationFormState> & {
-      stepStatuses?: Record<VerificationStepKey, VerificationStatus>;
-    } = {
-      ...form,
-      payoutCountry: selectedPayoutCountry?.name ?? form.payoutCountry,
-      payoutCurrency: selectedPayoutCountry?.currency ?? form.payoutCurrency,
-      stepStatuses,
-    };
-
-    if (!payload.accountNumber) delete payload.accountNumber;
-    if (!payload.routingNumber) delete payload.routingNumber;
-    if (!payload.sortCode) delete payload.sortCode;
-    if (!payload.iban) delete payload.iban;
-    if (!payload.payoutAccount) delete payload.payoutAccount;
-
-    return payload;
+  const selectDocument = (key: VerificationDocumentKey, file?: File) => {
+    setDocumentFiles((current) => ({ ...current, [key]: file }));
+    setUploadedDocumentIds((current) => ({ ...current, [key]: undefined }));
+    updateField(
+      key === "idDocument" ? "idDocumentName" : "supportingDocumentName",
+      file?.name ?? "",
+    );
   };
 
-  const buildStepFields = (stepKey: VerificationStepKey) => {
-    const payload = buildVerificationPayload();
+  const uploadPendingDocuments = async () => {
+    const ids = { ...uploadedDocumentIds };
+    const purposes = {
+      idDocument: "ID_DOCUMENT",
+      supportingDocument: "SUPPORTING_DOCUMENT",
+    } as const;
+    for (const key of Object.keys(purposes) as VerificationDocumentKey[]) {
+      const file = documentFiles[key];
+      if (file && !ids[key]) {
+        ids[key] = (await uploadAttachment(file, purposes[key])).id;
+      }
+    }
+    setUploadedDocumentIds(ids);
+    return ids;
+  };
+
+  const buildVerificationPayload =
+    async (): Promise<VerificationApiPayload> => {
+      const documentIds = await uploadPendingDocuments();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { idDocumentName, supportingDocumentName, ...fields } = form;
+      const payload: VerificationApiPayload = {
+        ...fields,
+        payoutCountry: selectedPayoutCountry?.name ?? form.payoutCountry,
+        payoutCurrency: selectedPayoutCountry?.currency ?? form.payoutCurrency,
+        idDocumentId: documentIds.idDocument,
+        supportingDocumentId: documentIds.supportingDocument,
+      };
+
+      if (!payload.accountNumber) delete payload.accountNumber;
+      if (!payload.routingNumber) delete payload.routingNumber;
+      if (!payload.sortCode) delete payload.sortCode;
+      if (!payload.iban) delete payload.iban;
+      if (!payload.payoutAccount) delete payload.payoutAccount;
+      if (!payload.idDocumentId) delete payload.idDocumentId;
+      if (!payload.supportingDocumentId) delete payload.supportingDocumentId;
+
+      return payload;
+    };
+
+  const buildStepFields = async (stepKey: VerificationStepKey) => {
+    const payload = await buildVerificationPayload();
     const stepFieldMap: Record<
       VerificationStepKey,
-      Array<keyof VerificationFormState>
+      Array<keyof VerificationApiPayload>
     > = {
       vendorType: ["vendorType"],
       identity: [
@@ -621,7 +678,7 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
         "countryOfResidence",
         "address",
         "phoneNumber",
-        "idDocumentName",
+        "idDocumentId",
       ],
       business: [
         "businessName",
@@ -645,12 +702,12 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
       crossBorder: [
         "crossBorderCountries",
         "crossBorderReason",
-        "supportingDocumentName",
+        "supportingDocumentId",
       ],
       review: ["acceptedTerms"],
     };
 
-    return stepFieldMap[stepKey].reduce<Partial<VerificationFormState>>(
+    return stepFieldMap[stepKey].reduce<VerificationApiPayload>(
       (fields, key) => {
         const value = payload[key];
         if (value !== "" && value !== undefined) {
@@ -660,6 +717,10 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
       },
       {},
     );
+  };
+
+  const markDocumentsSaved = () => {
+    setDocumentFiles({});
   };
 
   const submitStep = async (stepKey: VerificationStepKey) => {
@@ -673,14 +734,15 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
     try {
       await patchData<
         {
-          fields: Partial<VerificationFormState>;
+          fields: VerificationApiPayload;
           status: VerificationStatus;
         },
         VendorVerificationApiResponse
       >(`/vendor/verification/steps/${stepKey}/submit`, {
-        fields: buildStepFields(stepKey),
+        fields: await buildStepFields(stepKey),
         status: "submitted",
       });
+      markDocumentsSaved();
       setStatus(nextStatus);
       setStepStatuses(nextStepStatuses);
       persistVerification(nextStatus, nextStepStatuses);
@@ -701,10 +763,11 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
     const nextStatus = status === "not_started" ? "in_progress" : status;
     setSavingAction("draft");
     try {
-      await putData<Partial<VerificationFormState>, VendorVerificationApiResponse>(
+      await putData<VerificationApiPayload, VendorVerificationApiResponse>(
         "/vendor/verification",
-        buildVerificationPayload(),
+        await buildVerificationPayload(),
       );
+      markDocumentsSaved();
       persistVerification(nextStatus);
       setStatus(nextStatus);
       toast.success("Verification draft saved.");
@@ -737,15 +800,16 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
 
     setSavingAction("submit");
     try {
-      await postData<
-        Partial<VerificationFormState> & {
-          stepStatuses: Record<VerificationStepKey, VerificationStatus>;
-        },
-        VendorVerificationApiResponse
-      >("/vendor/verification/submit", {
-        ...buildVerificationPayload(),
-        stepStatuses: nextStepStatuses,
-      });
+      // Submission checks what is saved, not what is sent, so the latest form
+      // (terms included) is saved first.
+      await putData<VerificationApiPayload, VendorVerificationApiResponse>(
+        "/vendor/verification",
+        await buildVerificationPayload(),
+      );
+      markDocumentsSaved();
+      await postData<undefined, VendorVerificationApiResponse>(
+        "/vendor/verification/submit",
+      );
       window.localStorage.setItem(
         storageKey,
         JSON.stringify({
@@ -940,11 +1004,9 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
             <Field label="Government ID upload">
               <Input
                 type="file"
+                accept="image/*,application/pdf"
                 onChange={(event) =>
-                  updateField(
-                    "idDocumentName",
-                    event.target.files?.[0]?.name ?? "",
-                  )
+                  selectDocument("idDocument", event.target.files?.[0])
                 }
                 className="h-11 rounded-xl"
               />
@@ -1230,11 +1292,9 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
             <Field label="Supporting document, optional">
               <Input
                 type="file"
+                accept="image/*,application/pdf"
                 onChange={(event) =>
-                  updateField(
-                    "supportingDocumentName",
-                    event.target.files?.[0]?.name ?? "",
-                  )
+                  selectDocument("supportingDocument", event.target.files?.[0])
                 }
                 className="h-11 rounded-xl"
               />

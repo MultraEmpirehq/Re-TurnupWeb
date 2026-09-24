@@ -170,6 +170,8 @@ export interface IEventDetailsType {
   name: string;
   date: Date;
   status?: "draft" | "published";
+  /** True when the signed-in viewer created this event; only they may edit or delete it. */
+  isOwner?: boolean;
   draftStep?: number;
   draftSnapshot?: Record<string, unknown>;
   venue?: IVenueDetailsType;
