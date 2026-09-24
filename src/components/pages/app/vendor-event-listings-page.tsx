@@ -66,6 +66,7 @@ const EventListingCard: React.FC<{
   const eventDate = getEventDate(event);
 
   const isDraft = event.status === "draft";
+  const canManage = event.isOwner === true;
 
   const badgeLabel = isDraft
     ? "Draft"
@@ -150,13 +151,17 @@ const EventListingCard: React.FC<{
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
-          <Button
-            asChild
-            className="h-10 rounded-xl bg-secondary-400 px-3 text-sm font-semibold text-white hover:bg-secondary-500"
-          >
-            <Link href={editHref}>{isDraft ? "Continue" : "Edit"}</Link>
-          </Button>
+        <div
+          className={`grid gap-2 ${canManage ? "grid-cols-3" : "grid-cols-1"}`}
+        >
+          {canManage && (
+            <Button
+              asChild
+              className="h-10 rounded-xl bg-secondary-400 px-3 text-sm font-semibold text-white hover:bg-secondary-500"
+            >
+              <Link href={editHref}>{isDraft ? "Continue" : "Edit"}</Link>
+            </Button>
+          )}
 
           <Button
             asChild
@@ -166,14 +171,16 @@ const EventListingCard: React.FC<{
             <Link href={previewHref}>Preview</Link>
           </Button>
 
-          <Button
-            type="button"
-            variant="outline"
-            className="h-10 rounded-xl border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100"
-            onClick={() => onDeleteRequest(event)}
-          >
-            Delete
-          </Button>
+          {canManage && (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 rounded-xl border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100"
+              onClick={() => onDeleteRequest(event)}
+            >
+              Delete
+            </Button>
+          )}
         </div>
       </div>
     </article>

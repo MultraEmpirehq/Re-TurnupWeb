@@ -210,6 +210,14 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     );
   }
 
+  if (!data.isOwner) {
+    return (
+      <div className="rounded-[2rem] border border-secondary-100 bg-white p-8 text-secondary-600 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+        You can only edit events you created.
+      </div>
+    );
+  }
+
   const handleChange =
     (field: keyof typeof formValues) =>
     (
