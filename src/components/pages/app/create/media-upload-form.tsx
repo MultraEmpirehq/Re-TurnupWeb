@@ -69,7 +69,8 @@ export const mediaUploadFormSchema = Joi.object({
 const MediaUploadForm: React.FC<{
   handleNextStep?: () => Promise<void>;
   handlePreviousStep?: () => void;
-}> = ({ handleNextStep, handlePreviousStep }) => {
+  isSaving?: boolean;
+}> = ({ handleNextStep, handlePreviousStep, isSaving = false }) => {
   const {
     handleSubmit,
     watch,
@@ -349,6 +350,7 @@ const MediaUploadForm: React.FC<{
       <div className="w-full max-w-[500px] mt-6 md:mt-10 flex flex-row items-center justify-start gap-3">
         <Button
           onClick={handlePreviousStep}
+          disabled={isSaving}
           variant="outline"
           className="border-secondary-700 text-secondary-700"
         >
@@ -356,10 +358,10 @@ const MediaUploadForm: React.FC<{
         </Button>
         <Button
           onClick={handleSubmit(onSubmit)}
-          loading={isSubmitting}
-          disabled={!!errors?.mediaFiles || isSubmitting}
+          loading={isSubmitting || isSaving}
+          disabled={!!errors?.mediaFiles || isSubmitting || isSaving}
         >
-          Continue
+          {isSaving ? "Saving draft..." : "Continue"}
         </Button>
       </div>
     </div>

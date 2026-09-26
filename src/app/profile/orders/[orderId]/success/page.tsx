@@ -13,7 +13,6 @@ import { format } from "date-fns";
 import {
   CheckCircle2,
   Download,
-  Loader2,
   CalendarDays,
   MapPin,
   TicketIcon,
@@ -278,7 +277,6 @@ const OrderSuccessPage = () => {
           loading={isDownloading}
           className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white border-0"
         >
-          {isDownloading && <Loader2 className="size-5 animate-spin" />}
           {!isDownloading && <Download className="size-5" />}
           {isDownloading && "Preparing Download..."}
           {!isDownloading && "Download Tickets"}

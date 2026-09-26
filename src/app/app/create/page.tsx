@@ -158,7 +158,10 @@ const buildEventFormData = async (
     formData.append("categoryId", body.categoryId);
   }
   formData.append("description", body.description);
-  formData.append("saleMethod", body.saleMethod);
+  // Sale method is only chosen on the ticket step; the API rejects an empty value.
+  if (body.saleMethod) {
+    formData.append("saleMethod", body.saleMethod);
+  }
   formData.append("acceptedTerms", String(!!body.acceptedTerms));
 
   if (body.guestIds?.length) {
@@ -175,14 +178,37 @@ const buildEventFormData = async (
     formData.append("activities", JSON.stringify(body.eventActivities));
   }
   if (body.eventTickets?.length) {
-    formData.append("eventTickets", JSON.stringify(body.eventTickets));
-    formData.append("ticketCategories", JSON.stringify(body.eventTickets));
+    // The API rejects unknown fields, and form tickets also carry display-only
+    // ones (soldCount, and id/eventId/createdAt on a draft loaded back).
+    const tickets = body.eventTickets.map((ticket) => ({
+      ticketName: ticket.ticketName,
+      ticketPrice: getTicketPriceValue(ticket.ticketPrice),
+      ticketQuantity: Number(ticket.ticketQuantity),
+      visibility: ticket.visibility,
+      actionType: ticket.actionType,
+      transferable: !!ticket.transferable,
+      ...(ticket.visibility === "private" && ticket.privateAccessCode
+        ? { privateAccessCode: ticket.privateAccessCode }
+        : {}),
+    }));
+    formData.append("eventTickets", JSON.stringify(tickets));
+    formData.append("ticketCategories", JSON.stringify(tickets));
   }
   if (body.ticketUrl) {
     formData.append("ticketUrl", body.ticketUrl);
   }
   if (body.passAssignments?.length) {
-    formData.append("accessPasses", JSON.stringify(body.passAssignments));
+    formData.append(
+      "accessPasses",
+      JSON.stringify(
+        body.passAssignments.map((pass) => ({
+          passName: pass.passName,
+          quantity: Number(pass.quantity),
+          assigneeEmails: pass.assigneeEmails ?? [],
+          transferable: !!pass.transferable,
+        })),
+      ),
+    );
   }
   if (body.coverImage instanceof File) {
     const cover = await uploadOnce(body.coverImage, "EVENT_COVER");
@@ -219,12 +245,11 @@ const buildEventFormData = async (
     );
   }
   if (body.blogPosts?.length) {
-    const blogPosts = body.blogPosts.map((post) => ({
-      ...post,
-      image: post.image instanceof File ? post.image.name : post.image,
-      images: (post.images ?? []).map((image) =>
-        image instanceof File ? image.name : image,
-      ),
+    // The API only accepts these fields; images travel separately as blogImageIds.
+    const blogPosts = body.blogPosts.map(({ title, excerpt, body: postBody }) => ({
+      title,
+      ...(excerpt ? { excerpt } : {}),
+      body: postBody,
     }));
     formData.append("blogPosts", JSON.stringify(blogPosts));
     const blogImageFiles = body.blogPosts.flatMap((post) =>
@@ -245,9 +270,15 @@ const buildEventFormData = async (
 const CreateEvent = () => {
   const [step, setStep] = useState(1);
   const [draftId, setDraftId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
   const activeStepRef = useRef(1);
   const searchParams = useSearchParams();
   const userDetails = useUserStore((state) => state.userDetails);
+  // Local mock events stand in for the API only when developing signed out; a
+  // signed-in user always talks to the backend so draft ids stay real UUIDs.
+  const useMockEvents =
+    process.env.NODE_ENV === "development" && !userDetails?.id;
   const resolver = useCallback<Resolver<TFormValues>>((values, context, options) => {
     return joiResolver(schemas[activeStepRef.current as keyof typeof schemas])(
       values,
@@ -272,7 +303,7 @@ const CreateEvent = () => {
       return;
     }
 
-    if (process.env.NODE_ENV !== "development") {
+    if (!useMockEvents) {
       const loadBackendDraft = async () => {
         try {
           const response = await getData<IEventDetailsType>(`/event/${nextDraftId}`);
@@ -347,13 +378,13 @@ const CreateEvent = () => {
     });
     setDraftId(nextDraftId);
     setStep(draftStep);
-  }, [draftId, form, searchParams]);
+  }, [draftId, form, searchParams, useMockEvents]);
 
   const saveDraft = useCallback(
     async (currentStep: number) => {
       const body = form.getValues();
 
-      if (process.env.NODE_ENV !== "development") {
+      if (!useMockEvents) {
         try {
           const formData = await buildEventFormData(body, "draft");
           const response = draftId
@@ -443,10 +474,10 @@ const CreateEvent = () => {
       setDraftId(nextDraftId);
       return nextDraftId;
     },
-    [draftId, form],
+    [draftId, form, useMockEvents],
   );
 
-  const handleNextStep = useCallback(async () => {
+  const advanceStep = useCallback(async () => {
     if (step < 4) {
       const nextStep = step + 1;
       activeStepRef.current = nextStep;
@@ -458,7 +489,7 @@ const CreateEvent = () => {
       console.log("body", body);
       const formData = await buildEventFormData(body, "published");
 
-      if (process.env.NODE_ENV === "development" && !userDetails?.id) {
+      if (useMockEvents) {
         const nextEventId = draftId || `mock-event-${Date.now()}`;
         const nextEvent = {
           id: nextEventId,
@@ -540,6 +571,7 @@ const CreateEvent = () => {
       }
       activeStepRef.current = 1;
       setStep(1);
+      setDraftId(null);
       form.reset();
       toast.success("Event created successfully");
     } catch (error) {
@@ -554,7 +586,21 @@ const CreateEvent = () => {
         constructErrorMessage(err, "Something went wrong while creating event"),
       );
     }
-  }, [draftId, form, saveDraft, step, userDetails]);
+  }, [draftId, form, saveDraft, step, useMockEvents, userDetails]);
+
+  // Every step saves before it moves on, so the steps share one saving flag for
+  // their button loaders and a second click can't send the same save twice.
+  const handleNextStep = useCallback(async () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setIsSaving(true);
+    try {
+      await advanceStep();
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
+    }
+  }, [advanceStep]);
 
   const handlePreviousStep = useCallback(() => {
     if (step > 1) {
@@ -567,23 +613,28 @@ const CreateEvent = () => {
     <div className="space-y-10">
       <Steps currentStep={step} />
       <FormProvider {...form}>
-        {step === 1 && <BasicForm handleNextStep={handleNextStep} />}
+        {step === 1 && (
+          <BasicForm handleNextStep={handleNextStep} isSaving={isSaving} />
+        )}
         {step === 2 && (
           <TicketForm
             handleNextStep={handleNextStep}
             handlePreviousStep={handlePreviousStep}
+            isSaving={isSaving}
           />
         )}
         {step === 3 && (
           <MediaUploadForm
             handleNextStep={handleNextStep}
             handlePreviousStep={handlePreviousStep}
+            isSaving={isSaving}
           />
         )}
         {step === 4 && (
           <PreviewPublishForm
             handleNextStep={handleNextStep}
             handlePreviousStep={handlePreviousStep}
+            isSaving={isSaving}
           />
         )}
       </FormProvider>

@@ -43,6 +43,9 @@ export interface IVenueSelectProps {
   required?: boolean;
   allowCreateOption?: boolean;
   onCreateOption?: (venueName: string) => void | { id: string; name: string };
+  /** Only venues in this location are offered; leave out to search everywhere. */
+  country?: string;
+  state?: string;
 }
 
 const VenueSelect: React.FC<IVenueSelectProps> = ({
@@ -59,6 +62,8 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
   required,
   allowCreateOption,
   onCreateOption,
+  country,
+  state,
 }) => {
   const [search, setSearch] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -77,9 +82,11 @@ const VenueSelect: React.FC<IVenueSelectProps> = ({
     isLoading,
     error: fetchError,
     refetch,
-  } = useVenues(
-    debouncedQuery.trim() ? { q: debouncedQuery.trim() } : undefined,
-  );
+  } = useVenues({
+    ...(debouncedQuery.trim() ? { q: debouncedQuery.trim() } : {}),
+    ...(country?.trim() ? { country: country.trim() } : {}),
+    ...(state?.trim() ? { state: state.trim() } : {}),
+  });
 
   const venueItems = useMemo(() => {
     const list = data?.pages?.flatMap((p) => p?.data ?? []) ?? [];
