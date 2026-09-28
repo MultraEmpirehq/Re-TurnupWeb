@@ -6,24 +6,32 @@ import SectionContainer from "@/components/layouts/section-container/section-con
 import { Button } from "@/components/ui/button";
 import ErrorContainer from "@/components/ui/error-container";
 import { Skeleton } from "@/components/ui/skeleton";
-import { IOrderDetailsType } from "@/lib/types";
+import { EOrderStatus, IOrderDetailsType } from "@/lib/types";
+import { joinEventChatGroup } from "@/lib/event-chat";
 import { ROUTES } from "@/lib/variables";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
   CheckCircle2,
   Download,
-  Loader2,
   CalendarDays,
   MapPin,
   TicketIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import React, { memo, useCallback, useMemo, useState } from "react";
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import TicketCard from "@/components/ticket-design/ticket-card";
 import ViewTicketsDialog from "@/components/ticket-design/view-tickets-dialog";
+import useUserStore from "@/stores/user-store";
 
 const getOrder = async (orderId: string) => {
   const { data } = await getData<IOrderDetailsType>(`/order/${orderId}`);
@@ -33,6 +41,8 @@ const getOrder = async (orderId: string) => {
 const OrderSuccessPage = () => {
   const params = useParams();
   const orderId = params?.orderId?.toString() || "";
+  const userDetails = useUserStore((state) => state.userDetails);
+  const hasJoinedChat = useRef(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [showTicketsDialog, setShowTicketsDialog] = useState(false);
 
@@ -44,12 +54,29 @@ const OrderSuccessPage = () => {
     queryKey: ["order", orderId],
     queryFn: () => getOrder(orderId),
     enabled: !!orderId,
+    // The gateway can redirect back before the payment webhook settles the order.
+    refetchInterval: (query) =>
+      query.state.data?.status === EOrderStatus.PENDING ? 3000 : false,
   });
 
   const event = useMemo(
     () => order?.ticket?.event?.data,
     [order?.ticket?.event?.data],
   );
+
+  const isPaid = order?.status === EOrderStatus.COMPLETED;
+
+  // Only join the event group chat once payment is confirmed.
+  useEffect(() => {
+    if (!isPaid || !event || !userDetails || hasJoinedChat.current) return;
+    hasJoinedChat.current = true;
+    joinEventChatGroup({
+      event,
+      user: userDetails,
+      joinReason: (order?.ticket?.price?.amount ?? 0) > 0 ? "paid" : "booked",
+    });
+    toast.success("Payment confirmed. You joined the event group chat");
+  }, [isPaid, event, userDetails, order?.ticket?.price?.amount]);
 
   const captureAndDownloadAll = useCallback(async () => {
     if (!order?.userTickets?.length) return;
@@ -181,9 +208,17 @@ const OrderSuccessPage = () => {
         <div className="size-20 rounded-full bg-green-100 dark:bg-green-950/40 flex items-center justify-center">
           <CheckCircle2 className="size-10 text-green-600" />
         </div>
-        <h1 className="text-3xl font-bold">Payment Successful!</h1>
+        <h1 className="text-3xl font-bold">
+          {order?.status === EOrderStatus.PENDING && "Confirming Payment..."}
+          {order?.status === EOrderStatus.FAILED && "Payment Failed"}
+          {isPaid && "Payment Successful!"}
+        </h1>
         <p className="text-muted-foreground">
-          Your tickets have been confirmed. You can download them below.
+          {order?.status === EOrderStatus.PENDING &&
+            "We're waiting for your payment to be confirmed. This page will update automatically."}
+          {order?.status === EOrderStatus.FAILED &&
+            "Your payment could not be completed. Please try purchasing again."}
+          {isPaid && "Your tickets have been confirmed. You can download them or proceed to the event group chat."}
         </p>
       </div>
 
@@ -278,16 +313,21 @@ const OrderSuccessPage = () => {
           loading={isDownloading}
           className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white border-0"
         >
-          {isDownloading && <Loader2 className="size-5 animate-spin" />}
           {!isDownloading && <Download className="size-5" />}
           {isDownloading && "Preparing Download..."}
           {!isDownloading && "Download Tickets"}
         </Button>
 
         <div className="flex items-center gap-3">
-          <Button asChild variant="outline" className="flex-1 h-12 rounded-xl">
-            <Link href={ROUTES.PROFILE_ORDERS.href}>View Orders</Link>
-          </Button>
+          {isPaid ? (
+            <Button asChild variant="outline" className="flex-1 h-12 rounded-xl">
+              <Link href={ROUTES.MESSAGES.href}>Proceed to Group</Link>
+            </Button>
+          ) : (
+            <Button variant="outline" className="flex-1 h-12 rounded-xl" disabled>
+              Proceed to Group
+            </Button>
+          )}
           <Button asChild variant="outline" className="flex-1 h-12 rounded-xl">
             <Link href={ROUTES.EXPLORE.href}>Explore Events</Link>
           </Button>

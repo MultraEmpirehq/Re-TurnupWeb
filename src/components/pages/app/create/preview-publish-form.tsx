@@ -38,7 +38,8 @@ const getTicketPriceAmount = (price: unknown) => {
 const PreviewPublishForm: React.FC<{
   handleNextStep: () => Promise<void>;
   handlePreviousStep?: () => void;
-}> = ({ handleNextStep, handlePreviousStep }) => {
+  isSaving?: boolean;
+}> = ({ handleNextStep, handlePreviousStep, isSaving = false }) => {
   const {
     watch,
     control,
@@ -506,7 +507,12 @@ const PreviewPublishForm: React.FC<{
       )}
 
       <div className="flex flex-wrap gap-3">
-        <Button type="button" variant="outline" onClick={handlePreviousStep}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handlePreviousStep}
+          disabled={isSaving}
+        >
           Previous
         </Button>
         {isPaidPublishingLocked ? (
@@ -516,8 +522,12 @@ const PreviewPublishForm: React.FC<{
             </a>
           </Button>
         ) : (
-          <Button type="submit" loading={isSubmitting}>
-            Publish Event
+          <Button
+            type="submit"
+            loading={isSubmitting || isSaving}
+            disabled={isSubmitting || isSaving}
+          >
+            {isSaving ? "Publishing..." : "Publish Event"}
           </Button>
         )}
       </div>

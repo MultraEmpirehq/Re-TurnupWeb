@@ -220,7 +220,8 @@ const PassAssignmentsInput: React.FC<{
 const TicketForm: React.FC<{
   handleNextStep: () => Promise<void>;
   handlePreviousStep?: () => void;
-}> = ({ handleNextStep, handlePreviousStep }) => {
+  isSaving?: boolean;
+}> = ({ handleNextStep, handlePreviousStep, isSaving = false }) => {
   const userDetails = useUserStore((state) => state.userDetails);
   const {
     control,
@@ -483,18 +484,19 @@ const TicketForm: React.FC<{
           <Button
             type="button"
             onClick={handlePreviousStep}
+            disabled={isSaving}
             variant="outline"
             className="border-secondary-700 text-secondary-700"
           >
             Previous
           </Button>
           <Button
-            disabled={isSubmitting}
-            loading={isSubmitting}
+            disabled={isSubmitting || isSaving}
+            loading={isSubmitting || isSaving}
             type="button"
             onClick={handleContinue}
           >
-            Continue
+            {isSaving ? "Saving draft..." : "Continue"}
           </Button>
         </div>
       </form>

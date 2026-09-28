@@ -40,7 +40,7 @@ export const useVenues = (params?: IVenuesParam) => {
   }, []);
 
   const query = useInfiniteQuery({
-    queryKey: ["venues", ...Object.values(params || {})],
+    queryKey: ["venues", params ?? {}],
     queryFn: ({ pageParam }) => getVenues(pageParam, params),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage?.pagination?.nextPage,
