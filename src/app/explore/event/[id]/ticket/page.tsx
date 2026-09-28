@@ -390,20 +390,6 @@ const TicketPage = () => {
       return;
     }
 
-    if (process.env.NODE_ENV === "development") {
-      if (event) {
-        joinEventChatGroup({
-          event,
-          user: userDetails,
-          joinReason:
-            (selectedTicket?.price?.amount ?? 0) > 0 ? "paid" : "registered",
-        });
-      }
-      toast.success("You joined the event group chat");
-      router.push(ROUTES.MESSAGES.href);
-      return;
-    }
-
     setIsPurchasing(true);
     try {
       const { data } = await postData<

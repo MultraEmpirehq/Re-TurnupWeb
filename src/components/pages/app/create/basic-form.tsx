@@ -1,5 +1,5 @@
 "use client";
-import React, { memo, useMemo } from "react";
+import React, { memo, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import Joi from "joi";
 import { Button } from "@/components/ui/button";
@@ -162,14 +162,16 @@ export const basicInformationSchema = Joi.object({
     }),
 }).unknown(true);
 
-const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
-  handleNextStep,
-}) => {
+const BasicForm: React.FC<{
+  handleNextStep: () => void | Promise<void>;
+  isSaving?: boolean;
+}> = ({ handleNextStep, isSaving = false }) => {
   const {
     register,
     watch,
     control,
     setValue,
+    getValues,
     formState: { errors, isValid, isSubmitting },
   } = useFormContext<IBasicFormValues>();
   const eventDate = watch("eventDate");
@@ -180,6 +182,16 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
   );
   const eventCountryCode = watch("eventCountryCode");
   const eventStateCode = watch("eventStateCode");
+  const eventCountry = watch("eventCountry");
+  const eventState = watch("eventState");
+  // Venues are offered for the chosen location, so a venue picked for the old
+  // one no longer applies. A venue the user typed in themselves isn't tied to a
+  // location and stays.
+  const clearVenueForNewLocation = useCallback(() => {
+    if (getValues("venueId")?.startsWith("custom-venue-")) return;
+    setValue("venueId", "", { shouldValidate: true, shouldDirty: true });
+    setValue("venueName", "", { shouldDirty: true });
+  }, [getValues, setValue]);
   const {
     data: categories,
     isLoading,
@@ -360,6 +372,7 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
               item={field.value}
               setItem={(countryCode) => {
                 const selectedCountry = Country.getCountryByCode(countryCode);
+                if (countryCode !== field.value) clearVenueForNewLocation();
                 field.onChange(countryCode);
                 setValue("eventCountry", selectedCountry?.name ?? "", {
                   shouldValidate: true,
@@ -400,6 +413,7 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
                   stateCode,
                   eventCountryCode,
                 );
+                if (stateCode !== field.value) clearVenueForNewLocation();
                 field.onChange(stateCode);
                 setValue("eventState", selectedState?.name ?? "", {
                   shouldValidate: true,
@@ -464,7 +478,18 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
                 return nextVenue ?? undefined;
               }}
               error={fieldState?.error?.message}
-              placeholder="Search or type a new venue"
+              country={eventCountry}
+              state={eventState}
+              placeholder={
+                eventState
+                  ? `Search venues in ${eventState} or type a new one`
+                  : "Search or type a new venue"
+              }
+              emptyText={
+                eventState
+                  ? `No venue found in ${eventState}. Type a name to add it.`
+                  : "No venue found."
+              }
             />
           )}
         />
@@ -534,10 +559,10 @@ const BasicForm: React.FC<{ handleNextStep: () => void }> = ({
       <Button
         type="button"
         onClick={handleNextStep}
-        disabled={!isValid || isSubmitting}
-        loading={isSubmitting}
+        disabled={!isValid || isSubmitting || isSaving}
+        loading={isSubmitting || isSaving}
       >
-        Next
+        {isSaving ? "Saving draft..." : "Next"}
       </Button>
     </form>
   );

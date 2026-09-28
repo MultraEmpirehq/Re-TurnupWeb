@@ -1,10 +1,7 @@
 "use client";
 
 import { getData } from "@/api";
-import {
-  useVendorVerificationSnapshot,
-  VerificationStatus,
-} from "@/components/pages/app/vendor-verification";
+import { VerificationStatus } from "@/components/pages/app/vendor-verification";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -15,21 +12,20 @@ interface IVerificationStatusResponse {
   status?: VerificationStatus;
 }
 
+/**
+ * Only approved vendors get past this. The answer comes from the API alone: the
+ * browser's saved verification snapshot isn't tied to an account, so trusting it
+ * would let whoever last signed in on this browser decide.
+ */
 const RequireVendorVerification: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const snapshot = useVendorVerificationSnapshot();
   const router = useRouter();
   const [status, setStatus] = useState<VerificationStatus | undefined>();
   const [isChecking, setIsChecking] = useState(true);
   const hasRedirectedRef = useRef(false);
-  const isDevelopment = process.env.NODE_ENV === "development";
 
   useEffect(() => {
-    if (isDevelopment) {
-      setIsChecking(false);
-      return;
-    }
     let isActive = true;
     getData<IVerificationStatusResponse>("/vendor/verification")
       .then(({ data }) => {
@@ -42,22 +38,18 @@ const RequireVendorVerification: React.FC<{ children: React.ReactNode }> = ({
     return () => {
       isActive = false;
     };
-  }, [isDevelopment]);
+  }, []);
 
-  const isApproved = (status ?? snapshot?.status) === "approved";
+  const isApproved = status === "approved";
 
   useEffect(() => {
-    if (isDevelopment || isChecking || isApproved || hasRedirectedRef.current) {
+    if (isChecking || isApproved || hasRedirectedRef.current) {
       return;
     }
     hasRedirectedRef.current = true;
     toast.error("Verify your vendor account before creating an event.");
     router.replace(VENDOR_VERIFICATION_ROUTE);
-  }, [isDevelopment, isChecking, isApproved, router]);
-
-  if (isDevelopment) {
-    return <>{children}</>;
-  }
+  }, [isChecking, isApproved, router]);
 
   if (isChecking) {
     return (
