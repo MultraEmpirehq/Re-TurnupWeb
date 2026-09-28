@@ -19,7 +19,7 @@ import {
   TicketIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import React, {
   memo,
   useCallback,
@@ -41,7 +41,6 @@ const getOrder = async (orderId: string) => {
 const OrderSuccessPage = () => {
   const params = useParams();
   const orderId = params?.orderId?.toString() || "";
-  const router = useRouter();
   const userDetails = useUserStore((state) => state.userDetails);
   const hasJoinedChat = useRef(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -77,8 +76,7 @@ const OrderSuccessPage = () => {
       joinReason: (order?.ticket?.price?.amount ?? 0) > 0 ? "paid" : "booked",
     });
     toast.success("Payment confirmed. You joined the event group chat");
-    router.replace(ROUTES.MESSAGES.href);
-  }, [isPaid, event, userDetails, order?.ticket?.price?.amount, router]);
+  }, [isPaid, event, userDetails, order?.ticket?.price?.amount]);
 
   const captureAndDownloadAll = useCallback(async () => {
     if (!order?.userTickets?.length) return;
@@ -220,7 +218,7 @@ const OrderSuccessPage = () => {
             "We're waiting for your payment to be confirmed. This page will update automatically."}
           {order?.status === EOrderStatus.FAILED &&
             "Your payment could not be completed. Please try purchasing again."}
-          {isPaid && "Your tickets have been confirmed. Taking you to the event group chat..."}
+          {isPaid && "Your tickets have been confirmed. You can download them or proceed to the event group chat."}
         </p>
       </div>
 
@@ -321,9 +319,15 @@ const OrderSuccessPage = () => {
         </Button>
 
         <div className="flex items-center gap-3">
-          <Button asChild variant="outline" className="flex-1 h-12 rounded-xl">
-            <Link href={ROUTES.PROFILE_ORDERS.href}>View Orders</Link>
-          </Button>
+          {isPaid ? (
+            <Button asChild variant="outline" className="flex-1 h-12 rounded-xl">
+              <Link href={ROUTES.MESSAGES.href}>Proceed to Group</Link>
+            </Button>
+          ) : (
+            <Button variant="outline" className="flex-1 h-12 rounded-xl" disabled>
+              Proceed to Group
+            </Button>
+          )}
           <Button asChild variant="outline" className="flex-1 h-12 rounded-xl">
             <Link href={ROUTES.EXPLORE.href}>Explore Events</Link>
           </Button>
