@@ -43,7 +43,8 @@ const ForgotPasswordPage = () => {
     mode: "onChange",
   });
   const onSubmit = useCallback(
-    async (body: IFormValues) => {
+    async (values: IFormValues) => {
+      const body = { ...values, email: values.email.trim().toLowerCase() };
       try {
         const { data } = await getData<IUserCheckedCredentials>(
           `/auth?email=${body.email}`,

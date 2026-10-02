@@ -160,7 +160,10 @@ const AuthForm = () => {
   const isBusy = isSubmitting || isSocialSubmitting;
 
   const onSubmit = useCallback(
-    async (body: IFormValues) => {
+    async (values: IFormValues) => {
+      // Emails are case-insensitive, so send one spelling or the same person can
+      // end up looked up (or registered) as a different account.
+      const body = { ...values, email: values.email.trim().toLowerCase() };
       try {
         if (!checkedCredentials) {
           const { data } = await getData<IUserCheckedCredentials>(
