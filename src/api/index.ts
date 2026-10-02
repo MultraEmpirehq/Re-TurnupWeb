@@ -10,6 +10,9 @@ const api = axios.create({
   baseURL: apiBaseUrl,
   withCredentials: true,
   timeout: 30000,
+  headers: {
+    "x-mobile": false,
+  },
 });
 
 api.interceptors.response.use(
