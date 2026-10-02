@@ -12,6 +12,7 @@ import Link from "next/link";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { IVerificationDocument } from "@/lib/types";
+import useUserStore, { EUserRoles } from "@/stores/user-store";
 import {
   getAllCountryOptions,
   getAllCurrencies,
@@ -361,8 +362,13 @@ export const VendorVerificationNotice: React.FC<{
   context?: "dashboard" | "create" | "wallet";
 }> = ({ context = "dashboard" }) => {
   const [{ status }, setVerification] = useState(getSavedVerification);
+  // Admins aren't vendors, so there's nothing for them to verify.
+  const isAdmin = useUserStore(
+    (state) => state.userDetails?.role === EUserRoles.ADMIN,
+  );
 
   useEffect(() => {
+    if (isAdmin) return;
     setVerification(getSavedVerification());
     getData<VendorVerificationApiResponse>("/vendor/verification")
       .then(({ data }) => {
@@ -376,9 +382,9 @@ export const VendorVerificationNotice: React.FC<{
         setVerification(nextVerification);
       })
       .catch(() => undefined);
-  }, []);
+  }, [isAdmin]);
 
-  if (status === "approved") {
+  if (isAdmin || status === "approved") {
     return null;
   }
 

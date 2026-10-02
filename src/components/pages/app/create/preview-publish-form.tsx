@@ -12,6 +12,7 @@ import React, { memo, useMemo } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import type { TFormValues } from "@/app/app/create/page";
 import Link from "next/link";
+import useUserStore, { EUserRoles } from "@/stores/user-store";
 
 export const previewPublishSchema = Joi.object({
   acceptedTerms: Joi.boolean().valid(true).required().messages({
@@ -50,8 +51,14 @@ const PreviewPublishForm: React.FC<{
 
   const values = watch();
   const verification = useVendorVerificationSnapshot();
+  const isAdmin = useUserStore(
+    (state) => state.userDetails?.role === EUserRoles.ADMIN,
+  );
   const coverImage = values.coverImage;
-  const mediaFiles = useMemo(() => values.mediaFiles ?? [], [values.mediaFiles]);
+  const mediaFiles = useMemo(
+    () => values.mediaFiles ?? [],
+    [values.mediaFiles],
+  );
   const coverImagePreviewUrl = useMemo(
     () => getImagePreviewUrl(coverImage),
     [coverImage],
@@ -85,13 +92,15 @@ const PreviewPublishForm: React.FC<{
   const requiresPaidVerification = useMemo(() => {
     const hasPaidInternalTickets =
       values.saleMethod === "on_turnup" &&
-      eventTickets.some((ticket) => getTicketPriceAmount(ticket.ticketPrice) > 0);
+      eventTickets.some(
+        (ticket) => getTicketPriceAmount(ticket.ticketPrice) > 0,
+      );
     const hasExternalTicketing = values.saleMethod === "external_link";
     return hasPaidInternalTickets || hasExternalTicketing;
   }, [eventTickets, values.saleMethod]);
 
   const isPaidPublishingLocked =
-    requiresPaidVerification && verification.status !== "approved";
+    !isAdmin && requiresPaidVerification && verification.status !== "approved";
 
   const addBlogPost = () => {
     setValue(
@@ -135,21 +144,18 @@ const PreviewPublishForm: React.FC<{
 
   const blogImageOptions = useMemo(
     () =>
-      [
-        coverImage,
-        ...mediaFiles,
-        ...(values.sponsorImages ?? []),
-      ].filter(Boolean) as Array<File | string>,
+      [coverImage, ...mediaFiles, ...(values.sponsorImages ?? [])].filter(
+        Boolean,
+      ) as Array<File | string>,
     [coverImage, mediaFiles, values.sponsorImages],
   );
 
   const addBlogImages = (index: number, images: Array<File | string>) => {
     const currentImages = blogPosts[index]?.images ?? [];
-    setValue(
-      `blogPosts.${index}.images`,
-      [...currentImages, ...images],
-      { shouldValidate: true, shouldDirty: true },
-    );
+    setValue(`blogPosts.${index}.images`, [...currentImages, ...images], {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
     if (!blogPosts[index]?.image && images[0]) {
       setValue(`blogPosts.${index}.image`, images[0], {
         shouldValidate: true,
@@ -243,7 +249,8 @@ const PreviewPublishForm: React.FC<{
               Transfer Settings
             </p>
             <p className="text-sm text-secondary-500">
-              Enable transfer for any ticket category or access pass before publishing.
+              Enable transfer for any ticket category or access pass before
+              publishing.
             </p>
           </div>
           {eventTickets.length > 0 && (
@@ -259,7 +266,9 @@ const PreviewPublishForm: React.FC<{
                     </span>
                     <span className="mt-1 block text-secondary-500">
                       {ticket.ticketQuantity} tickets -{" "}
-                      {ticket.transferable ? "Transfer enabled" : "Transfer disabled"}
+                      {ticket.transferable
+                        ? "Transfer enabled"
+                        : "Transfer disabled"}
                     </span>
                   </span>
                   <input
@@ -277,8 +286,8 @@ const PreviewPublishForm: React.FC<{
           {passAssignments.length > 0 && (
             <div className="space-y-3">
               <p className="text-xs text-secondary-500">
-                Access pass invite emails are sent after publishing. Draft saves keep
-                the pass list without emailing assignees.
+                Access pass invite emails are sent after publishing. Draft saves
+                keep the pass list without emailing assignees.
               </p>
               {passAssignments.map((pass, index) => (
                 <label
@@ -291,7 +300,9 @@ const PreviewPublishForm: React.FC<{
                     </span>
                     <span className="mt-1 block text-secondary-500">
                       {pass.quantity} passes -{" "}
-                      {pass.transferable ? "Transfer enabled" : "Transfer disabled"}
+                      {pass.transferable
+                        ? "Transfer enabled"
+                        : "Transfer disabled"}
                     </span>
                   </span>
                   <input
@@ -316,8 +327,8 @@ const PreviewPublishForm: React.FC<{
               Private Ticket Invites
             </p>
             <p className="text-sm text-secondary-500">
-              These categories stay hidden from the public ticket page. Share the
-              private link after the event is published.
+              These categories stay hidden from the public ticket page. Share
+              the private link after the event is published.
             </p>
           </div>
           <div className="space-y-3">
@@ -330,7 +341,8 @@ const PreviewPublishForm: React.FC<{
                   {ticket.ticketName}
                 </p>
                 <p className="mt-1 break-all text-secondary-500">
-                  /explore/event/:eventId/ticket?access={ticket.privateAccessCode}
+                  /explore/event/:eventId/ticket?access=
+                  {ticket.privateAccessCode}
                 </p>
               </div>
             ))}
@@ -353,7 +365,10 @@ const PreviewPublishForm: React.FC<{
           </Button>
         </div>
         {blogPosts.map((post, index) => (
-          <div key={post.id} className="space-y-3 rounded-xl bg-secondary-50 p-4">
+          <div
+            key={post.id}
+            className="space-y-3 rounded-xl bg-secondary-50 p-4"
+          >
             <Input
               value={post.title}
               placeholder="Title"

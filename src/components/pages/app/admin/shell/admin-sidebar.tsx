@@ -7,12 +7,23 @@ import { useAdminVerifications } from "@/hooks/use-admin-verifications";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
-import { LogOut } from "lucide-react";
+import { ChevronDown, LogOut } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import React, { Fragment, memo, useMemo } from "react";
-import { ADMIN_NAV_GROUPS, isAdminNavItemActive } from "./admin-nav";
+import React, { Fragment, memo, useMemo, useState } from "react";
+import {
+  ADMIN_NAV_GROUPS,
+  isAdminNavItemActive,
+  TAdminNavItem,
+} from "./admin-nav";
+
+const firstDepartment = ADMIN_NAV_GROUPS.find((group) => group.department);
+
+const activeGroupLabel = (pathname: string) =>
+  ADMIN_NAV_GROUPS.find((group) =>
+    group.items.some((item) => isAdminNavItemActive(pathname, item)),
+  )?.label;
 
 const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
   const pathname = usePathname();
@@ -28,6 +39,69 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
     page: 1,
   });
   const pendingCount = pending?.pagination?.total ?? 0;
+
+  // Departments start collapsed except the one holding the current page, and
+  // opening a page elsewhere expands its department so the active link is visible.
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {
+    const label = activeGroupLabel(pathname);
+    return new Set(label ? [label] : []);
+  });
+  const [expandedFor, setExpandedFor] = useState(pathname);
+  if (expandedFor !== pathname) {
+    setExpandedFor(pathname);
+    const label = activeGroupLabel(pathname);
+    if (label && !expandedGroups.has(label)) {
+      setExpandedGroups(new Set(expandedGroups).add(label));
+    }
+  }
+
+  const toggleGroup = (label: string) => {
+    setExpandedGroups((current) => {
+      const next = new Set(current);
+      if (next.has(label)) {
+        next.delete(label);
+      } else {
+        next.add(label);
+      }
+      return next;
+    });
+  };
+
+  const renderItem = (item: TAdminNavItem) => {
+    const isActive = isAdminNavItemActive(pathname, item);
+    const Icon = item.icon;
+    const badge = item.showsPendingVerifications ? pendingCount : 0;
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        aria-current={isActive ? "page" : undefined}
+        className={cn(
+          "flex items-center gap-2.5 rounded-[10px] px-[11px] py-2.5 text-sm transition-colors duration-100 ease-out",
+          isActive
+            ? "bg-secondary-50 font-semibold text-secondary-800"
+            : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
+        )}
+      >
+        <Icon className="size-[18px] shrink-0" aria-hidden />
+        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+        {badge > 0 && (
+          <span
+            className="shrink-0 rounded-full bg-primary px-[7px] py-[3px] text-xs font-semibold text-white"
+            aria-label={`${badge} awaiting review`}
+          >
+            {badge}
+          </span>
+        )}
+        {item.comingSoon && (
+          <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+            Soon
+          </span>
+        )}
+      </Link>
+    );
+  };
 
   const displayName = useMemo(() => {
     const fromParts = [userDetails?.firstName, userDetails?.lastName]
@@ -72,43 +146,64 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
-        {ADMIN_NAV_GROUPS.map((group) => (
-          <Fragment key={group.label}>
-            <p className="px-[11px] pt-2.5 pb-0.5 text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
-              {group.label}
-            </p>
-            {group.items.map((item) => {
-              const isActive = isAdminNavItemActive(pathname, item);
-              const Icon = item.icon;
-              const badge = item.showsPendingVerifications ? pendingCount : 0;
+        {ADMIN_NAV_GROUPS.map((group) => {
+          if (!group.department) {
+            return (
+              <Fragment key={group.label}>
+                <p className="px-[11px] pt-2.5 pb-0.5 text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
+                  {group.label}
+                </p>
+                {group.items.map(renderItem)}
+              </Fragment>
+            );
+          }
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={isActive ? "page" : undefined}
+          const { icon: DepartmentIcon, accentClassName } = group.department;
+          const isExpanded = expandedGroups.has(group.label);
+          const listId = `admin-nav-${group.label.toLowerCase().replace(/\s+/g, "-")}`;
+
+          return (
+            <div key={group.label} className="flex flex-col gap-1 pt-1">
+              {group === firstDepartment && (
+                <p className="px-[11px] pt-2.5 pb-0.5 text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
+                  Departments
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.label)}
+                aria-expanded={isExpanded}
+                aria-controls={listId}
+                className="flex items-center gap-2.5 rounded-[10px] px-[7px] py-1.5 text-left text-sm font-semibold text-foreground transition-colors duration-100 ease-out hover:bg-muted"
+              >
+                <span
                   className={cn(
-                    "flex items-center gap-2.5 rounded-[10px] px-[11px] py-2.5 text-sm transition-colors duration-100 ease-out",
-                    isActive
-                      ? "bg-secondary-50 font-semibold text-secondary-800"
-                      : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
+                    "flex size-7 shrink-0 items-center justify-center rounded-lg",
+                    accentClassName,
                   )}
                 >
-                  <Icon className="size-[18px] shrink-0" aria-hidden />
-                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                  {badge > 0 && (
-                    <span
-                      className="shrink-0 rounded-full bg-primary px-[7px] py-[3px] text-xs font-semibold text-white"
-                      aria-label={`${badge} awaiting review`}
-                    >
-                      {badge}
-                    </span>
+                  <DepartmentIcon className="size-4" aria-hidden />
+                </span>
+                <span className="min-w-0 flex-1 truncate">{group.label}</span>
+                <ChevronDown
+                  className={cn(
+                    "size-4 shrink-0 text-muted-foreground transition-transform duration-150",
+                    isExpanded && "rotate-180",
                   )}
-                </Link>
-              );
-            })}
-          </Fragment>
-        ))}
+                  aria-hidden
+                />
+              </button>
+              {isExpanded && (
+                <div
+                  id={listId}
+                  className="ml-[21px] flex flex-col gap-1 border-l border-border pl-2"
+                >
+                  {group.items.map(renderItem)}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </nav>
 
       <div className="flex items-center gap-2.5 rounded-xl border border-border p-2.5">
