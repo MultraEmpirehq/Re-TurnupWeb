@@ -7,6 +7,8 @@ import {
   subscribeToEventNotifications,
 } from "@/lib/event-notifications";
 import { useVendorNotifications } from "@/hooks/use-vendor-notifications";
+import { markNotificationsSeen } from "@/hooks/use-unread-notifications";
+import useUserStore from "@/stores/user-store";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import React, { memo, useEffect, useMemo, useState } from "react";
@@ -19,7 +21,18 @@ const NotificationsPage = () => {
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("q")?.trim() ?? "",
   );
-  const { data: vendorNotifications = [] } = useVendorNotifications();
+  const { data: vendorNotificationsData } = useVendorNotifications();
+  const vendorNotifications = useMemo(
+    () => vendorNotificationsData ?? [],
+    [vendorNotificationsData],
+  );
+  const userId = useUserStore((state) => state.userDetails?.id);
+
+  // Being on this page means everything listed has been seen, including anything
+  // that arrives while it's open, so the nav badge clears.
+  useEffect(() => {
+    markNotificationsSeen(userId);
+  }, [userId, vendorNotificationsData, eventNotifications]);
 
   useEffect(() => {
     const syncNotifications = () => setEventNotifications(getEventNotifications());
