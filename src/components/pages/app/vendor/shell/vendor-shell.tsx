@@ -5,11 +5,14 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { usePathname } from "next/navigation";
 import React, { memo, useState } from "react";
 import VendorSidebar from "./vendor-sidebar";
+import RequireVendorVerification from "@/components/auth/require-vendor-verification";
+import { lockedVendorSection, verificationMessageFor } from "./vendor-nav";
 
 const VendorShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [navPathname, setNavPathname] = useState(pathname);
+  const lockedSection = lockedVendorSection(pathname);
 
   // Below `lg` the nav is a drawer over the page. Close it as soon as the route
   // changes, during render, so the new page is never painted underneath it.
@@ -31,7 +34,19 @@ const VendorShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <DashboardNav onOpenNav={() => setIsNavOpen(true)} />
-        <main className="flex-1 px-4 pt-6 pb-10 sm:px-6 lg:px-8">{children}</main>
+        <main className="flex-1 px-4 pt-6 pb-10 sm:px-6 lg:px-8">
+          {lockedSection ? (
+            // Typed URLs and other links are held back the same way the sidebar is.
+            <RequireVendorVerification
+              key={lockedSection.href}
+              message={verificationMessageFor(lockedSection)}
+            >
+              {children}
+            </RequireVendorVerification>
+          ) : (
+            children
+          )}
+        </main>
       </div>
     </div>
   );
