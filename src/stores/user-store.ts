@@ -82,6 +82,10 @@ const useUserStore = create(
     })),
     {
       name: "user-store",
+      // The server has no localStorage, so reading it while the store is created
+      // makes the first browser render differ from the server HTML. AuthProvider
+      // rehydrates once mounted instead; `isLoading` stays true until then.
+      skipHydration: true,
       storage: createJSONStorage(() => {
         if (typeof window !== "undefined") {
           return localStorage;

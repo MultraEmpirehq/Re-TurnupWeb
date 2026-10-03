@@ -1,24 +1,10 @@
 "use client";
 
-import useUserStore, { EUserRoles } from "@/stores/user-store";
+import { resolveLandingRoute } from "@/lib/auth-landing";
+import useUserStore from "@/stores/user-store";
 import { ROUTES } from "@/lib/variables";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
-
-/**
- * Where each role lands after signing in, when no explicit redirect was asked for.
- * Admins go to the console, vendors to their dashboard, everyone else to the site.
- */
-const landingRouteFor = (role?: EUserRoles) => {
-  switch (role) {
-    case EUserRoles.ADMIN:
-      return ROUTES.ADMIN_OVERVIEW.href;
-    case EUserRoles.VENDOR:
-      return ROUTES.DASHBOARD.href;
-    default:
-      return ROUTES.HOME.href;
-  }
-};
 
 const Spinner = () => (
   <div className="flex items-center justify-center h-screen w-full">
@@ -50,14 +36,15 @@ const RedirectWatcher = () => {
       return;
     }
 
-    // An explicit redirect always wins, otherwise an admin or vendor could never be
-    // linked to a page outside their own area.
-    if (redirectTo) {
-      router.replace(redirectTo);
-      return;
-    }
-
-    router.replace(landingRouteFor(userDetails.role));
+    // Same rule the login form follows, so whichever runs first sends them to the
+    // same place.
+    let isActive = true;
+    resolveLandingRoute(userDetails, redirectTo).then((route) => {
+      if (isActive) router.replace(route);
+    });
+    return () => {
+      isActive = false;
+    };
   }, [isLoading, userDetails, router, searchParams, isCompleteUserRoute]);
 
   return null;
