@@ -6,15 +6,16 @@ import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import NextTopLoader from "nextjs-toploader";
 import { usePathname } from "next/navigation";
-import React, { memo, useMemo } from "react";
+import React, { memo, useMemo, useState } from "react";
 
 const authsToRemoveNav = ["/auth", "/app"];
 const authsToRemoveFooter = ["/auth", "/app"];
 
-const queryClient = new QueryClient();
-
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
+  // One client per browser session; at module level the server would share a single
+  // cache between every request and user.
+  const [queryClient] = useState(() => new QueryClient());
   const shouldHideNav = useMemo(
     () => authsToRemoveNav.some((route) => pathname.startsWith(route)),
     [pathname],
