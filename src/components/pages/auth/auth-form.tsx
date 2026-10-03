@@ -1,4 +1,5 @@
 "use client";
+import { resolveLandingRoute } from "@/lib/auth-landing";
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import { Button } from "@/components/ui/button";
 import InputField from "@/components/ui/input-field";
@@ -129,7 +130,7 @@ const AuthForm = () => {
         return;
       }
 
-      router.push(redirectTo || ROUTES.HOME.href);
+      router.push(await resolveLandingRoute(payload?.user, redirectTo));
     },
     [performAuthOperation, redirectTo, router, setUserToken],
   );
