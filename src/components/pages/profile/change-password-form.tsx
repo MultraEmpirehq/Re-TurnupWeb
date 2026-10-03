@@ -42,7 +42,8 @@ const defaultValues: IPasswordFormValues = {
   confirmPassword: "",
 };
 
-const SecurityPage = () => {
+/** The password section of the dashboard profile, linked to as `#security`. */
+const ChangePasswordForm = () => {
   const {
     register,
     handleSubmit,
@@ -79,22 +80,29 @@ const SecurityPage = () => {
   );
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold">Change Password</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Update your password to keep your account secure.
-        </p>
-      </div>
+    <section
+      id="security"
+      className="scroll-mt-24 rounded-[1.75rem] border border-secondary-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-8"
+    >
+      <p className="text-xs font-bold tracking-[0.2em] text-secondary-400 uppercase">
+        Security
+      </p>
+      <h2 className="mt-2 text-2xl font-bold text-secondary-950">
+        Change password
+      </h2>
+      <p className="mt-2 max-w-2xl text-sm text-secondary-500">
+        Update your password to keep your account secure.
+      </p>
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="border rounded-xl p-6 space-y-5 max-w-md"
+        className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2"
       >
         <InputField
           label="Current Password"
           placeholder="Enter your current password"
           type="password"
+          containerClassName="md:col-span-2 md:max-w-[calc(50%-0.625rem)]"
           {...register("currentPassword")}
           error={errors.currentPassword?.message}
         />
@@ -112,17 +120,19 @@ const SecurityPage = () => {
           {...register("confirmPassword")}
           error={errors.confirmPassword?.message}
         />
-        <Button
-          type="submit"
-          disabled={!isValid}
-          loading={isSubmitting}
-          className="w-full"
-        >
-          Update Password
-        </Button>
+        <div className="md:col-span-2">
+          <Button
+            type="submit"
+            disabled={!isValid}
+            loading={isSubmitting}
+            className="h-11 rounded-2xl bg-secondary-400 px-5 font-semibold text-white hover:bg-secondary-500"
+          >
+            Update password
+          </Button>
+        </div>
       </form>
-    </div>
+    </section>
   );
 };
 
-export default memo(SecurityPage);
+export default memo(ChangePasswordForm);

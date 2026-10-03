@@ -35,7 +35,6 @@ import {
   CircleHelp,
   LogOut,
   Menu,
-  ShieldCheck,
   ShoppingBag,
   User,
 } from "lucide-react";
@@ -160,13 +159,6 @@ const GeneralNavComponent = () => {
                   Orders
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => router.push(ROUTES.PROFILE_SECURITY.href)}
-                  className="cursor-pointer"
-                >
-                  <ShieldCheck className="size-4" />
-                  Security
-                </DropdownMenuItem>
-                <DropdownMenuItem
                   onClick={() => router.push(ROUTES.PROFILE_HELP.href)}
                   className="cursor-pointer"
                 >
@@ -262,16 +254,6 @@ const GeneralNavComponent = () => {
                   >
                     <ShoppingBag className="size-4" />
                     Orders
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleMobileNavigate(ROUTES.PROFILE_SECURITY.href)
-                    }
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium hover:bg-muted transition-colors text-left cursor-pointer"
-                  >
-                    <ShieldCheck className="size-4" />
-                    Security
                   </button>
                   <button
                     type="button"

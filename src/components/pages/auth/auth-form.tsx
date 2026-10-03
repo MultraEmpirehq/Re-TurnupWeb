@@ -1,4 +1,5 @@
 "use client";
+import { resolveLandingRoute } from "@/lib/auth-landing";
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import { Button } from "@/components/ui/button";
 import InputField from "@/components/ui/input-field";
@@ -129,7 +130,7 @@ const AuthForm = () => {
         return;
       }
 
-      router.push(redirectTo || ROUTES.HOME.href);
+      router.push(await resolveLandingRoute(payload?.user, redirectTo));
     },
     [performAuthOperation, redirectTo, router, setUserToken],
   );
@@ -160,7 +161,10 @@ const AuthForm = () => {
   const isBusy = isSubmitting || isSocialSubmitting;
 
   const onSubmit = useCallback(
-    async (body: IFormValues) => {
+    async (values: IFormValues) => {
+      // Emails are case-insensitive, so send one spelling or the same person can
+      // end up looked up (or registered) as a different account.
+      const body = { ...values, email: values.email.trim().toLowerCase() };
       try {
         if (!checkedCredentials) {
           const { data } = await getData<IUserCheckedCredentials>(

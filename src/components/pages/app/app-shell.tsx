@@ -1,14 +1,13 @@
 "use client";
 
-import SectionContainer from "@/components/layouts/section-container/section-container";
 import AdminShell from "@/components/pages/app/admin/shell/admin-shell";
-import DashboardNav from "@/components/pages/app/dashboard-nav";
+import VendorShell from "@/components/pages/app/vendor/shell/vendor-shell";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
 import React, { memo } from "react";
 
 /**
  * Admins get the sidebar console on every /app page they can open (their own pages
- * and the admin-only venue and category pages); everyone else gets the vendor nav.
+ * and the admin-only venue and category pages); everyone else gets the vendor one.
  */
 const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const role = useUserStore((state) => state.userDetails?.role);
@@ -27,14 +26,7 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return <AdminShell>{children}</AdminShell>;
   }
 
-  return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,rgba(244,248,255,0.92)_0%,rgba(255,255,255,1)_30%)]">
-      <DashboardNav />
-      <SectionContainer className="relative max-w-[1800px] pt-28 pb-10 md:pt-32 md:pb-14">
-        {children}
-      </SectionContainer>
-    </div>
-  );
+  return <VendorShell>{children}</VendorShell>;
 };
 
 export default memo(AppShell);

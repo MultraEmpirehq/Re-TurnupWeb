@@ -23,7 +23,9 @@ const normalizeListResponse = <T>(payload: unknown): T[] => {
   return [];
 };
 
-export const useVendorNotifications = () =>
+export const useVendorNotifications = ({
+  enabled = true,
+}: { enabled?: boolean } = {}) =>
   useQuery({
     queryKey: ["vendor-notifications"],
     queryFn: async () => {
@@ -31,4 +33,7 @@ export const useVendorNotifications = () =>
       return normalizeListResponse<VendorNotification>(response.data.data);
     },
     retry: 0,
+    enabled,
+    // Keeps the unread badge in the nav current without a page reload.
+    refetchInterval: 60_000,
   });
