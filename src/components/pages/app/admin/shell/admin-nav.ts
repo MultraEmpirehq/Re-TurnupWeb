@@ -7,7 +7,6 @@ import {
   CalendarPlus,
   ChartNoAxesCombined,
   CircleDollarSign,
-  Crown,
   FileChartColumn,
   Headset,
   Inbox,
@@ -24,6 +23,7 @@ import {
   Receipt,
   ScrollText,
   Settings,
+  ShieldUser,
   SlidersHorizontal,
   Tags,
   Ticket,
@@ -79,7 +79,7 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
   {
     label: "Super Admin",
     department: {
-      icon: Crown,
+      icon: ShieldUser,
       accentClassName: "bg-violet-50 text-violet-600",
       description: "Manage other Super Admins and platform access.",
     },

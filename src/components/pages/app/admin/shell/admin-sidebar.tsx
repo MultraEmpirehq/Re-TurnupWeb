@@ -160,6 +160,15 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
 
           const { icon: DepartmentIcon, accentClassName } = group.department;
           const isExpanded = expandedGroups.has(group.label);
+          const isGroupActive = group.items.some((item) =>
+            isAdminNavItemActive(pathname, item),
+          );
+          // A collapsed department still shows what's waiting inside it.
+          const groupBadge = group.items.reduce(
+            (sum, item) =>
+              sum + (item.showsPendingVerifications ? pendingCount : 0),
+            0,
+          );
           const listId = `admin-nav-${group.label.toLowerCase().replace(/\s+/g, "-")}`;
 
           return (
@@ -174,7 +183,14 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
                 onClick={() => toggleGroup(group.label)}
                 aria-expanded={isExpanded}
                 aria-controls={listId}
-                className="flex items-center gap-2.5 rounded-[10px] px-[7px] py-1.5 text-left text-sm font-semibold text-foreground transition-colors duration-100 ease-out hover:bg-muted"
+                className={cn(
+                  "flex items-center gap-2.5 rounded-[10px] px-[7px] py-1.5 text-left text-sm font-semibold transition-colors duration-100 ease-out",
+                  isGroupActive
+                    ? "text-secondary-800"
+                    : "text-foreground hover:bg-muted",
+                  isGroupActive && !isExpanded && "bg-secondary-50",
+                  isGroupActive && isExpanded && "hover:bg-muted",
+                )}
               >
                 <span
                   className={cn(
@@ -184,7 +200,26 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
                 >
                   <DepartmentIcon className="size-4" aria-hidden />
                 </span>
-                <span className="min-w-0 flex-1 truncate">{group.label}</span>
+                <span className="min-w-0 flex-1 truncate">
+                  {group.label}
+                  {isGroupActive && (
+                    <span className="sr-only"> (current section)</span>
+                  )}
+                </span>
+                {!isExpanded && groupBadge > 0 && (
+                  <span
+                    className="shrink-0 rounded-full bg-primary px-[7px] py-[3px] text-xs font-semibold text-white"
+                    aria-label={`${groupBadge} awaiting review`}
+                  >
+                    {groupBadge}
+                  </span>
+                )}
+                {!isExpanded && isGroupActive && groupBadge === 0 && (
+                  <span
+                    className="size-1.5 shrink-0 rounded-full bg-secondary-800"
+                    aria-hidden
+                  />
+                )}
                 <ChevronDown
                   className={cn(
                     "size-4 shrink-0 text-muted-foreground transition-transform duration-150",
