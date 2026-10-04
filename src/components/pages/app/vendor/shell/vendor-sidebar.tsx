@@ -6,18 +6,27 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
-import { LogOut } from "lucide-react";
+import { Lock, LogOut } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { memo, useMemo } from "react";
-import { isVendorNavItemActive, VENDOR_NAV_ITEMS } from "./vendor-nav";
+import { toast } from "sonner";
+import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status";
+import {
+  isVendorNavItemActive,
+  VENDOR_NAV_ITEMS,
+  verificationMessageFor,
+} from "./vendor-nav";
 
 const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
   const pathname = usePathname();
   const router = useRouter();
   const userDetails = useUserStore((state) => state.userDetails);
   const clearStore = useUserStore((state) => state.clearStore);
+  const { isApproved, isChecking } = useVendorVerificationStatus();
+  // While the check runs the links behave normally; the page guard still catches them.
+  const isLocked = !isApproved && !isChecking;
 
   const displayName = useMemo(() => {
     const fromParts = [userDetails?.firstName, userDetails?.lastName]
@@ -54,7 +63,12 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
           href={ROUTES.DASHBOARD.href}
           className="flex h-10 items-center rounded-xl bg-linear-to-r from-secondary to-primary px-3"
         >
-          <Image src={LogoWhiteSVG} alt="Turnupz" className="h-6 w-auto" priority />
+          <Image
+            src={LogoWhiteSVG}
+            alt="Turnupz"
+            className="h-6 w-auto"
+            priority
+          />
         </Link>
         <span className="rounded-full bg-secondary-50 px-2 py-1 text-[11px] font-bold tracking-wide text-secondary-700">
           VENDOR
@@ -68,18 +82,42 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
         {VENDOR_NAV_ITEMS.map((item) => {
           const isActive = isVendorNavItemActive(pathname, item);
           const Icon = item.icon;
+          const itemClassName = cn(
+            "flex items-center gap-2.5 rounded-[10px] px-[11px] py-2.5 text-sm transition-colors duration-100 ease-out",
+            isActive
+              ? "bg-secondary-50 font-semibold text-secondary-800"
+              : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
+          );
+
+          if (isLocked && item.requiresVerification) {
+            return (
+              <button
+                key={item.href}
+                type="button"
+                onClick={() => {
+                  toast.error(verificationMessageFor(item));
+                  router.push(ROUTES.VENDOR_VERIFICATION.href);
+                }}
+                className={cn(
+                  itemClassName,
+                  "cursor-pointer text-left opacity-60",
+                )}
+                title="Available once your vendor account is verified"
+              >
+                <Icon className="size-[18px] shrink-0" aria-hidden />
+                <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                <Lock className="size-3.5 shrink-0" aria-hidden />
+                <span className="sr-only">(locked until verified)</span>
+              </button>
+            );
+          }
 
           return (
             <Link
               key={item.href}
               href={item.href}
               aria-current={isActive ? "page" : undefined}
-              className={cn(
-                "flex items-center gap-2.5 rounded-[10px] px-[11px] py-2.5 text-sm transition-colors duration-100 ease-out",
-                isActive
-                  ? "bg-secondary-50 font-semibold text-secondary-800"
-                  : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
-              )}
+              className={itemClassName}
             >
               <Icon className="size-[18px] shrink-0" aria-hidden />
               <span className="min-w-0 flex-1 truncate">{item.label}</span>

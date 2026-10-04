@@ -30,18 +30,12 @@ import { getRoutesByType } from "@/lib/functions";
 import { ROUTE_TYPE } from "@/lib/types";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
-import {
-  ChevronDown,
-  CircleHelp,
-  LogOut,
-  Menu,
-  ShoppingBag,
-  User,
-} from "lucide-react";
+import { ChevronDown, LogOut, Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { memo, useCallback, useMemo, useState } from "react";
+import React, { Fragment, memo, useCallback, useMemo, useState } from "react";
+import { getAccountNav } from "./account-nav";
 
 const navLinks = getRoutesByType(ROUTE_TYPE.NAV_ROUTE);
 
@@ -50,6 +44,11 @@ const GeneralNavComponent = () => {
   const clearStore = useUserStore((state) => state.clearStore);
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  // What a signed-in person sees depends on whether they attend, sell or run the platform.
+  const accountNav = useMemo(
+    () => getAccountNav(userDetails?.role),
+    [userDetails?.role],
+  );
 
   const routes = useMemo(() => {
     if (!userDetails) return navLinks;
@@ -104,6 +103,14 @@ const GeneralNavComponent = () => {
                 </NavigationMenuLink>
               </NavigationMenuItem>
             ))}
+            {userDetails &&
+              accountNav.headerLinks.map((link) => (
+                <NavigationMenuItem key={link.href}>
+                  <NavigationMenuLink asChild>
+                    <Link href={link.href}>{link.label}</Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              ))}
           </NavigationMenuList>
         </NavigationMenu>
 
@@ -112,9 +119,9 @@ const GeneralNavComponent = () => {
             <Button
               variant={"secondary"}
               className="text-white"
-              onClick={() => router.push(ROUTES.CREATE_EVENT.href)}
+              onClick={() => router.push(accountNav.cta.href)}
             >
-              Create Event
+              {accountNav.cta.label}
             </Button>
 
             <DropdownMenu>
@@ -144,27 +151,21 @@ const GeneralNavComponent = () => {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => router.push(ROUTES.USER_PROFILE.href)}
-                  className="cursor-pointer"
-                >
-                  <User className="size-4" />
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => router.push(ROUTES.PROFILE_ORDERS.href)}
-                  className="cursor-pointer"
-                >
-                  <ShoppingBag className="size-4" />
-                  Orders
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => router.push(ROUTES.PROFILE_HELP.href)}
-                  className="cursor-pointer"
-                >
-                  <CircleHelp className="size-4" />
-                  Help
-                </DropdownMenuItem>
+                {accountNav.menuGroups.map((group, index) => (
+                  <Fragment key={index}>
+                    {index > 0 && <DropdownMenuSeparator />}
+                    {group.map((link) => (
+                      <DropdownMenuItem
+                        key={link.href}
+                        onClick={() => router.push(link.href)}
+                        className="cursor-pointer"
+                      >
+                        <link.icon className="size-4" />
+                        {link.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </Fragment>
+                ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleLogout}
@@ -234,37 +235,23 @@ const GeneralNavComponent = () => {
 
               {userDetails && (
                 <>
-                  <Separator className="my-2" />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleMobileNavigate(ROUTES.USER_PROFILE.href)
-                    }
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium hover:bg-muted transition-colors text-left cursor-pointer"
-                  >
-                    <User className="size-4" />
-                    Profile
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleMobileNavigate(ROUTES.PROFILE_ORDERS.href)
-                    }
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium hover:bg-muted transition-colors text-left cursor-pointer"
-                  >
-                    <ShoppingBag className="size-4" />
-                    Orders
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleMobileNavigate(ROUTES.PROFILE_HELP.href)
-                    }
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium hover:bg-muted transition-colors text-left cursor-pointer"
-                  >
-                    <CircleHelp className="size-4" />
-                    Help
-                  </button>
+                  {/* The menu groups already hold the header links, so they aren't repeated. */}
+                  {accountNav.menuGroups.map((group, index) => (
+                    <Fragment key={index}>
+                      <Separator className="my-2" />
+                      {group.map((link) => (
+                        <button
+                          key={link.href}
+                          type="button"
+                          onClick={() => handleMobileNavigate(link.href)}
+                          className="flex items-center gap-3 px-4 py-3 text-sm font-medium hover:bg-muted transition-colors text-left cursor-pointer"
+                        >
+                          <link.icon className="size-4" />
+                          {link.label}
+                        </button>
+                      ))}
+                    </Fragment>
+                  ))}
                 </>
               )}
             </nav>
@@ -274,11 +261,9 @@ const GeneralNavComponent = () => {
                 <>
                   <Button
                     className="w-full"
-                    onClick={() =>
-                      handleMobileNavigate(ROUTES.CREATE_EVENT.href)
-                    }
+                    onClick={() => handleMobileNavigate(accountNav.cta.href)}
                   >
-                    Create Event
+                    {accountNav.cta.label}
                   </Button>
                   <Button
                     variant="outline"

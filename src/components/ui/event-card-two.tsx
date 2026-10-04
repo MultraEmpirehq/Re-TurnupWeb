@@ -20,10 +20,12 @@ const EventCardTwo: React.FC<IEventDetailsType> = ({
   }, [date]);
 
   return (
-    <div className="bg-white dark:bg-secondary-950 p-1 rounded-md shadow-sm flex flex-row items-start gap-2 text-secondary-950 dark:text-white">
+    <div className="bg-white dark:bg-secondary-950 p-1 rounded-md shadow-sm flex flex-row items-center gap-3 text-secondary-950 dark:text-white">
+      {/* A fixed width that never shrinks, so every card's image lines up whatever
+          the length of the text beside it. */}
       <Link
         href={`${ROUTES.EXPLORE.href}/event/${id}`}
-        className="w-1/2 max-w-[200px] aspect-video relative flex"
+        className="relative flex aspect-video w-[45%] max-w-[200px] shrink-0 overflow-hidden rounded"
       >
         <CustomImageComponent
           className="size-full"
@@ -32,18 +34,20 @@ const EventCardTwo: React.FC<IEventDetailsType> = ({
           alt={name}
           imageClassName="object-cover"
         />
-        <button className="size-3 rounded-full bg-white items-center justify-center inline-flex absolute top-4 right-4">
+        <button className="size-7 rounded-full bg-white items-center justify-center inline-flex absolute top-2 right-2">
           <span>
             <StarIcon size={14} />
           </span>
           <span className="sr-only">Add to favorite</span>
         </button>
       </Link>
-      <div className="space-y-2">
+      <div className="min-w-0 flex-1 space-y-2 py-1 pr-2">
         <Link href={`${ROUTES.EXPLORE.href}/event/${id}`}>
-          <h2 className="font-bold text-secondary-950 dark:text-white">{name || "Event name"}</h2>
+          <h2 className="line-clamp-2 font-bold text-secondary-950 dark:text-white">
+            {name || "Event name"}
+          </h2>
         </Link>
-        <p className="font-medium text-sm text-secondary-700 dark:text-secondary-300">
+        <p className="truncate font-medium text-sm text-secondary-700 dark:text-secondary-300">
           {eventDate ? format(eventDate, "do MMM yy") : "Date pending"} |{" "}
           {venue?.address || "Event location"}
         </p>
@@ -57,9 +61,9 @@ const EventCardTwo: React.FC<IEventDetailsType> = ({
 
 export const EventCardTwoCardLoader = memo(() => {
   return (
-    <div className="flex flex-row items-center gap-4">
-      <div className="w-[50%] max-w-[200px] aspect-video">
-        <Skeleton className="size-full" />
+    <div className="flex flex-row items-center gap-3 p-1">
+      <div className="aspect-video w-[45%] max-w-[200px] shrink-0">
+        <Skeleton className="size-full rounded" />
       </div>
       <div className="space-y-2 flex-1">
         <Skeleton className="w-full h-2" />
