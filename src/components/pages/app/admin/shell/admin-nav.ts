@@ -5,7 +5,6 @@ import {
   Banknote,
   CalendarDays,
   CalendarPlus,
-  ChartNoAxesCombined,
   CircleDollarSign,
   FileChartColumn,
   Headset,
@@ -23,7 +22,6 @@ import {
   Receipt,
   ScrollText,
   Settings,
-  ShieldUser,
   SlidersHorizontal,
   Tags,
   Ticket,
@@ -69,20 +67,11 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         href: ROUTES.ADMIN_OVERVIEW.href,
         icon: LayoutDashboard,
       },
-      {
-        label: "Performance Overview",
-        href: ROUTES.DASHBOARD.href,
-        icon: ChartNoAxesCombined,
-      },
     ],
   },
   {
+    // Platform access, not a department: a plain section above the departments.
     label: "Super Admin",
-    department: {
-      icon: ShieldUser,
-      accentClassName: "bg-violet-50 text-violet-600",
-      description: "Manage other Super Admins and platform access.",
-    },
     items: [
       {
         label: "Super Admins",
@@ -275,15 +264,11 @@ const isWithin = (pathname: string, href: string) =>
   pathname === href || pathname.startsWith(`${href}/`);
 
 /**
- * Overview and the performance dashboard are parents of every other admin route, so
- * they only count as active on their own page; everything else is active for itself
- * and anything nested under it.
+ * Overview is the parent of every other admin route, so it only counts as active on
+ * its own page; everything else is active for itself and anything nested under it.
  */
 export const isAdminNavItemActive = (pathname: string, item: TAdminNavItem) => {
-  if (
-    item.href === ROUTES.ADMIN_OVERVIEW.href ||
-    item.href === ROUTES.DASHBOARD.href
-  ) {
+  if (item.href === ROUTES.ADMIN_OVERVIEW.href) {
     return pathname === item.href;
   }
   return [item.href, ...(item.alsoActiveOn ?? [])].some((href) =>

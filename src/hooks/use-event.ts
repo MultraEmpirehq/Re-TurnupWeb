@@ -13,6 +13,8 @@ interface IEventParams {
   status?: "UPCOMING" | "PAST";
   priceType?: "FREE" | "EXTERNAL_LINK" | "PAID";
   isTrending?: boolean;
+  /** Admins only: include suspended events. */
+  includeSuspended?: boolean;
 }
 
 type NormalizedEventsResponse = {
@@ -88,6 +90,7 @@ const getEvents = async (
   if (params.categoryId) urlParams.set("categoryId", params.categoryId);
   if (params.status) urlParams.set("status", params.status);
   if (params.priceType) urlParams.set("priceType", params.priceType);
+  if (params.includeSuspended) urlParams.set("includeSuspended", "true");
   if (params.isTrending !== undefined) {
     urlParams.set("isTrending", params.isTrending.toString());
   }
@@ -126,7 +129,9 @@ export const useEvents = (
   });
 };
 
-const normalizeSingleEventResponse = (payload: any): IEventDetailsType | null => {
+const normalizeSingleEventResponse = (
+  payload: any,
+): IEventDetailsType | null => {
   if (!payload) return null;
 
   if (payload.id) return payload;

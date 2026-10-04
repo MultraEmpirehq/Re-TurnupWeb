@@ -91,11 +91,6 @@ const ADMIN_NAV: TAccountNav = {
   menuGroups: [
     [
       { label: "Admin Console", href: ROUTES.ADMIN_OVERVIEW.href, icon: ShieldCheck },
-      {
-        label: "Performance Overview",
-        href: ROUTES.DASHBOARD.href,
-        icon: ChartNoAxesCombined,
-      },
     ],
     [myTickets, myOrders, dashboardProfile],
     [help],

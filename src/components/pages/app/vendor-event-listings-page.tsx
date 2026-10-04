@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteData } from "@/api";
+import { deleteData, patchData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,11 +15,12 @@ import ErrorContainer from "@/components/ui/error-container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEvents } from "@/hooks/use-event";
 import { IEventDetailsType } from "@/lib/types";
-import useUserStore from "@/stores/user-store";
+import useUserStore, { EUserRoles } from "@/stores/user-store";
+import TextareaField from "@/components/ui/textarea-field";
 import { CalendarDays, MapPin, Ticket } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import React, { memo, useMemo, useState } from "react";
+import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 const getEventDate = (event: IEventDetailsType) => {
@@ -59,14 +60,32 @@ const getEventsFromPages = (pages: any): IEventDetailsType[] => {
   });
 };
 
+type TCardActions = {
+  onDeleteRequest: (event: IEventDetailsType) => void;
+  onSuspendRequest: (event: IEventDetailsType) => void;
+  onRestore: (event: IEventDetailsType) => void;
+  restoringId: string | null;
+};
+
 const EventListingCard: React.FC<{
   event: IEventDetailsType;
-  onDeleteRequest: (event: IEventDetailsType) => void;
-}> = ({ event, onDeleteRequest }) => {
+  actions: TCardActions;
+}> = ({ event, actions }) => {
   const eventDate = getEventDate(event);
 
   const isDraft = event.status === "draft";
-  const canManage = event.isOwner === true;
+  const isSuspended = event.status === "suspended";
+  const isAdmin = useUserStore(
+    (state) => state.userDetails?.role === EUserRoles.ADMIN,
+  );
+  // Only the organiser edits; an admin can also remove anyone's event.
+  const canEdit = event.isOwner === true;
+  const canDelete = canEdit || isAdmin;
+  // Admins take a published event down or bring a suspended one back.
+  const canSuspend = isAdmin && event.status === "published";
+  const canRestore = isAdmin && isSuspended;
+  const buttonCount =
+    1 + Number(canEdit) + Number(canDelete) + Number(canSuspend || canRestore);
 
   const badgeLabel = isDraft
     ? "Draft"
@@ -97,8 +116,29 @@ const EventListingCard: React.FC<{
             <h3 className="text-[1.2rem] font-semibold leading-tight text-secondary-950 sm:text-[1.3rem]">
               {event.name || "Untitled event"}
             </h3>
+            {isAdmin && !canEdit && event.organizerName && (
+              <p className="text-xs font-medium text-secondary-400">
+                By {event.organizerName}
+              </p>
+            )}
           </div>
         </div>
+
+        {isSuspended && (
+          <div className="mb-4 rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <p className="font-semibold">Suspended by an admin</p>
+            {event.suspensionReason && (
+              <p className="mt-1 line-clamp-3 text-amber-700">
+                {event.suspensionReason}
+              </p>
+            )}
+            {!isAdmin && (
+              <p className="mt-1 text-xs text-amber-700">
+                Hidden from attendees until an admin restores it.
+              </p>
+            )}
+          </div>
+        )}
 
         <p className="mb-4 line-clamp-2 text-sm text-secondary-500">
           {event.description || "No event description has been added yet."}
@@ -144,17 +184,25 @@ const EventListingCard: React.FC<{
             <div className="px-4 py-3 text-secondary-500">
               {isDraft
                 ? "Incomplete draft"
-                : badgeLabel === "Upcoming"
-                  ? "Ready to promote"
-                  : "Archived event"}
+                : isSuspended
+                  ? "Suspended"
+                  : badgeLabel === "Upcoming"
+                    ? "Ready to promote"
+                    : "Archived event"}
             </div>
           </div>
         </div>
 
         <div
-          className={`grid gap-2 ${canManage ? "grid-cols-3" : "grid-cols-1"}`}
+          className={`grid gap-2 ${
+            buttonCount === 3
+              ? "grid-cols-3"
+              : buttonCount === 1
+                ? "grid-cols-1"
+                : "grid-cols-2"
+          }`}
         >
-          {canManage && (
+          {canEdit && (
             <Button
               asChild
               className="h-10 rounded-xl bg-secondary-400 px-3 text-sm font-semibold text-white hover:bg-secondary-500"
@@ -171,12 +219,36 @@ const EventListingCard: React.FC<{
             <Link href={previewHref}>Preview</Link>
           </Button>
 
-          {canManage && (
+          {canSuspend && (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 rounded-xl border-amber-200 bg-amber-50 px-3 text-sm font-semibold text-amber-800 hover:bg-amber-100"
+              onClick={() => actions.onSuspendRequest(event)}
+            >
+              Suspend
+            </Button>
+          )}
+
+          {canRestore && (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 rounded-xl border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
+              loading={actions.restoringId === event.id}
+              disabled={!!actions.restoringId}
+              onClick={() => actions.onRestore(event)}
+            >
+              Restore
+            </Button>
+          )}
+
+          {canDelete && (
             <Button
               type="button"
               variant="outline"
               className="h-10 rounded-xl border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100"
-              onClick={() => onDeleteRequest(event)}
+              onClick={() => actions.onDeleteRequest(event)}
             >
               Delete
             </Button>
@@ -187,13 +259,20 @@ const EventListingCard: React.FC<{
   );
 };
 
+// Three full rows of the three-column grid.
+const LISTINGS_BATCH_SIZE = 9;
+
 const ListingSection: React.FC<{
   eyebrow: string;
   title: string;
   events: IEventDetailsType[];
   emptyState: string;
-  onDeleteRequest: (event: IEventDetailsType) => void;
-}> = ({ eyebrow, title, events, emptyState, onDeleteRequest }) => {
+  actions: TCardActions;
+}> = ({ eyebrow, title, events, emptyState, actions }) => {
+  const [visibleCount, setVisibleCount] = useState(LISTINGS_BATCH_SIZE);
+  const visibleEvents = events.slice(0, visibleCount);
+  const remaining = events.length - visibleEvents.length;
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -214,13 +293,29 @@ const ListingSection: React.FC<{
         </div>
       ) : (
         <div className="grid max-w-[78rem] grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {events.map((event, index) => (
+          {visibleEvents.map((event, index) => (
             <EventListingCard
               key={event.id || index}
               event={event}
-              onDeleteRequest={onDeleteRequest}
+              actions={actions}
             />
           ))}
+        </div>
+      )}
+
+      {remaining > 0 && (
+        <div className="flex max-w-[78rem] justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              setVisibleCount((count) => count + LISTINGS_BATCH_SIZE)
+            }
+            className="h-11 rounded-2xl border-secondary-200 px-6 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
+          >
+            Load more
+            <span className="text-secondary-400">({remaining} more)</span>
+          </Button>
         </div>
       )}
     </div>
@@ -245,24 +340,41 @@ const VendorEventListingsPage = () => {
   const pageSearchQuery = searchParams.get("q")?.trim() ?? "";
 
   const userId = useUserStore((state) => state?.userDetails?.id);
+  const isAdmin = useUserStore(
+    (state) => state?.userDetails?.role === EUserRoles.ADMIN,
+  );
 
-  const [eventToDelete, setEventToDelete] =
-    useState<IEventDetailsType | null>(null);
+  const [eventToDelete, setEventToDelete] = useState<IEventDetailsType | null>(
+    null,
+  );
 
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  // An admin removing someone else's event says why; the organiser is told.
+  const needsReason =
+    isAdmin && !!eventToDelete && eventToDelete.isOwner !== true;
 
-  const { data, error, refetch } = useEvents({
-    limit: 40,
-    q: pageSearchQuery || undefined,
-  });
+  const [eventToSuspend, setEventToSuspend] =
+    useState<IEventDetailsType | null>(null);
+  const [suspendReason, setSuspendReason] = useState("");
+  const [isSuspending, setIsSuspending] = useState(false);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
 
+  // A vendor sees only their own events (drafts included); an admin sees every
+  // published and suspended event on the platform. Every page is fetched, so the sections and their
+  // "Load more" cover the whole list, not just the first page.
   const {
-    data: userEventsData,
-    refetch: refetchUserEvents,
+    data,
+    error,
+    refetch,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
   } = useEvents(
     {
-      limit: 40,
-      userId: userId ?? undefined,
+      limit: 100,
+      userId: isAdmin ? undefined : (userId ?? undefined),
+      includeSuspended: isAdmin || undefined,
       q: pageSearchQuery || undefined,
     },
     {
@@ -270,28 +382,27 @@ const VendorEventListingsPage = () => {
     },
   );
 
+  useEffect(() => {
+    if (hasNextPage && !isFetchingNextPage && !error) {
+      void fetchNextPage();
+    }
+  }, [error, fetchNextPage, hasNextPage, isFetchingNextPage]);
+
   const events = useMemo(() => {
-    const allEvents = [
-      ...getEventsFromPages(data?.pages),
-      ...getEventsFromPages(userEventsData?.pages),
-    ];
+    const allEvents = getEventsFromPages(data?.pages);
 
     return Array.from(
       new Map(
-        allEvents.map((event, index) => [
-          event.id || `event-${index}`,
-          event,
-        ]),
+        allEvents.map((event, index) => [event.id || `event-${index}`, event]),
       ).values(),
     );
-  }, [data, userEventsData]);
+  }, [data]);
 
   const upcomingEvents = useMemo(
     () =>
       events.filter(
         (event) =>
-          event.status !== "draft" &&
-          isUpcomingEvent(getEventDate(event)),
+          event.status === "published" && isUpcomingEvent(getEventDate(event)),
       ),
     [events],
   );
@@ -300,8 +411,7 @@ const VendorEventListingsPage = () => {
     () =>
       events.filter(
         (event) =>
-          event.status !== "draft" &&
-          !isUpcomingEvent(getEventDate(event)),
+          event.status === "published" && !isUpcomingEvent(getEventDate(event)),
       ),
     [events],
   );
@@ -311,7 +421,64 @@ const VendorEventListingsPage = () => {
     [events],
   );
 
-  const isLoading = false;
+  const suspendedEvents = useMemo(
+    () => events.filter((event) => event.status === "suspended"),
+    [events],
+  );
+
+  const closeSuspendDialog = () => {
+    setEventToSuspend(null);
+    setSuspendReason("");
+  };
+
+  const handleSuspendEvent = async () => {
+    if (!eventToSuspend || !suspendReason.trim()) return;
+    setIsSuspending(true);
+    try {
+      await patchData(`/event/${eventToSuspend.id}/suspend`, {
+        reason: suspendReason.trim(),
+      });
+      await refetch();
+      toast.success("Event suspended. The organiser has been told why.");
+      closeSuspendDialog();
+    } catch (suspendError) {
+      toast.error(
+        constructErrorMessage(
+          suspendError as TApiErrorResponseType,
+          "Unable to suspend the event right now.",
+        ),
+      );
+    } finally {
+      setIsSuspending(false);
+    }
+  };
+
+  const handleRestoreEvent = async (event: IEventDetailsType) => {
+    setRestoringId(event.id);
+    try {
+      await patchData(`/event/${event.id}/restore`, undefined);
+      await refetch();
+      toast.success("Event restored and visible to attendees again.");
+    } catch (restoreError) {
+      toast.error(
+        constructErrorMessage(
+          restoreError as TApiErrorResponseType,
+          "Unable to restore the event right now.",
+        ),
+      );
+    } finally {
+      setRestoringId(null);
+    }
+  };
+
+  const cardActions: TCardActions = {
+    onDeleteRequest: setEventToDelete,
+    onSuspendRequest: setEventToSuspend,
+    onRestore: handleRestoreEvent,
+    restoringId,
+  };
+
+  const isLoading = !data && !error;
 
   const shouldShowError = !!error && !data;
 
@@ -321,17 +488,23 @@ const VendorEventListingsPage = () => {
     setIsDeleting(true);
 
     try {
-      await deleteData(`/event/${eventToDelete.id}`);
+      const reason = deleteReason.trim();
+      await deleteData(
+        needsReason
+          ? `/event/${eventToDelete.id}?reason=${encodeURIComponent(reason)}`
+          : `/event/${eventToDelete.id}`,
+      );
 
       await refetch();
 
-      if (userId) {
-        await refetchUserEvents();
-      }
-
-      toast.success("Event deleted successfully");
+      toast.success(
+        needsReason
+          ? "Event deleted. The organiser has been told why."
+          : "Event deleted successfully",
+      );
 
       setEventToDelete(null);
+      setDeleteReason("");
     } catch (deleteError) {
       console.error("Delete event failed", deleteError);
 
@@ -374,11 +547,15 @@ const VendorEventListingsPage = () => {
             </p>
 
             <h1 className="text-[clamp(1.8rem,3.2vw,2.7rem)] font-bold leading-[0.98] tracking-tight text-secondary-950">
-              Manage your event listings
+              {isAdmin
+                ? "Manage all event listings"
+                : "Manage your event listings"}
             </h1>
 
             <p className="max-w-2xl text-sm leading-6 text-secondary-500 sm:text-base">
-              Review drafts, upcoming events, and past listings from one place.
+              {isAdmin
+                ? "Every published and suspended event on the platform. Suspending or removing one tells its organiser why."
+                : "Review drafts, upcoming events, and past listings from one place."}
             </p>
           </div>
 
@@ -408,7 +585,7 @@ const VendorEventListingsPage = () => {
         }`}
         events={draftEvents}
         emptyState="No event drafts yet."
-        onDeleteRequest={setEventToDelete}
+        actions={cardActions}
       />
 
       <ListingSection
@@ -418,8 +595,20 @@ const VendorEventListingsPage = () => {
         }`}
         events={upcomingEvents}
         emptyState="No upcoming events created yet."
-        onDeleteRequest={setEventToDelete}
+        actions={cardActions}
       />
+
+      {(isAdmin || suspendedEvents.length > 0) && (
+        <ListingSection
+          eyebrow="Suspended"
+          title={`${suspendedEvents.length} suspended event${
+            suspendedEvents.length === 1 ? "" : "s"
+          }`}
+          events={suspendedEvents}
+          emptyState="No suspended events."
+          actions={cardActions}
+        />
+      )}
 
       <ListingSection
         eyebrow="Archive"
@@ -428,7 +617,7 @@ const VendorEventListingsPage = () => {
         }`}
         events={pastEvents}
         emptyState="No past events yet."
-        onDeleteRequest={setEventToDelete}
+        actions={cardActions}
       />
 
       <Dialog
@@ -436,6 +625,7 @@ const VendorEventListingsPage = () => {
         onOpenChange={(open) => {
           if (!open && !isDeleting) {
             setEventToDelete(null);
+            setDeleteReason("");
           }
         }}
       >
@@ -452,13 +642,30 @@ const VendorEventListingsPage = () => {
             </DialogDescription>
           </DialogHeader>
 
+          {needsReason && (
+            <TextareaField
+              label="Reason for the organiser"
+              placeholder="For example: this listing duplicates another event."
+              value={deleteReason}
+              maxLength={500}
+              inputClassName="min-h-24"
+              onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setDeleteReason(event.target.value)
+              }
+              helperText="Sent to the organiser with the notice that their event was removed."
+            />
+          )}
+
           <DialogFooter className="mt-2">
             <Button
               type="button"
               variant="outline"
               className="rounded-2xl border-secondary-200"
               disabled={isDeleting}
-              onClick={() => setEventToDelete(null)}
+              onClick={() => {
+                setEventToDelete(null);
+                setDeleteReason("");
+              }}
             >
               Cancel
             </Button>
@@ -466,10 +673,61 @@ const VendorEventListingsPage = () => {
             <Button
               type="button"
               className="rounded-2xl bg-red-600 text-white hover:bg-red-700"
-              disabled={isDeleting}
+              disabled={isDeleting || (needsReason && !deleteReason.trim())}
               onClick={handleDeleteEvent}
             >
               {isDeleting ? "Deleting..." : "Delete Event"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={!!eventToSuspend}
+        onOpenChange={(open) => {
+          if (!open && !isSuspending) closeSuspendDialog();
+        }}
+      >
+        <DialogContent className="rounded-[1.6rem] border-secondary-100 p-6 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-secondary-950">
+              Suspend this event?
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-7 text-secondary-500">
+              {eventToSuspend
+                ? `"${eventToSuspend.name}" will be hidden from listings, its page and checkout. Tickets already sold stay valid, and you can restore it at any time.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          <TextareaField
+            label="Reason for the organiser"
+            placeholder="For example: ticket prices don't match the venue booking."
+            value={suspendReason}
+            maxLength={500}
+            inputClassName="min-h-24"
+            onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
+              setSuspendReason(event.target.value)
+            }
+            helperText="Sent to the organiser and shown on their listing while it's suspended."
+          />
+
+          <DialogFooter className="mt-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl border-secondary-200"
+              disabled={isSuspending}
+              onClick={closeSuspendDialog}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="rounded-2xl bg-amber-600 text-white hover:bg-amber-700"
+              disabled={isSuspending || suspendReason.trim().length < 3}
+              onClick={handleSuspendEvent}
+            >
+              {isSuspending ? "Suspending..." : "Suspend Event"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -169,7 +169,9 @@ export interface IEventDetailsType {
   id: string;
   name: string;
   date: Date;
-  status?: "draft" | "published";
+  status?: "draft" | "published" | "suspended";
+  /** Why an admin suspended the event; present only while suspended. */
+  suspensionReason?: string | null;
   /** True when the signed-in viewer created this event; only they may edit or delete it. */
   isOwner?: boolean;
   draftStep?: number;
