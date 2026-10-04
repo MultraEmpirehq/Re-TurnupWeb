@@ -1,9 +1,23 @@
 "use client";
 
+import {
+  TAdminPermission,
+  useAdminPermissions,
+} from "@/hooks/use-admin-permissions";
 import { useAdminVerifications } from "@/hooks/use-admin-verifications";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
-import { ArrowRight, BadgeCheck, MapPin, Tags, Users } from "lucide-react";
+import {
+  ArrowRight,
+  BadgeCheck,
+  CalendarDays,
+  LucideIcon,
+  MapPin,
+  ScrollText,
+  Tags,
+  UserCog,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import React, { memo } from "react";
 
@@ -11,16 +25,32 @@ import React, { memo } from "react";
 // the sections that already exist.
 const AdminOverview = () => {
   const firstName = useUserStore((state) => state.userDetails?.firstName);
+  const { has, isLoading: isLoadingPermissions } = useAdminPermissions();
+  const canVerify = !isLoadingPermissions && has("VENDORS_VERIFY");
   const { data: pending } = useAdminVerifications({
     status: "submitted",
     search: "",
     page: 1,
+    enabled: canVerify,
   });
   const pendingCount = pending?.pagination?.total;
 
-  const shortcuts = [
+  const allShortcuts: {
+    href: string;
+    icon: LucideIcon;
+    title: string;
+    description: string;
+    permission?: TAdminPermission;
+  }[] = [
+    {
+      href: ROUTES.EVENTS.href,
+      icon: CalendarDays,
+      title: "Events",
+      description: "Every event on the platform, from every organiser.",
+    },
     {
       href: ROUTES.ADMIN_VERIFICATIONS.href,
+      permission: "VENDORS_VERIFY",
       icon: BadgeCheck,
       title: "Verifications",
       description:
@@ -33,20 +63,40 @@ const AdminOverview = () => {
       icon: Users,
       title: "Users",
       description: "Look up attendees, vendors and admins.",
+      permission: "USERS_VIEW",
     },
     {
       href: ROUTES.VENUES.href,
       icon: MapPin,
       title: "Venues",
       description: "Manage the venues events can be held at.",
+      permission: "CATALOGUE_MANAGE",
     },
     {
       href: ROUTES.CATEGORIES.href,
       icon: Tags,
       title: "Categories",
       description: "Manage the event categories.",
+      permission: "CATALOGUE_MANAGE",
+    },
+    {
+      href: `${ROUTES.ADMIN_OVERVIEW.href}/audit-log`,
+      icon: ScrollText,
+      title: "Audit Log",
+      description: "Every sensitive action taken by admins.",
+      permission: "AUDIT_VIEW",
+    },
+    {
+      href: `${ROUTES.ADMIN_OVERVIEW.href}/operations/admins`,
+      icon: UserCog,
+      title: "Admins & Permissions",
+      description: "Add admins and choose what each one can do.",
+      permission: "ADMINS_MANAGE",
     },
   ];
+  const shortcuts = allShortcuts.filter(
+    ({ permission }) => !permission || (!isLoadingPermissions && has(permission)),
+  );
 
   return (
     <div className="space-y-6">
@@ -59,7 +109,7 @@ const AdminOverview = () => {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {shortcuts.map(({ href, icon: Icon, title, description }) => (
           <Link
             key={href}

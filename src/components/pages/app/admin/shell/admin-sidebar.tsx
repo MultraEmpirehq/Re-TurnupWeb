@@ -3,22 +3,23 @@
 import { LogoWhiteSVG } from "@/assets/svg";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { useAdminVerifications } from "@/hooks/use-admin-verifications";
 import { cn } from "@/lib/utils";
+import useScrollFade from "@/hooks/use-scroll-fade";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
 import { ChevronDown, LogOut } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import React, { Fragment, memo, useMemo, useState } from "react";
+import React, { Fragment, memo, useMemo, useRef, useState } from "react";
 import {
   ADMIN_NAV_GROUPS,
   isAdminNavItemActive,
   TAdminNavItem,
+  visibleAdminNavGroups,
 } from "./admin-nav";
-
-const firstDepartment = ADMIN_NAV_GROUPS.find((group) => group.department);
 
 const activeGroupLabel = (pathname: string) =>
   ADMIN_NAV_GROUPS.find((group) =>
@@ -30,6 +31,19 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
   const router = useRouter();
   const userDetails = useUserStore((state) => state.userDetails);
   const clearStore = useUserStore((state) => state.clearStore);
+  const navRef = useRef<HTMLElement>(null);
+  const fade = useScrollFade(navRef);
+  const { has, isLoading: isLoadingPermissions } = useAdminPermissions();
+  // Until permissions arrive only the links every admin can use are shown, so a
+  // link never appears and then vanishes.
+  const navGroups = useMemo(
+    () =>
+      visibleAdminNavGroups((permission) =>
+        isLoadingPermissions ? !permission : has(permission),
+      ),
+    [has, isLoadingPermissions],
+  );
+  const firstDepartment = navGroups.find((group) => group.department);
 
   // Same query the verifications page opens on, so the badge and the list share a
   // cache entry and agree with each other.
@@ -37,6 +51,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
     status: "submitted",
     search: "",
     page: 1,
+    enabled: has("VENDORS_VERIFY") && !isLoadingPermissions,
   });
   const pendingCount = pending?.pagination?.total ?? 0;
 
@@ -138,108 +153,133 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
           href={ROUTES.ADMIN_OVERVIEW.href}
           className="flex h-10 items-center rounded-xl bg-linear-to-r from-secondary to-primary px-3"
         >
-          <Image src={LogoWhiteSVG} alt="Turnupz" className="h-6 w-auto" priority />
+          <Image
+            src={LogoWhiteSVG}
+            alt="Turnupz"
+            className="h-6 w-auto"
+            priority
+          />
         </Link>
         <span className="rounded-full bg-secondary-50 px-2 py-1 text-[11px] font-bold tracking-wide text-secondary-700">
           ADMIN
         </span>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
-        {ADMIN_NAV_GROUPS.map((group) => {
-          if (!group.department) {
-            return (
-              <Fragment key={group.label}>
-                <p className="px-[11px] pt-2.5 pb-0.5 text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
-                  {group.label}
-                </p>
-                {group.items.map(renderItem)}
-              </Fragment>
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <nav
+          ref={navRef}
+          className="scrollbar-none flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto"
+        >
+          {navGroups.map((group) => {
+            if (!group.department) {
+              return (
+                <Fragment key={group.label}>
+                  <p className="px-[11px] pt-2.5 pb-0.5 text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
+                    {group.label}
+                  </p>
+                  {group.items.map(renderItem)}
+                </Fragment>
+              );
+            }
+
+            const { icon: DepartmentIcon, accentClassName } = group.department;
+            const isExpanded = expandedGroups.has(group.label);
+            const isGroupActive = group.items.some((item) =>
+              isAdminNavItemActive(pathname, item),
             );
-          }
+            // A collapsed department still shows what's waiting inside it.
+            const groupBadge = group.items.reduce(
+              (sum, item) =>
+                sum + (item.showsPendingVerifications ? pendingCount : 0),
+              0,
+            );
+            const listId = `admin-nav-${group.label.toLowerCase().replace(/\s+/g, "-")}`;
 
-          const { icon: DepartmentIcon, accentClassName } = group.department;
-          const isExpanded = expandedGroups.has(group.label);
-          const isGroupActive = group.items.some((item) =>
-            isAdminNavItemActive(pathname, item),
-          );
-          // A collapsed department still shows what's waiting inside it.
-          const groupBadge = group.items.reduce(
-            (sum, item) =>
-              sum + (item.showsPendingVerifications ? pendingCount : 0),
-            0,
-          );
-          const listId = `admin-nav-${group.label.toLowerCase().replace(/\s+/g, "-")}`;
-
-          return (
-            <div key={group.label} className="flex flex-col gap-1 pt-1">
-              {group === firstDepartment && (
-                <p className="px-[11px] pt-2.5 pb-0.5 text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
-                  Departments
-                </p>
-              )}
-              <button
-                type="button"
-                onClick={() => toggleGroup(group.label)}
-                aria-expanded={isExpanded}
-                aria-controls={listId}
-                className={cn(
-                  "flex items-center gap-2.5 rounded-[10px] px-[7px] py-1.5 text-left text-sm font-semibold transition-colors duration-100 ease-out",
-                  isGroupActive
-                    ? "text-secondary-800"
-                    : "text-foreground hover:bg-muted",
-                  isGroupActive && !isExpanded && "bg-secondary-50",
-                  isGroupActive && isExpanded && "hover:bg-muted",
+            return (
+              <div key={group.label} className="flex flex-col gap-1 pt-1">
+                {group.label === firstDepartment?.label && (
+                  <p className="px-[11px] pt-2.5 pb-0.5 text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
+                    Departments
+                  </p>
                 )}
-              >
-                <span
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.label)}
+                  aria-expanded={isExpanded}
+                  aria-controls={listId}
                   className={cn(
-                    "flex size-7 shrink-0 items-center justify-center rounded-lg",
-                    accentClassName,
+                    "flex items-center gap-2.5 rounded-[10px] px-[7px] py-1.5 text-left text-sm font-semibold transition-colors duration-100 ease-out",
+                    isGroupActive
+                      ? "text-secondary-800"
+                      : "text-foreground hover:bg-muted",
+                    isGroupActive && !isExpanded && "bg-secondary-50",
+                    isGroupActive && isExpanded && "hover:bg-muted",
                   )}
                 >
-                  <DepartmentIcon className="size-4" aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1 truncate">
-                  {group.label}
-                  {isGroupActive && (
-                    <span className="sr-only"> (current section)</span>
-                  )}
-                </span>
-                {!isExpanded && groupBadge > 0 && (
                   <span
-                    className="shrink-0 rounded-full bg-primary px-[7px] py-[3px] text-xs font-semibold text-white"
-                    aria-label={`${groupBadge} awaiting review`}
+                    className={cn(
+                      "flex size-7 shrink-0 items-center justify-center rounded-lg",
+                      accentClassName,
+                    )}
                   >
-                    {groupBadge}
+                    <DepartmentIcon className="size-4" aria-hidden />
                   </span>
-                )}
-                {!isExpanded && isGroupActive && groupBadge === 0 && (
-                  <span
-                    className="size-1.5 shrink-0 rounded-full bg-secondary-800"
+                  <span className="min-w-0 flex-1 truncate">
+                    {group.label}
+                    {isGroupActive && (
+                      <span className="sr-only"> (current section)</span>
+                    )}
+                  </span>
+                  {!isExpanded && groupBadge > 0 && (
+                    <span
+                      className="shrink-0 rounded-full bg-primary px-[7px] py-[3px] text-xs font-semibold text-white"
+                      aria-label={`${groupBadge} awaiting review`}
+                    >
+                      {groupBadge}
+                    </span>
+                  )}
+                  {!isExpanded && isGroupActive && groupBadge === 0 && (
+                    <span
+                      className="size-1.5 shrink-0 rounded-full bg-secondary-800"
+                      aria-hidden
+                    />
+                  )}
+                  <ChevronDown
+                    className={cn(
+                      "size-4 shrink-0 text-muted-foreground transition-transform duration-150",
+                      isExpanded && "rotate-180",
+                    )}
                     aria-hidden
                   />
+                </button>
+                {isExpanded && (
+                  <div
+                    id={listId}
+                    className="ml-[21px] flex flex-col gap-1 border-l border-border pl-2"
+                  >
+                    {group.items.map(renderItem)}
+                  </div>
                 )}
-                <ChevronDown
-                  className={cn(
-                    "size-4 shrink-0 text-muted-foreground transition-transform duration-150",
-                    isExpanded && "rotate-180",
-                  )}
-                  aria-hidden
-                />
-              </button>
-              {isExpanded && (
-                <div
-                  id={listId}
-                  className="ml-[21px] flex flex-col gap-1 border-l border-border pl-2"
-                >
-                  {group.items.map(renderItem)}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </nav>
+              </div>
+            );
+          })}
+        </nav>
+        {/* Soft edges stand in for the hidden scrollbar: there is more this way. */}
+        <div
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute inset-x-0 top-0 h-8 bg-linear-to-b from-white to-transparent transition-opacity duration-150",
+            fade.top ? "opacity-100" : "opacity-0",
+          )}
+        />
+        <div
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-linear-to-t from-white to-transparent transition-opacity duration-150",
+            fade.bottom ? "opacity-100" : "opacity-0",
+          )}
+        />
+      </div>
 
       <div className="flex items-center gap-2.5 rounded-xl border border-border p-2.5">
         <Avatar className="size-[34px]">

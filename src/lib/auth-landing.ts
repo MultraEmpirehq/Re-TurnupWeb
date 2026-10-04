@@ -4,8 +4,9 @@ import { EUserRoles, TUserDetails } from "@/stores/user-store";
 
 /**
  * Where someone goes after signing in. An explicit redirect always wins, so a link
- * that sent them to log in brings them back. Otherwise admins and approved vendors
- * land on the dashboard and everyone else (unverified vendors included) on the site.
+ * that sent them to log in brings them back. Otherwise admins land on the admin
+ * console, approved vendors on their dashboard, and everyone else (unverified
+ * vendors included) on the site.
  *
  * Login doesn't return the verification status, so it's asked for here, the same
  * way the create-event guard asks. Needs the session token to be stored already.
@@ -16,7 +17,7 @@ export const resolveLandingRoute = async (
 ) => {
   if (redirectTo) return redirectTo;
 
-  if (user?.role === EUserRoles.ADMIN) return ROUTES.DASHBOARD.href;
+  if (user?.role === EUserRoles.ADMIN) return ROUTES.ADMIN_OVERVIEW.href;
 
   if (user?.role === EUserRoles.VENDOR) {
     try {
