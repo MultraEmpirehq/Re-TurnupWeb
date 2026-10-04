@@ -273,10 +273,11 @@ const AnalysisPage = () => {
       ),
     [userDetails?.country, userDetails?.countryCode, userDetails?.platformCurrency],
   );
-  const { data: eventsData } = useEvents({
-    limit: 50,
-    userId: userId ?? undefined,
-  });
+  // Waits for the user, so the first request is never the unfiltered public list.
+  const { data: eventsData } = useEvents(
+    { limit: 50, userId: userId ?? undefined },
+    { enabled: !!userId },
+  );
   const { data: ticketAnalyticsResponse } = useVendorTicketAnalytics({});
   const ticketAnalytics = useMemo(
     () => ticketAnalyticsResponse?.rows ?? [],

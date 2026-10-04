@@ -184,23 +184,15 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
     fetchNextPage,
     isFetchingNextPage,
   } = useEvents(
-    { limit: isEventPage ? 24 : 6 },
-  );
-  const {
-    data: userEventsData,
-    refetch: refetchUserEvents,
-  } = useEvents(
+    // Only the vendor's own events; nothing loads until we know who they are.
     { limit: isEventPage ? 24 : 6, userId: userId ?? undefined },
     { enabled: !!userId },
   );
 
-  const events = useMemo(() => {
-    const merged = [
-      ...(data?.pages?.flatMap((page) => page?.data || []) || []),
-      ...(userEventsData?.pages?.flatMap((page) => page?.data || []) || []),
-    ];
-    return Array.from(new Map(merged.map((event) => [event.id, event])).values());
-  }, [data, userEventsData]);
+  const events = useMemo(
+    () => data?.pages?.flatMap((page) => page?.data || []) || [],
+    [data],
+  );
 
   const isLoading = !data && !error;
   const shouldShowError = !!error && !data;
@@ -218,7 +210,6 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
     try {
       await deleteData(`/event/${eventToDelete.id}`);
       await refetch();
-      await refetchUserEvents();
 
       toast.success("Event deleted successfully");
       setEventToDelete(null);

@@ -71,8 +71,8 @@ const DashboardOverview = () => {
     ),
     [userDetails?.country, userDetails?.countryCode, userDetails?.platformCurrency],
   );
-  const { data } = useEvents({ limit: 50 });
-  const { data: userEventsData } = useEvents(
+  // Totals cover only the vendor's own events.
+  const { data } = useEvents(
     { limit: 50, userId: userId ?? undefined },
     { enabled: !!userId },
   );
@@ -82,13 +82,10 @@ const DashboardOverview = () => {
     [ticketAnalyticsResponse?.rows],
   );
 
-  const events = useMemo(() => {
-    const merged = [
-      ...(data?.pages?.flatMap((page) => page?.data ?? []) ?? []),
-      ...(userEventsData?.pages?.flatMap((page) => page?.data ?? []) ?? []),
-    ];
-    return Array.from(new Map(merged.map((event) => [event.id, event])).values());
-  }, [data, userEventsData]);
+  const events = useMemo(
+    () => data?.pages?.flatMap((page) => page?.data ?? []) ?? [],
+    [data],
+  );
 
   const metrics = useMemo(() => {
     const totalAttendance =

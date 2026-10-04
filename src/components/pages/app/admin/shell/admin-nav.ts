@@ -1,3 +1,4 @@
+import { TAdminPermission } from "@/hooks/use-admin-permissions";
 import { ROUTES } from "@/lib/variables";
 import {
   ArrowLeftRight,
@@ -35,6 +36,8 @@ export type TAdminNavItem = {
   icon: LucideIcon;
   /** Other routes that belong to this section, such as its create form. */
   alsoActiveOn?: string[];
+  /** Hidden from admins who don't hold it, since the page would refuse them. */
+  permission?: TAdminPermission;
   /** Shows the count of applications waiting for a decision. */
   showsPendingVerifications?: boolean;
   /**
@@ -67,25 +70,12 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         href: ROUTES.ADMIN_OVERVIEW.href,
         icon: LayoutDashboard,
       },
-    ],
-  },
-  {
-    // Platform access, not a department: a plain section above the departments.
-    label: "Super Admin",
-    items: [
-      {
-        label: "Super Admins",
-        href: `${ADMIN_BASE}/super-admins`,
-        icon: UserCog,
-        comingSoon:
-          "Invite, approve, suspend and remove Super Admins, and assign or revoke their permissions.",
-      },
+      // Covers every department, so it sits beside Overview rather than in one.
       {
         label: "Audit Log",
         href: `${ADMIN_BASE}/audit-log`,
         icon: ScrollText,
-        comingSoon:
-          "Every sensitive action, including who created, invited, removed, suspended or changed permissions for a Super Admin.",
+        permission: "AUDIT_VIEW",
       },
     ],
   },
@@ -140,17 +130,20 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         href: ROUTES.VENUES.href,
         icon: MapPin,
         alsoActiveOn: [ROUTES.CREATE_VENUE.href],
+        permission: "CATALOGUE_MANAGE",
       },
       {
         label: ROUTES.CATEGORIES.label,
         href: ROUTES.CATEGORIES.href,
         icon: Tags,
         alsoActiveOn: [ROUTES.CREATE_CATEGORY.href],
+        permission: "CATALOGUE_MANAGE",
       },
       {
         label: ROUTES.ADMIN_VERIFICATIONS.label,
         href: ROUTES.ADMIN_VERIFICATIONS.href,
         icon: BadgeCheck,
+        permission: "VENDORS_VERIFY",
         showsPendingVerifications: true,
       },
     ],
@@ -235,6 +228,15 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         label: ROUTES.ADMIN_USERS.label,
         href: ROUTES.ADMIN_USERS.href,
         icon: Users,
+        permission: "USERS_VIEW",
+      },
+      // Access is permission-based: any admin holding the admin-management
+      // permission manages the others here. There is no separate super admin role.
+      {
+        label: "Admins & Permissions",
+        href: `${ADMIN_BASE}/operations/admins`,
+        icon: UserCog,
+        permission: "ADMINS_MANAGE",
       },
       {
         label: "System Settings",
@@ -259,6 +261,24 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
 ];
 
 const ADMIN_NAV_ITEMS = ADMIN_NAV_GROUPS.flatMap((group) => group.items);
+
+/** The nav as one admin sees it: items they can't use go, then any group left empty. */
+export const visibleAdminNavGroups = (
+  has: (permission?: TAdminPermission) => boolean,
+) =>
+  ADMIN_NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => has(item.permission)),
+  })).filter((group) => group.items.length > 0);
+
+/** The permission the admin page at `pathname` needs, if it needs one. */
+export const adminPermissionFor = (pathname: string) =>
+  ADMIN_NAV_ITEMS.find(
+    (item) =>
+      item.permission &&
+      item.href !== ROUTES.ADMIN_OVERVIEW.href &&
+      isAdminNavItemActive(pathname, item),
+  )?.permission;
 
 const isWithin = (pathname: string, href: string) =>
   pathname === href || pathname.startsWith(`${href}/`);

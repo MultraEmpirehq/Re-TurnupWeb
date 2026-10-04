@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import ErrorContainer from "@/components/ui/error-container";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { useEvents } from "@/hooks/use-event";
 import { IEventDetailsType } from "@/lib/types";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
@@ -78,12 +79,15 @@ const EventListingCard: React.FC<{
   const isAdmin = useUserStore(
     (state) => state.userDetails?.role === EUserRoles.ADMIN,
   );
-  // Only the organiser edits; an admin can also remove anyone's event.
+  const { has } = useAdminPermissions();
+  // Only admins allowed to moderate events act on other organisers' events.
+  const canModerate = isAdmin && has("EVENTS_MODERATE");
+  // Only the organiser edits; a moderating admin can also remove anyone's event.
   const canEdit = event.isOwner === true;
-  const canDelete = canEdit || isAdmin;
-  // Admins take a published event down or bring a suspended one back.
-  const canSuspend = isAdmin && event.status === "published";
-  const canRestore = isAdmin && isSuspended;
+  const canDelete = canEdit || canModerate;
+  // Moderators take a published event down or bring a suspended one back.
+  const canSuspend = canModerate && event.status === "published";
+  const canRestore = canModerate && isSuspended;
   const buttonCount =
     1 + Number(canEdit) + Number(canDelete) + Number(canSuspend || canRestore);
 

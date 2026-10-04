@@ -20,13 +20,16 @@ export const useAdminVerifications = ({
   status,
   search,
   page,
+  enabled = true,
 }: {
   status: TVerificationStatus | "all";
   search: string;
   page: number;
+  enabled?: boolean;
 }) =>
   useQuery({
     queryKey: ["admin-verifications", status, search, page],
+    enabled,
     queryFn: async () => {
       const { data } = await getData<IVendorVerification[]>(
         "/admin/vendor-verifications",

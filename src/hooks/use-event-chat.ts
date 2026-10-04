@@ -29,6 +29,13 @@ export interface BackendChatConversation {
     vendorName?: string;
     vendorAvatar?: string;
   };
+  /** The organiser who owns the conversation. */
+  vendor?: {
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    username?: string | null;
+  };
 }
 
 export interface BackendChatMessage {
@@ -84,7 +91,14 @@ const toParticipantRole = (
 const mapConversation = (chat: BackendChatConversation): IEventChatGroup => {
   const eventName =
     chat.eventName || chat.name || chat.metadata?.eventName || "Turnupz Event";
-  const vendorName = chat.metadata?.vendorName || "Turnupz Vendor";
+  const ownerName = [chat.vendor?.firstName, chat.vendor?.lastName]
+    .filter(Boolean)
+    .join(" ");
+  const vendorName =
+    chat.metadata?.vendorName ||
+    ownerName ||
+    chat.vendor?.username ||
+    "Turnupz Vendor";
   const now = new Date().toISOString();
 
   return {
@@ -101,7 +115,8 @@ const mapConversation = (chat: BackendChatConversation): IEventChatGroup => {
     memberListVisibility: chat.memberListVisibility || "visible",
     pinnedMessageId: chat.pinnedMessageId,
     vendor: {
-      id: `${chat.id}-vendor`,
+      // The real owner, so the page can tell whether the viewer is the organiser.
+      id: chat.vendor?.id ?? `${chat.id}-vendor`,
       name: vendorName,
       role: "vendor",
       memberRole: "vendor",
@@ -112,11 +127,16 @@ const mapConversation = (chat: BackendChatConversation): IEventChatGroup => {
   };
 };
 
-export const mapBackendMessage = (message: BackendChatMessage): IEventChatMessage => ({
+export const mapBackendMessage = (
+  message: BackendChatMessage,
+): IEventChatMessage => ({
   id: message.id,
   senderId: message.senderId || "system",
   senderName: message.senderName || "Turnupz",
-  role: message.senderRole === "vendor" || message.senderRole === "system" ? "vendor" : "member",
+  role:
+    message.senderRole === "vendor" || message.senderRole === "system"
+      ? "vendor"
+      : "member",
   senderMemberRole: toParticipantRole(message.senderRole),
   body: message.body || "",
   createdAt: message.createdAt,
@@ -132,7 +152,9 @@ export const mapBackendMessage = (message: BackendChatMessage): IEventChatMessag
       : undefined),
   assetName:
     message.assetName ||
-    (typeof message.metadata?.title === "string" ? message.metadata.title : undefined) ||
+    (typeof message.metadata?.title === "string"
+      ? message.metadata.title
+      : undefined) ||
     (typeof message.metadata?.eventName === "string"
       ? message.metadata.eventName
       : undefined),
@@ -148,7 +170,9 @@ export const mapBackendMessage = (message: BackendChatMessage): IEventChatMessag
 
 const getBackendMessageHref = (message: BackendChatMessage) =>
   message.href ||
-  (typeof message.metadata?.href === "string" ? message.metadata.href : undefined);
+  (typeof message.metadata?.href === "string"
+    ? message.metadata.href
+    : undefined);
 
 export const mapBackendMember = (
   member: BackendChatMember,
@@ -166,9 +190,9 @@ export const useEventChats = () =>
     queryKey: ["event-chats"],
     queryFn: async () => {
       const response = await getData<BackendChatConversation[]>("/chats");
-      return normalizeListResponse<BackendChatConversation>(response.data.data).map(
-        mapConversation,
-      );
+      return normalizeListResponse<BackendChatConversation>(
+        response.data.data,
+      ).map(mapConversation);
     },
     retry: 0,
   });
@@ -218,10 +242,10 @@ export const useUpdateEventChatSettings = () => {
         > & { muted?: boolean }
       >;
     }) => {
-      const response = await patchData<typeof settings, BackendChatConversation>(
-        `/event-chat/${groupId}/settings`,
-        settings,
-      );
+      const response = await patchData<
+        typeof settings,
+        BackendChatConversation
+      >(`/event-chat/${groupId}/settings`, settings);
       return response.data.data;
     },
     onSuccess: (_data, variables) => {
@@ -229,6 +253,28 @@ export const useUpdateEventChatSettings = () => {
       queryClient.invalidateQueries({
         queryKey: ["event-chat-messages", variables.groupId],
       });
+    },
+  });
+};
+
+/** Mutes or unmutes a chat for the signed-in member only. */
+export const useMuteEventChat = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      groupId,
+      muted,
+    }: {
+      groupId: string;
+      muted: boolean;
+    }) => {
+      await patchData<{ muted: boolean }, { muted: boolean }>(
+        `/chats/${groupId}/mute`,
+        { muted },
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event-chats"] });
     },
   });
 };

@@ -38,6 +38,12 @@ const myOrders: TAccountLink = {
   href: ROUTES.PROFILE_ORDERS.href,
   icon: ShoppingBag,
 };
+// Event group chats, which anyone with a ticket joins.
+const chats: TAccountLink = {
+  label: ROUTES.MESSAGES.label,
+  href: ROUTES.MESSAGES.href,
+  icon: MessagesSquare,
+};
 const help: TAccountLink = {
   label: "Help",
   href: ROUTES.PROFILE_HELP.href,
@@ -55,11 +61,20 @@ const createEvent: TAccountLink = {
 };
 
 const ATTENDEE_NAV: TAccountNav = {
-  headerLinks: [myTickets, myOrders],
+  headerLinks: [myTickets, myOrders, chats],
   // Attendees become vendors by applying, so that is where hosting starts.
-  cta: { label: "Host an Event", href: ROUTES.VENDOR_VERIFICATION.href, icon: Store },
+  cta: {
+    label: "Host an Event",
+    href: ROUTES.VENDOR_VERIFICATION.href,
+    icon: Store,
+  },
   menuGroups: [
-    [{ label: "Profile", href: ROUTES.USER_PROFILE.href, icon: User }, myTickets, myOrders],
+    [
+      { label: "Profile", href: ROUTES.USER_PROFILE.href, icon: User },
+      myTickets,
+      myOrders,
+      chats,
+    ],
     [help],
   ],
 };
@@ -71,11 +86,19 @@ const VENDOR_NAV: TAccountNav = {
   cta: createEvent,
   menuGroups: [
     [
-      { label: "Dashboard", href: ROUTES.DASHBOARD.href, icon: LayoutDashboard },
+      {
+        label: "Dashboard",
+        href: ROUTES.DASHBOARD.href,
+        icon: LayoutDashboard,
+      },
       // The vendor ledger, named apart from the tickets they hold.
       { label: "Ticket Sales", href: ROUTES.TICKETS.href, icon: TicketCheck },
-      { label: ROUTES.MESSAGES.label, href: ROUTES.MESSAGES.href, icon: MessagesSquare },
-      { label: ROUTES.ANALYSIS.label, href: ROUTES.ANALYSIS.href, icon: ChartNoAxesCombined },
+      chats,
+      {
+        label: ROUTES.ANALYSIS.label,
+        href: ROUTES.ANALYSIS.href,
+        icon: ChartNoAxesCombined,
+      },
       { label: ROUTES.WALLET.label, href: ROUTES.WALLET.href, icon: Wallet },
     ],
     [myTickets, myOrders, dashboardProfile],
@@ -85,12 +108,20 @@ const VENDOR_NAV: TAccountNav = {
 
 const ADMIN_NAV: TAccountNav = {
   headerLinks: [
-    { label: "Admin Console", href: ROUTES.ADMIN_OVERVIEW.href, icon: ShieldCheck },
+    {
+      label: "Admin Console",
+      href: ROUTES.ADMIN_OVERVIEW.href,
+      icon: ShieldCheck,
+    },
   ],
   cta: createEvent,
   menuGroups: [
     [
-      { label: "Admin Console", href: ROUTES.ADMIN_OVERVIEW.href, icon: ShieldCheck },
+      {
+        label: "Admin Console",
+        href: ROUTES.ADMIN_OVERVIEW.href,
+        icon: ShieldCheck,
+      },
     ],
     [myTickets, myOrders, dashboardProfile],
     [help],

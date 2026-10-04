@@ -3,15 +3,47 @@
 import { NovuInbox } from "@/components/notifications/novu-inbox";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { MenuIcon } from "lucide-react";
+import {
+  ADMIN_PERMISSION_LABELS,
+  useAdminPermissions,
+} from "@/hooks/use-admin-permissions";
+import { ROUTES } from "@/lib/variables";
+import { LockKeyhole, MenuIcon } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { memo, useState } from "react";
-import { adminSectionLabel } from "./admin-nav";
+import { adminPermissionFor, adminSectionLabel } from "./admin-nav";
 import AdminSidebar from "./admin-sidebar";
+
+/** Shown in place of a page the admin's permissions don't cover. */
+const NoAccess: React.FC<{ permissionLabel: string }> = ({ permissionLabel }) => (
+  <div className="mx-auto flex max-w-md flex-col items-center gap-3 rounded-xl border border-border bg-card px-6 py-12 text-center">
+    <span className="flex size-12 items-center justify-center rounded-full bg-secondary-50 text-secondary-800">
+      <LockKeyhole className="size-5" aria-hidden />
+    </span>
+    <h1 className="text-lg font-semibold text-foreground">
+      You don&apos;t have access to this page
+    </h1>
+    <p className="text-sm text-muted-foreground">
+      It needs the &ldquo;{permissionLabel}&rdquo; permission. Ask an admin who
+      manages admins to give it to you.
+    </p>
+    <Button asChild variant="outline" className="mt-2">
+      <Link href={ROUTES.ADMIN_OVERVIEW.href}>Back to overview</Link>
+    </Button>
+  </div>
+);
 
 const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
   const [isNavOpen, setIsNavOpen] = useState(false);
+  const { has, isLoading: isLoadingPermissions } = useAdminPermissions();
+  const requiredPermission = adminPermissionFor(pathname);
+  // A page that needs a permission waits until we know, so it never fires a request
+  // the api will refuse.
+  const isWaiting = !!requiredPermission && isLoadingPermissions;
+  const isBlocked =
+    !!requiredPermission && !isLoadingPermissions && !has(requiredPermission);
   const [navPathname, setNavPathname] = useState(pathname);
 
   // Below `lg` the nav is a drawer over the page. Close it as soon as the route
@@ -59,7 +91,19 @@ const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <NovuInbox />
         </header>
 
-        <main className="flex-1 px-4 pt-6 pb-10 sm:px-6 lg:px-8">{children}</main>
+        <main className="flex-1 px-4 pt-6 pb-10 sm:px-6 lg:px-8">
+          {isWaiting ? (
+            <div className="flex justify-center py-16">
+              <div className="size-8 animate-spin rounded-full border-b-2 border-foreground" />
+            </div>
+          ) : isBlocked ? (
+            <NoAccess
+              permissionLabel={ADMIN_PERMISSION_LABELS[requiredPermission]}
+            />
+          ) : (
+            children
+          )}
+        </main>
       </div>
     </div>
   );
