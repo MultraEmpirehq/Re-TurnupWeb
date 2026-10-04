@@ -8,6 +8,7 @@ import {
   useHideEventChatMessage,
   useReactToEventChatMessage,
   useSendEventChatMessage,
+  useMuteEventChat,
   useUpdateEventChatSettings,
   useUploadEventChatAsset,
 } from "@/hooks/use-event-chat";
@@ -22,7 +23,7 @@ import {
   updateEventChatGroupSettings,
 } from "@/lib/event-chat";
 import { cn } from "@/lib/utils";
-import useUserStore from "@/stores/user-store";
+import useUserStore, { EUserRoles } from "@/stores/user-store";
 import {
   BellIcon,
   BellOffIcon,
@@ -93,7 +94,9 @@ const ChatAvatar = ({
 }) => (
   <Avatar className={className}>
     {avatar ? <AvatarImage src={avatar} alt={name || "Chat member"} /> : null}
-    <AvatarFallback className={fallbackClassName}>{getInitials(name)}</AvatarFallback>
+    <AvatarFallback className={fallbackClassName}>
+      {getInitials(name)}
+    </AvatarFallback>
   </Avatar>
 );
 
@@ -105,7 +108,9 @@ const getMessageHref = (
   conversation?: IEventChatGroup,
 ) => {
   if (message.href) return message.href;
-  const bodyLink = message.body.match(/\/app\/events\/[^\s]+\/blog\/[^\s]+/)?.[0];
+  const bodyLink = message.body.match(
+    /\/app\/events\/[^\s]+\/blog\/[^\s]+/,
+  )?.[0];
   if (bodyLink) return bodyLink;
   if (message.kind === "event-update" && conversation?.eventId) {
     return `/explore/event/${conversation.eventId}`;
@@ -113,15 +118,23 @@ const getMessageHref = (
   return undefined;
 };
 
-const getEmptyConversationCopy = (selectedStatus: TChatStatus) =>
+// Organisers create groups by publishing events; attendees join them by booking.
+const getEmptyConversationCopy = (
+  selectedStatus: TChatStatus,
+  isAttendee: boolean,
+) =>
   selectedStatus === "private"
     ? "Private conversations will appear here when you start or receive a direct chat."
-    : "Publish an event to automatically create its group chat here.";
+    : isAttendee
+      ? "Book or register for an event to join its group chat here."
+      : "Publish an event to automatically create its group chat here.";
 
-const getEmptyPanelCopy = (selectedStatus: TChatStatus) =>
+const getEmptyPanelCopy = (selectedStatus: TChatStatus, isAttendee: boolean) =>
   selectedStatus === "private"
     ? "Select a private conversation when one is available. Direct chats are separate from event group communities."
-    : "Publish an event to create its chat group automatically. When attendees book, register, pay, or open an external ticket link, they can be added to the group flow here.";
+    : isAttendee
+      ? "When you book, register for or pay for an event, you're added to its group chat, where the organiser shares updates and attendees talk before the day."
+      : "Publish an event to create its chat group automatically. When attendees book, register, pay, or open an external ticket link, they can be added to the group flow here.";
 
 const getCleanMessageBody = (message: IEventChatMessage) =>
   message.body
@@ -139,8 +152,10 @@ const MessagesPage = () => {
   const attachmentInputRef = React.useRef<HTMLInputElement | null>(null);
   const imageInputRef = React.useRef<HTMLInputElement | null>(null);
   const userDetails = useUserStore((state) => state.userDetails);
+  const isAttendee = userDetails?.role === EUserRoles.USER;
   const eventChatsQuery = useEventChats();
   const updateSettingsMutation = useUpdateEventChatSettings();
+  const muteMutation = useMuteEventChat();
   const reactToMessageMutation = useReactToEventChatMessage();
   const hideMessageMutation = useHideEventChatMessage();
   const sendMessageMutation = useSendEventChatMessage();
@@ -158,11 +173,10 @@ const MessagesPage = () => {
 
   const filteredConversations = useMemo(() => {
     if (selectedStatus === "all") return availableGroups;
-    return availableGroups.filter(
-      (conversation) =>
-        selectedStatus === "groups"
-          ? (conversation.conversationType ?? "group") === "group"
-          : conversation.conversationType === "private",
+    return availableGroups.filter((conversation) =>
+      selectedStatus === "groups"
+        ? (conversation.conversationType ?? "group") === "group"
+        : conversation.conversationType === "private",
     );
   }, [availableGroups, selectedStatus]);
 
@@ -173,14 +187,18 @@ const MessagesPage = () => {
 
   const selectedConversationIsBackend =
     !!selectedConversation &&
-    backendGroups.some((conversation) => conversation.id === selectedConversation.id);
+    backendGroups.some(
+      (conversation) => conversation.id === selectedConversation.id,
+    );
   const messagesQuery = useEventChatMessages(
     selectedConversation?.id,
     selectedConversationIsBackend,
   );
   const activeConversation = useMemo(
     () =>
-      selectedConversation && selectedConversationIsBackend && messagesQuery.data
+      selectedConversation &&
+      selectedConversationIsBackend &&
+      messagesQuery.data
         ? {
             ...selectedConversation,
             messages: messagesQuery.data,
@@ -189,18 +207,25 @@ const MessagesPage = () => {
     [messagesQuery.data, selectedConversation, selectedConversationIsBackend],
   );
 
+  // Only the event's organiser gets the organiser tools (pin, hide, announcement
+  // mode, member visibility); everyone else in the group is a member.
+  const isOrganiser =
+    !!userDetails?.id && activeConversation?.vendor.id === userDetails.id;
+
   const sender = useMemo(
     () => ({
-      id: userDetails?.id || activeConversation?.vendor.id || "turnupz-vendor",
+      id: userDetails?.id || "guest",
       name:
         userDetails?.name ||
-        [userDetails?.firstName, userDetails?.lastName].filter(Boolean).join(" ") ||
-        activeConversation?.vendor.name ||
-        "Turnupz Vendor",
-      role: "vendor" as const,
+        [userDetails?.firstName, userDetails?.lastName]
+          .filter(Boolean)
+          .join(" ") ||
+        userDetails?.username ||
+        "Turnupz member",
+      role: isOrganiser ? ("vendor" as const) : ("member" as const),
       avatar: userDetails?.avatar,
     }),
-    [activeConversation?.vendor.id, activeConversation?.vendor.name, userDetails],
+    [isOrganiser, userDetails],
   );
 
   const isVendorSender = sender.role === "vendor";
@@ -212,7 +237,8 @@ const MessagesPage = () => {
       ? ""
       : activeConversation?.pinnedMessageId || defaultPinnedMessageId;
   const pinnedMessage = activeConversation?.messages.find(
-    (message) => message.id === activePinnedMessageId && !message.hiddenByVendor,
+    (message) =>
+      message.id === activePinnedMessageId && !message.hiddenByVendor,
   );
   const visibleMessages = (activeConversation?.messages ?? []).filter(
     (message) => !message.hiddenByVendor,
@@ -293,7 +319,13 @@ const MessagesPage = () => {
       value: boolean | "visible" | "private",
     ) => {
       if (!activeConversation) return;
-      if (selectedConversationIsBackend) {
+      if (selectedConversationIsBackend && setting === "muted") {
+        // Muting is personal, so it has its own endpoint open to every member.
+        muteMutation.mutate({
+          groupId: activeConversation.id,
+          muted: value === true,
+        });
+      } else if (selectedConversationIsBackend) {
         updateSettingsMutation.mutate({
           groupId: activeConversation.id,
           settings: {
@@ -306,7 +338,12 @@ const MessagesPage = () => {
         });
       }
     },
-    [activeConversation, selectedConversationIsBackend, updateSettingsMutation],
+    [
+      activeConversation,
+      muteMutation,
+      selectedConversationIsBackend,
+      updateSettingsMutation,
+    ],
   );
 
   const handleReact = React.useCallback(
@@ -384,14 +421,17 @@ const MessagesPage = () => {
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <span className="text-[0.75rem] font-bold uppercase tracking-[0.22em] text-secondary-400">
-            Vendor Chats
+            {isAttendee ? "Event Chats" : "Vendor Chats"}
           </span>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-secondary-950 md:text-[2.35rem]">
-            Stay close to your event audience
+            {isAttendee
+              ? "Chat with your event community"
+              : "Stay close to your event audience"}
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-secondary-500">
-            Keep group conversations, attendee questions, and event updates in
-            one clean Turnupz workspace.
+            {isAttendee
+              ? "Group chats for the events you're going to, with updates from the organiser and other attendees."
+              : "Keep group conversations, attendee questions, and event updates in one clean Turnupz workspace."}
           </p>
         </div>
       </div>
@@ -431,7 +471,7 @@ const MessagesPage = () => {
           <div className="max-h-[640px] overflow-y-auto">
             {filteredConversations.length === 0 && (
               <div className="px-5 py-10 text-sm text-secondary-500">
-                {getEmptyConversationCopy(selectedStatus)}
+                {getEmptyConversationCopy(selectedStatus, isAttendee)}
               </div>
             )}
             {filteredConversations.map((conversation) => {
@@ -497,7 +537,7 @@ const MessagesPage = () => {
           <div className="flex items-center justify-between gap-4 border-b border-secondary-100 px-5 py-4">
             <div className="flex items-center gap-3">
               <ChatAvatar
-                name={activeConversation?.eventName || "Turnupz Event Circle"}
+                name={activeConversation?.eventName || "Event chats"}
                 avatar={activeConversation?.vendor.avatar}
                 className="size-10 border border-secondary-100 bg-secondary-800"
                 fallbackClassName="bg-secondary-800 text-sm font-semibold text-white"
@@ -506,7 +546,7 @@ const MessagesPage = () => {
                 <p className="text-sm font-semibold text-secondary-950">
                   {activeConversation?.eventName
                     ? `${activeConversation.eventName} Community`
-                    : "Turnupz Event Circle"}
+                    : "No chat selected"}
                 </p>
                 {activeConversation ? (
                   <Link
@@ -544,22 +584,7 @@ const MessagesPage = () => {
                       <UsersIcon className="mr-3 size-4 text-primary" />
                       View members and roles
                     </Link>
-                    <button
-                      type="button"
-                      className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-secondary-600 transition-colors hover:bg-secondary-50"
-                      onClick={() => {
-                        handleToggleSetting(
-                          "announcementMode",
-                          !activeConversation.announcementMode,
-                        );
-                        setShowGroupOptions(false);
-                      }}
-                    >
-                      <MegaphoneIcon className="mr-3 size-4 text-primary" />
-                      {activeConversation.announcementMode
-                        ? "Turn off announcement mode"
-                        : "Turn on announcement mode"}
-                    </button>
+                    {/* Anyone in the group can mute it for themselves. */}
                     <button
                       type="button"
                       className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-secondary-600 transition-colors hover:bg-secondary-50"
@@ -573,70 +598,105 @@ const MessagesPage = () => {
                       ) : (
                         <BellIcon className="mr-3 size-4 text-primary" />
                       )}
-                      {activeConversation.muted ? "Unmute this chat" : "Mute this chat"}
+                      {activeConversation.muted
+                        ? "Unmute this chat"
+                        : "Mute this chat"}
                     </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-secondary-600 transition-colors hover:bg-secondary-50"
-                      onClick={() => {
-                        handleToggleSetting(
-                          "memberListVisibility",
-                          activeConversation.memberListVisibility === "private"
-                            ? "visible"
-                            : "private",
-                        );
-                        setShowGroupOptions(false);
-                      }}
-                    >
-                      {activeConversation.memberListVisibility === "private" ? (
-                        <EyeOffIcon className="mr-3 size-4 text-primary" />
-                      ) : (
-                        <EyeIcon className="mr-3 size-4 text-primary" />
-                      )}
-                      {activeConversation.memberListVisibility === "private"
-                        ? "Show member list"
-                        : "Hide member list"}
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-secondary-600 transition-colors hover:bg-secondary-50"
-                      onClick={() => {
-                        if (selectedConversationIsBackend) {
-                          updateSettingsMutation.mutate({
-                            groupId: activeConversation.id,
-                            settings: { pinnedMessageId: defaultPinnedMessageId },
-                          });
-                        } else {
-                          updateEventChatGroupSettings(activeConversation.id, {
-                            pinnedMessageId: defaultPinnedMessageId,
-                          });
-                        }
-                        setShowGroupOptions(false);
-                      }}
-                    >
-                      <PinIcon className="mr-3 size-4 text-primary" />
-                      Restore default event pin
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-secondary-600 transition-colors hover:bg-secondary-50"
-                      onClick={() => {
-                        if (selectedConversationIsBackend) {
-                          updateSettingsMutation.mutate({
-                            groupId: activeConversation.id,
-                            settings: { pinnedMessageId: "none" },
-                          });
-                        } else {
-                          updateEventChatGroupSettings(activeConversation.id, {
-                            pinnedMessageId: "none",
-                          });
-                        }
-                        setShowGroupOptions(false);
-                      }}
-                    >
-                      <PinOffIcon className="mr-3 size-4 text-primary" />
-                      Clear pinned post
-                    </button>
+                    {/* Group settings are the organiser's; the api allows them to
+                        vendors only, so members just see who is in the group. */}
+                    {isVendorSender && (
+                      <>
+                        <button
+                          type="button"
+                          className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-secondary-600 transition-colors hover:bg-secondary-50"
+                          onClick={() => {
+                            handleToggleSetting(
+                              "announcementMode",
+                              !activeConversation.announcementMode,
+                            );
+                            setShowGroupOptions(false);
+                          }}
+                        >
+                          <MegaphoneIcon className="mr-3 size-4 text-primary" />
+                          {activeConversation.announcementMode
+                            ? "Turn off announcement mode"
+                            : "Turn on announcement mode"}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-secondary-600 transition-colors hover:bg-secondary-50"
+                          onClick={() => {
+                            handleToggleSetting(
+                              "memberListVisibility",
+                              activeConversation.memberListVisibility ===
+                                "private"
+                                ? "visible"
+                                : "private",
+                            );
+                            setShowGroupOptions(false);
+                          }}
+                        >
+                          {activeConversation.memberListVisibility ===
+                          "private" ? (
+                            <EyeOffIcon className="mr-3 size-4 text-primary" />
+                          ) : (
+                            <EyeIcon className="mr-3 size-4 text-primary" />
+                          )}
+                          {activeConversation.memberListVisibility === "private"
+                            ? "Show member list"
+                            : "Hide member list"}
+                        </button>
+                        <button
+                          type="button"
+                          className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-secondary-600 transition-colors hover:bg-secondary-50"
+                          onClick={() => {
+                            if (selectedConversationIsBackend) {
+                              updateSettingsMutation.mutate({
+                                groupId: activeConversation.id,
+                                settings: {
+                                  pinnedMessageId: defaultPinnedMessageId,
+                                },
+                              });
+                            } else {
+                              updateEventChatGroupSettings(
+                                activeConversation.id,
+                                {
+                                  pinnedMessageId: defaultPinnedMessageId,
+                                },
+                              );
+                            }
+                            setShowGroupOptions(false);
+                          }}
+                        >
+                          <PinIcon className="mr-3 size-4 text-primary" />
+                          Restore default event pin
+                        </button>
+                        <button
+                          type="button"
+                          className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-secondary-600 transition-colors hover:bg-secondary-50"
+                          onClick={() => {
+                            if (selectedConversationIsBackend) {
+                              updateSettingsMutation.mutate({
+                                groupId: activeConversation.id,
+                                settings: { pinnedMessageId: "none" },
+                              });
+                            } else {
+                              updateEventChatGroupSettings(
+                                activeConversation.id,
+                                {
+                                  pinnedMessageId: "none",
+                                },
+                              );
+                            }
+                            setShowGroupOptions(false);
+                          }}
+                        >
+                          <PinOffIcon className="mr-3 size-4 text-primary" />
+                          Clear pinned post
+                        </button>
+                      </>
+                    )}
                   </div>
                 ) : null}
               </div>
@@ -646,8 +706,8 @@ const MessagesPage = () => {
           <div className="space-y-5 bg-secondary-50/60 px-5 py-5">
             {activeConversation?.announcementMode ? (
               <div className="rounded-[1.1rem] border border-primary/20 bg-primary/10 px-4 py-3 text-xs font-medium text-primary">
-                Announcement mode is on. Members can react to updates, but only the
-                vendor can post new messages.
+                Announcement mode is on. Members can react to updates, but only
+                the vendor can post new messages.
               </div>
             ) : null}
             {activeConversation?.muted ? (
@@ -674,14 +734,19 @@ const MessagesPage = () => {
                   </span>
                 </div>
                 <Link
-                  href={getMessageHref(pinnedMessage, activeConversation) || "#"}
+                  href={
+                    getMessageHref(pinnedMessage, activeConversation) || "#"
+                  }
                   className="grid gap-3 sm:grid-cols-[180px_minmax(0,1fr)]"
                 >
                   <div className="relative aspect-[16/9] overflow-hidden rounded-[1rem] bg-[linear-gradient(135deg,#0f2f4f,#4cb9ec)]">
                     {pinnedMessage.assetUrl ? (
                       <CustomImageComponent
                         src={pinnedMessage.assetUrl}
-                        alt={pinnedMessage.assetName || activeConversation.eventName}
+                        alt={
+                          pinnedMessage.assetName ||
+                          activeConversation.eventName
+                        }
                         fill
                         className="size-full"
                         imageClassName="object-cover"
@@ -704,238 +769,253 @@ const MessagesPage = () => {
             ) : null}
 
             {visibleMessages.map((message) => {
-                  const messageHref = getMessageHref(message, activeConversation);
-                  const messageForLabel = { ...message, href: messageHref };
-                  const cleanMessageBody = getCleanMessageBody(message);
+              const messageHref = getMessageHref(message, activeConversation);
+              const messageForLabel = { ...message, href: messageHref };
+              const cleanMessageBody = getCleanMessageBody(message);
 
-                  return (
-              <div
-                key={message.id}
-                className={cn(
-                  "flex gap-3",
-                  message.role === "vendor" ? "justify-end" : "justify-start",
-                )}
-              >
-                {message.role !== "vendor" && (
-                  <ChatAvatar
-                    name={message.senderName}
-                    avatar={message.senderAvatar}
-                    className="mt-1 size-9 border border-secondary-100 bg-secondary-800"
-                    fallbackClassName="bg-secondary-800 text-xs font-semibold text-white"
-                  />
-                )}
-
+              return (
                 <div
+                  key={message.id}
                   className={cn(
-                    "max-w-[680px]",
-                    message.role === "vendor" ? "items-end" : "items-start",
+                    "flex gap-3",
+                    message.role === "vendor" ? "justify-end" : "justify-start",
                   )}
                 >
-                  {message.kind === "event-update" ? (
-                    <div className="w-full max-w-[520px] rounded-[1.6rem] border border-secondary-100 bg-white p-4 shadow-sm">
-                      <MessageLink href={messageHref}>
-                        <div
-                          className="relative aspect-[16/8] overflow-hidden rounded-[1.2rem] bg-[linear-gradient(135deg,#0f2f4f,#4cb9ec)]"
-                          aria-label={
-                            messageHref ? getMessageHrefLabel(messageForLabel) : undefined
-                          }
-                        >
-                          {message.assetUrl ? (
+                  {message.role !== "vendor" && (
+                    <ChatAvatar
+                      name={message.senderName}
+                      avatar={message.senderAvatar}
+                      className="mt-1 size-9 border border-secondary-100 bg-secondary-800"
+                      fallbackClassName="bg-secondary-800 text-xs font-semibold text-white"
+                    />
+                  )}
+
+                  <div
+                    className={cn(
+                      "max-w-[680px]",
+                      message.role === "vendor" ? "items-end" : "items-start",
+                    )}
+                  >
+                    {message.kind === "event-update" ? (
+                      <div className="w-full max-w-[520px] rounded-[1.6rem] border border-secondary-100 bg-white p-4 shadow-sm">
+                        <MessageLink href={messageHref}>
+                          <div
+                            className="relative aspect-[16/8] overflow-hidden rounded-[1.2rem] bg-[linear-gradient(135deg,#0f2f4f,#4cb9ec)]"
+                            aria-label={
+                              messageHref
+                                ? getMessageHrefLabel(messageForLabel)
+                                : undefined
+                            }
+                          >
+                            {message.assetUrl ? (
+                              <CustomImageComponent
+                                src={message.assetUrl}
+                                alt={
+                                  message.assetName ||
+                                  activeConversation?.eventName ||
+                                  "Event update"
+                                }
+                                fill
+                                className="size-full"
+                                imageClassName="object-cover"
+                              />
+                            ) : (
+                              <div className="flex size-full items-end p-5 text-white">
+                                <div>
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">
+                                    Turnupz Event Update
+                                  </p>
+                                  <p className="mt-2 text-2xl font-black uppercase">
+                                    {message.assetName ||
+                                      activeConversation?.eventName ||
+                                      "Event Community"}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </MessageLink>
+
+                        <div className="space-y-3 px-1 pt-4">
+                          {message.assetName ? (
+                            <h3 className="text-sm font-semibold text-secondary-950">
+                              {message.assetName}
+                            </h3>
+                          ) : null}
+                          <p className="whitespace-pre-line text-sm leading-6 text-secondary-600">
+                            {cleanMessageBody}
+                          </p>
+                          {messageHref ? (
+                            <Link
+                              href={messageHref}
+                              className="inline-flex text-xs font-semibold text-primary underline-offset-4 hover:underline"
+                            >
+                              {getMessageHrefLabel(messageForLabel)}
+                            </Link>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : message.kind === "image" && message.assetUrl ? (
+                      <div className="max-w-[360px] rounded-[1.2rem] border border-secondary-100 bg-white p-3 shadow-sm">
+                        <MessageLink href={messageHref}>
+                          <div className="relative aspect-square overflow-hidden rounded-[1rem] bg-secondary-50">
                             <CustomImageComponent
                               src={message.assetUrl}
-                              alt={message.assetName || activeConversation?.eventName || "Event update"}
+                              alt={message.assetName || "Chat upload"}
                               fill
                               className="size-full"
                               imageClassName="object-cover"
                             />
-                          ) : (
-                            <div className="flex size-full items-end p-5 text-white">
-                              <div>
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">
-                                  Turnupz Event Update
-                                </p>
-                                <p className="mt-2 text-2xl font-black uppercase">
-                                  {message.assetName ||
-                                    activeConversation?.eventName ||
-                                    "Event Community"}
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </MessageLink>
-
-                      <div className="space-y-3 px-1 pt-4">
-                        {message.assetName ? (
-                          <h3 className="text-sm font-semibold text-secondary-950">
-                            {message.assetName}
-                          </h3>
-                        ) : null}
-                        <p className="whitespace-pre-line text-sm leading-6 text-secondary-600">
-                          {cleanMessageBody}
+                          </div>
+                        </MessageLink>
+                        <p className="mt-3 text-sm leading-6 text-secondary-700">
+                          {message.body}
                         </p>
                         {messageHref ? (
                           <Link
                             href={messageHref}
-                            className="inline-flex text-xs font-semibold text-primary underline-offset-4 hover:underline"
+                            className="mt-2 inline-flex text-xs font-semibold text-primary underline-offset-4 hover:underline"
                           >
-                            {getMessageHrefLabel(messageForLabel)}
+                            Open
                           </Link>
                         ) : null}
                       </div>
-                    </div>
-                  ) : message.kind === "image" && message.assetUrl ? (
-                    <div className="max-w-[360px] rounded-[1.2rem] border border-secondary-100 bg-white p-3 shadow-sm">
-                      <MessageLink href={messageHref}>
-                        <div className="relative aspect-square overflow-hidden rounded-[1rem] bg-secondary-50">
-                          <CustomImageComponent
-                            src={message.assetUrl}
-                            alt={message.assetName || "Chat upload"}
-                            fill
-                            className="size-full"
-                            imageClassName="object-cover"
-                          />
-                        </div>
-                      </MessageLink>
-                      <p className="mt-3 text-sm leading-6 text-secondary-700">
-                        {message.body}
-                      </p>
-                      {messageHref ? (
-                        <Link
-                          href={messageHref}
-                          className="mt-2 inline-flex text-xs font-semibold text-primary underline-offset-4 hover:underline"
-                        >
-                          Open
-                        </Link>
-                      ) : null}
-                    </div>
-                  ) : message.kind === "file" && message.assetUrl ? (
-                    <div
-                      className={cn(
-                        "max-w-[360px] rounded-[1.2rem] px-4 py-4 shadow-sm",
-                        message.role === "vendor"
-                          ? "bg-secondary-800 text-white"
-                          : "border border-secondary-100 bg-white text-secondary-700",
-                      )}
-                    >
-                      <p className="text-sm leading-6">{message.body}</p>
-                      <a
-                        href={message.assetUrl}
-                        download={message.assetName}
+                    ) : message.kind === "file" && message.assetUrl ? (
+                      <div
                         className={cn(
-                          "mt-3 inline-flex rounded-full px-3 py-1.5 text-xs font-semibold",
+                          "max-w-[360px] rounded-[1.2rem] px-4 py-4 shadow-sm",
                           message.role === "vendor"
-                            ? "bg-white/15 text-white"
-                            : "bg-secondary-50 text-secondary-700",
+                            ? "bg-secondary-800 text-white"
+                            : "border border-secondary-100 bg-white text-secondary-700",
                         )}
                       >
-                        Download {message.assetName || "attachment"}
-                      </a>
-                    </div>
-                  ) : (
+                        <p className="text-sm leading-6">{message.body}</p>
+                        <a
+                          href={message.assetUrl}
+                          download={message.assetName}
+                          className={cn(
+                            "mt-3 inline-flex rounded-full px-3 py-1.5 text-xs font-semibold",
+                            message.role === "vendor"
+                              ? "bg-white/15 text-white"
+                              : "bg-secondary-50 text-secondary-700",
+                          )}
+                        >
+                          Download {message.assetName || "attachment"}
+                        </a>
+                      </div>
+                    ) : (
+                      <div
+                        className={cn(
+                          "max-w-[420px] rounded-[1.2rem] px-4 py-3 shadow-sm",
+                          message.role === "vendor"
+                            ? "bg-secondary-800 text-white"
+                            : "border border-secondary-100 bg-white text-secondary-700",
+                        )}
+                      >
+                        <p className="text-sm leading-6">{message.body}</p>
+                      </div>
+                    )}
+
                     <div
                       className={cn(
-                        "max-w-[420px] rounded-[1.2rem] px-4 py-3 shadow-sm",
+                        "mt-2 flex items-center gap-2 text-[11px] text-secondary-400",
                         message.role === "vendor"
-                          ? "bg-secondary-800 text-white"
-                          : "border border-secondary-100 bg-white text-secondary-700",
+                          ? "justify-end"
+                          : "justify-start",
                       )}
                     >
-                      <p className="text-sm leading-6">{message.body}</p>
+                      <span>{message.senderName}</span>
+                      <span className="rounded-full bg-white px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-secondary-400">
+                        {message.role === "vendor"
+                          ? "Vendor"
+                          : message.senderMemberRole === "scanner"
+                            ? "Scanner"
+                            : "Attendee"}
+                      </span>
+                      <span>{formatMessageTime(message.createdAt)}</span>
                     </div>
-                  )}
 
-                  <div
-                    className={cn(
-                      "mt-2 flex items-center gap-2 text-[11px] text-secondary-400",
-                      message.role === "vendor" ? "justify-end" : "justify-start",
-                    )}
-                  >
-                    <span>{message.senderName}</span>
-                    <span className="rounded-full bg-white px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-secondary-400">
-                      {message.role === "vendor"
-                        ? "Vendor"
-                        : message.senderMemberRole === "scanner"
-                          ? "Scanner"
-                          : "Attendee"}
-                    </span>
-                    <span>{formatMessageTime(message.createdAt)}</span>
+                    <div
+                      className={cn(
+                        "mt-2 flex flex-wrap items-center gap-2",
+                        message.role === "vendor"
+                          ? "justify-end"
+                          : "justify-start",
+                      )}
+                    >
+                      {reactionEmojis.map((emoji) => {
+                        const reaction = message.reactions?.find(
+                          (item) => item.emoji === emoji,
+                        );
+                        const hasReacted = !!reaction?.reactedBy.includes(
+                          sender.id,
+                        );
+                        return (
+                          <button
+                            key={`${message.id}-${emoji}`}
+                            type="button"
+                            onClick={() => handleReact(message.id, emoji)}
+                            className={cn(
+                              "rounded-full border px-2.5 py-1 text-xs transition-colors",
+                              hasReacted
+                                ? "border-primary/30 bg-primary/10 text-primary"
+                                : "border-secondary-100 bg-white text-secondary-500 hover:border-primary/30 hover:text-primary",
+                            )}
+                          >
+                            {emoji} {reaction?.count ? reaction.count : ""}
+                          </button>
+                        );
+                      })}
+                      {isVendorSender ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleTogglePin(message.id)}
+                            className={cn(
+                              "inline-flex items-center rounded-full border bg-white px-2.5 py-1 text-xs transition-colors",
+                              activePinnedMessageId === message.id
+                                ? "border-primary/30 text-primary hover:bg-primary/10"
+                                : "border-secondary-100 text-secondary-400 hover:border-primary/30 hover:text-primary",
+                            )}
+                          >
+                            {activePinnedMessageId === message.id ? (
+                              <PinOffIcon className="mr-1 size-3" />
+                            ) : (
+                              <PinIcon className="mr-1 size-3" />
+                            )}
+                            {activePinnedMessageId === message.id
+                              ? "Unpin"
+                              : "Pin"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleHideMessage(message.id)}
+                            className="inline-flex items-center rounded-full border border-secondary-100 bg-white px-2.5 py-1 text-xs text-secondary-400 transition-colors hover:border-danger/30 hover:text-danger"
+                          >
+                            <Trash2Icon className="mr-1 size-3" />
+                            Hide
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
                   </div>
 
-                  <div
-                    className={cn(
-                      "mt-2 flex flex-wrap items-center gap-2",
-                      message.role === "vendor" ? "justify-end" : "justify-start",
+                  {message.role === "vendor" &&
+                    message.kind !== "event-update" && (
+                      <ChatAvatar
+                        name={message.senderName}
+                        avatar={message.senderAvatar}
+                        className="mt-1 size-9 border border-secondary-100 bg-secondary-100"
+                        fallbackClassName="bg-secondary-100 text-xs font-semibold text-secondary-800"
+                      />
                     )}
-                  >
-                    {reactionEmojis.map((emoji) => {
-                      const reaction = message.reactions?.find(
-                        (item) => item.emoji === emoji,
-                      );
-                      const hasReacted = !!reaction?.reactedBy.includes(sender.id);
-                      return (
-                        <button
-                          key={`${message.id}-${emoji}`}
-                          type="button"
-                          onClick={() => handleReact(message.id, emoji)}
-                          className={cn(
-                            "rounded-full border px-2.5 py-1 text-xs transition-colors",
-                            hasReacted
-                              ? "border-primary/30 bg-primary/10 text-primary"
-                              : "border-secondary-100 bg-white text-secondary-500 hover:border-primary/30 hover:text-primary",
-                          )}
-                        >
-                          {emoji} {reaction?.count ? reaction.count : ""}
-                        </button>
-                      );
-                    })}
-                    {isVendorSender ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePin(message.id)}
-                          className={cn(
-                            "inline-flex items-center rounded-full border bg-white px-2.5 py-1 text-xs transition-colors",
-                            activePinnedMessageId === message.id
-                              ? "border-primary/30 text-primary hover:bg-primary/10"
-                              : "border-secondary-100 text-secondary-400 hover:border-primary/30 hover:text-primary",
-                          )}
-                        >
-                          {activePinnedMessageId === message.id ? (
-                            <PinOffIcon className="mr-1 size-3" />
-                          ) : (
-                            <PinIcon className="mr-1 size-3" />
-                          )}
-                          {activePinnedMessageId === message.id ? "Unpin" : "Pin"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleHideMessage(message.id)}
-                          className="inline-flex items-center rounded-full border border-secondary-100 bg-white px-2.5 py-1 text-xs text-secondary-400 transition-colors hover:border-danger/30 hover:text-danger"
-                        >
-                          <Trash2Icon className="mr-1 size-3" />
-                          Hide
-                        </button>
-                      </>
-                    ) : null}
-                  </div>
                 </div>
-
-                {message.role === "vendor" && message.kind !== "event-update" && (
-                  <ChatAvatar
-                    name={message.senderName}
-                    avatar={message.senderAvatar}
-                    className="mt-1 size-9 border border-secondary-100 bg-secondary-100"
-                    fallbackClassName="bg-secondary-100 text-xs font-semibold text-secondary-800"
-                  />
-                )}
-              </div>
               );
             })}
 
             {!activeConversation && (
               <div className="rounded-[1.4rem] border border-secondary-100 bg-white px-5 py-8 text-sm text-secondary-500">
-                {getEmptyPanelCopy(selectedStatus)}
+                {getEmptyPanelCopy(selectedStatus, isAttendee)}
               </div>
             )}
           </div>
@@ -983,7 +1063,11 @@ const MessagesPage = () => {
                   accept="image/*"
                   className="hidden"
                   onChange={(e) => {
-                    handleUpload(e.target.files?.[0], "image", "Shared an image: ");
+                    handleUpload(
+                      e.target.files?.[0],
+                      "image",
+                      "Shared an image: ",
+                    );
                     e.currentTarget.value = "";
                   }}
                 />

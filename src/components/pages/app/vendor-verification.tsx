@@ -1233,16 +1233,16 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
       )}
 
       {status === "submitted" && (
-        <div className="rounded-[1.4rem] border border-cyan-100 bg-cyan-50 p-5">
+        <div className="rounded-[1.4rem] bg-[#004766] p-5 text-white shadow-[0_16px_40px_rgba(0,71,102,0.25)]">
           <div className="flex items-start gap-3">
-            <span className="rounded-2xl bg-white p-3 text-cyan-700">
+            <span className="rounded-2xl bg-white p-3 text-[#004766]">
               <CheckCircle2 className="size-5" />
             </span>
             <div>
-              <p className="text-sm font-bold text-secondary-950">
+              <p className="text-sm font-bold text-white">
                 Submitted for admin review
               </p>
-              <p className="mt-2 text-sm leading-6 text-secondary-600">
+              <p className="mt-2 text-sm leading-6 text-white/80">
                 Your details are saved and waiting for review. You can still
                 create event drafts, but paid publishing, cross-border paid
                 events, and payout requests stay locked until approval.

@@ -38,12 +38,9 @@ export const VENDOR_NAV_ITEMS: TVendorNavItem[] = [
     icon: Ticket,
     requiresVerification: true,
   },
-  {
-    label: "Chats",
-    href: ROUTES.MESSAGES.href,
-    icon: MessagesSquare,
-    requiresVerification: true,
-  },
+  // Open to everyone: attendees and unverified vendors chat in the groups of events
+  // they're going to.
+  { label: "Chats", href: ROUTES.MESSAGES.href, icon: MessagesSquare },
   {
     label: "Analysis",
     href: ROUTES.ANALYSIS.href,

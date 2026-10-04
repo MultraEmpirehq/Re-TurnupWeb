@@ -289,8 +289,8 @@ const TicketList = () => {
   const [selectedScannerEventId, setSelectedScannerEventId] = useState("");
   const [scannerEmailDraft, setScannerEmailDraft] = useState("");
   const [scanCode, setScanCode] = useState("");
-  const { data } = useEvents({ limit: 50 });
-  const { data: userEventsData } = useEvents(
+  // The vendor's own events only, for the event filters and scanner cards.
+  const { data } = useEvents(
     { limit: 50, userId: userId ?? undefined },
     { enabled: !!userId },
   );
@@ -311,13 +311,10 @@ const TicketList = () => {
     setSearchQuery(searchParams.get("q")?.trim() ?? "");
   }, [searchParams]);
 
-  const events = useMemo(() => {
-    const merged = [
-      ...(data?.pages?.flatMap((page) => page?.data ?? []) ?? []),
-      ...(userEventsData?.pages?.flatMap((page) => page?.data ?? []) ?? []),
-    ];
-    return Array.from(new Map(merged.map((event) => [event.id, event])).values());
-  }, [data, userEventsData]);
+  const events = useMemo(
+    () => data?.pages?.flatMap((page) => page?.data ?? []) ?? [],
+    [data],
+  );
 
   const rows = useMemo(() => {
     const apiRows = (ledgerResponse?.records ?? []).map(mapLedgerApiRecord);

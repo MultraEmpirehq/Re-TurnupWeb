@@ -273,10 +273,11 @@ const AnalysisPage = () => {
       ),
     [userDetails?.country, userDetails?.countryCode, userDetails?.platformCurrency],
   );
-  const { data: eventsData } = useEvents({
-    limit: 50,
-    userId: userId ?? undefined,
-  });
+  // Waits for the user, so the first request is never the unfiltered public list.
+  const { data: eventsData } = useEvents(
+    { limit: 50, userId: userId ?? undefined },
+    { enabled: !!userId },
+  );
   const { data: ticketAnalyticsResponse } = useVendorTicketAnalytics({});
   const ticketAnalytics = useMemo(
     () => ticketAnalyticsResponse?.rows ?? [],
@@ -497,18 +498,6 @@ const AnalysisPage = () => {
             </p>
           </article>
 
-          <article className="rounded-[1.8rem] bg-[#11172d] p-6 text-white shadow-[0_20px_50px_rgba(17,23,45,0.24)] sm:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/40">
-              Operations View
-            </p>
-            <h2 className="mt-4 text-3xl font-bold leading-tight">
-              Track sales, check-ins, transfers, and remaining inventory.
-            </h2>
-            <p className="mt-4 text-sm leading-7 text-white/72 sm:text-base sm:leading-8">
-              Use this page to decide where to promote more, which events need
-              scanner support, and how much ticket capacity is still available.
-            </p>
-          </article>
         </div>
       </section>
 

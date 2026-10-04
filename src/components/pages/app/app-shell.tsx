@@ -1,13 +1,16 @@
 "use client";
 
 import AdminShell from "@/components/pages/app/admin/shell/admin-shell";
+import AttendeeShell from "@/components/pages/app/attendee-shell";
 import VendorShell from "@/components/pages/app/vendor/shell/vendor-shell";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
 import React, { memo } from "react";
 
 /**
  * Admins get the sidebar console on every /app page they can open (their own pages
- * and the admin-only venue and category pages); everyone else gets the vendor one.
+ * and the admin-only venue and category pages). Vendors, including those still
+ * waiting on verification, get the vendor sidebar. Attendees only use a few /app
+ * pages, such as their chats, so they get the site header instead of a sidebar.
  */
 const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const role = useUserStore((state) => state.userDetails?.role);
@@ -24,6 +27,10 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   if (role === EUserRoles.ADMIN) {
     return <AdminShell>{children}</AdminShell>;
+  }
+
+  if (role === EUserRoles.USER) {
+    return <AttendeeShell>{children}</AttendeeShell>;
   }
 
   return <VendorShell>{children}</VendorShell>;

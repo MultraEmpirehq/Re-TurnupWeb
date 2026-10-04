@@ -1,6 +1,5 @@
 import DashboardEvents from "@/components/pages/app/dashboard-events";
 import DashboardOverview from "@/components/pages/app/dashboard-overview";
-import DashboardTicketSales from "@/components/pages/app/dashboard-ticket-sales";
 import { VendorVerificationNotice } from "@/components/pages/app/vendor-verification";
 import React, { memo } from "react";
 
@@ -12,7 +11,6 @@ const DashboardPage = () => {
       <VendorVerificationNotice />
       <DashboardOverview />
       <DashboardEvents />
-      <DashboardTicketSales />
     </div>
   );
 };
