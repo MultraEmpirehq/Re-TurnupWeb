@@ -248,6 +248,11 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Settings",
     href: "/app/settings",
   },
+  VENDOR_VERIFICATION: {
+    shouldShowIn: [],
+    label: "Vendor Verification",
+    href: "/app/settings/vendor-verification",
+  },
   NOTIFICATIONS: {
     shouldShowIn: [ROUTE_TYPE.APP_ROUTE],
     label: "Notifications",
