@@ -11,12 +11,12 @@ import { Spinner } from "@/components/ui/spinner";
 
 import useAuth from "@/hooks/use-auth";
 import { ROUTES } from "@/lib/variables";
-import { EUserGenders, TUserDetails } from "@/stores/user-store";
+import useUserStore, { EUserGenders, TUserDetails } from "@/stores/user-store";
 import { joiResolver } from "@hookform/resolvers/joi";
 import Joi from "joi";
 import { CheckIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { memo, useCallback, useEffect, useState } from "react";
+import React, { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useDebouncedCallback } from "use-debounce";
@@ -94,11 +94,14 @@ const CompleteUserForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get("redirect");
+  const userDetails = useUserStore((state) => state.userDetails);
+  const hasPrefilled = useRef(false);
   const {
     register,
     control,
     handleSubmit,
     watch,
+    reset,
     setValue,
     setError,
     formState: { errors, isValid, isSubmitting },
@@ -107,6 +110,29 @@ const CompleteUserForm = () => {
     defaultValues,
     mode: "onChange",
   });
+
+  // Google and Apple sign-ups arrive with a name and a generated username already
+  // saved, so start from those instead of making people type them again.
+  useEffect(() => {
+    if (!userDetails || hasPrefilled.current) return;
+    hasPrefilled.current = true;
+    reset(
+      {
+        ...defaultValues,
+        firstName: userDetails.firstName ?? "",
+        lastName: userDetails.lastName ?? "",
+        username: userDetails.username ?? "",
+        dateOfBirth: userDetails.dateOfBirth
+          ? new Date(userDetails.dateOfBirth)
+          : defaultValues.dateOfBirth,
+        gender: userDetails.gender ?? defaultValues.gender,
+        country: userDetails.country ?? "",
+        isUserNameValid: !!userDetails.username,
+      },
+      { keepDefaultValues: true },
+    );
+  }, [userDetails, reset]);
+
   const checkUserNameAvailability = useDebouncedCallback(
     async (username: string) => {
       setIsValidatingUserName(true);
@@ -166,12 +192,21 @@ const CompleteUserForm = () => {
   );
   useEffect(() => {
     const trimmedUsername = username?.trim();
+    // Their own saved username would read as taken, so it needs no check.
+    if (
+      trimmedUsername &&
+      trimmedUsername.toLowerCase() === userDetails?.username?.toLowerCase()
+    ) {
+      checkUserNameAvailability.cancel();
+      setValue("isUserNameValid", true, { shouldValidate: true });
+      return;
+    }
     setValue("isUserNameValid", false);
     if (trimmedUsername && trimmedUsername.length > 2) {
       checkUserNameAvailability(username);
       return;
     }
-  }, [username, checkUserNameAvailability, setValue]);
+  }, [username, userDetails?.username, checkUserNameAvailability, setValue]);
 
   return (
     <div className="flex w-full flex-col gap-7">

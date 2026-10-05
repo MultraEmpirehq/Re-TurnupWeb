@@ -15,6 +15,9 @@ import ErrorContainer from "@/components/ui/error-container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { useEvents } from "@/hooks/use-event";
+import OrganiserContactDialog, {
+  TOrganiserContactTarget,
+} from "./organiser-contact-dialog";
 import { IEventDetailsType } from "@/lib/types";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
 import TextareaField from "@/components/ui/textarea-field";
@@ -65,6 +68,7 @@ type TCardActions = {
   onDeleteRequest: (event: IEventDetailsType) => void;
   onSuspendRequest: (event: IEventDetailsType) => void;
   onRestore: (event: IEventDetailsType) => void;
+  onContactRequest: (event: IEventDetailsType) => void;
   restoringId: string | null;
 };
 
@@ -120,9 +124,18 @@ const EventListingCard: React.FC<{
             <h3 className="text-[1.2rem] font-semibold leading-tight text-secondary-950 sm:text-[1.3rem]">
               {event.name || "Untitled event"}
             </h3>
-            {isAdmin && !canEdit && event.organizerName && (
-              <p className="text-xs font-medium text-secondary-400">
-                By {event.organizerName}
+            {/* Another organiser's event: say whose, with a way to reach them. */}
+            {isAdmin && !canEdit && (
+              <p className="flex flex-wrap items-center gap-x-1.5 text-xs font-medium text-secondary-400">
+                <span>By {event.organizerName || "another organiser"}</span>
+                <span aria-hidden>·</span>
+                <button
+                  type="button"
+                  onClick={() => actions.onContactRequest(event)}
+                  className="font-semibold text-primary hover:underline"
+                >
+                  Contact
+                </button>
               </p>
             )}
           </div>
@@ -140,6 +153,15 @@ const EventListingCard: React.FC<{
               <p className="mt-1 text-xs text-amber-700">
                 Hidden from attendees until an admin restores it.
               </p>
+            )}
+            {isAdmin && !canEdit && (
+              <button
+                type="button"
+                onClick={() => actions.onContactRequest(event)}
+                className="mt-2 text-xs font-semibold text-amber-900 underline-offset-2 hover:underline"
+              >
+                Reach out to the organiser
+              </button>
             )}
           </div>
         )}
@@ -363,6 +385,14 @@ const VendorEventListingsPage = () => {
   const [suspendReason, setSuspendReason] = useState("");
   const [isSuspending, setIsSuspending] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [contactTarget, setContactTarget] =
+    useState<TOrganiserContactTarget | null>(null);
+  const openContact = (event: IEventDetailsType, reason?: string | null) =>
+    setContactTarget({
+      id: event.id,
+      name: event.name,
+      suspensionReason: reason ?? event.suspensionReason ?? null,
+    });
 
   // A vendor sees only their own events (drafts included); an admin sees every
   // published and suspended event on the platform. Every page is fetched, so the sections and their
@@ -443,7 +473,14 @@ const VendorEventListingsPage = () => {
         reason: suspendReason.trim(),
       });
       await refetch();
-      toast.success("Event suspended. The organiser has been told why.");
+      const suspended = eventToSuspend;
+      const reason = suspendReason.trim();
+      toast.success("Event suspended. The organiser has been told why.", {
+        action: {
+          label: "Contact organiser",
+          onClick: () => openContact(suspended, reason),
+        },
+      });
       closeSuspendDialog();
     } catch (suspendError) {
       toast.error(
@@ -479,6 +516,7 @@ const VendorEventListingsPage = () => {
     onDeleteRequest: setEventToDelete,
     onSuspendRequest: setEventToSuspend,
     onRestore: handleRestoreEvent,
+    onContactRequest: (event: IEventDetailsType) => openContact(event),
     restoringId,
   };
 
@@ -685,6 +723,11 @@ const VendorEventListingsPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <OrganiserContactDialog
+        target={contactTarget}
+        onClose={() => setContactTarget(null)}
+      />
+
       <Dialog
         open={!!eventToSuspend}
         onOpenChange={(open) => {

@@ -24,7 +24,7 @@ import React, { memo } from "react";
 import useExploreFilters from "./use-explore-filters";
 
 // Matched against the category name, so new categories still get a fitting icon.
-const ICONS: [RegExp, LucideIcon][] = [
+export const CATEGORY_ICONS: [RegExp, LucideIcon][] = [
   [/music|concert|gig|afro|jazz/i, Music],
   [/comedy|stand.?up|laugh/i, Mic],
   [/food|drink|dine|brunch/i, Utensils],
@@ -41,7 +41,7 @@ const ICONS: [RegExp, LucideIcon][] = [
   [/festival|owambe|celebrat/i, PartyPopper],
 ];
 
-const TONES = [
+export const CATEGORY_TONES = [
   "from-sky-400 to-blue-600",
   "from-pink-400 to-rose-600",
   "from-amber-300 to-orange-500",
@@ -51,8 +51,8 @@ const TONES = [
   "from-cyan-300 to-sky-600",
 ];
 
-const iconFor = (name: string) =>
-  ICONS.find(([pattern]) => pattern.test(name))?.[1] ?? Sparkles;
+export const categoryIconFor = (name: string) =>
+  CATEGORY_ICONS.find(([pattern]) => pattern.test(name))?.[1] ?? Sparkles;
 
 /** Categories as colourful tiles; picking one filters the board below. */
 const CategoryTiles = () => {
@@ -67,7 +67,7 @@ const CategoryTiles = () => {
       className="scrollbar-none -mx-horizontal flex gap-3 overflow-x-auto px-horizontal pb-2 md:mx-0 md:px-0"
     >
       {categories.map((category, index) => {
-        const Icon = iconFor(category.name);
+        const Icon = categoryIconFor(category.name);
         const isActive = categoryId === category.id;
         const isDimmed = !!categoryId && !isActive;
         return (
@@ -80,7 +80,7 @@ const CategoryTiles = () => {
             }
             className={cn(
               "group relative flex h-[104px] w-[132px] shrink-0 flex-col justify-between overflow-hidden rounded-3xl bg-linear-to-br p-4 text-left text-white transition-all duration-300",
-              TONES[index % TONES.length],
+              CATEGORY_TONES[index % CATEGORY_TONES.length],
               isActive
                 ? "-translate-y-1 shadow-[0_18px_30px_-14px_rgba(2,6,23,0.55)] ring-4 ring-secondary-950/90 ring-offset-2 ring-offset-[#f7f9fc]"
                 : "hover:-translate-y-1 hover:shadow-[0_18px_30px_-16px_rgba(2,6,23,0.5)]",
