@@ -15,7 +15,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-brand-sans);
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -204,5 +204,319 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Landing page motion. Kept small and slow; all of it stops for reduced motion. */
+@keyframes landing-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes landing-twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@keyframes landing-spin3d {
+  to {
+    transform: rotate3d(1, 1, 0.4, 360deg);
+  }
+}
+
+@keyframes landing-flip-hint {
+  0%,
+  80%,
+  100% {
+    transform: rotateY(0deg);
+  }
+  88% {
+    transform: rotateY(-22deg);
+  }
+}
+
+/* Sweeps its own absolutely placed line from the top of its box to the bottom. */
+@keyframes landing-scan {
+  0%,
+  100% {
+    top: 0;
+  }
+  50% {
+    top: calc(100% - 4px);
+  }
+}
+
+@utility animate-landing-scan {
+  animation: landing-scan 2.6s ease-in-out infinite;
+}
+
+/* Notes and emoji drifting up. */
+@keyframes landing-rise {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-160px);
+    opacity: 0;
+  }
+}
+
+/* The login story: a ticket leaving the phone, confetti, a pop of success.
+   These fill backwards only: each element's own style is its final state, and the
+   animation just plays the way in, so nothing depends on a held end frame. */
+@keyframes landing-ticket-out {
+  0% {
+    transform: translate(0, 40px) rotate(0deg) scale(0.6);
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--out-x, 150px), -30px) rotate(9deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes landing-confetti {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy)) rotate(var(--spin, 260deg));
+    opacity: 0;
+  }
+}
+
+@keyframes landing-pop {
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes landing-dash {
+  to {
+    stroke-dashoffset: -120;
+  }
+}
+
+@utility animate-landing-dash {
+  animation: landing-dash 6s linear infinite;
+}
+
+@keyframes landing-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@utility animate-landing-progress {
+  animation: landing-progress linear backwards;
+}
+
+@utility animate-landing-ticket-out {
+  animation: landing-ticket-out 1.1s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  transform: translate(var(--out-x, 150px), -30px) rotate(9deg);
+}
+
+@utility animate-landing-confetti {
+  animation: landing-confetti 1.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  opacity: 0;
+}
+
+@utility animate-landing-pop {
+  animation: landing-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+@utility animate-landing-rise {
+  animation: landing-rise 7s ease-in infinite;
+}
+
+@utility animate-landing-spin3d {
+  animation: landing-spin3d 14s linear infinite;
+}
+
+@utility animate-landing-flip-hint {
+  animation: landing-flip-hint 6s ease-in-out infinite;
+}
+
+@utility animate-landing-marquee {
+  animation: landing-marquee 60s linear infinite;
+}
+
+@utility animate-landing-float {
+  animation: landing-float 7s ease-in-out infinite;
+}
+
+@utility animate-landing-twinkle {
+  animation: landing-twinkle 4s ease-in-out infinite;
+}
+
+.landing-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 700ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.landing-reveal[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* The brand loader, as one 3.6s loop: the wordmark writes itself, inks in,
+   beats once, then fades and writes itself again. Each element's own style is
+   its finished look, so reduced motion simply shows the logo. */
+@keyframes loader-write {
+  0% {
+    stroke-dashoffset: 1;
+  }
+  34%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes loader-ink {
+  0%,
+  14% {
+    transform: scaleX(0);
+  }
+  40%,
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes loader-fade {
+  0% {
+    opacity: 0;
+  }
+  3%,
+  92% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes loader-beat {
+  0%,
+  54%,
+  70%,
+  100% {
+    transform: scale(1);
+  }
+  60% {
+    transform: scale(1.1);
+  }
+  65% {
+    transform: scale(0.98);
+  }
+}
+
+@keyframes loader-glow {
+  0%,
+  52%,
+  74%,
+  100% {
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+}
+
+@keyframes loader-dots {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@utility animate-loader-write {
+  animation: loader-write 3.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@utility animate-loader-ink {
+  animation: loader-ink 3.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@utility animate-loader-fade {
+  animation: loader-fade 3.6s ease-in-out infinite;
+}
+
+@utility animate-loader-beat {
+  animation: loader-beat 3.6s ease-in-out infinite;
+}
+
+@utility animate-loader-glow {
+  animation: loader-glow 3.6s ease-in-out infinite;
+}
+
+@utility animate-loader-dots {
+  animation: loader-dots 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .animate-landing-marquee,
+  .animate-loader-write,
+  .animate-loader-ink,
+  .animate-loader-beat,
+  .animate-loader-glow,
+  .animate-loader-fade,
+  .animate-loader-dots,
+  .animate-landing-spin3d,
+  .animate-landing-ticket-out,
+  .animate-landing-confetti,
+  .animate-landing-pop,
+  .animate-landing-progress,
+  .animate-landing-dash,
+  .animate-landing-rise,
+  .animate-landing-scan,
+  .animate-landing-flip-hint,
+  .animate-landing-float,
+  .animate-landing-twinkle {
+    animation: none;
   }
 }

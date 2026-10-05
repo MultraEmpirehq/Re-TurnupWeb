@@ -1,6 +1,5 @@
 "use client";
 import { LogoWhiteSVG } from "@/assets/svg";
-import SectionContainer from "@/components/layouts/section-container/section-container";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,17 +32,48 @@ import useUserStore from "@/stores/user-store";
 import { ChevronDown, LogOut, Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import React, { Fragment, memo, useCallback, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import React, {
+  Fragment,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { getAccountNav } from "./account-nav";
 
 const navLinks = getRoutesByType(ROUTE_TYPE.NAV_ROUTE);
+
+const linkClassName =
+  "rounded-full px-4 py-2 text-sm font-medium text-white/80 transition-colors duration-200 hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white data-[active]:bg-white/15 data-[active]:text-white data-[active]:hover:bg-white/20 data-[active]:focus:bg-white/20";
 
 const GeneralNavComponent = () => {
   const userDetails = useUserStore((state) => state.userDetails);
   const clearStore = useUserStore((state) => state.clearStore);
   const router = useRouter();
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  // On pages with a dark hero the header floats over it: clear at the top, then
+  // frosted glass once the page moves. Everywhere else it is the usual brand bar.
+  // Pages that open on a dark hero, which the header floats over.
+  const isHome = [
+    ROUTES.HOME.href,
+    ROUTES.EXPLORE.href,
+    ROUTES.PRICING.href,
+  ].includes(pathname);
+  const [isScrolled, setIsScrolled] = useState(false);
+  useEffect(() => {
+    const update = () => setIsScrolled(window.scrollY > 24);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
+  const isFloating = isHome && isScrolled;
+  const isActive = (href: string) =>
+    href !== ROUTES.HOME.href &&
+    (pathname === href || pathname.startsWith(`${href}/`));
   // What a signed-in person sees depends on whether they attend, sell or run the platform.
   const accountNav = useMemo(
     () => getAccountNav(userDetails?.role),
@@ -56,6 +86,14 @@ const GeneralNavComponent = () => {
       (route) => !route.shouldShowIn.includes(ROUTE_TYPE.HIDE_ON_LOGIN),
     );
   }, [userDetails]);
+  // Login and sign up read as buttons on the right, not as more page links.
+  const pageLinks = useMemo(
+    () =>
+      navLinks.filter(
+        (route) => !route.shouldShowIn.includes(ROUTE_TYPE.HIDE_ON_LOGIN),
+      ),
+    [],
+  );
 
   const initials = useMemo(() => {
     const first = userDetails?.firstName?.[0] ?? "";
@@ -88,17 +126,35 @@ const GeneralNavComponent = () => {
   );
 
   return (
-    <div className="py-3 bg-linear-to-r from-secondary to-primary sticky top-0 z-9999">
-      <SectionContainer className="flex flex-row items-center justify-between gap-4">
-        <Link href={ROUTES.HOME.href}>
-          <Image src={LogoWhiteSVG} alt="logo" className="h-8" />
+    <header
+      className={cn(
+        // One fixed height in every state (the page layout allows 70px for it), full
+        // width, square edges. Only the background changes as the page scrolls.
+        "top-0 z-9999 flex h-[70px] items-center px-5 transition-[background-color,box-shadow,border-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:px-8",
+        isHome
+          ? cn(
+              "fixed inset-x-0 border-b",
+              isFloating
+                ? "border-white/10 bg-linear-to-r from-secondary-950/90 via-secondary-900/85 to-primary-950/85 shadow-[0_16px_40px_-18px_rgba(2,6,23,0.7)] backdrop-blur-xl"
+                : "border-transparent",
+            )
+          : "sticky bg-linear-to-r from-secondary to-primary shadow-[0_8px_24px_-16px_rgba(2,6,23,0.45)]",
+      )}
+    >
+      <div className="flex w-full flex-row items-center justify-between gap-4">
+        <Link href={ROUTES.HOME.href} className="shrink-0">
+          <Image src={LogoWhiteSVG} alt="Turnupz home" className="h-8 w-auto" />
         </Link>
 
-        <NavigationMenu className="hidden md:flex">
-          <NavigationMenuList className="text-white">
-            {routes.map((link) => (
+        <NavigationMenu className="hidden md:flex" viewport={false}>
+          <NavigationMenuList className="gap-1">
+            {pageLinks.map((link) => (
               <NavigationMenuItem key={link.href}>
-                <NavigationMenuLink asChild>
+                <NavigationMenuLink
+                  asChild
+                  active={isActive(link.href)}
+                  className={linkClassName}
+                >
                   <Link href={link.href}>{link.label}</Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
@@ -106,7 +162,11 @@ const GeneralNavComponent = () => {
             {userDetails &&
               accountNav.headerLinks.map((link) => (
                 <NavigationMenuItem key={link.href}>
-                  <NavigationMenuLink asChild>
+                  <NavigationMenuLink
+                    asChild
+                    active={isActive(link.href)}
+                    className={linkClassName}
+                  >
                     <Link href={link.href}>{link.label}</Link>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -114,11 +174,24 @@ const GeneralNavComponent = () => {
           </NavigationMenuList>
         </NavigationMenu>
 
+        {!userDetails && (
+          <div className="hidden md:flex flex-row items-center gap-1">
+            <Link href={ROUTES.LOGIN.href} className={linkClassName}>
+              {ROUTES.LOGIN.label}
+            </Link>
+            <Button
+              asChild
+              className="h-10 rounded-full bg-white px-5 text-secondary-950 shadow-[0_6px_18px_-8px_rgba(255,255,255,0.6)] hover:bg-white/90"
+            >
+              <Link href={ROUTES.SIGNUP.href}>Sign up</Link>
+            </Button>
+          </div>
+        )}
+
         {userDetails && (
           <div className="hidden md:flex flex-row items-center gap-3">
             <Button
-              variant={"secondary"}
-              className="text-white"
+              className="h-10 rounded-full bg-white/15 px-5 text-white ring-1 ring-white/25 hover:bg-white/25"
               onClick={() => router.push(accountNav.cta.href)}
             >
               {accountNav.cta.label}
@@ -196,10 +269,7 @@ const GeneralNavComponent = () => {
                 {userDetails ? (
                   <div className="flex items-center gap-3">
                     <Avatar className="size-10">
-                      <AvatarImage
-                        src={userDetails.avatar}
-                        alt={displayName}
-                      />
+                      <AvatarImage src={userDetails.avatar} alt={displayName} />
                       <AvatarFallback className="bg-secondary text-white text-xs font-semibold">
                         {initials}
                       </AvatarFallback>
@@ -294,8 +364,8 @@ const GeneralNavComponent = () => {
             </div>
           </SheetContent>
         </Sheet>
-      </SectionContainer>
-    </div>
+      </div>
+    </header>
   );
 };
 

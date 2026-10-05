@@ -1,16 +1,14 @@
 "use client";
 
+import BrandLoader from "@/components/ui/brand-loader";
 import { resolveLandingRoute } from "@/lib/auth-landing";
 import useUserStore from "@/stores/user-store";
 import { ROUTES } from "@/lib/variables";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
 
-const Spinner = () => (
-  <div className="flex items-center justify-center h-screen w-full">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground" />
-  </div>
-);
+// The sign-in pages sit on the night sky, so their wait does too.
+const Spinner = () => <BrandLoader fullScreen />;
 
 const RedirectWatcher = () => {
   const userDetails = useUserStore((state) => state.userDetails);
