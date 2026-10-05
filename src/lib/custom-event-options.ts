@@ -6,7 +6,7 @@ const CUSTOM_OPTIONS_UPDATED = "turnup:custom-options-updated";
 
 const canUseStorage = () => typeof window !== "undefined";
 
-const readList = <T,>(key: string): T[] => {
+const readList = <T>(key: string): T[] => {
   if (!canUseStorage()) return [];
   try {
     const raw = window.localStorage.getItem(key);
@@ -18,7 +18,7 @@ const readList = <T,>(key: string): T[] => {
   }
 };
 
-const writeList = <T,>(key: string, items: T[]) => {
+const writeList = <T>(key: string, items: T[]) => {
   if (!canUseStorage()) return;
   window.localStorage.setItem(key, JSON.stringify(items));
   window.dispatchEvent(new CustomEvent(CUSTOM_OPTIONS_UPDATED));
@@ -46,7 +46,8 @@ export const saveCustomCategory = (name: string) => {
   return nextCategory;
 };
 
-export const getCustomVenues = () => readList<IVenueDetailsType>(CUSTOM_VENUES_KEY);
+export const getCustomVenues = () =>
+  readList<IVenueDetailsType>(CUSTOM_VENUES_KEY);
 
 export const saveCustomVenue = (name: string) => {
   const trimmedName = name.trim();

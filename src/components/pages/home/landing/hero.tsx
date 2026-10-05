@@ -263,18 +263,7 @@ const LandingHero = () => {
             </Button>
           </div>
 
-          {/* The app is the main way in, so the hero points to it. */}
-          <a
-            href="#get-the-app"
-            className="group -mt-1 inline-flex items-center gap-3 text-sm text-white/60 transition-colors hover:text-white"
-          >
-            <span className="flex items-center gap-1.5 text-white/80">
-              <AppleIcon className="size-4" />
-              <GooglePlayIcon className="size-4" />
-            </span>
-            Best on the Turnupz app for iPhone and Android
-            <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
-          </a>
+       
         </div>
 
         {/* The fan of tickets, in real 3D: the stage leans toward the pointer and each

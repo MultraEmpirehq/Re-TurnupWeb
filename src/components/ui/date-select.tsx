@@ -73,7 +73,7 @@ const DateSelect: React.FC<ICalendarSelectProps> = ({
             disabled={disabled}
             data-empty={!date}
             className={cn(
-              "data-[empty=true]:text-muted-foreground w-full justify-start text-left font-normal",
+              "data-[empty=true]:text-muted-foreground/55 w-full justify-start text-left font-normal",
               inputClassName,
             )}
           >

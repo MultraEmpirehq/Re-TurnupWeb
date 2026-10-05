@@ -9,6 +9,7 @@ import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
 import { Lock, LogOut } from "lucide-react";
 import Image from "next/image";
+import useSignOut from "@/hooks/use-sign-out";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { memo, useMemo, useRef } from "react";
@@ -24,7 +25,7 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
   const pathname = usePathname();
   const router = useRouter();
   const userDetails = useUserStore((state) => state.userDetails);
-  const clearStore = useUserStore((state) => state.clearStore);
+  const handleLogout = useSignOut();
   const navRef = useRef<HTMLElement>(null);
   const fade = useScrollFade(navRef);
   const { isApproved, isChecking } = useVendorVerificationStatus();
@@ -49,19 +50,14 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
     [displayName],
   );
 
-  const handleLogout = () => {
-    clearStore();
-    router.push(ROUTES.HOME.href);
-  };
-
   return (
     <aside
       className={cn(
-        "flex w-[248px] shrink-0 flex-col gap-1 border-r border-border bg-white px-4 py-4",
+        "flex w-[248px] shrink-0 flex-col gap-1 border-r border-border bg-white px-4 pb-4",
         className,
       )}
     >
-      <div className="flex items-center gap-3 px-1 pt-0.5 pb-4">
+      <div className="-mx-4 mb-3 flex h-[70px] shrink-0 items-center gap-3 border-b border-border/60 px-5">
         <Link
           href={ROUTES.DASHBOARD.href}
           className="flex h-10 items-center rounded-xl bg-linear-to-r from-secondary to-primary px-3"

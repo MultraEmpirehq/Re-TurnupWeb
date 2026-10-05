@@ -1,6 +1,6 @@
 "use client";
 
-import { putData } from "@/api";
+import { deleteData, patchData, postData, putData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,17 @@ import Link from "next/link";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { uploadAttachment, uploadAttachments } from "@/api/attachments";
+import TimezoneSelect from "@/components/ui/timezone-select";
+import {
+  DEFAULT_EVENT_TIMEZONE,
+  instantToWallTimeInZone,
+  wallTimeInZoneToInstant,
+} from "@/lib/event-time";
+import TicketSaleRulesFields, {
+  saleRulesError,
+  saleRulesPayload,
+  TTicketSaleRules,
+} from "./create/ticket-sale-rules";
 
 const toDatetimeInputValue = (date: Date | string) => {
   const nextDate = new Date(date);
@@ -108,6 +119,8 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     description: "",
     totalTickets: "0",
   });
+  // Dates in this form are held on the event's clock and converted on save.
+  const [timezone, setTimezone] = useState(DEFAULT_EVENT_TIMEZONE);
   const [saleMethod, setSaleMethod] = useState("");
   const [ticketUrl, setTicketUrl] = useState("");
   const [activities, setActivities] = useState<IEventActivityDetails[]>([]);
@@ -135,7 +148,9 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
 
     setFormValues({
       name: data.name ?? "",
-      date: toDatetimeInputValue(data.date),
+      date: toDatetimeInputValue(
+        instantToWallTimeInZone(data.date, data.timezone),
+      ),
       venueName: data.venue?.name ?? "",
       venueAddress: data.venue?.address ?? "",
       description: data.description ?? "",
@@ -143,7 +158,13 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     });
     setSaleMethod(data.saleMethod ?? "");
     setTicketUrl(data.ticketUrl ?? "");
-    setActivities(data.activities ?? []);
+    setTimezone(data.timezone || DEFAULT_EVENT_TIMEZONE);
+    setActivities(
+      (data.activities ?? []).map((activity) => ({
+        ...activity,
+        date: instantToWallTimeInZone(activity.date, data.timezone),
+      })),
+    );
     setBannerImage(data.image ?? "");
     setBannerImageFile(null);
     setMediaImages(data.medias ?? []);
@@ -221,7 +242,9 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
   const handleChange =
     (field: keyof typeof formValues) =>
     (
-      event: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>,
+      event:
+        | React.ChangeEvent<HTMLInputElement>
+        | React.ChangeEvent<HTMLTextAreaElement>,
     ) => {
       setFormValues((current) => ({
         ...current,
@@ -289,6 +312,14 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
           [field]: value,
         };
       }),
+    );
+  };
+
+  const handleTicketRulesChange = (index: number, patch: TTicketSaleRules) => {
+    setEventTickets((current) =>
+      current.map((ticket, ticketIndex) =>
+        ticketIndex === index ? { ...ticket, ...patch } : ticket,
+      ),
     );
   };
 
@@ -477,9 +508,13 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
   };
 
   const handleSave = async () => {
-    const existingBlogPostIds = new Set(data.blogPosts?.map((post) => post.id) ?? []);
+    const existingBlogPostIds = new Set(
+      data.blogPosts?.map((post) => post.id) ?? [],
+    );
     const blogImageFiles = blogPosts.flatMap((post) =>
-      (post.images ?? []).filter((image): image is File => image instanceof File),
+      (post.images ?? []).filter(
+        (image): image is File => image instanceof File,
+      ),
     );
     const cleanedBlogPosts = blogPosts
       .map((post) => {
@@ -540,24 +575,81 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
       );
 
     if (!isDevelopmentEdit) {
+      const ticketRulesProblem = cleanedEventTickets
+        .map((ticket) => saleRulesError(ticket))
+        .find(Boolean);
+      if (ticketRulesProblem) {
+        toast.error(ticketRulesProblem);
+        return;
+      }
       try {
+        // The event update carries the event's own fields. Tickets, passes and
+        // existing blog posts each have their own endpoint, because on a live
+        // event the update only ever adds them.
         const formData = new FormData();
-        formData.append("status", data.status === "draft" ? "draft" : "published");
-        formData.append("eventName", formValues.name);
-        formData.append("eventDate", new Date(formValues.date).toISOString());
-        formData.append("description", formValues.description);
-        formData.append("saleMethod", saleMethod);
-        formData.append("ticketUrl", ticketUrl.trim());
-        formData.append("eventTickets", JSON.stringify(cleanedEventTickets));
-        formData.append("ticketCategories", JSON.stringify(cleanedEventTickets));
-        formData.append("passAssignments", JSON.stringify(cleanedPassAssignments));
-        formData.append("accessPasses", JSON.stringify(cleanedPassAssignments));
-        formData.append("activities", JSON.stringify(activities));
-        formData.append("blogPosts", JSON.stringify(cleanedBlogPosts));
         formData.append(
-          "sponsors",
-          JSON.stringify(sponsors.map((sponsor) => sponsor.trim()).filter(Boolean)),
+          "status",
+          data.status === "draft" ? "draft" : "published",
         );
+        formData.append("eventName", formValues.name);
+        formData.append(
+          "eventDate",
+          wallTimeInZoneToInstant(
+            new Date(formValues.date),
+            timezone,
+          ).toISOString(),
+        );
+        formData.append("timezone", timezone);
+        formData.append("description", formValues.description);
+        if (saleMethod) formData.append("saleMethod", saleMethod);
+        if (saleMethod === "external_link" && ticketUrl.trim()) {
+          formData.append("ticketUrl", ticketUrl.trim());
+        }
+        formData.append(
+          "activities",
+          JSON.stringify(
+            activities
+              .filter((activity) => activity.name?.trim() && activity.date)
+              .map((activity) => ({
+                activityName: activity.name.trim(),
+                activityDescription: activity.description?.trim() || undefined,
+                activityDate: wallTimeInZoneToInstant(
+                  new Date(activity.date),
+                  timezone,
+                ).toISOString(),
+              })),
+          ),
+        );
+
+        // Sponsors and blog posts already on the event stay; only new ones are sent.
+        const existingSponsorCount = data.sponsors?.length ?? 0;
+        const newSponsors = sponsors
+          .map((sponsor, index) => ({ name: sponsor.trim(), index }))
+          .filter(
+            (sponsor) => sponsor.index >= existingSponsorCount && sponsor.name,
+          );
+        if (newSponsors.length) {
+          formData.append(
+            "sponsors",
+            JSON.stringify(newSponsors.map(({ name }) => ({ name }))),
+          );
+        }
+        const newBlogPosts = cleanedBlogPosts.filter(
+          (post) => !existingBlogPostIds.has(post.id),
+        );
+        if (newBlogPosts.length) {
+          formData.append(
+            "blogPosts",
+            JSON.stringify(
+              newBlogPosts.map(({ title, excerpt, body }) => ({
+                title,
+                excerpt: excerpt || undefined,
+                body,
+              })),
+            ),
+          );
+        }
+
         // Files go to the attachment endpoint first; the event only carries ids.
         if (bannerImageFile) {
           const banner = await uploadAttachment(bannerImageFile, "EVENT_COVER");
@@ -573,18 +665,23 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
             JSON.stringify(medias.map((media) => media.id)),
           );
         }
-        const sponsorImageList = Object.values(sponsorImageFiles);
-        if (sponsorImageList.length) {
-          const sponsorImages = await uploadAttachments(
-            sponsorImageList,
+        const newSponsorImages = newSponsors
+          .map((sponsor) => sponsorImageFiles[sponsor.index])
+          .filter((file): file is File => !!file);
+        if (
+          newSponsorImages.length &&
+          newSponsorImages.length === newSponsors.length
+        ) {
+          const uploaded = await uploadAttachments(
+            newSponsorImages,
             "EVENT_SPONSOR",
           );
           formData.append(
             "sponsorImageIds",
-            JSON.stringify(sponsorImages.map((image) => image.id)),
+            JSON.stringify(uploaded.map((image) => image.id)),
           );
         }
-        if (blogImageFiles.length) {
+        if (newBlogPosts.length && blogImageFiles.length) {
           const blogImages = await uploadAttachments(
             blogImageFiles,
             "EVENT_BLOG",
@@ -595,10 +692,72 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
           );
         }
         await putData<FormData, unknown>(`/event/${id}`, formData);
+
+        await Promise.all(
+          cleanedBlogPosts
+            .filter((post) => existingBlogPostIds.has(post.id))
+            .map(({ id: postId, title, excerpt, body }) =>
+              patchData(`/event/${id}/blog-posts/${postId}`, {
+                title,
+                excerpt: excerpt || undefined,
+                body,
+              }),
+            ),
+        );
+
+        const keptTicketIds = new Set(
+          cleanedEventTickets.map((ticket) => ticket.id).filter(Boolean),
+        );
+        for (const ticket of cleanedEventTickets) {
+          await postData(`/event/${id}/tickets`, {
+            ...(ticket.id ? { id: ticket.id } : {}),
+            ticketName: ticket.ticketName,
+            ticketPrice: ticket.ticketPrice,
+            ticketQuantity: ticket.ticketQuantity,
+            visibility: ticket.visibility,
+            actionType: ticket.actionType,
+            transferable: ticket.transferable,
+            ...(ticket.visibility === "private"
+              ? { privateAccessCode: ticket.privateAccessCode }
+              : {}),
+            ...saleRulesPayload(ticket),
+          });
+        }
+        for (const removed of (data.eventTickets ?? []).filter(
+          (ticket) => ticket.id && !keptTicketIds.has(ticket.id),
+        )) {
+          await deleteData(`/event/${id}/tickets/${removed.id}`);
+        }
+
+        const originalPasses = data.passAssignments ?? data.accessPasses ?? [];
+        const keptPassIds = new Set(
+          cleanedPassAssignments.map((pass) => pass.id).filter(Boolean),
+        );
+        for (const pass of cleanedPassAssignments) {
+          await postData(`/event/${id}/passes`, {
+            ...(pass.id ? { id: pass.id } : {}),
+            passName: pass.passName,
+            quantity: pass.quantity,
+            assigneeEmails: pass.assigneeEmails,
+            transferable: pass.transferable,
+          });
+        }
+        for (const removed of originalPasses.filter(
+          (pass) => pass.id && !keptPassIds.has(pass.id),
+        )) {
+          await deleteData(`/event/${id}/passes/${removed.id}`);
+        }
+
         queryClient.invalidateQueries({ queryKey: ["event", id] });
         queryClient.invalidateQueries({ queryKey: ["events"] });
-        toast.success("Event updated successfully");
+        toast.success(
+          data.status === "pending_review"
+            ? "Saved. It's still waiting for an admin to approve it."
+            : "Event updated successfully",
+        );
       } catch (error) {
+        // Part of the save may have landed; reload so the form shows what did.
+        queryClient.invalidateQueries({ queryKey: ["event", id] });
         toast.error(
           constructErrorMessage(
             error as TApiErrorResponseType,
@@ -625,9 +784,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
       passAssignments: cleanedPassAssignments,
       accessPasses: cleanedPassAssignments,
       totalTickets:
-        totalConfiguredTickets ||
-        Number(formValues.totalTickets) ||
-        0,
+        totalConfiguredTickets || Number(formValues.totalTickets) || 0,
       activities: activities
         .map((activity) => ({
           ...activity,
@@ -658,17 +815,18 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
       passAssignments: cleanedPassAssignments,
       accessPasses: cleanedPassAssignments,
       totalTickets:
-        totalConfiguredTickets ||
-        Number(formValues.totalTickets) ||
-        0,
+        totalConfiguredTickets || Number(formValues.totalTickets) || 0,
     };
     queryClient.setQueryData(["event", id], updatedEvent);
     queryClient.invalidateQueries({ queryKey: ["events"] });
 
     ensureEventChatGroup(updatedEvent, userDetails);
     newlyPublishedBlogPosts.forEach((post) => {
-      const postImages = (post.images?.length ? post.images : [post.image || ""])
-        .filter((image): image is string => typeof image === "string" && !!image);
+      const postImages = (
+        post.images?.length ? post.images : [post.image || ""]
+      ).filter(
+        (image): image is string => typeof image === "string" && !!image,
+      );
       appendEventChatMessage({
         eventId: id,
         sender: {
@@ -797,6 +955,11 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                   className="h-12 rounded-2xl border-secondary-200"
                 />
               </div>
+              <TimezoneSelect
+                value={timezone}
+                onChange={setTimezone}
+                inputClassName="h-12 rounded-2xl"
+              />
               <div className="space-y-2">
                 <label className="text-sm font-medium text-secondary-700">
                   Ticket Count
@@ -883,7 +1046,9 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                         className="w-full rounded-xl border-secondary-200 bg-white"
                         onClick={() =>
                           setMediaImages((current) =>
-                            current.filter((_, imageIndex) => imageIndex !== index),
+                            current.filter(
+                              (_, imageIndex) => imageIndex !== index,
+                            ),
                           )
                         }
                       >
@@ -903,7 +1068,8 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                     Tickets
                   </p>
                   <p className="text-sm text-secondary-500">
-                    Display, add, edit, or delete ticket categories shown in the event preview.
+                    Display, add, edit, or delete ticket categories shown in the
+                    event preview.
                   </p>
                 </div>
                 <Button
@@ -911,7 +1077,10 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                   variant="outline"
                   className="rounded-xl border-secondary-200"
                   onClick={() =>
-                    setEventTickets((current) => [...current, createEmptyTicket()])
+                    setEventTickets((current) => [
+                      ...current,
+                      createEmptyTicket(),
+                    ])
                   }
                 >
                   <Plus className="size-4" />
@@ -953,7 +1122,8 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
 
                 {eventTickets.length === 0 && (
                   <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
-                    No ticket categories yet. Add one to display tickets in the preview.
+                    No ticket categories yet. Add one to display tickets in the
+                    preview.
                   </div>
                 )}
                 {eventTickets.map((ticket, index) => (
@@ -998,14 +1168,14 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                         <label className="text-sm font-medium text-secondary-700">
                           Price
                         </label>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={
-                              typeof ticket.ticketPrice === "number"
-                                ? ticket.ticketPrice
-                                : ticket.ticketPrice?.amount ?? 0
-                            }
+                        <Input
+                          type="number"
+                          min="0"
+                          value={
+                            typeof ticket.ticketPrice === "number"
+                              ? ticket.ticketPrice
+                              : (ticket.ticketPrice?.amount ?? 0)
+                          }
                           onChange={(event) =>
                             handleTicketChange(
                               index,
@@ -1088,6 +1258,14 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                           Allow attendees to transfer this ticket category
                         </span>
                       </label>
+                      <TicketSaleRulesFields
+                        className="rounded-xl border border-secondary-200 bg-white p-3 md:col-span-2 xl:col-span-5"
+                        value={ticket}
+                        timezone={timezone}
+                        onChange={(patch) =>
+                          handleTicketRulesChange(index, patch)
+                        }
+                      />
                       {ticket.visibility === "private" && (
                         <div className="space-y-2 rounded-xl border border-dashed border-secondary-200 bg-white p-3 md:col-span-2 xl:col-span-5">
                           <p className="text-sm font-medium text-secondary-700">
@@ -1120,11 +1298,12 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                     Access Passes
                   </p>
                   <p className="text-sm text-secondary-500">
-                    View saved passes, add more, and control pass transfer settings.
+                    View saved passes, add more, and control pass transfer
+                    settings.
                   </p>
                   <p className="mt-1 text-xs text-secondary-400">
-                    Invite emails are sent from Turnupz after the event is published.
-                    Draft saves will not email assignees.
+                    Invite emails are sent from Turnupz after the event is
+                    published. Draft saves will not email assignees.
                   </p>
                 </div>
                 <Button
@@ -1132,7 +1311,10 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                   variant="outline"
                   className="rounded-xl border-secondary-200"
                   onClick={() =>
-                    setPassAssignments((current) => [...current, createEmptyPass()])
+                    setPassAssignments((current) => [
+                      ...current,
+                      createEmptyPass(),
+                    ])
                   }
                 >
                   <Plus className="size-4" />
@@ -1143,7 +1325,8 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
               <div className="space-y-4">
                 {passAssignments.length === 0 && (
                   <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
-                    No access passes yet. Add media, sponsor, worker, or guest passes.
+                    No access passes yet. Add media, sponsor, worker, or guest
+                    passes.
                   </div>
                 )}
                 {passAssignments.map((pass, index) => (
@@ -1173,7 +1356,11 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                         <Input
                           value={pass.passName}
                           onChange={(event) =>
-                            handlePassChange(index, "passName", event.target.value)
+                            handlePassChange(
+                              index,
+                              "passName",
+                              event.target.value,
+                            )
                           }
                           placeholder="Media pass"
                           className="h-11 rounded-xl border-secondary-200 bg-white"
@@ -1188,7 +1375,11 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                           min="0"
                           value={pass.quantity}
                           onChange={(event) =>
-                            handlePassChange(index, "quantity", event.target.value)
+                            handlePassChange(
+                              index,
+                              "quantity",
+                              event.target.value,
+                            )
                           }
                           className="h-11 rounded-xl border-secondary-200 bg-white"
                         />
@@ -1236,8 +1427,8 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                           </p>
                         ) : (
                           <p className="text-xs text-secondary-400">
-                            New assignees will receive pass emails when this event is
-                            published.
+                            New assignees will receive pass emails when this
+                            event is published.
                           </p>
                         )}
                       </div>
@@ -1276,7 +1467,10 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                   variant="outline"
                   className="rounded-xl border-secondary-200"
                   onClick={() =>
-                    setActivities((current) => [...current, createEmptyActivity()])
+                    setActivities((current) => [
+                      ...current,
+                      createEmptyActivity(),
+                    ])
                   }
                 >
                   <Plus className="size-4" />
@@ -1380,7 +1574,10 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                   variant="outline"
                   className="rounded-xl border-secondary-200"
                   onClick={() =>
-                    setBlogPosts((current) => [...current, createEmptyBlogPost()])
+                    setBlogPosts((current) => [
+                      ...current,
+                      createEmptyBlogPost(),
+                    ])
                   }
                 >
                   <Plus className="size-4" />
@@ -1421,7 +1618,11 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                         <Input
                           value={post.title}
                           onChange={(event) =>
-                            handleBlogPostChange(index, "title", event.target.value)
+                            handleBlogPostChange(
+                              index,
+                              "title",
+                              event.target.value,
+                            )
                           }
                           className="h-11 rounded-xl border-secondary-200 bg-white"
                         />
@@ -1433,7 +1634,11 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                         <Input
                           value={post.excerpt ?? ""}
                           onChange={(event) =>
-                            handleBlogPostChange(index, "excerpt", event.target.value)
+                            handleBlogPostChange(
+                              index,
+                              "excerpt",
+                              event.target.value,
+                            )
                           }
                           className="h-11 rounded-xl border-secondary-200 bg-white"
                         />
@@ -1445,7 +1650,11 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                         <Textarea
                           value={post.body}
                           onChange={(event) =>
-                            handleBlogPostChange(index, "body", event.target.value)
+                            handleBlogPostChange(
+                              index,
+                              "body",
+                              event.target.value,
+                            )
                           }
                           className="min-h-44 rounded-[1rem] border-secondary-200 bg-white px-4 py-3"
                         />
@@ -1457,13 +1666,19 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                         <select
                           value=""
                           onChange={(event) =>
-                            handleBlogExistingImageAdd(index, event.target.value)
+                            handleBlogExistingImageAdd(
+                              index,
+                              event.target.value,
+                            )
                           }
                           className="h-11 w-full rounded-xl border border-secondary-200 bg-white px-3 text-sm"
                         >
                           <option value="">Choose an image</option>
                           {availableImageOptions.map((image, imageIndex) => (
-                            <option key={`${image}-${imageIndex}`} value={image}>
+                            <option
+                              key={`${image}-${imageIndex}`}
+                              value={image}
+                            >
                               Image {imageIndex + 1}
                             </option>
                           ))}
@@ -1496,7 +1711,9 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                             >
                               <div
                                 className="h-36 bg-cover bg-center"
-                                style={{ backgroundImage: `url(${previewUrl})` }}
+                                style={{
+                                  backgroundImage: `url(${previewUrl})`,
+                                }}
                               />
                               <div className="flex items-center justify-between gap-2 p-3">
                                 <span className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary-400">
@@ -1575,7 +1792,10 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                         accept="image/*"
                         className="h-11 rounded-xl border-secondary-200 bg-white"
                         onChange={(event) => {
-                          handleSponsorImageUpload(index, event.target.files?.[0]);
+                          handleSponsorImageUpload(
+                            index,
+                            event.target.files?.[0],
+                          );
                           event.currentTarget.value = "";
                         }}
                       />

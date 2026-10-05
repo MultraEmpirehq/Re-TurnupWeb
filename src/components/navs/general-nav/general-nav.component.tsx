@@ -3,14 +3,6 @@ import { LogoWhiteSVG } from "@/assets/svg";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   NavigationMenu,
   NavigationMenuItem,
   NavigationMenuLink,
@@ -29,7 +21,7 @@ import { getRoutesByType } from "@/lib/functions";
 import { ROUTE_TYPE } from "@/lib/types";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
-import { ChevronDown, LogOut, Menu } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -43,6 +35,11 @@ import React, {
   useState,
 } from "react";
 import { getAccountNav } from "./account-nav";
+import AccountMenu, {
+  accountDisplayName,
+  accountInitials,
+} from "../account-menu";
+import useSignOut from "@/hooks/use-sign-out";
 
 const navLinks = getRoutesByType(ROUTE_TYPE.NAV_ROUTE);
 
@@ -51,7 +48,6 @@ const linkClassName =
 
 const GeneralNavComponent = () => {
   const userDetails = useUserStore((state) => state.userDetails);
-  const clearStore = useUserStore((state) => state.clearStore);
   const router = useRouter();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -80,42 +76,33 @@ const GeneralNavComponent = () => {
     [userDetails?.role],
   );
 
+  // Once signed in, the header keeps only what they come back for: Explore, plus
+  // their own links. Sales pages and Contact move to the menu and footer.
   const routes = useMemo(() => {
     if (!userDetails) return navLinks;
     return navLinks.filter(
-      (route) => !route.shouldShowIn.includes(ROUTE_TYPE.HIDE_ON_LOGIN),
+      (route) =>
+        !route.shouldShowIn.includes(ROUTE_TYPE.HIDE_ON_LOGIN) &&
+        !route.shouldShowIn.includes(ROUTE_TYPE.SIGNED_OUT_ONLY),
     );
   }, [userDetails]);
   // Login and sign up read as buttons on the right, not as more page links.
   const pageLinks = useMemo(
     () =>
-      navLinks.filter(
+      routes.filter(
         (route) => !route.shouldShowIn.includes(ROUTE_TYPE.HIDE_ON_LOGIN),
       ),
-    [],
+    [routes],
   );
 
-  const initials = useMemo(() => {
-    const first = userDetails?.firstName?.[0] ?? "";
-    const last = userDetails?.lastName?.[0] ?? "";
-    if (first || last) return `${first}${last}`.toUpperCase();
-    return userDetails?.username?.[0]?.toUpperCase() ?? "U";
-  }, [userDetails]);
+  const initials = accountInitials(userDetails);
+  const displayName = accountDisplayName(userDetails);
 
-  const displayName = useMemo(() => {
-    if (userDetails?.firstName) {
-      return userDetails.lastName
-        ? `${userDetails.firstName} ${userDetails.lastName}`
-        : userDetails.firstName;
-    }
-    return userDetails?.username ?? "User";
-  }, [userDetails]);
-
+  const signOut = useSignOut();
   const handleLogout = useCallback(() => {
-    clearStore();
-    router.push(ROUTES.HOME.href);
     setMobileOpen(false);
-  }, [clearStore, router]);
+    signOut();
+  }, [signOut]);
 
   const handleMobileNavigate = useCallback(
     (href: string) => {
@@ -197,59 +184,7 @@ const GeneralNavComponent = () => {
               {accountNav.cta.label}
             </Button>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 transition-colors hover:bg-white/10 cursor-pointer outline-none">
-                  <Avatar className="size-8 border-2 border-white/30">
-                    <AvatarImage src={userDetails.avatar} alt={displayName} />
-                    <AvatarFallback className="bg-white/20 text-white text-xs font-semibold">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-white text-sm font-medium max-w-[120px] truncate hidden sm:inline">
-                    {displayName}
-                  </span>
-                  <ChevronDown className="size-4 text-white/70" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col gap-1">
-                    <p className="text-sm font-semibold">{displayName}</p>
-                    {userDetails.email && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {userDetails.email}
-                      </p>
-                    )}
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {accountNav.menuGroups.map((group, index) => (
-                  <Fragment key={index}>
-                    {index > 0 && <DropdownMenuSeparator />}
-                    {group.map((link) => (
-                      <DropdownMenuItem
-                        key={link.href}
-                        onClick={() => router.push(link.href)}
-                        className="cursor-pointer"
-                      >
-                        <link.icon className="size-4" />
-                        {link.label}
-                      </DropdownMenuItem>
-                    ))}
-                  </Fragment>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  variant="destructive"
-                  className="cursor-pointer"
-                >
-                  <LogOut className="size-4" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <AccountMenu variant="site" />
           </div>
         )}
 

@@ -542,7 +542,13 @@ const PreviewPublishForm: React.FC<{
             loading={isSubmitting || isSaving}
             disabled={isSubmitting || isSaving}
           >
-            {isSaving ? "Publishing..." : "Publish Event"}
+            {isAdmin
+              ? isSaving
+                ? "Publishing..."
+                : "Publish Event"
+              : isSaving
+                ? "Submitting..."
+                : "Submit for review"}
           </Button>
         )}
       </div>

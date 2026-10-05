@@ -56,5 +56,6 @@ export const addEventNotification = (
 export const subscribeToEventNotifications = (callback: () => void) => {
   if (!canUseStorage()) return () => {};
   window.addEventListener(EVENT_NOTIFICATIONS_UPDATED, callback);
-  return () => window.removeEventListener(EVENT_NOTIFICATIONS_UPDATED, callback);
+  return () =>
+    window.removeEventListener(EVENT_NOTIFICATIONS_UPDATED, callback);
 };

@@ -26,6 +26,7 @@ export interface IAccessPassType {
 
 export interface ITicketFormValues {
   saleMethod: string;
+  eventTimezone?: string;
   ticketUrl?: string;
   eventTickets?: ITicketType[];
   passAssignments?: IAccessPassType[];
@@ -47,7 +48,12 @@ const ticketItemSchema = Joi.object({
   actionType: Joi.string().valid("paid", "register").required(),
   transferable: Joi.boolean().optional(),
   privateAccessCode: Joi.string().allow("").optional(),
-});
+  salesStartAt: Joi.string().allow(null, "").optional(),
+  salesEndAt: Joi.string().allow(null, "").optional(),
+  maxPerOrder: Joi.number().integer().min(1).allow(null).optional(),
+  // A draft loaded back also carries display-only fields (id, soldCount, isOnSale);
+  // the request is built from the fields above, so let those through.
+}).unknown(true);
 
 const passItemSchema = Joi.object({
   passName: Joi.string().required().messages({
@@ -58,14 +64,20 @@ const passItemSchema = Joi.object({
     "number.min": "Pass quantity must be at least 1",
     "any.required": "Pass quantity is required",
   }),
-  assigneeEmails: Joi.array().items(Joi.string().email({ tlds: false })).required(),
+  assigneeEmails: Joi.array()
+    .items(Joi.string().email({ tlds: false }))
+    .required(),
   transferable: Joi.boolean().optional(),
 });
 
 export const ticketFormSchema = Joi.object({
   saleMethod: Joi.string()
     .required()
-    .valid(ESaleMethods.SELL_ON_TURNUP, ESaleMethods.REGISTER, ESaleMethods.EXTERNAL_LINK)
+    .valid(
+      ESaleMethods.SELL_ON_TURNUP,
+      ESaleMethods.REGISTER,
+      ESaleMethods.EXTERNAL_LINK,
+    )
     .messages({
       "any.only": "Invalid sale method",
       "any.required": "Sale method is required",
@@ -129,10 +141,12 @@ const PassAssignmentsInput: React.FC<{
   return (
     <div className="space-y-4 rounded-2xl border border-secondary-100 bg-secondary-50 p-5">
       <div>
-        <p className="text-sm font-semibold text-secondary-950">Access Passes</p>
+        <p className="text-sm font-semibold text-secondary-950">
+          Access Passes
+        </p>
         <p className="mt-1 text-xs leading-5 text-secondary-500">
-          Create media, sponsor, or worker passes and assign them by email so recipients
-          can receive them through their Turnupz user account.
+          Create media, sponsor, or worker passes and assign them by email so
+          recipients can receive them through their Turnupz user account.
         </p>
       </div>
 
@@ -144,7 +158,9 @@ const PassAssignmentsInput: React.FC<{
               className="flex items-start justify-between gap-4 rounded-xl bg-white p-4"
             >
               <div className="space-y-1">
-                <p className="text-sm font-semibold text-secondary-950">{pass.passName}</p>
+                <p className="text-sm font-semibold text-secondary-950">
+                  {pass.passName}
+                </p>
                 <p className="text-xs text-secondary-500">
                   {pass.quantity} passes Â· {pass.assigneeEmails.length} email
                   {pass.assigneeEmails.length === 1 ? "" : "s"}
@@ -163,7 +179,11 @@ const PassAssignmentsInput: React.FC<{
                 variant="ghost"
                 size="sm"
                 className="text-red-500"
-                onClick={() => setPasses(passes.filter((_, itemIndex) => itemIndex !== index))}
+                onClick={() =>
+                  setPasses(
+                    passes.filter((_, itemIndex) => itemIndex !== index),
+                  )
+                }
               >
                 <TrashIcon className="size-4" />
               </Button>
@@ -177,14 +197,18 @@ const PassAssignmentsInput: React.FC<{
           label="Pass Type"
           placeholder="Media pass"
           value={draft.passName}
-          onChange={(e) => setDraft((current) => ({ ...current, passName: e.target.value }))}
+          onChange={(e) =>
+            setDraft((current) => ({ ...current, passName: e.target.value }))
+          }
         />
         <InputField
           label="Quantity"
           type="number"
           placeholder="10"
           value={draft.quantity}
-          onChange={(e) => setDraft((current) => ({ ...current, quantity: e.target.value }))}
+          onChange={(e) =>
+            setDraft((current) => ({ ...current, quantity: e.target.value }))
+          }
         />
         <TextareaField
           label="Assigned Emails"
@@ -192,7 +216,10 @@ const PassAssignmentsInput: React.FC<{
           placeholder="one email per line or separated by commas"
           value={draft.assigneeEmails}
           onChange={(e) =>
-            setDraft((current) => ({ ...current, assigneeEmails: e.target.value }))
+            setDraft((current) => ({
+              ...current,
+              assigneeEmails: e.target.value,
+            }))
           }
         />
         <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-white px-3 text-sm text-secondary-700 md:col-span-2">
@@ -236,9 +263,13 @@ const TicketForm: React.FC<{
   const saleMethod = watch("saleMethod");
   const eventCountry = watch("eventCountry");
   const eventCountryCode = watch("eventCountryCode");
+  const eventTimezone = watch("eventTimezone");
   const watchedEventTickets = watch("eventTickets");
   const watchedPassAssignments = watch("passAssignments");
-  const eventTickets = useMemo(() => watchedEventTickets ?? [], [watchedEventTickets]);
+  const eventTickets = useMemo(
+    () => watchedEventTickets ?? [],
+    [watchedEventTickets],
+  );
   const passAssignments = useMemo(
     () => watchedPassAssignments ?? [],
     [watchedPassAssignments],
@@ -381,6 +412,7 @@ const TicketForm: React.FC<{
               name="eventTickets"
               render={({ field, fieldState }) => (
                 <TicketInput
+                  timezone={eventTimezone}
                   tickets={field.value ?? []}
                   setTickets={(tickets) => {
                     field.onChange(tickets);
@@ -425,6 +457,7 @@ const TicketForm: React.FC<{
               name="eventTickets"
               render={({ field, fieldState }) => (
                 <TicketInput
+                  timezone={eventTimezone}
                   tickets={field.value ?? []}
                   setTickets={(tickets) => {
                     field.onChange(tickets);
@@ -456,26 +489,31 @@ const TicketForm: React.FC<{
           <p className="font-semibold text-secondary-950">Ticket flow notes</p>
           <ul className="mt-3 list-disc space-y-2 pl-5">
             <li>
-              <span className="font-medium">Sell on Turnupz:</span> Create public or private
-              paid ticket categories so users can choose the available options on the event page.
+              <span className="font-medium">Sell on Turnupz:</span> Create
+              public or private paid ticket categories so users can choose the
+              available options on the event page.
             </li>
             <li>
-              <span className="font-medium">Register:</span> Create public or private
-              registration records so users can submit their details without payment.
+              <span className="font-medium">Register:</span> Create public or
+              private registration records so users can submit their details
+              without payment.
             </li>
             <li>
-              <span className="font-medium">External link:</span> Use a red preview CTA that
-              sends users outside the app to your uploaded ticketing URL.
+              <span className="font-medium">External link:</span> Use a red
+              preview CTA that sends users outside the app to your uploaded
+              ticketing URL.
             </li>
             <li>
-              <span className="font-medium">Access passes:</span> Passes add to event
-              attendance. A recipient should receive passes through a user account and
-              distribute individual passes by entering each attendee&apos;s email.
+              <span className="font-medium">Access passes:</span> Passes add to
+              event attendance. A recipient should receive passes through a user
+              account and distribute individual passes by entering each
+              attendee&apos;s email.
             </li>
             <li>
-              <span className="font-medium">Transfers:</span> Ticket transfer belongs on
-              the user side after purchase. Vendors configure transferable inventory;
-              attendees transfer owned tickets from their account.
+              <span className="font-medium">Transfers:</span> Ticket transfer
+              belongs on the user side after purchase. Vendors configure
+              transferable inventory; attendees transfer owned tickets from
+              their account.
             </li>
           </ul>
         </div>

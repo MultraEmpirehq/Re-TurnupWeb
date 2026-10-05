@@ -10,7 +10,9 @@ export type TAdminPermission =
   | "EVENTS_MODERATE"
   | "CATALOGUE_MANAGE"
   | "AUDIT_VIEW"
-  | "FILES_MANAGE";
+  | "FILES_MANAGE"
+  | "USERS_MANAGE"
+  | "SUPPORT_MANAGE";
 
 /** Every permission, in the order the admin screens list them. */
 export const ADMIN_PERMISSIONS: {
@@ -47,6 +49,16 @@ export const ADMIN_PERMISSIONS: {
     value: "FILES_MANAGE",
     label: "Manage files",
     description: "Clean up uploaded files no longer in use.",
+  },
+  {
+    value: "USERS_MANAGE",
+    label: "Suspend users",
+    description: "Suspend and reactivate attendee and vendor accounts.",
+  },
+  {
+    value: "SUPPORT_MANAGE",
+    label: "Handle inquiries",
+    description: "Read and resolve messages sent through the Contact Us form.",
   },
   {
     value: "ADMINS_MANAGE",
