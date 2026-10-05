@@ -9,8 +9,13 @@ import { Button } from "@/components/ui/button";
 import { TicketIcon, TrashIcon } from "lucide-react";
 import SelectField from "@/components/ui/select-field";
 import { AppCurrency, formatAppMoney } from "@/lib/currency";
+import TicketSaleRulesFields, {
+  describeSaleRules,
+  saleRulesError,
+  TTicketSaleRules,
+} from "./ticket-sale-rules";
 
-export interface ITicketType {
+export interface ITicketType extends TTicketSaleRules {
   ticketName: string;
   ticketPrice: number;
   ticketQuantity: number;
@@ -57,6 +62,9 @@ const schema = Joi.object({
   }),
   transferable: Joi.boolean().optional(),
   privateAccessCode: Joi.string().allow("").optional(),
+  salesStartAt: Joi.string().allow(null, "").optional(),
+  salesEndAt: Joi.string().allow(null, "").optional(),
+  maxPerOrder: Joi.number().integer().min(1).allow(null).optional(),
 });
 
 const defaultValues: ITicketType = {
@@ -67,6 +75,9 @@ const defaultValues: ITicketType = {
   actionType: "paid",
   transferable: false,
   privateAccessCode: "",
+  salesStartAt: null,
+  salesEndAt: null,
+  maxPerOrder: null,
 };
 
 interface ITicketInputProps {
@@ -76,6 +87,8 @@ interface ITicketInputProps {
   errorClassName?: string;
   mode: "paid" | "register";
   currency: AppCurrency;
+  /** The event's zone; sales times are entered and shown on its clock. */
+  timezone?: string;
 }
 
 const TicketInput: React.FC<ITicketInputProps> = ({
@@ -85,6 +98,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
   errorClassName,
   mode,
   currency,
+  timezone,
 }) => {
   const [showTicketInput, setShowTicketInput] = useState(false);
   const {
@@ -94,6 +108,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
     setFocus,
     control,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<ITicketType>({
     defaultValues: { ...defaultValues, actionType: mode },
@@ -115,8 +130,15 @@ const TicketInput: React.FC<ITicketInputProps> = ({
     [parsedTickets],
   );
 
+  const saleRules: TTicketSaleRules = {
+    salesStartAt: watch("salesStartAt"),
+    salesEndAt: watch("salesEndAt"),
+    maxPerOrder: watch("maxPerOrder"),
+  };
+
   const onSubmit = useCallback(
     (data: ITicketType) => {
+      if (saleRulesError(data)) return;
       setTickets([
         ...tickets,
         {
@@ -126,7 +148,8 @@ const TicketInput: React.FC<ITicketInputProps> = ({
           soldCount: 0,
           privateAccessCode:
             data.visibility === "private"
-              ? data.privateAccessCode || createPrivateAccessCode(data.ticketName)
+              ? data.privateAccessCode ||
+                createPrivateAccessCode(data.ticketName)
               : "",
         },
       ]);
@@ -152,11 +175,15 @@ const TicketInput: React.FC<ITicketInputProps> = ({
       <div className="flex items-center justify-between gap-4">
         <div>
           <Label htmlFor="ticketName" className="opacity-60">
-            {mode === "register" ? "Registration Categories" : "Ticket Categories"}
+            {mode === "register"
+              ? "Registration Categories"
+              : "Ticket Categories"}
           </Label>
           <p className="mt-1 text-xs text-secondary-500">
             Total event capacity from these categories:{" "}
-            <span className="font-semibold text-secondary-900">{totalCapacity}</span>
+            <span className="font-semibold text-secondary-900">
+              {totalCapacity}
+            </span>
           </p>
         </div>
       </div>
@@ -187,11 +214,17 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                     {ticket.visibility} -{" "}
                     {ticket.transferable ? "transferable" : "non-transferable"}
                   </p>
-                  {ticket.visibility === "private" && ticket.privateAccessCode && (
-                    <p className="text-[11px] text-secondary-400">
-                      Access code: {ticket.privateAccessCode}
+                  {describeSaleRules(ticket, timezone) && (
+                    <p className="text-[11px] text-secondary-500">
+                      {describeSaleRules(ticket, timezone)}
                     </p>
                   )}
+                  {ticket.visibility === "private" &&
+                    ticket.privateAccessCode && (
+                      <p className="text-[11px] text-secondary-400">
+                        Access code: {ticket.privateAccessCode}
+                      </p>
+                    )}
                 </div>
               </div>
 
@@ -213,15 +246,18 @@ const TicketInput: React.FC<ITicketInputProps> = ({
         <div className="mt-7 space-y-3">
           <div className="rounded-md bg-secondary-50 p-3 text-xs text-secondary-900">
             <p>
-              <span className="font-bold">Note:</span> Each category can be public or
-              private. Private categories are meant to be shared by link only.
+              <span className="font-bold">Note:</span> Each category can be
+              public or private. Private categories are meant to be shared by
+              link only.
             </p>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <InputField
               label={mode === "register" ? "Registration Name" : "Ticket Name"}
               className="md:col-span-2"
-              placeholder={mode === "register" ? "Regular registration" : "Diamond ticket"}
+              placeholder={
+                mode === "register" ? "Regular registration" : "Diamond ticket"
+              }
               error={errors?.ticketName?.message}
               {...register("ticketName")}
             />
@@ -240,7 +276,9 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                       </span>
                     }
                     type="number"
-                    onChange={(e) => field.onChange(Number(e.target.value || "0"))}
+                    onChange={(e) =>
+                      field.onChange(Number(e.target.value || "0"))
+                    }
                     placeholder="Enter price"
                     error={fieldState?.error?.message}
                   />
@@ -258,7 +296,9 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                   value={field.value?.toString() || ""}
                   placeholder="Enter quantity"
                   error={fieldState?.error?.message}
-                  onChange={(e) => field.onChange(Number(e.target.value || "0"))}
+                  onChange={(e) =>
+                    field.onChange(Number(e.target.value || "0"))
+                  }
                 />
               )}
             />
@@ -270,7 +310,9 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                 <SelectField
                   label="Visibility"
                   value={field.value}
-                  setValue={(value) => field.onChange(value as "public" | "private")}
+                  setValue={(value) =>
+                    field.onChange(value as "public" | "private")
+                  }
                   error={fieldState?.error?.message}
                   options={[
                     { label: "Public", value: "public" },
@@ -293,6 +335,17 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                   <span>Allow attendees to transfer this category</span>
                 </label>
               )}
+            />
+
+            <TicketSaleRulesFields
+              className="col-span-full"
+              value={saleRules}
+              timezone={timezone}
+              onChange={(patch) =>
+                (Object.keys(patch) as (keyof TTicketSaleRules)[]).forEach(
+                  (key) => setValue(key, patch[key] ?? null),
+                )
+              }
             />
 
             <div className="col-span-full flex justify-end gap-2">

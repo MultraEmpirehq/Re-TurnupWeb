@@ -33,10 +33,10 @@ const AdditionalInformation: React.FC<IAdditionalInformationProps> = ({
   const handleRemoveAdditionalInformation = useCallback(
     (index: number) => {
       setAdditionalInformation(
-        additionalInformation.filter((_, i) => i !== index)
+        additionalInformation.filter((_, i) => i !== index),
       );
     },
-    [additionalInformation, setAdditionalInformation]
+    [additionalInformation, setAdditionalInformation],
   );
   const handleAddAdditionalInformation = useCallback(() => {
     if (additionalInformationInput?.trim() === "") return;
@@ -131,7 +131,7 @@ const AdditionalInformation: React.FC<IAdditionalInformationProps> = ({
             "text-sm",
 
             error && errorClassName,
-            error && "text-destructive"
+            error && "text-destructive",
           )}
         >
           {error}

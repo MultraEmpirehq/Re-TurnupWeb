@@ -19,6 +19,8 @@ import {
   EventDetailMedia,
 } from "@/components/pages/explore/event-detail";
 import { resolveAttachmentUrl, resolveAttachmentUrls } from "@/lib/functions";
+import { eventZoneNote, instantToWallTimeInZone } from "@/lib/event-time";
+import ReportEventButton from "@/components/pages/explore/event-detail/report-event-button";
 
 const EventDetails = () => {
   const params = useParams();
@@ -73,7 +75,17 @@ const EventDetails = () => {
       </SectionContainer>
     );
 
-  const eventDate = data?.date ? new Date(data.date) : null;
+  // Shown on the venue's clock, whatever zone the viewer is in.
+  const eventDate = data?.date
+    ? instantToWallTimeInZone(data.date, data.timezone)
+    : null;
+  const zoneNote = data?.date ? eventZoneNote(data.timezone, data.date) : null;
+  const activities = (data?.activities ?? []).map((activity) => ({
+    ...activity,
+    date: activity.date
+      ? instantToWallTimeInZone(activity.date, data?.timezone)
+      : activity.date,
+  }));
   // Prefers the attachment list, which also says what each file is, and falls back
   // to the plain urls for an event saved before attachments.
   const coverImageUrl = resolveAttachmentUrl(data?.imageDetails, data?.image);
@@ -104,7 +116,9 @@ const EventDetails = () => {
         copied={copied}
       />
 
-      {eventDate && <EventDetailDateTime date={eventDate} />}
+      {eventDate && (
+        <EventDetailDateTime date={eventDate} zoneNote={zoneNote} />
+      )}
 
       {data?.venue && <EventDetailLocation venue={data.venue} />}
 
@@ -119,13 +133,21 @@ const EventDetails = () => {
         />
       )}
 
-      {data?.activities && data.activities.length > 0 && (
-        <EventDetailActivities activities={data.activities} />
+      {activities.length > 0 && (
+        <EventDetailActivities activities={activities} />
       )}
 
       {mediaList.length > 0 && (
         <EventDetailMedia mediaList={mediaList} eventName={data?.name} />
       )}
+
+      <div className="border-t pt-6">
+        <ReportEventButton
+          eventId={id}
+          eventName={data?.name}
+          isOwner={data?.isOwner}
+        />
+      </div>
     </SectionContainer>
   );
 };

@@ -7,6 +7,7 @@ import CustomImageComponent from "@/components/ui/custom-image.component";
 import InputField from "@/components/ui/input-field";
 import { Input } from "@/components/ui/input";
 import DateSelect from "@/components/ui/date-select";
+import TimezoneSelect from "@/components/ui/timezone-select";
 import TextareaField from "@/components/ui/textarea-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrashIcon, UploadIcon } from "lucide-react";
@@ -40,6 +41,7 @@ export interface IBasicFormValues {
   eventName: string;
   organizerName: string;
   eventDate: Date;
+  eventTimezone: string;
   eventCountry: string;
   eventCountryCode: string;
   eventState: string;
@@ -106,6 +108,7 @@ export const basicInformationSchema = Joi.object({
     "date.empty": "Event date is required",
     "any.required": "Event date is required",
   }),
+  eventTimezone: Joi.string().allow("").optional(),
   eventCountryCode: Joi.string().required().messages({
     "string.empty": "Event country is required",
     "any.required": "Event country is required",
@@ -234,10 +237,12 @@ const BasicForm: React.FC<{
 
   const cityOptions = useMemo(() => {
     if (!eventCountryCode || !eventStateCode) return [];
-    return City.getCitiesOfState(eventCountryCode, eventStateCode).map((city) => ({
-      label: city.name,
-      value: city.name,
-    }));
+    return City.getCitiesOfState(eventCountryCode, eventStateCode).map(
+      (city) => ({
+        label: city.name,
+        value: city.name,
+      }),
+    );
   }, [eventCountryCode, eventStateCode]);
 
   return (
@@ -249,7 +254,8 @@ const BasicForm: React.FC<{
               Event Banner
             </p>
             <p className="mt-1 text-sm text-secondary-500">
-              Upload the main image that appears at the top of the event preview.
+              Upload the main image that appears at the top of the event
+              preview.
             </p>
           </div>
           <div className="relative flex min-h-[14rem] items-center justify-center overflow-hidden rounded-[1.5rem] border border-dashed border-secondary-200 bg-secondary-50">
@@ -364,6 +370,19 @@ const BasicForm: React.FC<{
 
         <Controller
           control={control}
+          name="eventTimezone"
+          render={({ field, fieldState }) => (
+            <TimezoneSelect
+              value={field.value}
+              onChange={field.onChange}
+              error={fieldState?.error?.message}
+              inputClassName="h-10"
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
           name="eventCountryCode"
           render={({ field, fieldState }) => (
             <ComboboxSelect
@@ -374,6 +393,14 @@ const BasicForm: React.FC<{
                 const selectedCountry = Country.getCountryByCode(countryCode);
                 if (countryCode !== field.value) clearVenueForNewLocation();
                 field.onChange(countryCode);
+                // A single-zone country settles the timezone; others are left
+                // for the organiser to pick.
+                const countryZones = selectedCountry?.timezones ?? [];
+                if (countryZones.length === 1) {
+                  setValue("eventTimezone", countryZones[0].zoneName, {
+                    shouldDirty: true,
+                  });
+                }
                 setValue("eventCountry", selectedCountry?.name ?? "", {
                   shouldValidate: true,
                   shouldDirty: true,
@@ -473,7 +500,9 @@ const BasicForm: React.FC<{
                 const nextVenue = saveCustomVenue(venueName);
                 if (nextVenue) {
                   field.onChange(nextVenue.id);
-                  setValue("venueName", nextVenue.name, { shouldValidate: false });
+                  setValue("venueName", nextVenue.name, {
+                    shouldValidate: false,
+                  });
                 }
                 return nextVenue ?? undefined;
               }}
@@ -524,7 +553,9 @@ const BasicForm: React.FC<{
                 const nextCategory = saveCustomCategory(categoryName);
                 if (nextCategory) {
                   field.onChange(nextCategory.id);
-                  setValue("categoryName", nextCategory.name, { shouldValidate: false });
+                  setValue("categoryName", nextCategory.name, {
+                    shouldValidate: false,
+                  });
                 }
               }}
             />

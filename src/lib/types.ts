@@ -8,6 +8,8 @@ export enum ROUTE_TYPE {
   FOOTER_CATEGORIES_ROUTE = "FOOTER_CATEGORIES_ROUTE",
   FOOTER_FOLLOW_US_ROUTE = "FOOTER_FOLLOW_US_ROUTE",
   HIDE_ON_LOGIN = "HIDE_ON_LOGIN",
+  /** A header page link that's only for visitors; signed-in people reach it another way. */
+  SIGNED_OUT_ONLY = "SIGNED_OUT_ONLY",
   APP_ROUTE = "APP_ROUTE",
   SHOW_ON_APP_SIDE_NAV = "SHOW_ON_APP_SIDE_NAV",
   ADMIN_ONLY = "ADMIN_ONLY",
@@ -22,11 +24,7 @@ export enum OTP_VERIFICATION_TYPE {
 }
 
 export type TAttachmentType =
-  | "IMAGE"
-  | "VIDEO"
-  | "DOCUMENT"
-  | "AUDIO"
-  | "OTHER";
+  "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO" | "OTHER";
 
 export type TAttachmentPurpose =
   | "EVENT_COVER"
@@ -59,6 +57,10 @@ export enum EOrderStatus {
   PENDING = "PENDING",
   COMPLETED = "COMPLETED",
   FAILED = "FAILED",
+  /** Paid, couldn't be fulfilled, money returned. */
+  REFUNDED = "REFUNDED",
+  /** Paid, but held for a person to check (amount mismatch, failed refund). */
+  NEEDS_REVIEW = "NEEDS_REVIEW",
 }
 
 export interface PriceDetailsType {
@@ -131,6 +133,11 @@ export interface IEventTicketOptionDetails {
   actionType?: "paid" | "register";
   transferable?: boolean;
   privateAccessCode?: string;
+  salesStartAt?: string | null;
+  salesEndAt?: string | null;
+  maxPerOrder?: number | null;
+  /** Inside its sales window right now. */
+  isOnSale?: boolean;
 }
 
 export interface IEventPassAssignmentDetails {
@@ -169,9 +176,13 @@ export interface IEventDetailsType {
   id: string;
   name: string;
   date: Date;
-  status?: "draft" | "published" | "suspended";
+  status?: "draft" | "pending_review" | "published" | "suspended";
   /** Why an admin suspended the event; present only while suspended. */
   suspensionReason?: string | null;
+  /** What an admin asked the organiser to change; only the organiser sees it. */
+  reviewNote?: string | null;
+  /** IANA zone the event's times are in, e.g. "Africa/Lagos". */
+  timezone?: string;
   /** True when the signed-in viewer created this event; only they may edit or delete it. */
   isOwner?: boolean;
   draftStep?: number;
@@ -245,6 +256,10 @@ export interface ITicketDetailsType {
   privateAccessCode?: string;
   accessCode?: string;
   privateToken?: string;
+  salesStartAt?: string | null;
+  salesEndAt?: string | null;
+  maxPerOrder?: number | null;
+  isOnSale?: boolean;
 }
 
 export enum ETicketStatus {
@@ -329,6 +344,10 @@ export type UserTicketDetailsResponseType = {
 export interface IOrderDetailsType {
   id: string;
   status: EOrderStatus;
+  /** Why a refunded, failed or held order ended up that way. */
+  statusReason?: string | null;
+  /** For a pending paid order: when its held seats are released. */
+  holdExpiresAt?: string | null;
   quantity: number;
   createdAt: Date;
   ticket: IOrderTicketType;
@@ -344,7 +363,8 @@ export interface ICategoryDetailsType {
 // Admin console
 // ---------------------------------------------------------------------------
 
-export type TAdminUserType = "all" | "vendors" | "users";
+export type TAdminUserType =
+  "all" | "vendors" | "users" | "unverified" | "suspended";
 
 export type TVerificationStatus =
   | "not_started"
@@ -373,6 +393,8 @@ export interface IAdminUserListItem {
   country?: string;
   createdAt?: string;
   profileImage?: string;
+  isEmailVerified?: boolean;
+  isAccountDisabled?: boolean;
 }
 
 export interface IVendorVerificationSummary {
@@ -388,7 +410,6 @@ export interface IVendorVerificationSummary {
 }
 
 export interface IAdminUserDetails extends IAdminUserListItem {
-  isEmailVerified?: boolean;
   isAccountDisabled: boolean;
   isAccountCreationCompleted?: boolean;
   dateOfBirth?: string;
@@ -398,12 +419,7 @@ export interface IAdminUserDetails extends IAdminUserListItem {
 }
 
 export type TVerificationStepKey =
-  | "vendorType"
-  | "identity"
-  | "business"
-  | "payout"
-  | "crossBorder"
-  | "review";
+  "vendorType" | "identity" | "business" | "payout" | "crossBorder" | "review";
 
 export interface IVerificationDocument {
   id?: string | null;

@@ -80,6 +80,7 @@ const EventListingCard: React.FC<{
 
   const isDraft = event.status === "draft";
   const isSuspended = event.status === "suspended";
+  const isPendingReview = event.status === "pending_review";
   const isAdmin = useUserStore(
     (state) => state.userDetails?.role === EUserRoles.ADMIN,
   );
@@ -97,9 +98,11 @@ const EventListingCard: React.FC<{
 
   const badgeLabel = isDraft
     ? "Draft"
-    : isUpcomingEvent(eventDate)
-      ? "Upcoming"
-      : "Past";
+    : isPendingReview
+      ? "In review"
+      : isUpcomingEvent(eventDate)
+        ? "Upcoming"
+        : "Past";
 
   const editHref = isDraft
     ? `/app/create?draftId=${event.id}`
@@ -166,6 +169,29 @@ const EventListingCard: React.FC<{
           </div>
         )}
 
+        {isPendingReview && (
+          <div className="mb-4 rounded-[1rem] border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+            <p className="font-semibold">Waiting for review</p>
+            <p className="mt-1 text-xs text-sky-700">
+              {canEdit
+                ? "An admin checks every new event before attendees can see it. You'll be notified once it's live."
+                : "Approve or send it back from Event Reviews."}
+            </p>
+          </div>
+        )}
+
+        {isDraft && event.reviewNote && (
+          <div className="mb-4 rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <p className="font-semibold">Sent back by an admin</p>
+            <p className="mt-1 line-clamp-4 text-amber-700">
+              {event.reviewNote}
+            </p>
+            <p className="mt-1 text-xs text-amber-700">
+              Make the change, then submit it again.
+            </p>
+          </div>
+        )}
+
         <p className="mb-4 line-clamp-2 text-sm text-secondary-500">
           {event.description || "No event description has been added yet."}
         </p>
@@ -209,12 +235,16 @@ const EventListingCard: React.FC<{
 
             <div className="px-4 py-3 text-secondary-500">
               {isDraft
-                ? "Incomplete draft"
-                : isSuspended
-                  ? "Suspended"
-                  : badgeLabel === "Upcoming"
-                    ? "Ready to promote"
-                    : "Archived event"}
+                ? event.reviewNote
+                  ? "Needs changes"
+                  : "Incomplete draft"
+                : isPendingReview
+                  ? "Waiting for review"
+                  : isSuspended
+                    ? "Suspended"
+                    : badgeLabel === "Upcoming"
+                      ? "Ready to promote"
+                      : "Archived event"}
             </div>
           </div>
         </div>
@@ -455,6 +485,11 @@ const VendorEventListingsPage = () => {
     [events],
   );
 
+  const pendingReviewEvents = useMemo(
+    () => events.filter((event) => event.status === "pending_review"),
+    [events],
+  );
+
   const suspendedEvents = useMemo(
     () => events.filter((event) => event.status === "suspended"),
     [events],
@@ -629,6 +664,18 @@ const VendorEventListingsPage = () => {
         emptyState="No event drafts yet."
         actions={cardActions}
       />
+
+      {pendingReviewEvents.length > 0 && (
+        <ListingSection
+          eyebrow="In review"
+          title={`${pendingReviewEvents.length} event${
+            pendingReviewEvents.length === 1 ? "" : "s"
+          } waiting for approval`}
+          events={pendingReviewEvents}
+          emptyState="Nothing waiting for review."
+          actions={cardActions}
+        />
+      )}
 
       <ListingSection
         eyebrow="Upcoming"

@@ -81,7 +81,10 @@ const MediaUploadForm: React.FC<{
 
   const watchedMediaFiles = watch("mediaFiles");
   const watchedSponsorImages = watch("sponsorImages");
-  const mediaFiles = useMemo(() => watchedMediaFiles ?? [], [watchedMediaFiles]);
+  const mediaFiles = useMemo(
+    () => watchedMediaFiles ?? [],
+    [watchedMediaFiles],
+  );
   const sponsorNames = watch("sponsorNames") ?? [];
   const sponsorImages = useMemo(
     () => watchedSponsorImages ?? [],
@@ -286,7 +289,8 @@ const MediaUploadForm: React.FC<{
           <div>
             <p className="text-sm font-semibold text-secondary-950">Sponsors</p>
             <p className="text-xs leading-5 text-secondary-500">
-              Add sponsor names or logos. These connect to the event preview sponsor board.
+              Add sponsor names or logos. These connect to the event preview
+              sponsor board.
             </p>
           </div>
           <Button type="button" variant="outline" onClick={addSponsor}>
@@ -308,7 +312,9 @@ const MediaUploadForm: React.FC<{
             >
               <Input
                 value={name}
-                onChange={(event) => updateSponsorName(index, event.target.value)}
+                onChange={(event) =>
+                  updateSponsorName(index, event.target.value)
+                }
                 placeholder="Sponsor name"
                 className="h-11 rounded-xl bg-white"
               />

@@ -12,10 +12,11 @@ export default function Home() {
     <div>
       <LandingHero />
       <AppShowcase />
-      <VibeLinks />
-      <HowItWorks />
       <ForOrganisers />
-      <ClosingCta />
+      {/* <VibeLinks /> */}
+      <HowItWorks />
+      
+      {/* <ClosingCta /> */}
     </div>
   );
 }

@@ -84,7 +84,9 @@ const getDefaultVendor = (): IEventChatParticipant => ({
   memberRole: "vendor",
 });
 
-const toVendorParticipant = (user?: TUserDetails | null): IEventChatParticipant => ({
+const toVendorParticipant = (
+  user?: TUserDetails | null,
+): IEventChatParticipant => ({
   id: user?.id || "turnupz-vendor",
   name:
     user?.name ||
@@ -96,7 +98,9 @@ const toVendorParticipant = (user?: TUserDetails | null): IEventChatParticipant 
   email: user?.email,
 });
 
-const toMemberParticipant = (user?: TUserDetails | null): IEventChatParticipant | null => {
+const toMemberParticipant = (
+  user?: TUserDetails | null,
+): IEventChatParticipant | null => {
   if (!user?.id) return null;
   return {
     id: user.id,
@@ -117,7 +121,8 @@ const buildVendorLaunchMessage = (
   vendor: IEventChatParticipant,
 ) => {
   const bannerImage =
-    event.image || (event as IEventDetailsType & { bannerImage?: string }).bannerImage;
+    event.image ||
+    (event as IEventDetailsType & { bannerImage?: string }).bannerImage;
 
   return {
     id: `chat-message-${event.id}-launch`,
@@ -186,7 +191,9 @@ export const ensureEventChatGroup = (
         `Community chat for ${event.name} is now live on Turnupz.`,
     };
     writeGroups(
-      groups.map((group) => (group.eventId === event.id ? updatedGroup : group)),
+      groups.map((group) =>
+        group.eventId === event.id ? updatedGroup : group,
+      ),
     );
     return updatedGroup;
   }
@@ -207,7 +214,12 @@ export const ensureEventChatGroup = (
     pinnedMessageId: `chat-message-${event.id}-launch`,
     vendor: vendorUser?.id ? vendor : getDefaultVendor(),
     members: [],
-    messages: [buildVendorLaunchMessage(event, vendorUser?.id ? vendor : getDefaultVendor())],
+    messages: [
+      buildVendorLaunchMessage(
+        event,
+        vendorUser?.id ? vendor : getDefaultVendor(),
+      ),
+    ],
   };
 
   writeGroups([nextGroup, ...groups]);
@@ -333,8 +345,8 @@ export const appendEventChatMessage = ({
       kind === "image"
         ? `${sender.name} shared an image.`
         : kind === "file"
-            ? `${sender.name} attached a file.`
-            : body || existingGroup.preview,
+          ? `${sender.name} attached a file.`
+          : body || existingGroup.preview,
     messages: [...existingGroup.messages, nextMessage],
   };
 
@@ -353,7 +365,9 @@ const updateGroupById = (
   const existingGroup = groups.find((group) => group.id === groupId);
   if (!existingGroup) return null;
   const nextGroup = updater(existingGroup);
-  writeGroups(groups.map((group) => (group.id === groupId ? nextGroup : group)));
+  writeGroups(
+    groups.map((group) => (group.id === groupId ? nextGroup : group)),
+  );
   return nextGroup;
 };
 
@@ -388,7 +402,9 @@ export const toggleEventChatReaction = ({
       if (message.id !== messageId) return message;
 
       const reactions = message.reactions ?? [];
-      const existingReaction = reactions.find((reaction) => reaction.emoji === emoji);
+      const existingReaction = reactions.find(
+        (reaction) => reaction.emoji === emoji,
+      );
       if (!existingReaction) {
         return {
           ...message,

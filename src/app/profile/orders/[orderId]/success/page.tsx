@@ -15,9 +15,14 @@ import {
   CheckCircle2,
   Download,
   CalendarDays,
+  Loader2,
   MapPin,
+  ShieldAlert,
   TicketIcon,
+  Undo2,
+  XCircle,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import React, {
@@ -65,6 +70,50 @@ const OrderSuccessPage = () => {
   );
 
   const isPaid = order?.status === EOrderStatus.COMPLETED;
+  const outcome = (() => {
+    switch (order?.status) {
+      case EOrderStatus.COMPLETED:
+        return {
+          Icon: CheckCircle2,
+          tone: "bg-green-100 text-green-600 dark:bg-green-950/40",
+          title: "Payment successful!",
+          message:
+            "Your tickets have been confirmed. You can download them or head to the event group chat.",
+        };
+      case EOrderStatus.REFUNDED:
+        return {
+          Icon: Undo2,
+          tone: "bg-sky-100 text-sky-600 dark:bg-sky-950/40",
+          title: "Payment refunded",
+          message: `${order.statusReason ?? "We couldn't complete this order."} We've refunded you in full; it can take a few days to show.`,
+        };
+      case EOrderStatus.NEEDS_REVIEW:
+        return {
+          Icon: ShieldAlert,
+          tone: "bg-amber-100 text-amber-600 dark:bg-amber-950/40",
+          title: "We're checking your payment",
+          message:
+            "Something about this payment needs a person to look at it. No tickets were issued yet, and our team will get back to you.",
+        };
+      case EOrderStatus.FAILED:
+        return {
+          Icon: XCircle,
+          tone: "bg-red-100 text-red-600 dark:bg-red-950/40",
+          title: "Payment failed",
+          message:
+            order.statusReason ??
+            "Your payment could not be completed. Please try purchasing again.",
+        };
+      default:
+        return {
+          Icon: Loader2,
+          tone: "bg-yellow-100 text-yellow-600 dark:bg-yellow-950/40 [&_svg]:animate-spin",
+          title: "Confirming payment...",
+          message:
+            "We're waiting for your payment to be confirmed. This page will update automatically.",
+        };
+    }
+  })();
 
   // Only join the event group chat once payment is confirmed.
   useEffect(() => {
@@ -91,9 +140,8 @@ const OrderSuccessPage = () => {
       const jsPDF = jspdfModule.default ?? jspdfModule.jsPDF;
       const zip = new JSZip();
 
-      const ticketCards = document.querySelectorAll<HTMLDivElement>(
-        "[data-ticket-card]",
-      );
+      const ticketCards =
+        document.querySelectorAll<HTMLDivElement>("[data-ticket-card]");
 
       if (ticketCards.length === 0) {
         toast.error("No ticket cards found to capture.");
@@ -114,7 +162,8 @@ const OrderSuccessPage = () => {
           const code = order.userTickets[i]?.code ?? `ticket-${i + 1}`;
 
           const pdf = new jsPDF({
-            orientation: canvas.width > canvas.height ? "landscape" : "portrait",
+            orientation:
+              canvas.width > canvas.height ? "landscape" : "portrait",
             unit: "px",
             format: [canvas.width, canvas.height],
           });
@@ -205,21 +254,16 @@ const OrderSuccessPage = () => {
   return (
     <SectionContainer className="py-20 max-w-2xl space-y-10">
       <div className="flex flex-col items-center text-center gap-4">
-        <div className="size-20 rounded-full bg-green-100 dark:bg-green-950/40 flex items-center justify-center">
-          <CheckCircle2 className="size-10 text-green-600" />
+        <div
+          className={cn(
+            "size-20 rounded-full flex items-center justify-center",
+            outcome.tone,
+          )}
+        >
+          <outcome.Icon className="size-10" />
         </div>
-        <h1 className="text-3xl font-bold">
-          {order?.status === EOrderStatus.PENDING && "Confirming Payment..."}
-          {order?.status === EOrderStatus.FAILED && "Payment Failed"}
-          {isPaid && "Payment Successful!"}
-        </h1>
-        <p className="text-muted-foreground">
-          {order?.status === EOrderStatus.PENDING &&
-            "We're waiting for your payment to be confirmed. This page will update automatically."}
-          {order?.status === EOrderStatus.FAILED &&
-            "Your payment could not be completed. Please try purchasing again."}
-          {isPaid && "Your tickets have been confirmed. You can download them or proceed to the event group chat."}
-        </p>
+        <h1 className="text-3xl font-bold">{outcome.title}</h1>
+        <p className="text-muted-foreground">{outcome.message}</p>
       </div>
 
       <div className="border rounded-xl divide-y">
@@ -320,11 +364,19 @@ const OrderSuccessPage = () => {
 
         <div className="flex items-center gap-3">
           {isPaid ? (
-            <Button asChild variant="outline" className="flex-1 h-12 rounded-xl">
+            <Button
+              asChild
+              variant="outline"
+              className="flex-1 h-12 rounded-xl"
+            >
               <Link href={ROUTES.MESSAGES.href}>Proceed to Group</Link>
             </Button>
           ) : (
-            <Button variant="outline" className="flex-1 h-12 rounded-xl" disabled>
+            <Button
+              variant="outline"
+              className="flex-1 h-12 rounded-xl"
+              disabled
+            >
               Proceed to Group
             </Button>
           )}

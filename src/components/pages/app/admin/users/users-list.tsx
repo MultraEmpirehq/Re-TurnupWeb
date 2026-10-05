@@ -28,7 +28,23 @@ const TABS: { value: TAdminUserType; label: string }[] = [
   { value: "all", label: "All" },
   { value: "vendors", label: "Vendors" },
   { value: "users", label: "Users" },
+  { value: "suspended", label: "Suspended" },
+  { value: "unverified", label: "Unverified" },
 ];
+
+const TAB_NOTES: Partial<Record<TAdminUserType, string>> = {
+  unverified:
+    "People who signed up but haven't verified their email yet. They aren't counted as users until they do.",
+  suspended: "Accounts that can't sign in until an admin reactivates them.",
+};
+
+/** Suspension wins over verification: a suspended account can't sign in either way. */
+const accountStatus = (user: IAdminUserListItem) =>
+  user.isAccountDisabled
+    ? { label: "Suspended", tone: "bg-red-50 text-red-700" }
+    : user.isEmailVerified === false && user.role !== EUserRoles.ADMIN
+      ? { label: "Unverified", tone: "bg-amber-50 text-amber-800" }
+      : { label: "Active", tone: "bg-emerald-50 text-emerald-700" };
 
 const ROLE_TONE: Record<string, string> = {
   [EUserRoles.ADMIN]: "bg-purple-50 text-purple-700",
@@ -74,12 +90,13 @@ const UsersList = () => {
       <div className="flex flex-col gap-1">
         <h1 className="text-xl font-bold text-secondary-800">Users</h1>
         <p className="text-sm text-muted-foreground">
-          Every account on the platform. Open one to see its details.
+          {TAB_NOTES[type] ??
+            "Every account that has verified its email. Open one to see its details."}
         </p>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="inline-flex rounded-lg border border-border bg-card p-1">
+        <div className="inline-flex flex-wrap rounded-lg border border-border bg-card p-1">
           {TABS.map((tab) => (
             <Button
               key={tab.value}
@@ -136,7 +153,11 @@ const UsersList = () => {
           description={
             search
               ? "No account matches that search."
-              : "There are no accounts in this group yet."
+              : type === "suspended"
+                ? "No account is suspended."
+                : type === "unverified"
+                  ? "Everyone who signed up has verified their email."
+                  : "There are no accounts in this group yet."
           }
         />
       )}
@@ -149,6 +170,7 @@ const UsersList = () => {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Country</TableHead>
                 <TableHead>Joined</TableHead>
               </TableRow>
@@ -166,7 +188,10 @@ const UsersList = () => {
                       setOpenUserId(user.id);
                     }
                   }}
-                  className="cursor-pointer"
+                  className={cn(
+                    "cursor-pointer",
+                    user.isAccountDisabled && "bg-red-50/40",
+                  )}
                 >
                   <TableCell className="font-medium">
                     {displayName(user)}
@@ -178,10 +203,21 @@ const UsersList = () => {
                     <span
                       className={cn(
                         "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                        ROLE_TONE[user.role ?? ""] ?? ROLE_TONE[EUserRoles.USER],
+                        ROLE_TONE[user.role ?? ""] ??
+                          ROLE_TONE[EUserRoles.USER],
                       )}
                     >
                       {user.role ?? "—"}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                        accountStatus(user).tone,
+                      )}
+                    >
+                      {accountStatus(user).label}
                     </span>
                   </TableCell>
                   <TableCell className="text-muted-foreground">

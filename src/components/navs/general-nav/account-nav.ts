@@ -8,6 +8,7 @@ import {
   LucideIcon,
   MessagesSquare,
   ShieldCheck,
+  Settings,
   ShoppingBag,
   Store,
   Ticket,
@@ -61,7 +62,8 @@ const createEvent: TAccountLink = {
 };
 
 const ATTENDEE_NAV: TAccountNav = {
-  headerLinks: [myTickets, myOrders, chats],
+  // Orders sit in the account menu; the header keeps the two they use most.
+  headerLinks: [myTickets, chats],
   // Attendees become vendors by applying, so that is where hosting starts.
   cta: {
     label: "Host an Event",
@@ -101,7 +103,16 @@ const VENDOR_NAV: TAccountNav = {
       },
       { label: ROUTES.WALLET.label, href: ROUTES.WALLET.href, icon: Wallet },
     ],
-    [myTickets, myOrders, dashboardProfile],
+    [
+      myTickets,
+      myOrders,
+      dashboardProfile,
+      {
+        label: ROUTES.SETTINGS.label,
+        href: ROUTES.SETTINGS.href,
+        icon: Settings,
+      },
+    ],
     [help],
   ],
 };

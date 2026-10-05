@@ -36,7 +36,9 @@ const countryCurrencyMap: Record<string, AppCurrency> = {
 
 export const getCurrencyForCountry = (country?: string | null): AppCurrency => {
   if (!country) return DEFAULT_APP_CURRENCY;
-  return countryCurrencyMap[country.trim().toUpperCase()] ?? DEFAULT_APP_CURRENCY;
+  return (
+    countryCurrencyMap[country.trim().toUpperCase()] ?? DEFAULT_APP_CURRENCY
+  );
 };
 
 export const formatAppMoney = (

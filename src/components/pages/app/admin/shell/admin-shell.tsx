@@ -1,7 +1,6 @@
 "use client";
 
 import BrandLoader from "@/components/ui/brand-loader";
-import { NovuInbox } from "@/components/notifications/novu-inbox";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import {
@@ -9,12 +8,13 @@ import {
   useAdminPermissions,
 } from "@/hooks/use-admin-permissions";
 import { ROUTES } from "@/lib/variables";
-import { LockKeyhole, MenuIcon } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { memo, useState } from "react";
 import { adminPermissionFor, adminSectionLabel } from "./admin-nav";
 import AdminSidebar from "./admin-sidebar";
+import WorkspaceTopBar from "../../workspace-top-bar";
 
 /** Shown in place of a page the admin's permissions don't cover. */
 const NoAccess: React.FC<{ permissionLabel: string }> = ({
@@ -68,34 +68,11 @@ const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </Sheet>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex h-[68px] shrink-0 items-center justify-between gap-3 border-b border-border/60 bg-white/80 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsNavOpen(true)}
-              aria-label="Open navigation"
-              className="size-[38px] shrink-0 rounded-xl text-muted-foreground lg:hidden"
-            >
-              <MenuIcon className="size-4" />
-            </Button>
-            <nav aria-label="Breadcrumb" className="min-w-0">
-              <ol className="flex items-center gap-2 text-sm">
-                <li className="hidden text-muted-foreground sm:block">Admin</li>
-                <li
-                  aria-hidden
-                  className="hidden text-muted-foreground sm:block"
-                >
-                  /
-                </li>
-                <li className="truncate font-semibold text-foreground">
-                  {adminSectionLabel(pathname)}
-                </li>
-              </ol>
-            </nav>
-          </div>
-          <NovuInbox />
-        </header>
+        <WorkspaceTopBar
+          workspace="Admin"
+          section={adminSectionLabel(pathname)}
+          onOpenNav={() => setIsNavOpen(true)}
+        />
 
         <main className="flex-1 px-4 pt-6 pb-10 sm:px-6 lg:px-8">
           {isWaiting ? (

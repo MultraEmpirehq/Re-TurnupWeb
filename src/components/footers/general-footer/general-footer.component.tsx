@@ -30,6 +30,7 @@ const COLUMNS = [
       { label: "About us", href: ROUTES.ABOUT_US.href },
       { label: "Contact us", href: ROUTES.CONTACT.href },
       { label: "Terms of Service", href: ROUTES.TERMS_OF_SERVICE.href },
+      { label: "Privacy Policy", href: ROUTES.PRIVACY_POLICY.href },
     ],
   },
 ];

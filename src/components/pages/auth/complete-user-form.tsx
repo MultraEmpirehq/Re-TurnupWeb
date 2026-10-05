@@ -111,7 +111,7 @@ const CompleteUserForm = () => {
     mode: "onChange",
   });
 
-  // Google and Apple sign-ups arrive with a name and a generated username already
+  // Google sign-ups arrive with a name and a generated username already
   // saved, so start from those instead of making people type them again.
   useEffect(() => {
     if (!userDetails || hasPrefilled.current) return;

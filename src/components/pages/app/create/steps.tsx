@@ -39,7 +39,7 @@ const StepDetails: React.FC<{
               "flex-1 h-0.5 min-w-[6px] sm:min-w-[12px] transition-colors self-center shrink-0",
               isFirst && "invisible",
               !isFirst && isLeftConnectorComplete && "bg-primary",
-              !isFirst && !isLeftConnectorComplete && "bg-secondary-200"
+              !isFirst && !isLeftConnectorComplete && "bg-secondary-200",
             )}
             aria-hidden
           />
@@ -51,7 +51,7 @@ const StepDetails: React.FC<{
               status === "current" &&
                 "bg-primary text-primary-foreground ring-primary",
               status === "upcoming" &&
-                "bg-secondary-200 text-secondary-600 ring-transparent"
+                "bg-secondary-200 text-secondary-600 ring-transparent",
             )}
           >
             {status === "completed" ? (
@@ -78,7 +78,7 @@ const StepDetails: React.FC<{
               "flex-1 h-0.5 min-w-[6px] sm:min-w-[12px] transition-colors self-center shrink-0",
               isLast && "invisible",
               !isLast && isRightConnectorComplete && "bg-primary",
-              !isLast && !isRightConnectorComplete && "bg-secondary-200"
+              !isLast && !isRightConnectorComplete && "bg-secondary-200",
             )}
             aria-hidden
           />
@@ -88,14 +88,14 @@ const StepDetails: React.FC<{
             "mt-2 text-xs font-medium text-center max-w-18 sm:max-w-none",
             status === "current" && "text-primary",
             status === "completed" && "text-secondary-600",
-            status === "upcoming" && "text-secondary-400"
+            status === "upcoming" && "text-secondary-400",
           )}
         >
           {title}
         </p>
       </li>
     );
-  }
+  },
 );
 
 StepDetails.displayName = "StepDetails";
@@ -115,8 +115,8 @@ const Steps: React.FC<{ currentStep?: number }> = memo(
               step < active
                 ? "completed"
                 : step === active
-                ? "current"
-                : "upcoming";
+                  ? "current"
+                  : "upcoming";
             const isLeftConnectorComplete = active >= step;
             const isRightConnectorComplete = active > step;
             return (
@@ -135,7 +135,7 @@ const Steps: React.FC<{ currentStep?: number }> = memo(
         </ol>
       </nav>
     );
-  }
+  },
 );
 
 Steps.displayName = "Steps";

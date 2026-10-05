@@ -8,8 +8,8 @@ import NextTopLoader from "nextjs-toploader";
 import { usePathname } from "next/navigation";
 import React, { memo, useMemo, useState } from "react";
 
-const authsToRemoveNav = ["/auth", "/app"];
-const authsToRemoveFooter = ["/auth", "/app"];
+const authsToRemoveNav = ["/auth", "/app", "/admin"];
+const authsToRemoveFooter = ["/auth", "/app", "/admin"];
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();

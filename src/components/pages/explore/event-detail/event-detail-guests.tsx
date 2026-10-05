@@ -5,8 +5,7 @@ import CustomImageComponent from "@/components/ui/custom-image.component";
 import { IEventDetailsType } from "@/lib/types";
 
 type GuestItem = IEventDetailsType["eventGuestsOfHonour"] extends
-  | (infer U)[]
-  | undefined
+  (infer U)[] | undefined
   ? U
   : never;
 

@@ -7,6 +7,8 @@ import {
   CalendarDays,
   CalendarPlus,
   CircleDollarSign,
+  ClipboardCheck,
+  Flag,
   FileChartColumn,
   Headset,
   Inbox,
@@ -146,6 +148,18 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         permission: "VENDORS_VERIFY",
         showsPendingVerifications: true,
       },
+      {
+        label: "Event Reviews",
+        href: `${ADMIN_BASE}/events/reviews`,
+        icon: ClipboardCheck,
+        permission: "EVENTS_MODERATE",
+      },
+      {
+        label: "Reports",
+        href: `${ADMIN_BASE}/events/reports`,
+        icon: Flag,
+        permission: "EVENTS_MODERATE",
+      },
     ],
   },
   {
@@ -166,7 +180,7 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         label: "Inquiries",
         href: `${ADMIN_BASE}/support/inquiries`,
         icon: Inbox,
-        comingSoon: "Messages sent through the contact form.",
+        permission: "SUPPORT_MANAGE",
       },
       {
         label: "Help Centre",

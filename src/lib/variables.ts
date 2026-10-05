@@ -12,13 +12,19 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Explore",
     href: "/explore",
   },
+  // A sales page, so it drops out of the header once someone has signed in.
   PRICING: {
-    shouldShowIn: [ROUTE_TYPE.NAV_ROUTE],
+    shouldShowIn: [ROUTE_TYPE.NAV_ROUTE, ROUTE_TYPE.SIGNED_OUT_ONLY],
     label: "Pricing",
     href: "/pricing",
   },
+  // Signed-in people reach it from Help in the account menu, and from the footer.
   CONTACT: {
-    shouldShowIn: [ROUTE_TYPE.NAV_ROUTE, ROUTE_TYPE.FOOTER_COMPANY_INFO_ROUTE],
+    shouldShowIn: [
+      ROUTE_TYPE.NAV_ROUTE,
+      ROUTE_TYPE.FOOTER_COMPANY_INFO_ROUTE,
+      ROUTE_TYPE.SIGNED_OUT_ONLY,
+    ],
     label: "Contact Us",
     href: "/contact",
   },
@@ -36,6 +42,11 @@ export const ROUTES: { [key: string]: RouteProps } = {
     shouldShowIn: [ROUTE_TYPE.NAV_ROUTE, ROUTE_TYPE.HIDE_ON_LOGIN],
     label: "Signup",
     href: "/auth?type=signup",
+  },
+  ADMIN_LOGIN: {
+    shouldShowIn: [],
+    label: "Admin sign-in",
+    href: "/admin/login",
   },
   COMPLETE_USER_INFORMATION: {
     shouldShowIn: [],
@@ -58,6 +69,11 @@ export const ROUTES: { [key: string]: RouteProps } = {
     shouldShowIn: [ROUTE_TYPE.FOOTER_COMPANY_INFO_ROUTE],
     label: "Terms of Service",
     href: "/terms",
+  },
+  PRIVACY_POLICY: {
+    shouldShowIn: [ROUTE_TYPE.FOOTER_COMPANY_INFO_ROUTE],
+    label: "Privacy Policy",
+    href: "/privacy-policy",
   },
 
   // App Routes
