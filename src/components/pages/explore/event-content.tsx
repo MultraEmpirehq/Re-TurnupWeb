@@ -1,14 +1,12 @@
 import React, { memo } from "react";
-import Filter from "./filter";
+import CategoryTiles from "./category-tiles";
 import EventList from "./event-list";
 
-const EventContent = () => {
-  return (
-    <div className="flex-row flex items-start gap-6 sticky top-[50px]">
-      <Filter />
-      <EventList />
-    </div>
-  );
-};
+const EventContent = () => (
+  <div className="space-y-8">
+    <CategoryTiles />
+    <EventList />
+  </div>
+);
 
 export default memo(EventContent);

@@ -1,5 +1,6 @@
 "use client";
 
+import BrandLoader from "@/components/ui/brand-loader";
 import AdminShell from "@/components/pages/app/admin/shell/admin-shell";
 import AttendeeShell from "@/components/pages/app/attendee-shell";
 import VendorShell from "@/components/pages/app/vendor/shell/vendor-shell";
@@ -20,7 +21,7 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
-        <div className="size-8 animate-spin rounded-full border-b-2 border-foreground" />
+        <BrandLoader />
       </div>
     );
   }

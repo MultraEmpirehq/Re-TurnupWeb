@@ -1,5 +1,6 @@
 "use client";
 
+import BrandLoader from "@/components/ui/brand-loader";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
 import { ROUTES } from "@/lib/variables";
 import { useRouter } from "next/navigation";
@@ -23,7 +24,7 @@ const RequireAdmin: React.FC<{ children: React.ReactNode }> = ({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen w-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground" />
+        <BrandLoader />
       </div>
     );
   }

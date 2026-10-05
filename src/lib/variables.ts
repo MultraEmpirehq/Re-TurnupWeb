@@ -12,6 +12,11 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Explore",
     href: "/explore",
   },
+  PRICING: {
+    shouldShowIn: [ROUTE_TYPE.NAV_ROUTE],
+    label: "Pricing",
+    href: "/pricing",
+  },
   CONTACT: {
     shouldShowIn: [ROUTE_TYPE.NAV_ROUTE, ROUTE_TYPE.FOOTER_COMPANY_INFO_ROUTE],
     label: "Contact Us",

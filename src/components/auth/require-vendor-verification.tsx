@@ -1,5 +1,6 @@
 "use client";
 
+import BrandLoader from "@/components/ui/brand-loader";
 import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status";
 import { ROUTES } from "@/lib/variables";
 import { useRouter } from "next/navigation";
@@ -36,7 +37,7 @@ const RequireVendorVerification: React.FC<{
   if (isChecking) {
     return (
       <div className="flex items-center justify-center h-screen w-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground" />
+        <BrandLoader />
       </div>
     );
   }

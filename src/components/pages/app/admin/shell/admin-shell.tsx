@@ -1,5 +1,6 @@
 "use client";
 
+import BrandLoader from "@/components/ui/brand-loader";
 import { NovuInbox } from "@/components/notifications/novu-inbox";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -16,7 +17,9 @@ import { adminPermissionFor, adminSectionLabel } from "./admin-nav";
 import AdminSidebar from "./admin-sidebar";
 
 /** Shown in place of a page the admin's permissions don't cover. */
-const NoAccess: React.FC<{ permissionLabel: string }> = ({ permissionLabel }) => (
+const NoAccess: React.FC<{ permissionLabel: string }> = ({
+  permissionLabel,
+}) => (
   <div className="mx-auto flex max-w-md flex-col items-center gap-3 rounded-xl border border-border bg-card px-6 py-12 text-center">
     <span className="flex size-12 items-center justify-center rounded-full bg-secondary-50 text-secondary-800">
       <LockKeyhole className="size-5" aria-hidden />
@@ -79,7 +82,10 @@ const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <nav aria-label="Breadcrumb" className="min-w-0">
               <ol className="flex items-center gap-2 text-sm">
                 <li className="hidden text-muted-foreground sm:block">Admin</li>
-                <li aria-hidden className="hidden text-muted-foreground sm:block">
+                <li
+                  aria-hidden
+                  className="hidden text-muted-foreground sm:block"
+                >
                   /
                 </li>
                 <li className="truncate font-semibold text-foreground">
@@ -94,7 +100,7 @@ const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <main className="flex-1 px-4 pt-6 pb-10 sm:px-6 lg:px-8">
           {isWaiting ? (
             <div className="flex justify-center py-16">
-              <div className="size-8 animate-spin rounded-full border-b-2 border-foreground" />
+              <BrandLoader />
             </div>
           ) : isBlocked ? (
             <NoAccess

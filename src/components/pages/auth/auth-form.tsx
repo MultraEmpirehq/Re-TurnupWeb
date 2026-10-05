@@ -1,6 +1,5 @@
 "use client";
 import { resolveLandingRoute } from "@/lib/auth-landing";
-import SectionContainer from "@/components/layouts/section-container/section-container";
 import { Button } from "@/components/ui/button";
 import InputField from "@/components/ui/input-field";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -14,7 +13,7 @@ import { toast } from "sonner";
 import { constructErrorMessage } from "@/api/functions";
 import useAuth from "@/hooks/use-auth";
 import useSocialAuth, {
-  APPLE_SCRIPT_SRC,
+  // APPLE_SCRIPT_SRC, // Apple sign-in is switched off for now; see below.
   GOOGLE_SCRIPT_SRC,
   ISocialAuthResponse,
 } from "@/hooks/use-social-auth";
@@ -24,6 +23,8 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/variables";
 import Script from "next/script";
+import Link from "next/link";
+import { Mail } from "lucide-react";
 
 interface IFormValues {
   email: string;
@@ -99,6 +100,7 @@ const AuthForm = () => {
     register,
     handleSubmit,
     resetField,
+    getValues,
     formState: { errors, isValid, isSubmitting },
   } = useForm<IFormValues>({
     resolver: joiResolver(schema),
@@ -147,12 +149,14 @@ const AuthForm = () => {
   const {
     googleButtonRef,
     isGoogleConfigured,
-    isAppleConfigured,
-    isAppleScriptReady,
+    // Apple sign-in is switched off for now. To bring it back, restore these,
+    // the Apple script and button below, and APPLE_SCRIPT_SRC in the import.
+    // isAppleConfigured,
+    // isAppleScriptReady,
+    // onAppleScriptReady,
+    // signInWithApple,
     isSubmitting: isSocialSubmitting,
     onGoogleScriptReady,
-    onAppleScriptReady,
-    signInWithApple,
   } = useSocialAuth({
     onSuccess: handleAuthSuccess,
     onError: handleAuthError,
@@ -213,85 +217,140 @@ const AuthForm = () => {
           onReady={onGoogleScriptReady}
         />
       )}
+      {/* Apple sign-in, switched off for now.
       {isAppleConfigured && (
         <Script
           src={APPLE_SCRIPT_SRC}
           strategy="afterInteractive"
           onReady={onAppleScriptReady}
         />
-      )}
-      <SectionContainer className="flex flex-col items-center justify-center min-h-full py-10 md:py-16">
-        <div className="flex flex-col items-center justify-center w-full max-w-sm gap-10">
-          <div className="flex flex-col items-center justify-center text-center">
-            <h1 className="text-[clamp(1.1rem,2vw,2rem)] font-bold text-secondary-900">
-              Welcome 🎉
-            </h1>
-            <p className="opacity-60 max-w-xs">
-              Enter your email to sign up or login to your account.
-            </p>
-          </div>
+      )} */}
+      <div className="flex w-full flex-col gap-7">
+        <div className="space-y-2">
+          <p className="text-sm font-semibold tracking-wider text-primary uppercase">
+            {shouldShowLoginForm ? "Log in" : "Log in or sign up"}
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-secondary-950">
+            {shouldShowLoginForm ? "Welcome back" : "Let's get you in"}
+          </h1>
+          <p className="text-secondary-950/60">
+            {shouldShowLoginForm
+              ? "Enter your password to carry on where you left off."
+              : "Enter your email. We'll log you in, or send a link to set up your account if you're new."}
+          </p>
+        </div>
 
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="space-y-5 w-full max-w-sm"
-          >
+        <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-5">
+          {shouldShowLoginForm ? (
+            // The email is settled by now, so it shows as a chip that can be changed.
+            <div className="flex items-center gap-3 rounded-2xl bg-[#f7f9fc] px-4 py-3 ring-1 ring-secondary-100">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white text-secondary-800 ring-1 ring-secondary-100">
+                <Mail className="size-4" aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1 truncate font-medium text-secondary-950">
+                {getValues("email")?.trim().toLowerCase()}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setCheckedCredentials(null);
+                  resetField("password");
+                }}
+                className="shrink-0 text-sm font-semibold text-primary hover:underline"
+              >
+                Change
+              </button>
+            </div>
+          ) : (
             <InputField
-              inputClassName="bg-black/10"
+              label="Email"
+              labelClassName="text-secondary-950"
+              inputClassName="h-12 rounded-xl bg-[#f7f9fc]"
               placeholder="name@example.com"
               type="email"
+              autoComplete="email"
+              autoFocus
               {...register("email")}
               error={errors.email?.message}
             />
-            {shouldShowLoginForm && (
+          )}
+          {shouldShowLoginForm && (
+            <div className="space-y-2">
               <InputField
-                inputClassName="bg-black/10"
+                label="Password"
+                labelClassName="text-secondary-950"
+                inputClassName="h-12 rounded-xl bg-[#f7f9fc]"
                 placeholder="Enter your password"
                 type="password"
+                autoComplete="current-password"
+                autoFocus
                 {...register("password")}
                 error={errors.password?.message}
               />
-            )}
-            <Button
-              disabled={!isValid || isBusy}
-              loading={isSubmitting}
-              type="submit"
-              className="w-full"
-            >
-              Continue
-            </Button>
-          </form>
-          {(isGoogleConfigured || isAppleConfigured) && (
-            <>
-              <div className="flex flex-row items-center gap-2 w-full max-w-sm">
-                <Separator className="flex-1" />
-                <p className="text-sm opacity-60">OR</p>
-                <Separator className="flex-1" />
+              <div className="flex justify-end">
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-sm font-medium text-secondary-950/60 hover:text-secondary-950 hover:underline"
+                >
+                  Forgot password?
+                </Link>
               </div>
-              <div className="flex flex-col items-center justify-center gap-4 w-full">
-                {isGoogleConfigured && (
-                  <div
-                    ref={googleButtonRef}
-                    className="w-full flex justify-center min-h-10"
-                    aria-busy={isSocialSubmitting}
-                  />
-                )}
-                {isAppleConfigured && (
-                  <Button
-                    disabled={isBusy || !isAppleScriptReady}
-                    onClick={signInWithApple}
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    size="lg"
-                  >
-                    Continue with Apple
-                  </Button>
-                )}
-              </div>
-            </>
+            </div>
           )}
-        </div>
-      </SectionContainer>
+          <Button
+            disabled={!isValid || isBusy}
+            loading={isSubmitting}
+            type="submit"
+            className="h-12 w-full rounded-full bg-secondary-950 text-base text-white hover:bg-secondary-900"
+          >
+            {shouldShowLoginForm ? "Log in" : "Continue with email"}
+          </Button>
+        </form>
+
+        {isGoogleConfigured && (
+          <>
+            <div className="flex w-full flex-row items-center gap-3">
+              <Separator className="flex-1" />
+              <p className="text-xs font-medium tracking-wider text-secondary-950/45 uppercase">
+                or
+              </p>
+              <Separator className="flex-1" />
+            </div>
+            <div className="flex w-full flex-col items-center justify-center gap-3">
+              {isGoogleConfigured && (
+                <div
+                  ref={googleButtonRef}
+                  className="flex min-h-10 w-full justify-center"
+                  aria-busy={isSocialSubmitting}
+                />
+              )}
+              {/* Apple sign-in, switched off for now.
+              {isAppleConfigured && (
+                <Button
+                  disabled={isBusy || !isAppleScriptReady}
+                  onClick={signInWithApple}
+                  type="button"
+                  variant="outline"
+                  className="h-12 w-full rounded-full border-secondary-200"
+                >
+                  Continue with Apple
+                </Button>
+              )} */}
+            </div>
+          </>
+        )}
+
+        <p className="text-center text-xs leading-5 text-secondary-950/50">
+          By continuing you agree to the Turnupz{" "}
+          <Link
+            href="/terms"
+            className="font-medium text-secondary-950/70 underline-offset-2 hover:underline"
+          >
+            Terms of Service
+          </Link>
+          .
+        </p>
+      </div>
       <MagicLinkModal
         open={!!magicLinkEmail}
         setOpen={() => setMagicLinkEmail(null)}
