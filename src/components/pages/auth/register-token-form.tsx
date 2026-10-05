@@ -1,5 +1,4 @@
 "use client";
-import SectionContainer from "@/components/layouts/section-container/section-container";
 import { Button } from "@/components/ui/button";
 import InputField from "@/components/ui/input-field";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -88,46 +87,58 @@ const RegisterTokenForm = () => {
     [token, email, performAuthOperation, router, redirectTo],
   );
   return (
-    <SectionContainer className="flex flex-col items-center justify-center min-h-full py-10 md:py-16">
-      <div className="flex flex-col items-center justify-center w-full max-w-sm gap-10">
-        <div className="flex flex-col items-center justify-center text-center">
-          <h1 className="text-[clamp(1.1rem,1.5vw,1.5rem)] font-bold text-secondary-900">
-            Continue Account Creation
-          </h1>
-          <p className="opacity-60 max-w-xs">
-            Complete your account creation by creating a password to secure your
-            account.
-          </p>
-        </div>
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="space-y-6 w-full max-w-sm"
-        >
-          <InputField
-            inputClassName="bg-black/10"
-            placeholder="Enter your password"
-            type="password"
-            {...register("password")}
-            error={errors.password?.message}
-          />
-          <InputField
-            inputClassName="bg-black/10"
-            placeholder="Confirm your password"
-            type="password"
-            {...register("confirmPassword")}
-            error={errors.confirmPassword?.message}
-          />
-          <Button
-            disabled={!isValid}
-            loading={isSubmitting}
-            className="w-full"
-            type="submit"
-          >
-            Continue
-          </Button>
-        </form>
+    <div className="flex w-full flex-col gap-7">
+      <div className="space-y-2">
+        <p className="text-sm font-semibold tracking-wider text-primary uppercase">
+          Sign up · Step 1 of 2
+        </p>
+        <h1 className="text-3xl font-bold tracking-tight text-secondary-950">
+          Create a password
+        </h1>
+        <p className="text-secondary-950/60">
+          {email ? (
+            <>
+              You&apos;ll use it with{" "}
+              <span className="font-medium text-secondary-950">{email}</span> to
+              log in.
+            </>
+          ) : (
+            "You'll use it with your email to log in."
+          )}
+        </p>
       </div>
-    </SectionContainer>
+      <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-5">
+        <InputField
+          label="Password"
+          labelClassName="text-secondary-950"
+          inputClassName="h-12 rounded-xl bg-[#f7f9fc]"
+          placeholder="At least 8 characters"
+          type="password"
+          autoComplete="new-password"
+          autoFocus
+          {...register("password")}
+          error={errors.password?.message}
+        />
+        <InputField
+          label="Confirm password"
+          labelClassName="text-secondary-950"
+          inputClassName="h-12 rounded-xl bg-[#f7f9fc]"
+          placeholder="Type it again"
+          type="password"
+          autoComplete="new-password"
+          {...register("confirmPassword")}
+          error={errors.confirmPassword?.message}
+        />
+        <Button
+          disabled={!isValid}
+          loading={isSubmitting}
+          className="h-12 w-full rounded-full bg-secondary-950 text-base text-white hover:bg-secondary-900"
+          type="submit"
+        >
+          Continue
+        </Button>
+      </form>
+    </div>
   );
 };
 

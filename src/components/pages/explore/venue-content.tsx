@@ -38,7 +38,7 @@ const VenueContent = () => {
   return (
     <div>
       {(isLoading || (!isLoading && venues && venues.length > 0)) && !error && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {isLoading &&
             Array.from({ length: 6 }).map((_, index) => (
               <VenueCardSkeleton key={index} />
@@ -67,14 +67,13 @@ const VenueContent = () => {
         />
       )}
       {hasNextPage && fetchNextPage && (
-        <div className="flex flex-row items-center gap-2 justify-between">
+        <div className="mt-8 flex justify-center">
           <Button
             disabled={isFetchingNextPage}
             onClick={() => fetchNextPage?.()}
-            variant="outline"
-            size="sm"
+            className="h-11 rounded-full bg-secondary-950 px-7 text-white hover:bg-secondary-900"
           >
-            {isFetchingNextPage ? "Loading..." : "See more"}
+            {isFetchingNextPage ? "Loading..." : "Show more venues"}
           </Button>
         </div>
       )}

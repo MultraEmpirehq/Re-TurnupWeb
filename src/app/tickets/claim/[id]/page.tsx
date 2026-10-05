@@ -1,5 +1,6 @@
 "use client";
 
+import BrandLoader from "@/components/ui/brand-loader";
 import { postData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { ROUTES } from "@/lib/variables";
@@ -49,8 +50,7 @@ export default function ClaimTicketPage() {
 
   return (
     <div className="flex flex-col items-center justify-center h-screen w-full gap-4">
-      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-foreground" />
-      <p className="text-sm text-muted-foreground">Claiming your ticket...</p>
+      <BrandLoader fullScreen label="Claiming your ticket..." />
     </div>
   );
 }

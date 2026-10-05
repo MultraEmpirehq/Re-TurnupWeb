@@ -1,5 +1,4 @@
-import Link from "next/link";
-import React, { memo } from "react";
+import { memo } from "react";
 
 const policySections = [
   {
@@ -82,21 +81,6 @@ const TermsPage = () => {
             </ul>
           </article>
         ))}
-      </section>
-
-      <section className="rounded-[1.6rem] bg-secondary-50 p-6 text-sm leading-7 text-secondary-600">
-        <p className="font-semibold text-secondary-950">Before publishing</p>
-        <p className="mt-2">
-          By confirming the publish checkbox, the vendor confirms that the event
-          follows these requirements and that the submitted event information is
-          accurate to the best of their knowledge.
-        </p>
-        <Link
-          href="/app/create"
-          className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-secondary-950 transition hover:bg-secondary-100"
-        >
-          Back to Create Event
-        </Link>
       </section>
     </main>
   );

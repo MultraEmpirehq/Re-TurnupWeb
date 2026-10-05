@@ -1,9 +1,12 @@
 "use client";
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CalendarDays, MapPin } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import React, { memo } from "react";
+import DayStrip from "./day-strip";
 import EventContent from "./event-content";
-import { useRouter, useSearchParams } from "next/navigation";
+import useExploreFilters from "./use-explore-filters";
 import VenueContent from "./venue-content";
 
 export enum EXPLORE_CONTENT_TABS {
@@ -11,51 +14,62 @@ export enum EXPLORE_CONTENT_TABS {
   VENUES = "venues",
 }
 
-interface TabItem {
-  value: EXPLORE_CONTENT_TABS;
-  label: string;
-  content: React.ReactNode;
-}
-const tabItems: TabItem[] = [
+const tabItems = [
   {
     value: EXPLORE_CONTENT_TABS.EVENTS,
     label: "Events",
+    icon: CalendarDays,
     content: <EventContent />,
   },
   {
     value: EXPLORE_CONTENT_TABS.VENUES,
     label: "Venues",
+    icon: MapPin,
     content: <VenueContent />,
   },
 ];
 
 const ExploreContentComponent = () => {
-  const { push } = useRouter();
   const searchParams = useSearchParams();
+  const { setFilters } = useExploreFilters();
   const tab = searchParams.get("tab")?.toString();
+
   return (
-    <SectionContainer className="w-full py-10 md:py-16">
-      <Tabs
-        onValueChange={(value) => {
-          push(`?tab=${value}`, { scroll: false });
-        }}
-        defaultValue={tab || EXPLORE_CONTENT_TABS.EVENTS}
-        className="w-full space-y-6"
-      >
-        <TabsList>
-          {tabItems.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
-              {tab.label}
-            </TabsTrigger>
+    <section className="bg-[#f7f9fc] [--ticket-notch:#f7f9fc]">
+      <SectionContainer className="relative z-10 w-full space-y-10 pb-16 md:pb-24">
+        <div className="-mt-20">
+          <DayStrip />
+        </div>
+        <Tabs
+          // Only the tab changes, so any search or filters carry over.
+          onValueChange={(value) =>
+            setFilters({
+              tab: value === EXPLORE_CONTENT_TABS.EVENTS ? undefined : value,
+            })
+          }
+          defaultValue={tab || EXPLORE_CONTENT_TABS.EVENTS}
+          className="w-full gap-6"
+        >
+          <TabsList className="h-auto rounded-full bg-white p-1 shadow-[0_1px_2px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
+            {tabItems.map(({ value, label, icon: Icon }) => (
+              <TabsTrigger
+                key={value}
+                value={value}
+                className="gap-2 rounded-full px-5 py-2 text-sm font-medium text-secondary-800 data-[state=active]:bg-secondary-950 data-[state=active]:text-white data-[state=active]:shadow-none"
+              >
+                <Icon className="size-4" aria-hidden />
+                {label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {tabItems.map((item) => (
+            <TabsContent key={item.value} value={item.value}>
+              {item.content}
+            </TabsContent>
           ))}
-        </TabsList>
-        {tabItems.map((tab) => (
-          <TabsContent key={tab.value} value={tab.value}>
-            {tab.content}
-          </TabsContent>
-        ))}
-      </Tabs>
-    </SectionContainer>
+        </Tabs>
+      </SectionContainer>
+    </section>
   );
 };
 

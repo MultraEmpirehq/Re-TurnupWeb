@@ -2,7 +2,6 @@
 import nextDynamic from "next/dynamic";
 import { getData, patchData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
-import SectionContainer from "@/components/layouts/section-container/section-container";
 import { Button } from "@/components/ui/button";
 import DateSelect from "@/components/ui/date-select";
 import GenderSelect from "@/components/ui/gender-select";
@@ -26,7 +25,7 @@ const CountrySelect = nextDynamic(
   () => import("@/components/ui/country-select"),
   {
     ssr: false,
-    loading: () => <Skeleton className="h-10 w-full rounded-md" />,
+    loading: () => <Skeleton className="h-12 w-full rounded-xl" />,
   },
 );
 
@@ -68,10 +67,8 @@ const schema = Joi.object({
     "string.empty": "Country is required",
     "any.required": "Country is required",
   }),
-  postalCode: Joi.string().required().messages({
-    "string.empty": "Postal code is required",
-    "any.required": "Postal code is required",
-  }),
+  // Optional: not every country uses one, and plenty of people don't know theirs.
+  postalCode: Joi.string().allow("").optional(),
   isUserNameValid: Joi.boolean().valid(true).required().messages({
     "boolean.valid": "Username is not available",
     "boolean.empty": "Username validation is required",
@@ -135,12 +132,24 @@ const CompleteUserForm = () => {
 
   const onSubmit = useCallback(
     async (body: IFormValues) => {
-      const { username, isUserNameValid: _isUserNameValid, ...payload } = body;
+      const {
+        username,
+        postalCode,
+        isUserNameValid: _isUserNameValid,
+        ...payload
+      } = body;
       try {
         const { data } = await patchData<
-          Omit<IFormValues, "isUserNameValid">,
+          Omit<IFormValues, "isUserNameValid" | "postalCode"> & {
+            postalCode?: string;
+          },
           TUserDetails
-        >("/user", { ...payload, username: username?.trim()?.toLowerCase() });
+        >("/user", {
+          ...payload,
+          username: username?.trim()?.toLowerCase(),
+          // Left out when blank: the api checks any postcode it's given.
+          ...(postalCode?.trim() ? { postalCode: postalCode.trim() } : {}),
+        });
         await performAuthOperation(data?.data);
         toast.success("Account completed successfully");
         router.push(redirectTo || ROUTES.HOME.href);
@@ -165,53 +174,60 @@ const CompleteUserForm = () => {
   }, [username, checkUserNameAvailability, setValue]);
 
   return (
-    <SectionContainer className="flex flex-col items-center justify-center min-h-full py-10 md:py-16">
-      <div className="flex flex-col items-center justify-center w-full max-w-sm gap-10">
-        <div className="flex flex-col items-center justify-center text-center">
-          <h1 className="text-[clamp(1.1rem,1.5vw,1.5rem)] font-bold text-secondary-900">
-            Complete Your Account
-          </h1>
-          <p className="opacity-60 max-w-xs">
-            Complete your account creation by creating a password to secure your
-            account.
-          </p>
-        </div>
-        <form
-          className="space-y-5 w-full max-w-sm"
-          onSubmit={handleSubmit(onSubmit)}
-        >
+    <div className="flex w-full flex-col gap-7">
+      <div className="space-y-2">
+        <p className="text-sm font-semibold tracking-wider text-primary uppercase">
+          Almost there
+        </p>
+        <h1 className="text-3xl font-bold tracking-tight text-secondary-950">
+          Tell us about you
+        </h1>
+        <p className="text-secondary-950/60">
+          A few details so we can show you events that fit. Takes a minute.
+        </p>
+      </div>
+      <form className="w-full space-y-5" onSubmit={handleSubmit(onSubmit)}>
+        <div className="grid gap-5 sm:grid-cols-2">
           <InputField
-            inputClassName="bg-black/10"
-            placeholder="Enter your first name"
-            label="First Name"
+            label="First name"
+            labelClassName="text-secondary-950"
+            inputClassName="h-12 rounded-xl bg-[#f7f9fc]"
+            placeholder="Ada"
             type="text"
+            autoComplete="given-name"
             {...register("firstName")}
             error={errors?.firstName?.message}
           />
           <InputField
-            inputClassName="bg-black/10"
-            placeholder="Enter your first name"
-            label="Last Name"
+            label="Last name"
+            labelClassName="text-secondary-950"
+            inputClassName="h-12 rounded-xl bg-[#f7f9fc]"
+            placeholder="Okafor"
             type="text"
+            autoComplete="family-name"
             {...register("lastName")}
             error={errors?.lastName?.message}
           />
-          <InputField
-            inputClassName="bg-black/10"
-            placeholder="Enter your username"
-            label="Username"
-            rightIcon={
-              <>
-                {isValidatingUserName && <Spinner className="size-4" />}
-                {!isValidatingUserName && isUserNameValid && (
-                  <CheckIcon className="size-4" />
-                )}
-              </>
-            }
-            type="text"
-            {...register("username")}
-            error={errors?.username?.message}
-          />
+        </div>
+        <InputField
+          label="Username"
+          labelClassName="text-secondary-950"
+          inputClassName="h-12 rounded-xl bg-[#f7f9fc]"
+          placeholder="Pick something people can find you by"
+          autoComplete="username"
+          rightIcon={
+            <>
+              {isValidatingUserName && <Spinner className="size-4" />}
+              {!isValidatingUserName && isUserNameValid && (
+                <CheckIcon className="size-4 text-emerald-600" />
+              )}
+            </>
+          }
+          type="text"
+          {...register("username")}
+          error={errors?.username?.message}
+        />
+        <div className="grid gap-5 sm:grid-cols-2">
           <Controller
             control={control}
             name="dateOfBirth"
@@ -219,11 +235,11 @@ const CompleteUserForm = () => {
               <DateSelect
                 date={field.value}
                 setDate={field.onChange}
-                label="Date of Birth"
-                placeholder="Select your date of birth"
+                label="Date of birth"
+                placeholder="Select a date"
                 error={fieldState?.error?.message}
                 className="w-full"
-                inputClassName="w-full bg-black/10"
+                inputClassName="w-full h-12 rounded-xl bg-[#f7f9fc]"
               />
             )}
           />
@@ -235,13 +251,15 @@ const CompleteUserForm = () => {
                 gender={field.value}
                 setGender={field.onChange}
                 label="Gender"
-                placeholder="Select your gender"
+                placeholder="Select"
                 error={fieldState?.error?.message}
                 className="w-full"
-                inputClassName="w-full bg-black/10"
+                inputClassName="w-full h-12 rounded-xl bg-[#f7f9fc]"
               />
             )}
           />
+        </div>
+        <div className="grid gap-5 sm:grid-cols-[1.4fr_1fr]">
           <Controller
             control={control}
             name="country"
@@ -253,29 +271,31 @@ const CompleteUserForm = () => {
                 placeholder="Select your country"
                 error={fieldState?.error?.message}
                 className="w-full"
-                inputClassName="w-full bg-black/10"
+                inputClassName="w-full h-12 rounded-xl bg-[#f7f9fc]"
               />
             )}
           />
           <InputField
-            inputClassName="bg-black/10"
-            placeholder="Enter your postal code"
-            label="Postal Code"
+            label="Postcode (optional)"
+            labelClassName="text-secondary-950"
+            inputClassName="h-12 rounded-xl bg-[#f7f9fc]"
+            placeholder="e.g. 100001"
             type="text"
+            autoComplete="postal-code"
             {...register("postalCode")}
             error={errors?.postalCode?.message}
           />
-          <Button
-            className="w-full mt-4"
-            type="submit"
-            disabled={!isValid}
-            loading={isSubmitting}
-          >
-            Complete Account
-          </Button>
-        </form>
-      </div>
-    </SectionContainer>
+        </div>
+        <Button
+          className="mt-2 h-12 w-full rounded-full bg-secondary-950 text-base text-white hover:bg-secondary-900"
+          type="submit"
+          disabled={!isValid}
+          loading={isSubmitting}
+        >
+          Finish and start exploring
+        </Button>
+      </form>
+    </div>
   );
 };
 
