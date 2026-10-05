@@ -13,12 +13,11 @@ import { toast } from "sonner";
 import { constructErrorMessage } from "@/api/functions";
 import useAuth from "@/hooks/use-auth";
 import useSocialAuth, {
-  // APPLE_SCRIPT_SRC, // Apple sign-in is switched off for now; see below.
   GOOGLE_SCRIPT_SRC,
   ISocialAuthResponse,
 } from "@/hooks/use-social-auth";
 import useUserStore, { TUserDetails } from "@/stores/user-store";
-import { IUserCheckedCredentials } from "@/lib/types";
+import { IUserCheckedCredentials, OTP_VERIFICATION_TYPE } from "@/lib/types";
 import { useParams, useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/variables";
@@ -89,6 +88,9 @@ const AuthForm = () => {
       checkedCredentials?.isAccountCreationCompleted
     );
   }, [checkedCredentials]);
+  // An account made with Google has no password, so asking for one is a dead end.
+  const isPasswordless =
+    !!shouldShowLoginForm && !!checkedCredentials?.shouldRequestPassword;
 
   const schema = useMemo(() => {
     return shouldShowLoginForm ? loginSchema : checkAccountSchema;
@@ -149,12 +151,6 @@ const AuthForm = () => {
   const {
     googleButtonRef,
     isGoogleConfigured,
-    // Apple sign-in is switched off for now. To bring it back, restore these,
-    // the Apple script and button below, and APPLE_SCRIPT_SRC in the import.
-    // isAppleConfigured,
-    // isAppleScriptReady,
-    // onAppleScriptReady,
-    // signInWithApple,
     isSubmitting: isSocialSubmitting,
     onGoogleScriptReady,
   } = useSocialAuth({
@@ -217,14 +213,6 @@ const AuthForm = () => {
           onReady={onGoogleScriptReady}
         />
       )}
-      {/* Apple sign-in, switched off for now.
-      {isAppleConfigured && (
-        <Script
-          src={APPLE_SCRIPT_SRC}
-          strategy="afterInteractive"
-          onReady={onAppleScriptReady}
-        />
-      )} */}
       <div className="flex w-full flex-col gap-7">
         <div className="space-y-2">
           <p className="text-sm font-semibold tracking-wider text-primary uppercase">
@@ -234,9 +222,11 @@ const AuthForm = () => {
             {shouldShowLoginForm ? "Welcome back" : "Let's get you in"}
           </h1>
           <p className="text-secondary-950/60">
-            {shouldShowLoginForm
-              ? "Enter your password to carry on where you left off."
-              : "Enter your email. We'll log you in, or send a link to set up your account if you're new."}
+            {isPasswordless
+              ? "This account was created with Google, so it doesn't have a password yet."
+              : shouldShowLoginForm
+                ? "Enter your password to carry on where you left off."
+                : "Enter your email. We'll log you in, or send a link to set up your account if you're new."}
           </p>
         </div>
 
@@ -274,7 +264,30 @@ const AuthForm = () => {
               error={errors.email?.message}
             />
           )}
-          {shouldShowLoginForm && (
+          {isPasswordless && (
+            <div className="space-y-3 rounded-2xl bg-secondary-50/60 p-4 text-sm text-secondary-950/70">
+              <p>
+                {isGoogleConfigured
+                  ? "Use Continue with Google below, or set a password to sign in with your email from now on."
+                  : "Set a password to sign in with your email from now on."}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 w-full rounded-full border-secondary-200 bg-white"
+                onClick={() =>
+                  router.push(
+                    `${ROUTES.OTP.href}?email=${encodeURIComponent(
+                      getValues("email")?.trim().toLowerCase() ?? "",
+                    )}&type=${OTP_VERIFICATION_TYPE.FORGOT_PASSWORD}`,
+                  )
+                }
+              >
+                Email me a code to set a password
+              </Button>
+            </div>
+          )}
+          {shouldShowLoginForm && !isPasswordless && (
             <div className="space-y-2">
               <InputField
                 label="Password"
@@ -297,14 +310,16 @@ const AuthForm = () => {
               </div>
             </div>
           )}
-          <Button
-            disabled={!isValid || isBusy}
-            loading={isSubmitting}
-            type="submit"
-            className="h-12 w-full rounded-full bg-secondary-950 text-base text-white hover:bg-secondary-900"
-          >
-            {shouldShowLoginForm ? "Log in" : "Continue with email"}
-          </Button>
+          {!isPasswordless && (
+            <Button
+              disabled={!isValid || isBusy}
+              loading={isSubmitting}
+              type="submit"
+              className="h-12 w-full rounded-full bg-secondary-950 text-base text-white hover:bg-secondary-900"
+            >
+              {shouldShowLoginForm ? "Log in" : "Continue with email"}
+            </Button>
+          )}
         </form>
 
         {isGoogleConfigured && (
@@ -324,18 +339,6 @@ const AuthForm = () => {
                   aria-busy={isSocialSubmitting}
                 />
               )}
-              {/* Apple sign-in, switched off for now.
-              {isAppleConfigured && (
-                <Button
-                  disabled={isBusy || !isAppleScriptReady}
-                  onClick={signInWithApple}
-                  type="button"
-                  variant="outline"
-                  className="h-12 w-full rounded-full border-secondary-200"
-                >
-                  Continue with Apple
-                </Button>
-              )} */}
             </div>
           </>
         )}
@@ -347,6 +350,13 @@ const AuthForm = () => {
             className="font-medium text-secondary-950/70 underline-offset-2 hover:underline"
           >
             Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link
+            href="/privacy-policy"
+            className="font-medium text-secondary-950/70 underline-offset-2 hover:underline"
+          >
+            Privacy Policy
           </Link>
           .
         </p>

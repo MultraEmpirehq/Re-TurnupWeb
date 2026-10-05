@@ -22,28 +22,9 @@ interface IGoogleAccountsId {
   cancel: () => void;
 }
 
-interface IAppleSignInResponse {
-  authorization: { id_token: string; code: string; state?: string };
-  user?: { name?: { firstName?: string; lastName?: string }; email?: string };
-}
-
-interface IAppleId {
-  auth: {
-    init: (options: {
-      clientId: string;
-      scope: string;
-      redirectURI: string;
-      usePopup: boolean;
-      state?: string;
-    }) => void;
-    signIn: () => Promise<IAppleSignInResponse>;
-  };
-}
-
 declare global {
   interface Window {
     google?: { accounts: { id: IGoogleAccountsId } };
-    AppleID?: IAppleId;
   }
 }
 

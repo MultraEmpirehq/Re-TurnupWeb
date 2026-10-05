@@ -109,7 +109,7 @@ const AdminOverview = () => {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {shortcuts.map(({ href, icon: Icon, title, description }) => (
           <Link
             key={href}

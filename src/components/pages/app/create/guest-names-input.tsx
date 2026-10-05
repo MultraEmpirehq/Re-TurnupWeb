@@ -32,7 +32,7 @@ const GuestNamesInput: React.FC<IAdditionalInformationProps> = ({
     (index: number) => {
       setGuestNames(guestNames?.filter((_, i) => i !== index));
     },
-    [guestNames, setGuestNames]
+    [guestNames, setGuestNames],
   );
   const handleAddGuestName = useCallback(() => {
     if (guestNamesInput?.trim() === "") return;
@@ -123,7 +123,7 @@ const GuestNamesInput: React.FC<IAdditionalInformationProps> = ({
             "text-sm",
 
             error && errorClassName,
-            error && "text-destructive"
+            error && "text-destructive",
           )}
         >
           {error}

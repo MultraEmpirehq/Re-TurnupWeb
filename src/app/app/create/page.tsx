@@ -33,6 +33,13 @@ import { IEventBlogPostDetails, IEventDetailsType } from "@/lib/types";
 import { getCurrencyForCountry } from "@/lib/currency";
 import { uploadAttachment } from "@/api/attachments";
 import { TAttachment, TAttachmentPurpose } from "@/lib/types";
+import { saleRulesPayload } from "@/components/pages/app/create/ticket-sale-rules";
+import {
+  DEFAULT_EVENT_TIMEZONE,
+  defaultEventTimezone,
+  instantToWallTimeInZone,
+  wallTimeInZoneToInstant,
+} from "@/lib/event-time";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +64,7 @@ const defaultValues: TFormValues = {
   eventName: "",
   organizerName: "",
   eventDate: new Date(new Date().setDate(new Date().getDate() + 1)),
+  eventTimezone: DEFAULT_EVENT_TIMEZONE,
   eventCountry: "",
   eventCountryCode: "",
   eventState: "",
@@ -137,8 +145,14 @@ const buildEventFormData = async (
   formData.append("organizerName", body.organizerName);
   formData.append(
     "eventDate",
-    body.eventDate ? new Date(body.eventDate).toISOString() : "",
+    body.eventDate
+      ? wallTimeInZoneToInstant(
+          new Date(body.eventDate),
+          body.eventTimezone,
+        ).toISOString()
+      : "",
   );
+  if (body.eventTimezone) formData.append("timezone", body.eventTimezone);
   formData.append("eventCountry", body.eventCountry);
   formData.append("eventCountryCode", body.eventCountryCode);
   formData.append("eventState", body.eventState);
@@ -174,8 +188,18 @@ const buildEventFormData = async (
     );
   }
   if (body.eventActivities?.length) {
-    formData.append("eventActivities", JSON.stringify(body.eventActivities));
-    formData.append("activities", JSON.stringify(body.eventActivities));
+    // Activity times are picked on the same clock as the event date.
+    const activities = body.eventActivities.map((activity) => ({
+      ...activity,
+      activityDate: activity.activityDate
+        ? wallTimeInZoneToInstant(
+            new Date(activity.activityDate),
+            body.eventTimezone,
+          )
+        : activity.activityDate,
+    }));
+    formData.append("eventActivities", JSON.stringify(activities));
+    formData.append("activities", JSON.stringify(activities));
   }
   if (body.eventTickets?.length) {
     // The API rejects unknown fields, and form tickets also carry display-only
@@ -187,6 +211,7 @@ const buildEventFormData = async (
       visibility: ticket.visibility,
       actionType: ticket.actionType,
       transferable: !!ticket.transferable,
+      ...saleRulesPayload(ticket),
       ...(ticket.visibility === "private" && ticket.privateAccessCode
         ? { privateAccessCode: ticket.privateAccessCode }
         : {}),
@@ -246,14 +271,18 @@ const buildEventFormData = async (
   }
   if (body.blogPosts?.length) {
     // The API only accepts these fields; images travel separately as blogImageIds.
-    const blogPosts = body.blogPosts.map(({ title, excerpt, body: postBody }) => ({
-      title,
-      ...(excerpt ? { excerpt } : {}),
-      body: postBody,
-    }));
+    const blogPosts = body.blogPosts.map(
+      ({ title, excerpt, body: postBody }) => ({
+        title,
+        ...(excerpt ? { excerpt } : {}),
+        body: postBody,
+      }),
+    );
     formData.append("blogPosts", JSON.stringify(blogPosts));
     const blogImageFiles = body.blogPosts.flatMap((post) =>
-      (post.images ?? []).filter((image): image is File => image instanceof File),
+      (post.images ?? []).filter(
+        (image): image is File => image instanceof File,
+      ),
     );
     if (blogImageFiles.length) {
       const blogImages = await uploadEachOnce(blogImageFiles, "EVENT_BLOG");
@@ -279,13 +308,14 @@ const CreateEvent = () => {
   // signed-in user always talks to the backend so draft ids stay real UUIDs.
   const useMockEvents =
     process.env.NODE_ENV === "development" && !userDetails?.id;
-  const resolver = useCallback<Resolver<TFormValues>>((values, context, options) => {
-    return joiResolver(schemas[activeStepRef.current as keyof typeof schemas])(
-      values,
-      context,
-      options,
-    );
-  }, []);
+  const resolver = useCallback<Resolver<TFormValues>>(
+    (values, context, options) => {
+      return joiResolver(
+        schemas[activeStepRef.current as keyof typeof schemas],
+      )(values, context, options);
+    },
+    [],
+  );
   const form = useForm<TFormValues>({
     defaultValues,
     resolver,
@@ -297,6 +327,14 @@ const CreateEvent = () => {
     form.clearErrors();
   }, [form, step]);
 
+  // A new event starts in the organiser's own zone; the server can't know it.
+  useEffect(() => {
+    if (searchParams.get("draftId")) return;
+    if (form.getValues("eventTimezone") === DEFAULT_EVENT_TIMEZONE) {
+      form.setValue("eventTimezone", defaultEventTimezone());
+    }
+  }, [form, searchParams]);
+
   useEffect(() => {
     const nextDraftId = searchParams.get("draftId");
     if (!nextDraftId || draftId === nextDraftId) {
@@ -306,7 +344,9 @@ const CreateEvent = () => {
     if (!useMockEvents) {
       const loadBackendDraft = async () => {
         try {
-          const response = await getData<IEventDetailsType>(`/event/${nextDraftId}`);
+          const response = await getData<IEventDetailsType>(
+            `/event/${nextDraftId}`,
+          );
           const draftEvent = response.data.data;
           if (!draftEvent) return;
 
@@ -314,12 +354,16 @@ const CreateEvent = () => {
             ...defaultValues,
             eventName: draftEvent.name ?? "",
             organizerName: draftEvent.organizerName ?? "",
-            eventDate: draftEvent.date ? new Date(draftEvent.date) : defaultValues.eventDate,
+            eventDate: draftEvent.date
+              ? instantToWallTimeInZone(draftEvent.date, draftEvent.timezone)
+              : defaultValues.eventDate,
+            eventTimezone: draftEvent.timezone || defaultEventTimezone(),
             eventCountry: draftEvent.eventCountry ?? draftEvent.country ?? "",
             eventCountryCode:
               draftEvent.eventCountryCode ?? draftEvent.countryCode ?? "",
             eventState: draftEvent.eventState ?? draftEvent.state ?? "",
-            eventStateCode: draftEvent.eventStateCode ?? draftEvent.stateCode ?? "",
+            eventStateCode:
+              draftEvent.eventStateCode ?? draftEvent.stateCode ?? "",
             eventCity: draftEvent.eventCity ?? draftEvent.city ?? "",
             venueId: draftEvent.venue?.id ?? "",
             venueName: draftEvent.venue?.name ?? "",
@@ -330,13 +374,20 @@ const CreateEvent = () => {
             eventActivities: (draftEvent.activities ?? []).map((activity) => ({
               activityName: activity.name,
               activityDescription: activity.description ?? "",
-              activityDate: activity.date,
+              activityDate: instantToWallTimeInZone(
+                activity.date,
+                draftEvent.timezone,
+              ),
             })),
             coverImage: draftEvent.image || null,
             mediaFiles: draftEvent.medias ?? [],
-            sponsorNames: ((draftEvent.sponsors ?? []) as Array<string | { name?: string }>).map((sponsor) =>
-              typeof sponsor === "string" ? sponsor : sponsor.name,
-            ).filter(Boolean) as string[],
+            sponsorNames: (
+              (draftEvent.sponsors ?? []) as Array<string | { name?: string }>
+            )
+              .map((sponsor) =>
+                typeof sponsor === "string" ? sponsor : sponsor.name,
+              )
+              .filter(Boolean) as string[],
             sponsorImages: draftEvent.sponsorImages ?? [],
             saleMethod: draftEvent.saleMethod ?? "",
             eventTickets: (draftEvent.eventTickets ?? []).map((ticket) => ({
@@ -367,7 +418,8 @@ const CreateEvent = () => {
     activeStepRef.current = draftStep;
     const draftSnapshot = draftEvent.draftSnapshot as Partial<TFormValues>;
     const restoredCoverImage =
-      typeof draftSnapshot.coverImage === "string" && draftSnapshot.coverImage.trim()
+      typeof draftSnapshot.coverImage === "string" &&
+      draftSnapshot.coverImage.trim()
         ? draftSnapshot.coverImage
         : draftEvent.image || null;
 
@@ -388,7 +440,10 @@ const CreateEvent = () => {
         try {
           const formData = await buildEventFormData(body, "draft");
           const response = draftId
-            ? await putData<FormData, IEventDetailsType>(`/event/${draftId}`, formData)
+            ? await putData<FormData, IEventDetailsType>(
+                `/event/${draftId}`,
+                formData,
+              )
             : await postData<FormData, IEventDetailsType>("/event", formData);
           const nextDraftId = response.data.data?.id ?? draftId;
           if (nextDraftId) {
@@ -427,14 +482,17 @@ const CreateEvent = () => {
         stateCode: body.eventStateCode,
         city: body.eventCity,
         image: getImagePreviewUrl(body.coverImage),
-        description: body.description || "Continue this draft to complete your event.",
-        totalTickets: (body.eventTickets ?? []).reduce(
-          (sum, ticket) => sum + Number(ticket.ticketQuantity || 0),
-          0,
-        ) + (body.passAssignments ?? []).reduce(
-          (sum, pass) => sum + Number(pass.quantity || 0),
-          0,
-        ),
+        description:
+          body.description || "Continue this draft to complete your event.",
+        totalTickets:
+          (body.eventTickets ?? []).reduce(
+            (sum, ticket) => sum + Number(ticket.ticketQuantity || 0),
+            0,
+          ) +
+          (body.passAssignments ?? []).reduce(
+            (sum, pass) => sum + Number(pass.quantity || 0),
+            0,
+          ),
         additionalInformation: [],
         activities: (body.eventActivities ?? []).map((activity) => ({
           name: activity.activityName,
@@ -451,15 +509,18 @@ const CreateEvent = () => {
         ticketUrl: body.ticketUrl,
         eventTickets: body.eventTickets ?? [],
         passAssignments: body.passAssignments ?? [],
-        eventGuestsOfHonour: (body.unRegisteredGuestNames ?? []).map((name) => ({
-          name,
-        })),
+        eventGuestsOfHonour: (body.unRegisteredGuestNames ?? []).map(
+          (name) => ({
+            name,
+          }),
+        ),
         venue: {
           id: body.venueId,
           name: body.venueName || "Selected Venue",
-          address: [body.eventCity, body.eventState, body.eventCountry]
-            .filter(Boolean)
-            .join(", ") || "Draft venue",
+          address:
+            [body.eventCity, body.eventState, body.eventCountry]
+              .filter(Boolean)
+              .join(", ") || "Draft venue",
           rating: 0,
           totalAvailableSeat: 0,
           images: [],
@@ -512,13 +573,15 @@ const CreateEvent = () => {
           city: body.eventCity,
           image: getImagePreviewUrl(body.coverImage),
           description: body.description,
-          totalTickets: (body.eventTickets ?? []).reduce(
-            (sum, ticket) => sum + Number(ticket.ticketQuantity || 0),
-            0,
-          ) + (body.passAssignments ?? []).reduce(
-            (sum, pass) => sum + Number(pass.quantity || 0),
-            0,
-          ),
+          totalTickets:
+            (body.eventTickets ?? []).reduce(
+              (sum, ticket) => sum + Number(ticket.ticketQuantity || 0),
+              0,
+            ) +
+            (body.passAssignments ?? []).reduce(
+              (sum, pass) => sum + Number(pass.quantity || 0),
+              0,
+            ),
           additionalInformation: [],
           activities: body.eventActivities.map((activity) => ({
             name: activity.activityName,
@@ -542,9 +605,10 @@ const CreateEvent = () => {
           venue: {
             id: body.venueId,
             name: body.venueName || "Selected Venue",
-            address: [body.eventCity, body.eventState, body.eventCountry]
-              .filter(Boolean)
-              .join(", ") || "Development venue",
+            address:
+              [body.eventCity, body.eventState, body.eventCountry]
+                .filter(Boolean)
+                .join(", ") || "Development venue",
             rating: 5,
             totalAvailableSeat: 0,
             images: [],
@@ -564,16 +628,25 @@ const CreateEvent = () => {
         return;
       }
 
-      if (draftId) {
-        await putData<FormData, IEventDetailsType>(`/event/${draftId}`, formData);
-      } else {
-        await postData<FormData, IEventDetailsType>("/event", formData);
-      }
+      const response = draftId
+        ? await putData<FormData, IEventDetailsType>(
+            `/event/${draftId}`,
+            formData,
+          )
+        : await postData<FormData, IEventDetailsType>("/event", formData);
       activeStepRef.current = 1;
       setStep(1);
       setDraftId(null);
       form.reset();
-      toast.success("Event created successfully");
+      // Organisers' events wait for an admin; an admin's go straight out.
+      if (response.data?.data?.status === "pending_review") {
+        toast.success("Submitted for review", {
+          description:
+            "An admin will check it shortly. We'll let you know once it's live.",
+        });
+      } else {
+        toast.success("Event published");
+      }
     } catch (error) {
       const err = error as TApiErrorResponseType;
       console.error("Create event failed", {

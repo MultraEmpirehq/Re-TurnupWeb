@@ -208,12 +208,6 @@
 }
 
 /* Landing page motion. Kept small and slow; all of it stops for reduced motion. */
-@keyframes landing-marquee {
-  to {
-    transform: translateX(-50%);
-  }
-}
-
 @keyframes landing-float {
   0%,
   100% {
@@ -370,10 +364,6 @@
   animation: landing-flip-hint 6s ease-in-out infinite;
 }
 
-@utility animate-landing-marquee {
-  animation: landing-marquee 60s linear infinite;
-}
-
 @utility animate-landing-float {
   animation: landing-float 7s ease-in-out infinite;
 }
@@ -499,7 +489,6 @@
     transform: none;
     transition: none;
   }
-  .animate-landing-marquee,
   .animate-loader-write,
   .animate-loader-ink,
   .animate-loader-beat,

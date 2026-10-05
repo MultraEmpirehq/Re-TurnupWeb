@@ -21,7 +21,9 @@ export const resolveLandingRoute = async (
 
   if (user?.role === EUserRoles.VENDOR) {
     try {
-      const { data } = await getData<{ status?: string }>("/vendor/verification");
+      const { data } = await getData<{ status?: string }>(
+        "/vendor/verification",
+      );
       if (data?.data?.status === "approved") return ROUTES.DASHBOARD.href;
     } catch {
       // Can't tell, so treat them like any other user.

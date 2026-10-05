@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { EOrderStatus, IOrderDetailsType } from "@/lib/types";
+import { orderStatusMeta } from "@/lib/order-status";
 import { ROUTES } from "@/lib/variables";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -25,15 +26,6 @@ import React, { memo, useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import TicketCard from "@/components/ticket-design/ticket-card";
 import ViewTicketsDialog from "@/components/ticket-design/view-tickets-dialog";
-
-const statusStyles: Record<EOrderStatus, string> = {
-  [EOrderStatus.COMPLETED]:
-    "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  [EOrderStatus.PENDING]:
-    "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-  [EOrderStatus.FAILED]:
-    "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-};
 
 const OrderDetailPage = () => {
   const params = useParams();
@@ -95,7 +87,8 @@ const OrderDetailPage = () => {
           const code = order.userTickets[i]?.code ?? `ticket-${i + 1}`;
 
           const pdf = new jsPDF({
-            orientation: canvas.width > canvas.height ? "landscape" : "portrait",
+            orientation:
+              canvas.width > canvas.height ? "landscape" : "portrait",
             unit: "px",
             format: [canvas.width, canvas.height],
           });
@@ -213,13 +206,38 @@ const OrderDetailPage = () => {
           </div>
           <span
             className={cn(
-              "text-xs font-medium px-2.5 py-0.5 rounded-full capitalize shrink-0",
-              statusStyles[order.status] ?? statusStyles.PENDING,
+              "text-xs font-medium px-2.5 py-0.5 rounded-full shrink-0",
+              orderStatusMeta(order.status).className,
             )}
           >
-            {order.status?.toLowerCase()}
+            {orderStatusMeta(order.status).label}
           </span>
         </div>
+
+        {/* Why the order ended up where it did, or how long its seats are held. */}
+        {order.statusReason && order.status !== EOrderStatus.COMPLETED && (
+          <p
+            className={cn(
+              "rounded-xl px-4 py-3 text-sm",
+              order.status === EOrderStatus.REFUNDED
+                ? "bg-sky-50 text-sky-800"
+                : order.status === EOrderStatus.NEEDS_REVIEW
+                  ? "bg-amber-50 text-amber-800"
+                  : "bg-red-50 text-red-700",
+            )}
+          >
+            {order.statusReason}
+            {order.status === EOrderStatus.NEEDS_REVIEW &&
+              " Our team has been alerted and will get back to you."}
+          </p>
+        )}
+        {order.status === EOrderStatus.PENDING && order.holdExpiresAt && (
+          <p className="rounded-xl bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+            Your seats are held until{" "}
+            {format(new Date(order.holdExpiresAt), "h:mm a")}. Finish paying
+            before then to keep them.
+          </p>
+        )}
 
         <Separator />
 

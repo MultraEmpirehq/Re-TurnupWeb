@@ -9,11 +9,12 @@ import ErrorContainer from "@/components/ui/error-container";
 import { useEvent } from "@/hooks/use-event";
 import { useEventTickets } from "@/hooks/use-ticket.hook";
 import { formatCurrency } from "@/lib/functions";
+import { formatEventTime } from "@/lib/event-time";
+import { describeTicketSaleState, ticketSaleState } from "@/lib/ticket-sales";
 import { joinEventChatGroup } from "@/lib/event-chat";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -28,7 +29,11 @@ import {
   TicketIcon,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { EOrderStatus, IEventDetailsType, ITicketDetailsType } from "@/lib/types";
+import {
+  EOrderStatus,
+  IEventDetailsType,
+  ITicketDetailsType,
+} from "@/lib/types";
 
 const EXTERNAL_LINK_TYPE = "EXTERNAL_LINK";
 
@@ -93,7 +98,9 @@ const TicketSelectionCard: React.FC<{
               <div className="mt-4 space-y-2 text-xs text-white/80">
                 <p className="flex items-center gap-2">
                   <CalendarDays className="size-4" />
-                  {eventDate ? format(eventDate, "dd/MM/yyyy, hh:mm a") : "Date pending"}
+                  {eventDate
+                    ? formatEventTime(eventDate, event?.timezone)
+                    : "Date pending"}
                 </p>
                 <p className="flex items-center gap-2">
                   <MapPin className="size-4" />
@@ -106,7 +113,12 @@ const TicketSelectionCard: React.FC<{
             <span className="rounded-full bg-white/18 px-4 py-2 text-sm font-semibold">
               {ticket.name || ticket.type || "Ticket"}
             </span>
-            <span className="text-xs font-semibold text-white/45">turnupz.com</span>
+            <span className="text-xs font-semibold text-white/45">
+              {describeTicketSaleState(
+                ticketSaleState(ticket),
+                event?.timezone,
+              ) ?? "turnupz.com"}
+            </span>
           </div>
         </div>
 
@@ -167,7 +179,11 @@ const TicketPage = () => {
 
   const getTicketVisibility = useCallback(
     (ticket: ITicketDetailsType) => {
-      return ticket.visibility || getEventTicketOption(ticket)?.visibility || "public";
+      return (
+        ticket.visibility ||
+        getEventTicketOption(ticket)?.visibility ||
+        "public"
+      );
     },
     [getEventTicketOption],
   );
@@ -194,12 +210,7 @@ const TicketPage = () => {
       const accessCode = getTicketAccessCode(ticket);
       return !!privateAccessCode && accessCode === privateAccessCode;
     });
-  }, [
-    getTicketAccessCode,
-    getTicketVisibility,
-    privateAccessCode,
-    tickets,
-  ]);
+  }, [getTicketAccessCode, getTicketVisibility, privateAccessCode, tickets]);
 
   const hiddenPrivateTicketCount = useMemo(() => {
     return tickets.filter((ticket) => getTicketVisibility(ticket) === "private")
@@ -278,19 +289,45 @@ const TicketPage = () => {
     setQuantity((prev) => Math.max(1, prev - 1));
   }, []);
 
-  const maxQuantity = useMemo(
-    () =>
-      isRegistrationOnly
-        ? Math.max(
-            Math.min(
-              event?.remainingRegistrationSpots ?? 1,
-              selectedTicket?.available ?? selectedTicket?.quantity ?? 1,
-            ),
-            1,
-          )
-        : selectedTicket?.available ?? selectedTicket?.quantity ?? 10,
-    [event?.remainingRegistrationSpots, isRegistrationOnly, selectedTicket],
+  const selectedSaleState = useMemo(
+    () => ticketSaleState(selectedTicket),
+    [selectedTicket],
   );
+  const selectedSaleNotice = describeTicketSaleState(
+    selectedSaleState,
+    event?.timezone,
+  );
+  const isSelectedOnSale = selectedSaleState.status === "open";
+
+  const maxQuantity = useMemo(() => {
+    const byStock = isRegistrationOnly
+      ? Math.max(
+          Math.min(
+            event?.remainingRegistrationSpots ?? 1,
+            selectedTicket?.available ?? selectedTicket?.quantity ?? 1,
+          ),
+          1,
+        )
+      : (selectedTicket?.available ?? selectedTicket?.quantity ?? 10);
+    // The organiser can cap how many one buyer takes in a single order.
+    return selectedTicket?.maxPerOrder
+      ? Math.max(1, Math.min(byStock, selectedTicket.maxPerOrder))
+      : byStock;
+  }, [event?.remainingRegistrationSpots, isRegistrationOnly, selectedTicket]);
+
+  const saleNoticeBlock = selectedTicket &&
+    (selectedSaleNotice || selectedTicket.maxPerOrder) && (
+      <p
+        className={cn(
+          "text-sm",
+          selectedSaleNotice
+            ? "rounded-lg bg-amber-50 px-3 py-2 font-medium text-amber-800"
+            : "text-right text-muted-foreground",
+        )}
+      >
+        {selectedSaleNotice ?? `Up to ${selectedTicket.maxPerOrder} per order`}
+      </p>
+    );
 
   const handleIncrement = useCallback(() => {
     setQuantity((prev) => Math.min(maxQuantity, prev + 1));
@@ -324,7 +361,9 @@ const TicketPage = () => {
       try {
         const attendeeName =
           userDetails.name ||
-          [userDetails.firstName, userDetails.lastName].filter(Boolean).join(" ") ||
+          [userDetails.firstName, userDetails.lastName]
+            .filter(Boolean)
+            .join(" ") ||
           "Turnupz attendee";
         const attendeeEmail = userDetails.email || "";
         const { data } = await postData<
@@ -364,7 +403,9 @@ const TicketPage = () => {
         if (data.data.status === "pending") {
           toast.success("Registration submitted and pending approval.");
         } else {
-          toast.success("Registration confirmed. Your ticket is available in your account.");
+          toast.success(
+            "Registration confirmed. Your ticket is available in your account.",
+          );
         }
         router.push(ROUTES.PROFILE_TICKETS.href);
       } catch (error) {
@@ -510,14 +551,24 @@ const TicketPage = () => {
                       <span className="font-semibold text-secondary-950">
                         Spots left:
                       </span>{" "}
-                      {(event?.remainingRegistrationSpots ?? 0).toLocaleString()}
+                      {(
+                        event?.remainingRegistrationSpots ?? 0
+                      ).toLocaleString()}
                     </p>
                     <p>
-                      <span className="font-semibold text-secondary-950">Limit:</span>{" "}
-                      {(event?.registrationLimit ?? event?.totalTickets ?? 0).toLocaleString()}
+                      <span className="font-semibold text-secondary-950">
+                        Limit:
+                      </span>{" "}
+                      {(
+                        event?.registrationLimit ??
+                        event?.totalTickets ??
+                        0
+                      ).toLocaleString()}
                     </p>
                     <p className="capitalize">
-                      <span className="font-semibold text-secondary-950">Status:</span>{" "}
+                      <span className="font-semibold text-secondary-950">
+                        Status:
+                      </span>{" "}
                       {event?.registrationStatus ?? "open"}
                     </p>
                   </div>
@@ -541,8 +592,9 @@ const TicketPage = () => {
                     Choose registration type
                   </p>
                   <p className="mt-1 text-sm text-secondary-500">
-                    Select the registration category you want. Private categories
-                    only appear when you open the organizer&apos;s invite link.
+                    Select the registration category you want. Private
+                    categories only appear when you open the organizer&apos;s
+                    invite link.
                   </p>
                 </div>
                 <div className="space-y-4">
@@ -559,20 +611,24 @@ const TicketPage = () => {
               </div>
             )}
 
-            {showRegistrationTypes && tickets.length > 0 && registrationTickets.length === 0 && (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
-                <div className="flex items-start gap-3">
-                  <LockKeyhole className="mt-0.5 size-5 shrink-0" />
-                  <div>
-                    <p className="font-semibold">No public registration type available</p>
-                    <p className="mt-1 text-sm leading-6">
-                      Private registration categories are hidden unless you open
-                      the organizer&apos;s invite link.
-                    </p>
+            {showRegistrationTypes &&
+              tickets.length > 0 &&
+              registrationTickets.length === 0 && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
+                  <div className="flex items-start gap-3">
+                    <LockKeyhole className="mt-0.5 size-5 shrink-0" />
+                    <div>
+                      <p className="font-semibold">
+                        No public registration type available
+                      </p>
+                      <p className="mt-1 text-sm leading-6">
+                        Private registration categories are hidden unless you
+                        open the organizer&apos;s invite link.
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
             <div className="space-y-4 border rounded-xl p-6">
               <div className="flex items-center justify-between">
@@ -601,6 +657,7 @@ const TicketPage = () => {
                   </button>
                 </div>
               </div>
+              {saleNoticeBlock}
             </div>
 
             <button
@@ -608,7 +665,8 @@ const TicketPage = () => {
               disabled={
                 isPurchasing ||
                 event?.registrationStatus !== "open" ||
-                (registrationTickets.length > 0 && !selectedTicket)
+                (registrationTickets.length > 0 && !selectedTicket) ||
+                (!!selectedTicket && !isSelectedOnSale)
               }
               className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
             >
@@ -618,28 +676,32 @@ const TicketPage = () => {
           </div>
         )}
 
-        {!isRegistrationOnly && tickets.length > 0 && accessibleTickets.length === 0 && (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
-            <div className="flex items-start gap-3">
-              <LockKeyhole className="mt-0.5 size-5 shrink-0" />
-              <div>
-                <p className="font-semibold">No public tickets available</p>
-                <p className="mt-1 text-sm leading-6">
-                  Private ticket categories are hidden unless you open the
-                  organizer&apos;s invite link.
-                </p>
+        {!isRegistrationOnly &&
+          tickets.length > 0 &&
+          accessibleTickets.length === 0 && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
+              <div className="flex items-start gap-3">
+                <LockKeyhole className="mt-0.5 size-5 shrink-0" />
+                <div>
+                  <p className="font-semibold">No public tickets available</p>
+                  <p className="mt-1 text-sm leading-6">
+                    Private ticket categories are hidden unless you open the
+                    organizer&apos;s invite link.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {!isRegistrationOnly && accessibleTickets.length > 0 && hiddenPrivateTicketCount > 0 && (
-          <div className="rounded-2xl border border-cyan-100 bg-cyan-50/60 p-4 text-sm text-cyan-900">
-            {privateAccessCode
-              ? "Private ticket access applied. Only matching private categories are shown."
-              : "Some ticket categories are private and only appear through an organizer invite link."}
-          </div>
-        )}
+        {!isRegistrationOnly &&
+          accessibleTickets.length > 0 &&
+          hiddenPrivateTicketCount > 0 && (
+            <div className="rounded-2xl border border-cyan-100 bg-cyan-50/60 p-4 text-sm text-cyan-900">
+              {privateAccessCode
+                ? "Private ticket access applied. Only matching private categories are shown."
+                : "Some ticket categories are private and only appear through an organizer invite link."}
+            </div>
+          )}
 
         {!isRegistrationOnly && tickets.length === 0 && (
           <div className="text-center py-16 text-muted-foreground">
@@ -681,6 +743,17 @@ const TicketPage = () => {
                           <TicketIcon className="size-6 text-cyan-700 dark:text-cyan-400" />
                         </div>
                         <p className="font-bold text-lg">{ticket.name}</p>
+                        {describeTicketSaleState(
+                          ticketSaleState(ticket),
+                          event?.timezone,
+                        ) && (
+                          <p className="-mt-2 text-xs font-medium text-amber-700">
+                            {describeTicketSaleState(
+                              ticketSaleState(ticket),
+                              event?.timezone,
+                            )}
+                          </p>
+                        )}
                       </div>
 
                       {!isExternal && (
@@ -786,6 +859,8 @@ const TicketPage = () => {
                   </p>
                 )}
 
+                {saleNoticeBlock}
+
                 <div className="border-t" />
 
                 <div className="flex items-center justify-between">
@@ -814,11 +889,12 @@ const TicketPage = () => {
             ) : (
               <button
                 onClick={handlePurchase}
-                disabled={!selectedTicket || isPurchasing}
+                disabled={!selectedTicket || isPurchasing || !isSelectedOnSale}
                 className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
               >
                 {isPurchasing && "Processing..."}
-                {!isPurchasing && "Continue"}
+                {!isPurchasing &&
+                  (isSelectedOnSale ? "Continue" : "Not on sale")}
               </button>
             )}
           </>

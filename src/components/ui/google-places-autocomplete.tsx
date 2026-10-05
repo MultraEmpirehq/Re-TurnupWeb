@@ -16,11 +16,7 @@ import { Input } from "./input";
 import { Label } from "./label";
 import { Spinner } from "./spinner";
 import { env } from "@/lib/env";
-import {
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-} from "./popover";
+import { Popover, PopoverAnchor, PopoverContent } from "./popover";
 
 const DEBOUNCE_MS = 300;
 
@@ -50,6 +46,28 @@ interface IGooglePlacesAutocompleteProps {
   countryRestriction?: string | string[];
 }
 
+// One shape for address parts from both Places (New), which uses longText and
+// shortText, and the Geocoder, which uses long_name and short_name.
+type TAddressPart = { long: string; short: string; types: string[] };
+
+const fromPlaces = (
+  parts: google.maps.places.AddressComponent[] | null | undefined,
+): TAddressPart[] =>
+  (parts ?? []).map((part) => ({
+    long: part.longText ?? "",
+    short: part.shortText ?? "",
+    types: part.types,
+  }));
+
+const fromGeocoder = (
+  parts: google.maps.GeocoderAddressComponent[] | undefined,
+): TAddressPart[] =>
+  (parts ?? []).map((part) => ({
+    long: part.long_name,
+    short: part.short_name,
+    types: part.types,
+  }));
+
 let placesLibPromise: Promise<google.maps.PlacesLibrary> | null = null;
 let geocodingLibPromise: Promise<google.maps.GeocodingLibrary> | null = null;
 
@@ -57,7 +75,7 @@ const ensureOptionsConfigured = () => {
   const apiKey = env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
     throw new Error(
-      "Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY. Add it to .env.local and enable the Places API.",
+      "Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY. Add it to .env and enable Places API (New).",
     );
   }
   setOptions({ key: apiKey, v: "weekly" });
@@ -88,7 +106,7 @@ const loadGeocodingLibrary = () => {
 const reverseGeocode = async (
   lat: number,
   lng: number,
-): Promise<google.maps.GeocoderAddressComponent[] | null> => {
+): Promise<TAddressPart[] | null> => {
   try {
     const { Geocoder } = await loadGeocodingLibrary();
     const geocoder = new Geocoder();
@@ -97,24 +115,24 @@ const reverseGeocode = async (
     const withPostal = results.find((r) =>
       r.address_components?.some((c) => c.types.includes("postal_code")),
     );
-    return (withPostal ?? results[0]).address_components ?? null;
+    return fromGeocoder((withPostal ?? results[0]).address_components);
   } catch {
     return null;
   }
 };
 
 const getComponent = (
-  components: google.maps.GeocoderAddressComponent[] | undefined,
+  components: TAddressPart[] | undefined,
   type: string,
   useShort = false,
 ) => {
   const found = components?.find((c) => c.types.includes(type));
   if (!found) return "";
-  return useShort ? found.short_name : found.long_name;
+  return useShort ? found.short : found.long;
 };
 
 const buildStreetAddress = (
-  components: google.maps.GeocoderAddressComponent[] | undefined,
+  components: TAddressPart[] | undefined,
   fallback: string,
 ) => {
   const streetNumber = getComponent(components, "street_number");
@@ -138,7 +156,7 @@ const GooglePlacesAutocomplete: React.FC<IGooglePlacesAutocompleteProps> = ({
   countryRestriction,
 }) => {
   const [predictions, setPredictions] = useState<
-    google.maps.places.AutocompletePrediction[]
+    google.maps.places.PlacePrediction[]
   >([]);
   const [open, setOpen] = useState(false);
   const [isLoadingApi, setIsLoadingApi] = useState(false);
@@ -147,12 +165,11 @@ const GooglePlacesAutocomplete: React.FC<IGooglePlacesAutocompleteProps> = ({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
-  const autocompleteServiceRef =
-    useRef<google.maps.places.AutocompleteService | null>(null);
-  const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
+  const placesRef = useRef<google.maps.PlacesLibrary | null>(null);
   const sessionTokenRef =
     useRef<google.maps.places.AutocompleteSessionToken | null>(null);
-  const attributionsRef = useRef<HTMLDivElement | null>(null);
+  // Drops answers to a search the person has already typed past.
+  const latestQueryRef = useRef("");
 
   useEffect(() => {
     let cancelled = false;
@@ -160,12 +177,7 @@ const GooglePlacesAutocomplete: React.FC<IGooglePlacesAutocompleteProps> = ({
     loadPlacesLibrary()
       .then((places) => {
         if (cancelled) return;
-        autocompleteServiceRef.current = new places.AutocompleteService();
-        if (attributionsRef.current) {
-          placesServiceRef.current = new places.PlacesService(
-            attributionsRef.current,
-          );
-        }
+        placesRef.current = places;
         sessionTokenRef.current = new places.AutocompleteSessionToken();
         setLoadError(null);
       })
@@ -181,27 +193,43 @@ const GooglePlacesAutocomplete: React.FC<IGooglePlacesAutocompleteProps> = ({
     };
   }, []);
 
-  const fetchPredictions = useDebouncedCallback((q: string) => {
-    const service = autocompleteServiceRef.current;
-    if (!service || !q.trim()) {
+  const fetchPredictions = useDebouncedCallback(async (q: string) => {
+    const places = placesRef.current;
+    latestQueryRef.current = q;
+    if (!places || !q.trim()) {
       setPredictions([]);
       setIsFetching(false);
       return;
     }
-    service.getPlacePredictions(
-      {
-        input: q,
-        sessionToken: sessionTokenRef.current ?? undefined,
-        ...(countryRestriction
-          ? { componentRestrictions: { country: countryRestriction } }
-          : {}),
-      },
-      (results) => {
-        setPredictions(results ?? []);
-        setIsFetching(false);
-        setHighlightedIndex(-1);
-      },
-    );
+    try {
+      const { suggestions } =
+        await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+          input: q,
+          sessionToken: sessionTokenRef.current ?? undefined,
+          ...(countryRestriction
+            ? {
+                includedRegionCodes: (Array.isArray(countryRestriction)
+                  ? countryRestriction
+                  : [countryRestriction]
+                ).map((code) => code.toLowerCase()),
+              }
+            : {}),
+        });
+      if (latestQueryRef.current !== q) return;
+      setPredictions(
+        suggestions
+          .map((suggestion) => suggestion.placePrediction)
+          .filter(
+            (prediction): prediction is google.maps.places.PlacePrediction =>
+              !!prediction,
+          ),
+      );
+      setHighlightedIndex(-1);
+    } catch {
+      if (latestQueryRef.current === q) setPredictions([]);
+    } finally {
+      if (latestQueryRef.current === q) setIsFetching(false);
+    }
   }, DEBOUNCE_MS);
 
   const handleInputChange = useCallback(
@@ -221,71 +249,63 @@ const GooglePlacesAutocomplete: React.FC<IGooglePlacesAutocompleteProps> = ({
   );
 
   const handleSelect = useCallback(
-    (prediction: google.maps.places.AutocompletePrediction) => {
-      const service = placesServiceRef.current;
-      if (!service) return;
+    async (prediction: google.maps.places.PlacePrediction) => {
+      const places = placesRef.current;
+      if (!places) return;
+      const label = prediction.text?.text ?? "";
       setIsResolving(true);
-      onChange(prediction.description);
-      service.getDetails(
-        {
-          placeId: prediction.place_id,
-          fields: [
-            "address_components",
-            "formatted_address",
-            "geometry.location",
-          ],
-          sessionToken: sessionTokenRef.current ?? undefined,
-        },
-        async (place, status) => {
-          setOpen(false);
-          if (
-            status !== google.maps.places.PlacesServiceStatus.OK ||
-            !place
-          ) {
-            setIsResolving(false);
-            return;
-          }
-          let components = place.address_components;
-          const formatted = place.formatted_address ?? prediction.description;
-          const lat = place.geometry?.location?.lat() ?? 0;
-          const lng = place.geometry?.location?.lng() ?? 0;
+      onChange(label);
+      setOpen(false);
+      try {
+        const place = prediction.toPlace();
+        await place.fetchFields({
+          fields: ["addressComponents", "formattedAddress", "location"],
+        });
 
-          const hasPostal = components?.some((c) =>
-            c.types.includes("postal_code"),
-          );
-          if (!hasPostal && lat !== 0 && lng !== 0) {
-            const fallback = await reverseGeocode(lat, lng);
-            if (fallback) {
-              const merged = [...(components ?? [])];
-              for (const c of fallback) {
-                const exists = merged.some((existing) =>
-                  existing.types.some((t) => c.types.includes(t)),
-                );
-                if (!exists) merged.push(c);
-              }
-              components = merged;
+        let components = fromPlaces(place.addressComponents);
+        const formatted = place.formattedAddress ?? label;
+        const lat = place.location?.lat() ?? 0;
+        const lng = place.location?.lng() ?? 0;
+
+        // Places often leaves the postcode out; the Geocoder usually has it.
+        const hasPostal = components.some((c) =>
+          c.types.includes("postal_code"),
+        );
+        if (!hasPostal && lat !== 0 && lng !== 0) {
+          const fallback = await reverseGeocode(lat, lng);
+          if (fallback) {
+            const merged = [...components];
+            for (const c of fallback) {
+              const exists = merged.some((existing) =>
+                existing.types.some((t) => c.types.includes(t)),
+              );
+              if (!exists) merged.push(c);
             }
+            components = merged;
           }
+        }
 
-          setIsResolving(false);
-          onPlaceSelected({
-            address: buildStreetAddress(components, formatted),
-            city:
-              getComponent(components, "locality") ||
-              getComponent(components, "postal_town") ||
-              getComponent(components, "sublocality") ||
-              getComponent(components, "administrative_area_level_2"),
-            state: getComponent(components, "administrative_area_level_1"),
-            country: getComponent(components, "country"),
-            postalCode: getComponent(components, "postal_code"),
-            latitude: lat,
-            longitude: lng,
-            formattedAddress: formatted,
-          });
-          sessionTokenRef.current =
-            new google.maps.places.AutocompleteSessionToken();
-        },
-      );
+        onPlaceSelected({
+          address: buildStreetAddress(components, formatted),
+          city:
+            getComponent(components, "locality") ||
+            getComponent(components, "postal_town") ||
+            getComponent(components, "sublocality") ||
+            getComponent(components, "administrative_area_level_2"),
+          state: getComponent(components, "administrative_area_level_1"),
+          country: getComponent(components, "country"),
+          postalCode: getComponent(components, "postal_code"),
+          latitude: lat,
+          longitude: lng,
+          formattedAddress: formatted,
+        });
+      } catch {
+        // The typed text stays, so the person can still carry on by hand.
+      } finally {
+        setIsResolving(false);
+        // A session ends with the details lookup; the next search starts a new one.
+        sessionTokenRef.current = new places.AutocompleteSessionToken();
+      }
     },
     [onChange, onPlaceSelected],
   );
@@ -304,7 +324,7 @@ const GooglePlacesAutocomplete: React.FC<IGooglePlacesAutocompleteProps> = ({
       } else if (e.key === "Enter") {
         if (highlightedIndex >= 0) {
           e.preventDefault();
-          handleSelect(predictions[highlightedIndex]);
+          void handleSelect(predictions[highlightedIndex]);
         }
       } else if (e.key === "Escape") {
         setOpen(false);
@@ -365,9 +385,9 @@ const GooglePlacesAutocomplete: React.FC<IGooglePlacesAutocompleteProps> = ({
           )}
           {predictions.map((p, idx) => (
             <button
-              key={p.place_id}
+              key={p.placeId}
               type="button"
-              onClick={() => handleSelect(p)}
+              onClick={() => void handleSelect(p)}
               onMouseEnter={() => setHighlightedIndex(idx)}
               className={cn(
                 "w-full text-left px-3 py-2 text-sm flex items-start gap-2 hover:bg-accent transition-colors",
@@ -377,11 +397,11 @@ const GooglePlacesAutocomplete: React.FC<IGooglePlacesAutocompleteProps> = ({
               <MapPinIcon className="size-4 mt-0.5 shrink-0 text-muted-foreground" />
               <div className="flex flex-col min-w-0">
                 <span className="truncate">
-                  {p.structured_formatting?.main_text ?? p.description}
+                  {p.mainText?.text ?? p.text?.text}
                 </span>
-                {p.structured_formatting?.secondary_text && (
+                {p.secondaryText?.text && (
                   <span className="text-xs text-muted-foreground truncate">
-                    {p.structured_formatting.secondary_text}
+                    {p.secondaryText.text}
                   </span>
                 )}
               </div>
@@ -389,7 +409,6 @@ const GooglePlacesAutocomplete: React.FC<IGooglePlacesAutocompleteProps> = ({
           ))}
         </PopoverContent>
       </Popover>
-      <div ref={attributionsRef} className="hidden" aria-hidden="true" />
       {loadError && (
         <p className="text-xs text-destructive flex items-center gap-1">
           <AlertTriangle className="size-3" />

@@ -5,10 +5,13 @@ import { format } from "date-fns";
 import { Calendar, Clock } from "lucide-react";
 
 interface EventDetailDateTimeProps {
+  /** Already on the venue's clock. */
   date: Date;
+  /** The event's zone, when it isn't the viewer's own. */
+  zoneNote?: string | null;
 }
 
-const EventDetailDateTime = ({ date }: EventDetailDateTimeProps) => (
+const EventDetailDateTime = ({ date, zoneNote }: EventDetailDateTimeProps) => (
   <section className="space-y-3">
     <h3 className="text-lg font-semibold">Date and Time</h3>
     <div className="flex flex-wrap gap-6 text-muted-foreground">
@@ -19,6 +22,7 @@ const EventDetailDateTime = ({ date }: EventDetailDateTimeProps) => (
       <span className="flex items-center gap-2">
         <Clock className="size-4 shrink-0" />
         {format(date, "h:mm a")}
+        {zoneNote && <span className="text-xs">({zoneNote})</span>}
       </span>
     </div>
   </section>

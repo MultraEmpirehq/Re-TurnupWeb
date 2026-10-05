@@ -4,7 +4,8 @@ import { getData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import ErrorContainer from "@/components/ui/error-container";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EOrderStatus, IOrderDetailsType } from "@/lib/types";
+import { IOrderDetailsType } from "@/lib/types";
+import { orderStatusMeta } from "@/lib/order-status";
 import { ROUTES } from "@/lib/variables";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -12,15 +13,6 @@ import { format } from "date-fns";
 import { CalendarDays, ShoppingBag, TicketIcon } from "lucide-react";
 import Link from "next/link";
 import React, { memo } from "react";
-
-const statusStyles: Record<EOrderStatus, string> = {
-  [EOrderStatus.COMPLETED]:
-    "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  [EOrderStatus.PENDING]:
-    "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-  [EOrderStatus.FAILED]:
-    "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-};
 
 const OrdersPage = () => {
   const { data, error, refetch, isLoading } = useQuery({
@@ -103,11 +95,11 @@ const OrdersPage = () => {
               <div className="flex flex-col items-end gap-2 shrink-0">
                 <span
                   className={cn(
-                    "text-xs font-medium px-2.5 py-0.5 rounded-full capitalize",
-                    statusStyles[order.status] ?? statusStyles.PENDING,
+                    "text-xs font-medium px-2.5 py-0.5 rounded-full",
+                    orderStatusMeta(order.status).className,
                   )}
                 >
-                  {order.status?.toLowerCase()}
+                  {orderStatusMeta(order.status).label}
                 </span>
                 <p className="font-semibold text-sm">
                   {order.ticket?.price?.formatted?.withCurrency ?? "Free"}
