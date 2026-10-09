@@ -25,6 +25,8 @@ const VenueSelect = dynamic(() => import("@/components/ui/venue-select"), {
   loading: () => <Skeleton className="h-10 w-full rounded-md" />,
 });
 import GuestNamesInput from "./guest-names-input";
+import LineupPicker from "@/components/discovery/lineup-picker";
+import { IPerformerSummary } from "@/lib/types";
 import EventActivitiesInput, { IEventActivity } from "./event-activities-input";
 import { Controller, useFormContext } from "react-hook-form";
 import useCategory from "@/hooks/use-category";
@@ -53,6 +55,8 @@ export interface IBasicFormValues {
   categoryName?: string;
   guestIds: string[];
   unRegisteredGuestNames: string[];
+  /** Who's on the bill, headliner first; saved as performerIds. */
+  lineup: IPerformerSummary[];
   description: string;
   eventActivities: IEventActivity[];
 }
@@ -133,6 +137,7 @@ export const basicInformationSchema = Joi.object({
     "array.empty": "Guests are required",
     "any.required": "Guests are required",
   }),
+  lineup: Joi.array().items(Joi.object().unknown(true)).optional(),
   unRegisteredGuestNames: Joi.array().items(Joi.string()).required().messages({
     "array.empty": "Unregistered guest names are required",
     "any.required": "Unregistered guest names are required",
@@ -584,6 +589,19 @@ const BasicForm: React.FC<{
               guestNames={field.value}
               setGuestNames={field.onChange}
             />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="lineup"
+          render={({ field }) => (
+            <div className="lg:col-span-2">
+              <LineupPicker
+                value={field.value ?? []}
+                onChange={field.onChange}
+              />
+            </div>
           )}
         />
       </div>

@@ -4,7 +4,14 @@ import RequireAuth from "@/components/auth/require-auth";
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import { ROUTES } from "@/lib/variables";
 import { cn } from "@/lib/utils";
-import { CircleHelp, ShoppingBag, TicketIcon, User } from "lucide-react";
+import {
+  CircleHelp,
+  Heart,
+  Settings,
+  ShoppingBag,
+  TicketIcon,
+  User,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { memo, useMemo } from "react";
@@ -13,6 +20,8 @@ const sidebarLinks = [
   { href: ROUTES.USER_PROFILE.href, label: "My Profile", icon: User },
   { href: ROUTES.PROFILE_ORDERS.href, label: "Orders", icon: ShoppingBag },
   { href: ROUTES.PROFILE_TICKETS.href, label: "Tickets", icon: TicketIcon },
+  { href: ROUTES.PROFILE_FOLLOWING.href, label: "Following", icon: Heart },
+  { href: ROUTES.PROFILE_SETTINGS.href, label: "Settings", icon: Settings },
   { href: ROUTES.PROFILE_HELP.href, label: "Help", icon: CircleHelp },
 ];
 

@@ -59,7 +59,7 @@ const NotFoundContent = () => {
 
             <div className="space-y-3">
               <h1 className="text-xl sm:text-2xl md:text-4xl font-bold">
-                This party has moved on
+                This page has moved on
               </h1>
               <p className="mx-auto max-w-md md:max-w-xl text-sm md:text-base opacity-70">
                 The page you&apos;re looking for doesn&apos;t exist or may have

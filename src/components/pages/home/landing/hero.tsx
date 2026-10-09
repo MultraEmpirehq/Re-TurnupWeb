@@ -19,14 +19,16 @@ import React, {
 import TicketCard, { TicketCardSkeleton } from "./ticket-card";
 import usePointerTilt from "./use-pointer-tilt";
 
+// Every kind of event, so the line never reads as just a night out.
 const WORDS = [
-  "owambe",
   "concert",
-  "comedy night",
-  "rave",
+  "conference",
   "match day",
+  "food festival",
+  "comedy show",
+  "workshop",
   "art show",
-  "night out",
+  "family day",
 ];
 
 // Fixed positions so the server and the browser draw the same sky.
@@ -83,7 +85,7 @@ const RotatingWord = () => {
     <span className="relative inline-grid align-bottom">
       {/* The widest word holds the space so the line never jumps. */}
       <span className="invisible col-start-1 row-start-1" aria-hidden>
-        comedy night.
+        food festival.
       </span>
       {WORDS.map((word, wordIndex) => (
         <span
@@ -232,7 +234,7 @@ const LandingHero = () => {
             <br />
             <RotatingWord />
             <span className="sr-only">
-              Concerts, owambes, comedy nights and more.
+              Concerts, conferences, sports, food, comedy, workshops and more.
             </span>
           </h1>
 

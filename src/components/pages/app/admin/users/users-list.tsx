@@ -1,5 +1,6 @@
 "use client";
 
+import ScrollRow from "@/components/ui/scroll-row";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import EmptyContainer from "@/components/ui/empty-container";
@@ -96,25 +97,27 @@ const UsersList = () => {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="inline-flex flex-wrap rounded-lg border border-border bg-card p-1">
-          {TABS.map((tab) => (
-            <Button
-              key={tab.value}
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-pressed={type === tab.value}
-              onClick={() => setType(tab.value)}
-              className={cn(
-                "rounded-md px-4",
-                type === tab.value &&
-                  "bg-secondary-800 text-white hover:bg-secondary-800 hover:text-white",
-              )}
-            >
-              {tab.label}
-            </Button>
-          ))}
-        </div>
+        <ScrollRow>
+          <div className="inline-flex rounded-lg border border-border bg-card p-1">
+            {TABS.map((tab) => (
+              <Button
+                key={tab.value}
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-pressed={type === tab.value}
+                onClick={() => setType(tab.value)}
+                className={cn(
+                  "rounded-md px-4",
+                  type === tab.value &&
+                    "bg-secondary-800 text-white hover:bg-secondary-800 hover:text-white",
+                )}
+              >
+                {tab.label}
+              </Button>
+            ))}
+          </div>
+        </ScrollRow>
 
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -164,7 +167,7 @@ const UsersList = () => {
 
       {!showSkeleton && !error && users.length > 0 && (
         <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <Table>
+          <Table label="Users">
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>

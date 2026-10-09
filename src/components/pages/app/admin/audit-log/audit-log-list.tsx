@@ -1,5 +1,6 @@
 "use client";
 
+import ScrollRow from "@/components/ui/scroll-row";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import EmptyContainer from "@/components/ui/empty-container";
@@ -38,6 +39,10 @@ const TABS: { value?: TAuditTargetType; label: string }[] = [
   { value: "venue", label: "Venues" },
   { value: "faq", label: "FAQs" },
   { value: "admin", label: "Admins" },
+  { value: "user", label: "Users" },
+  { value: "event_report", label: "Reports" },
+  { value: "contact_message", label: "Inquiries" },
+  { value: "ticket_transfer", label: "Transfers" },
 ];
 
 // What each recorded action reads as, and the colour of its pill.
@@ -82,7 +87,10 @@ const ACTIONS: Record<string, { label: string; tone: string }> = {
     tone: "bg-muted text-muted-foreground",
   },
   "faq.deleted": { label: "Deleted FAQ", tone: "bg-red-50 text-red-700" },
-  "admin.added": { label: "Added admin", tone: "bg-emerald-50 text-emerald-700" },
+  "admin.added": {
+    label: "Added admin",
+    tone: "bg-emerald-50 text-emerald-700",
+  },
   "admin.permissions_changed": {
     label: "Changed permissions",
     tone: "bg-blue-50 text-blue-700",
@@ -96,6 +104,38 @@ const ACTIONS: Record<string, { label: string; tone: string }> = {
     tone: "bg-emerald-50 text-emerald-700",
   },
   "admin.removed": { label: "Removed admin", tone: "bg-red-50 text-red-700" },
+  "user.suspended": {
+    label: "Suspended user",
+    tone: "bg-amber-50 text-amber-800",
+  },
+  "user.reactivated": {
+    label: "Reactivated user",
+    tone: "bg-emerald-50 text-emerald-700",
+  },
+  "event.approved": {
+    label: "Approved event",
+    tone: "bg-emerald-50 text-emerald-700",
+  },
+  "event.rejected": {
+    label: "Sent event back",
+    tone: "bg-amber-50 text-amber-800",
+  },
+  "event_report.resolved": {
+    label: "Resolved report",
+    tone: "bg-emerald-50 text-emerald-700",
+  },
+  "event_report.dismissed": {
+    label: "Dismissed report",
+    tone: "bg-muted text-muted-foreground",
+  },
+  "contact_message.resolved": {
+    label: "Resolved inquiry",
+    tone: "bg-emerald-50 text-emerald-700",
+  },
+  "ticket_transfer.cancelled": {
+    label: "Cancelled transfer",
+    tone: "bg-red-50 text-red-700",
+  },
 };
 
 const permissionNames = (value: unknown) =>
@@ -183,31 +223,33 @@ const AuditLogList = () => {
         <h1 className="text-xl font-bold text-secondary-800">Audit Log</h1>
         <p className="text-sm text-muted-foreground">
           Sensitive actions across the platform, newest first: verification
-          decisions, event removals and suspensions, catalogue changes and changes
-          to admin access.
+          decisions, event removals and suspensions, catalogue changes and
+          changes to admin access.
         </p>
       </div>
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="inline-flex flex-wrap rounded-lg border border-border bg-card p-1">
-          {TABS.map((tab) => (
-            <Button
-              key={tab.label}
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-pressed={targetType === tab.value}
-              onClick={() => setTargetType(tab.value)}
-              className={cn(
-                "rounded-md px-4",
-                targetType === tab.value &&
-                  "bg-secondary-800 text-white hover:bg-secondary-800 hover:text-white",
-              )}
-            >
-              {tab.label}
-            </Button>
-          ))}
-        </div>
+        <ScrollRow>
+          <div className="inline-flex rounded-lg border border-border bg-card p-1">
+            {TABS.map((tab) => (
+              <Button
+                key={tab.label}
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-pressed={targetType === tab.value}
+                onClick={() => setTargetType(tab.value)}
+                className={cn(
+                  "rounded-md px-4",
+                  targetType === tab.value &&
+                    "bg-secondary-800 text-white hover:bg-secondary-800 hover:text-white",
+                )}
+              >
+                {tab.label}
+              </Button>
+            ))}
+          </div>
+        </ScrollRow>
 
         <div className="relative w-full lg:max-w-xs">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -252,8 +294,8 @@ const AuditLogList = () => {
       )}
 
       {!showSkeleton && !error && entries.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-border bg-card">
-          <Table>
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <Table label="Audit log">
             <TableHeader>
               <TableRow>
                 <TableHead>When</TableHead>

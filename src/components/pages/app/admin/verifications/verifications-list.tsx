@@ -1,5 +1,6 @@
 "use client";
 
+import ScrollRow from "@/components/ui/scroll-row";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import EmptyContainer from "@/components/ui/empty-container";
@@ -73,30 +74,33 @@ const VerificationsList = () => {
           Vendor verifications
         </h1>
         <p className="text-sm text-muted-foreground">
-          Vendors who have sent in their documents. Open one to review and verify it.
+          Vendors who have sent in their documents. Open one to review and
+          verify it.
         </p>
       </div>
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-card p-1">
-          {FILTERS.map((filter) => (
-            <Button
-              key={filter.value}
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-pressed={status === filter.value}
-              onClick={() => setStatus(filter.value)}
-              className={cn(
-                "rounded-md px-3",
-                status === filter.value &&
-                  "bg-secondary-800 text-white hover:bg-secondary-800 hover:text-white",
-              )}
-            >
-              {filter.label}
-            </Button>
-          ))}
-        </div>
+        <ScrollRow>
+          <div className="flex gap-1 rounded-lg border border-border bg-card p-1">
+            {FILTERS.map((filter) => (
+              <Button
+                key={filter.value}
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-pressed={status === filter.value}
+                onClick={() => setStatus(filter.value)}
+                className={cn(
+                  "rounded-md px-3",
+                  status === filter.value &&
+                    "bg-secondary-800 text-white hover:bg-secondary-800 hover:text-white",
+                )}
+              >
+                {filter.label}
+              </Button>
+            ))}
+          </div>
+        </ScrollRow>
 
         <div className="relative w-full lg:max-w-xs">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -142,14 +146,14 @@ const VerificationsList = () => {
 
       {!showSkeleton && !error && verifications.length > 0 && (
         <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <Table>
+          <Table label="Vendor applications">
             <TableHeader>
               <TableRow>
-                <TableHead className="hidden sm:table-cell">Reference</TableHead>
+                <TableHead>Reference</TableHead>
                 <TableHead>Vendor</TableHead>
-                <TableHead className="hidden md:table-cell">Type</TableHead>
-                <TableHead className="hidden lg:table-cell">Country</TableHead>
-                <TableHead className="hidden sm:table-cell">Submitted</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Country</TableHead>
+                <TableHead>Submitted</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden w-8 sm:table-cell" />
               </TableRow>
@@ -194,7 +198,7 @@ const VerificationsList = () => {
                   <TableCell>
                     <StatusPill status={verification.status} />
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell">
+                  <TableCell>
                     <ChevronRight className="size-4 text-muted-foreground" />
                   </TableCell>
                 </TableRow>

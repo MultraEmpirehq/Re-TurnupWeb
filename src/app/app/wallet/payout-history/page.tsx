@@ -1,5 +1,6 @@
 "use client";
 
+import ScrollTable from "@/components/ui/scroll-table";
 import { Button } from "@/components/ui/button";
 import { useVendorPayoutHistory } from "@/hooks/use-vendor-wallet";
 import { ArrowLeft, Banknote, Clock3, Download, Landmark } from "lucide-react";
@@ -59,7 +60,11 @@ const PayoutHistoryPage = () => {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <Button asChild variant="outline" className="rounded-full border-secondary-100">
+          <Button
+            asChild
+            variant="outline"
+            className="rounded-full border-secondary-100"
+          >
             <Link href="/app/wallet">
               <ArrowLeft className="mr-2 size-4" />
               Back to Wallet
@@ -97,7 +102,9 @@ const PayoutHistoryPage = () => {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm text-secondary-500">{item.label}</p>
-                <p className="mt-3 text-2xl font-bold text-secondary-950">{item.value}</p>
+                <p className="mt-3 text-2xl font-bold text-secondary-950">
+                  {item.value}
+                </p>
               </div>
               <span className="rounded-2xl bg-secondary-50 p-3 text-secondary-700">
                 <item.icon className="size-5" />
@@ -114,7 +121,7 @@ const PayoutHistoryPage = () => {
           </h2>
         </div>
 
-        <div className="overflow-x-auto">
+        <ScrollTable label="Payout history">
           <table className="min-w-full text-left">
             <thead className="bg-secondary-50 text-xs uppercase tracking-[0.18em] text-secondary-400">
               <tr>
@@ -136,7 +143,9 @@ const PayoutHistoryPage = () => {
                   <td className="px-6 py-5 text-sm text-secondary-500">
                     {dateFormatter(row.date)}
                   </td>
-                  <td className="px-6 py-5 text-sm text-secondary-500">{row.method}</td>
+                  <td className="px-6 py-5 text-sm text-secondary-500">
+                    {row.method}
+                  </td>
                   <td className="px-6 py-5 text-sm text-secondary-950">
                     {moneyFormatter(row.amount, row.currency)}
                   </td>
@@ -165,7 +174,7 @@ const PayoutHistoryPage = () => {
               )}
             </tbody>
           </table>
-        </div>
+        </ScrollTable>
       </section>
     </div>
   );

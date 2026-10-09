@@ -27,8 +27,34 @@ export const PRICE_OPTIONS = [
   { value: "PAID", label: "Paid" },
 ] as const;
 
+/** What the search looks through, as the app's tabs. */
+export const EXPLORE_TABS = [
+  { value: "events", label: "Events" },
+  { value: "venues", label: "Venues" },
+  { value: "performers", label: "Performers" },
+  { value: "places", label: "Places" },
+] as const;
+
+export type TExploreTab = (typeof EXPLORE_TABS)[number]["value"];
+
+const isTab = (value?: string | null): value is TExploreTab =>
+  EXPLORE_TABS.some((option) => option.value === value);
+
+/** Narrower lists, as the app has them: what's hot, what you saved, what's been. */
+export const SHOW_OPTIONS = [
+  { value: "trending", label: "Trending" },
+  { value: "saved", label: "Saved" },
+  { value: "past", label: "Past" },
+] as const;
+
+export type TShow = (typeof SHOW_OPTIONS)[number]["value"];
+
+const isShow = (value?: string | null): value is TShow =>
+  SHOW_OPTIONS.some((option) => option.value === value);
+
 /** A preset, or one calendar day as yyyy-mm-dd from the date strip. */
-export type TWhen = (typeof WHEN_OPTIONS)[number]["value"] | `${number}-${number}-${number}`;
+export type TWhen =
+  (typeof WHEN_OPTIONS)[number]["value"] | `${number}-${number}-${number}`;
 
 const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -55,7 +81,10 @@ const rangeFor = (when: TWhen, now = new Date()) => {
       return [startOfDay(addDays(now, 1)), endOfDay(addDays(now, 1))];
     case "weekend":
       return isWeekend(now)
-        ? [startOfDay(now), endOfDay(now.getDay() === 0 ? now : nextSunday(now))]
+        ? [
+            startOfDay(now),
+            endOfDay(now.getDay() === 0 ? now : nextSunday(now)),
+          ]
         : [startOfDay(nextSaturday(now)), endOfDay(nextSunday(now))];
     case "week":
       return [startOfDay(now), endOfWeek(now, monday)];
@@ -95,6 +124,13 @@ const useExploreFilters = () => {
   const priceParam = searchParams.get("price");
   const price = isPrice(priceParam) ? priceParam : undefined;
   const categoryId = searchParams.get("category") || undefined;
+  // Where: an ISO country code, and optionally one of its cities.
+  const countryCode = searchParams.get("country")?.toUpperCase() || undefined;
+  const city = (countryCode && searchParams.get("city")) || undefined;
+  const showParam = searchParams.get("show");
+  const show = isShow(showParam) ? showParam : undefined;
+  const tabParam = searchParams.get("tab");
+  const tab: TExploreTab = isTab(tabParam) ? tabParam : "events";
 
   const dayKey = new Date().toDateString();
   const range = useMemo(() => {
@@ -124,15 +160,24 @@ const useExploreFilters = () => {
     [pathname],
   );
 
-  const activeCount = [q, when, price, categoryId].filter(Boolean).length;
+  const activeCount = [q, when, price, categoryId, countryCode, show].filter(
+    Boolean,
+  ).length;
 
   return {
     q,
     when,
     price,
     categoryId,
+    countryCode,
+    city,
+    show,
+    tab,
     range,
     activeCount,
+    // As the app: anything searched or narrowed swaps the browse sections for
+    // results; so does looking at venues, performers or places.
+    isFiltering: activeCount > 0 || tab !== "events",
     setFilters,
     clearFilters: () =>
       setFilters({
@@ -140,6 +185,9 @@ const useExploreFilters = () => {
         when: undefined,
         price: undefined,
         category: undefined,
+        country: undefined,
+        city: undefined,
+        show: undefined,
       }),
   };
 };

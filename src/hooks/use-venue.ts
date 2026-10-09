@@ -30,7 +30,7 @@ const getVenues = async (page: number = 1, params?: IVenuesParam) => {
   return data;
 };
 
-export const useVenues = (params?: IVenuesParam) => {
+export const useVenues = (params?: IVenuesParam, enabled = true) => {
   const [customVenues, setCustomVenues] = useState<IVenueDetailsType[]>([]);
 
   useEffect(() => {
@@ -45,6 +45,7 @@ export const useVenues = (params?: IVenuesParam) => {
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage?.pagination?.nextPage,
     retry: 0,
+    enabled,
   });
   const filteredCustomVenues = params?.q?.trim()
     ? customVenues.filter(

@@ -117,7 +117,10 @@ export const buildVendorTicketCategoryAnalytics = (
       (row) => row.status === "Transferred",
     ).length;
     const inventory = eventTicket?.inventory ?? purchased;
-    const revenue = categoryRows.reduce((sum, row) => sum + row.amountNumber, 0);
+    const revenue = categoryRows.reduce(
+      (sum, row) => sum + row.amountNumber,
+      0,
+    );
 
     return {
       eventId,

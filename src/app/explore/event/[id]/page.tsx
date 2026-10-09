@@ -21,6 +21,11 @@ import {
 import { resolveAttachmentUrl, resolveAttachmentUrls } from "@/lib/functions";
 import { eventZoneNote, instantToWallTimeInZone } from "@/lib/event-time";
 import ReportEventButton from "@/components/pages/explore/event-detail/report-event-button";
+import HideEventButton from "@/components/pages/explore/event-detail/hide-event-button";
+import EventDetailLineup from "@/components/pages/explore/event-detail/event-detail-lineup";
+import FollowButton from "@/components/discovery/follow-button";
+import Link from "next/link";
+import { ROUTES } from "@/lib/variables";
 
 const EventDetails = () => {
   const params = useParams();
@@ -120,7 +125,32 @@ const EventDetails = () => {
         <EventDetailDateTime date={eventDate} zoneNote={zoneNote} />
       )}
 
+      {!!data?.performers?.length && (
+        <EventDetailLineup performers={data.performers} />
+      )}
+
       {data?.venue && <EventDetailLocation venue={data.venue} />}
+
+      {!!data?.organizerId && (
+        <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white p-4 ring-1 ring-black/5">
+          <div>
+            <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+              Organised by
+            </p>
+            <Link
+              href={`${ROUTES.EXPLORE.href}/planner/${data.organizerId}`}
+              className="font-semibold text-foreground hover:text-secondary hover:underline"
+            >
+              {data.organizerName || "See this planner's events"}
+            </Link>
+          </div>
+          <FollowButton
+            type="PLANNER"
+            id={data.organizerId}
+            name={data.organizerName || "this planner"}
+          />
+        </section>
+      )}
 
       {data?.eventGuestsOfHonour && data.eventGuestsOfHonour.length > 0 && (
         <EventDetailGuests guests={data.eventGuestsOfHonour} />
@@ -141,7 +171,8 @@ const EventDetails = () => {
         <EventDetailMedia mediaList={mediaList} eventName={data?.name} />
       )}
 
-      <div className="border-t pt-6">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t pt-6">
+        <HideEventButton eventId={id} isOwner={data?.isOwner} />
         <ReportEventButton
           eventId={id}
           eventName={data?.name}

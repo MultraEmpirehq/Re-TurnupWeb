@@ -9,7 +9,7 @@ const CHAPTER_MS = 4800;
 const CHAPTERS = [
   {
     title: "Find it",
-    line: "Browse what's on tonight and heart the ones you like.",
+    line: "Browse what's on near you and heart the ones you like.",
   },
   { title: "Book it", line: "Pick a ticket and pay in a few taps." },
   { title: "Link up", line: "Chat with everyone going before you arrive." },
@@ -31,18 +31,18 @@ const FindScreen = () => (
       )}
     >
       <Search className="size-3.5" aria-hidden />
-      What&apos;s on tonight?
+      What&apos;s on this week?
     </div>
     {[
       {
         name: "Afrobeats Live",
         tone: "from-secondary-300 to-secondary-600",
-        when: "Tonight · 9pm",
+        when: "Sat · 4pm",
       },
       {
-        name: "Rooftop Sessions",
+        name: "Lagos Tech Fest",
         tone: "from-primary-200 to-primary-500",
-        when: "Fri · 8pm",
+        when: "Fri · 9am",
         liked: true,
       },
       {
@@ -98,9 +98,9 @@ const BookScreen = () => (
       className={cn("text-[12px] font-bold text-secondary-950", IN)}
       style={enter(150)}
     >
-      Rooftop Sessions
+      Lagos Tech Fest
     </p>
-    {["Regular", "VIP", "Table for 4"].map((tier, index) => (
+    {["Regular", "VIP", "Group of 4"].map((tier, index) => (
       <div
         key={tier}
         className={cn(
@@ -140,7 +140,7 @@ const ChatScreen = () => (
   <div className="flex h-full flex-col">
     <div className={cn("border-b border-secondary-50 px-4 py-3", IN)}>
       <p className="text-[12px] font-bold text-secondary-950">
-        Rooftop Sessions
+        Lagos Tech Fest
       </p>
       <p className="text-[10px] text-emerald-600">248 going · 31 online</p>
     </div>
@@ -148,20 +148,20 @@ const ChatScreen = () => (
       {[
         {
           from: "Tolu",
-          text: "Who's pulling up early? 👀",
+          text: "Who's getting there early? 👀",
           mine: false,
           tone: "bg-amber-300",
         },
-        { from: "You", text: "Me! Getting there at 8", mine: true },
+        { from: "You", text: "Me! Getting there at 8:30", mine: true },
         {
           from: "Kemi",
-          text: "Same, see you at the bar 🍹",
+          text: "Same, see you at registration ☕",
           mine: false,
           tone: "bg-sky-300",
         },
         {
           from: "Dayo",
-          text: "This DJ line-up is mad 🔥",
+          text: "This speaker line-up is 🔥",
           mine: false,
           tone: "bg-pink-300",
         },
@@ -273,7 +273,7 @@ const STOPS = [
 ];
 
 /**
- * The night out as a journey around the login ticket: four stops, each a small
+ * A booking as a journey around the login ticket: four stops, each a small
  * phone, joined by a dashed route that ends at the ticket. One stop lights up at
  * a time and plays its moment; the rest wait dimmed, so the form stays the focus.
  */
@@ -381,7 +381,7 @@ const AuthStory = () => {
                     <p className="mt-1.5 text-[8px] font-semibold tracking-[0.2em] text-white/75 uppercase">
                       Admit one
                     </p>
-                    <p className="text-[10px] font-bold">VIP · Rooftop</p>
+                    <p className="text-[10px] font-bold">VIP · Tech Fest</p>
                   </div>
                   <div className="w-6 border-l-2 border-dashed border-white/40" />
                 </div>

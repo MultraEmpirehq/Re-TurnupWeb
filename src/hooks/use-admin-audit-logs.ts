@@ -9,7 +9,11 @@ export type TAuditTargetType =
   | "category"
   | "venue"
   | "faq"
-  | "admin";
+  | "admin"
+  | "user"
+  | "event_report"
+  | "contact_message"
+  | "ticket_transfer";
 
 export interface IAuditLogEntry {
   id: string;

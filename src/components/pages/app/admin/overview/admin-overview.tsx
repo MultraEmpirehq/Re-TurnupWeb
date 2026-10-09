@@ -95,7 +95,8 @@ const AdminOverview = () => {
     },
   ];
   const shortcuts = allShortcuts.filter(
-    ({ permission }) => !permission || (!isLoadingPermissions && has(permission)),
+    ({ permission }) =>
+      !permission || (!isLoadingPermissions && has(permission)),
   );
 
   return (
@@ -105,7 +106,8 @@ const AdminOverview = () => {
           Welcome back{firstName ? `, ${firstName}` : ""}
         </h1>
         <p className="text-sm text-muted-foreground">
-          The overview dashboard is on its way. In the meantime, jump into a section.
+          The overview dashboard is on its way. In the meantime, jump into a
+          section.
         </p>
       </div>
 

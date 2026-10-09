@@ -53,7 +53,7 @@ const FlipTicket = () => {
                   <p className="text-[11px] font-semibold tracking-[0.22em] text-white/75 uppercase">
                     Admit one
                   </p>
-                  <p className="text-lg font-bold">Your next night out</p>
+                  <p className="text-lg font-bold">Your next turn-up</p>
                 </div>
               </div>
               <div className="relative flex w-[78px] flex-col items-center justify-center border-l-2 border-dashed border-white/40">

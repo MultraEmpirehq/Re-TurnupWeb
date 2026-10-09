@@ -76,6 +76,7 @@ const defaultValues: TFormValues = {
   categoryName: "",
   guestIds: [],
   unRegisteredGuestNames: [],
+  lineup: [],
   description: "",
   eventActivities: [],
   coverImage: null,
@@ -181,6 +182,11 @@ const buildEventFormData = async (
   if (body.guestIds?.length) {
     formData.append("guestIds", JSON.stringify(body.guestIds));
   }
+  // Always sent, in billing order, so taking everyone off a draft clears it.
+  formData.append(
+    "performerIds",
+    JSON.stringify((body.lineup ?? []).map((performer) => performer.id)),
+  );
   if (body.unRegisteredGuestNames?.length) {
     formData.append(
       "unRegisteredGuestNames",
@@ -371,6 +377,7 @@ const CreateEvent = () => {
             categoryName:
               draftEvent.category?.name ?? draftEvent.customCategoryName ?? "",
             description: draftEvent.description ?? "",
+            lineup: draftEvent.performers ?? [],
             eventActivities: (draftEvent.activities ?? []).map((activity) => ({
               activityName: activity.name,
               activityDescription: activity.description ?? "",

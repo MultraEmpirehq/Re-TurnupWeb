@@ -48,7 +48,11 @@ const Field: React.FC<{
   children: React.ReactNode;
   wide?: boolean;
 }> = ({ label, children, wide }) => (
-  <div className={wide ? "flex flex-col gap-0.5 sm:col-span-2" : "flex flex-col gap-0.5"}>
+  <div
+    className={
+      wide ? "flex flex-col gap-0.5 sm:col-span-2" : "flex flex-col gap-0.5"
+    }
+  >
     <span className="text-xs text-muted-foreground">{label}</span>
     <span className="text-sm break-words">{children || "—"}</span>
   </div>
@@ -269,7 +273,9 @@ const Details: React.FC<{ verification: IVendorVerification }> = ({
                 >
                   <span>{step.label}</span>
                   <StatusPill
-                    status={verification.stepStatuses?.[step.key] ?? "not_started"}
+                    status={
+                      verification.stepStatuses?.[step.key] ?? "not_started"
+                    }
                   />
                 </li>
               ))}
