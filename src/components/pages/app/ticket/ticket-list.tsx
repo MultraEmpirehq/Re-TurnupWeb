@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import ScrollTable from "@/components/ui/scroll-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useEvents } from "@/hooks/use-event";
@@ -171,7 +172,8 @@ const mapLedgerApiRecord = (
     amount: getMoneyLabel(record.amount),
     amountNumber,
     status:
-      record.transferStatus === "claimed" || record.transferStatus === "transferred"
+      record.transferStatus === "claimed" ||
+      record.transferStatus === "transferred"
         ? "Transferred"
         : "Not Transferred",
     entryStatus:
@@ -217,7 +219,11 @@ const mapAnalyticsRecord = (item: VendorTicketAnalyticsApiRecord) => ({
 });
 
 const getEventPassAssignments = (event: IEventDetailsType) =>
-  event.passAssignments ?? event.accessPasses ?? event.eventPasses ?? event.passes ?? [];
+  event.passAssignments ??
+  event.accessPasses ??
+  event.eventPasses ??
+  event.passes ??
+  [];
 
 const VendorTicketPreview: React.FC<{ ticket: VendorTicketLedgerRecord }> = ({
   ticket,
@@ -240,7 +246,9 @@ const VendorTicketPreview: React.FC<{ ticket: VendorTicketLedgerRecord }> = ({
               {isFree ? "Free" : ticket.category}
             </span>
             <div>
-              <h3 className="text-xl font-black leading-tight">{ticket.event}</h3>
+              <h3 className="text-xl font-black leading-tight">
+                {ticket.event}
+              </h3>
               <div className="mt-5 space-y-2 text-sm text-white/78">
                 <p className="flex items-center gap-2">
                   <CalendarDays className="size-4" />
@@ -257,7 +265,9 @@ const VendorTicketPreview: React.FC<{ ticket: VendorTicketLedgerRecord }> = ({
             <span className="rounded-full bg-white/18 px-4 py-2 text-sm font-semibold">
               {ticket.category}
             </span>
-            <span className="text-xs font-semibold text-white/45">turnupz.com</span>
+            <span className="text-xs font-semibold text-white/45">
+              turnupz.com
+            </span>
           </div>
         </div>
 
@@ -301,8 +311,9 @@ const TicketList = () => {
   const { data: analyticsResponse } = useVendorTicketAnalytics({
     eventId: selectedEventId === "all" ? undefined : selectedEventId,
   });
-  const { data: scannerAccessResponse } =
-    useEventScanners(selectedScannerEventId);
+  const { data: scannerAccessResponse } = useEventScanners(
+    selectedScannerEventId,
+  );
   const addScannerMutation = useAddEventScanner(selectedScannerEventId);
   const revokeScannerMutation = useRevokeEventScanner(selectedScannerEventId);
   const scanTicketMutation = useScanEventTicket(selectedScannerEventId);
@@ -329,60 +340,57 @@ const TicketList = () => {
 
   const ticketEventCards = useMemo(() => {
     if (events.length > 0) {
-      return events
-        .map((event) => {
-          const eventRows = rows.filter((row) => row.eventId === event.id);
-          const purchased = eventRows.length;
-          const attended = eventRows.filter(
-            (row) => row.entryStatus === "Checked In",
-          ).length;
-          const ticketInventory = (event.eventTickets ?? []).reduce(
-            (sum, ticket) => sum + Number(ticket.ticketQuantity || 0),
-            0,
-          );
-          const passInventory = getEventPassAssignments(event).reduce(
-            (sum, pass) => sum + Number(pass.quantity || 0),
-            0,
-          );
-          const registrationInventory = Number(
-            event.registrationLimit ?? event.totalTickets ?? 0,
-          );
-          const categoryNames = (event.eventTickets ?? [])
-            .map((ticket) => ticket.ticketName)
-            .filter(Boolean);
-          const passNames = getEventPassAssignments(event)
-            .map((pass) => pass.passName)
-            .filter(Boolean);
-          const normalizedCategoryNames =
-            categoryNames.length > 0
-              ? categoryNames
-              : event.saleMethod === "register"
-                ? ["Registration"]
-                : [];
-          const scannerCategories = [
-            ...normalizedCategoryNames,
-            ...passNames.map((name) => `${name} Pass`),
-          ];
+      return events.map((event) => {
+        const eventRows = rows.filter((row) => row.eventId === event.id);
+        const purchased = eventRows.length;
+        const attended = eventRows.filter(
+          (row) => row.entryStatus === "Checked In",
+        ).length;
+        const ticketInventory = (event.eventTickets ?? []).reduce(
+          (sum, ticket) => sum + Number(ticket.ticketQuantity || 0),
+          0,
+        );
+        const passInventory = getEventPassAssignments(event).reduce(
+          (sum, pass) => sum + Number(pass.quantity || 0),
+          0,
+        );
+        const registrationInventory = Number(
+          event.registrationLimit ?? event.totalTickets ?? 0,
+        );
+        const categoryNames = (event.eventTickets ?? [])
+          .map((ticket) => ticket.ticketName)
+          .filter(Boolean);
+        const passNames = getEventPassAssignments(event)
+          .map((pass) => pass.passName)
+          .filter(Boolean);
+        const normalizedCategoryNames =
+          categoryNames.length > 0
+            ? categoryNames
+            : event.saleMethod === "register"
+              ? ["Registration"]
+              : [];
+        const scannerCategories = [
+          ...normalizedCategoryNames,
+          ...passNames.map((name) => `${name} Pass`),
+        ];
 
-          return {
-            id: event.id,
-            name: event.name,
-            date: event.date,
-            purchased,
-            attended,
-            inventory: ticketInventory + passInventory || registrationInventory,
-            accessExpiresLabel: formatEventAccessExpiry(event.date),
-            scannerCount: (
-              selectedScannerEventId === event.id
-                ? (scannerAccessResponse ?? []).map(mapScannerApiRecord)
-                : []
-            ).filter(
-              (scanner) => getScannerAccessStatus(scanner) === "Active",
-            ).length,
-            categories: scannerCategories.length,
-            categoryNames: scannerCategories,
-          };
-        });
+        return {
+          id: event.id,
+          name: event.name,
+          date: event.date,
+          purchased,
+          attended,
+          inventory: ticketInventory + passInventory || registrationInventory,
+          accessExpiresLabel: formatEventAccessExpiry(event.date),
+          scannerCount: (selectedScannerEventId === event.id
+            ? (scannerAccessResponse ?? []).map(mapScannerApiRecord)
+            : []
+          ).filter((scanner) => getScannerAccessStatus(scanner) === "Active")
+            .length,
+          categories: scannerCategories.length,
+          categoryNames: scannerCategories,
+        };
+      });
     }
 
     return eventOptions.map((event) => {
@@ -395,18 +403,24 @@ const TicketList = () => {
           .length,
         inventory: eventRows.length,
         accessExpiresLabel: "Expires after event day",
-        scannerCount: (
-          selectedScannerEventId === event.id
-            ? (scannerAccessResponse ?? []).map(mapScannerApiRecord)
-            : []
-        ).filter(
-          (scanner) => getScannerAccessStatus(scanner) === "Active",
-        ).length,
+        scannerCount: (selectedScannerEventId === event.id
+          ? (scannerAccessResponse ?? []).map(mapScannerApiRecord)
+          : []
+        ).filter((scanner) => getScannerAccessStatus(scanner) === "Active")
+          .length,
         categories: new Set(eventRows.map((row) => row.category)).size,
-        categoryNames: Array.from(new Set(eventRows.map((row) => row.category))),
+        categoryNames: Array.from(
+          new Set(eventRows.map((row) => row.category)),
+        ),
       };
     });
-  }, [eventOptions, events, rows, scannerAccessResponse, selectedScannerEventId]);
+  }, [
+    eventOptions,
+    events,
+    rows,
+    scannerAccessResponse,
+    selectedScannerEventId,
+  ]);
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
@@ -422,7 +436,9 @@ const TicketList = () => {
   }, [activeStatus, rows, searchQuery, selectedEventId]);
 
   const categoryAnalytics = useMemo(() => {
-    const apiAnalytics = (analyticsResponse?.rows ?? []).map(mapAnalyticsRecord);
+    const apiAnalytics = (analyticsResponse?.rows ?? []).map(
+      mapAnalyticsRecord,
+    );
     if (apiAnalytics.length > 0) {
       return apiAnalytics.filter((item) =>
         selectedEventId === "all" ? true : item.eventId === selectedEventId,
@@ -471,15 +487,19 @@ const TicketList = () => {
   }, [rows, selectedScannerEventId]);
 
   const selectedScannerEvent = useMemo(() => {
-    return ticketEventCards.find((event) => event.id === selectedScannerEventId);
+    return ticketEventCards.find(
+      (event) => event.id === selectedScannerEventId,
+    );
   }, [ticketEventCards, selectedScannerEventId]);
 
   const selectedEventScanners = useMemo(() => {
     if (!selectedScannerEventId) return [];
-    return (scannerAccessResponse ?? []).map(mapScannerApiRecord).map((scanner) => ({
-      ...scanner,
-      status: getScannerAccessStatus(scanner),
-    }));
+    return (scannerAccessResponse ?? [])
+      .map(mapScannerApiRecord)
+      .map((scanner) => ({
+        ...scanner,
+        status: getScannerAccessStatus(scanner),
+      }));
   }, [scannerAccessResponse, selectedScannerEventId]);
 
   const scanResult = useMemo(() => {
@@ -521,7 +541,8 @@ const TicketList = () => {
       return {
         status: "denied" as const,
         title: "Access denied",
-        description: "This barcode does not match a ticket for the selected event.",
+        description:
+          "This barcode does not match a ticket for the selected event.",
       };
     }
 
@@ -582,7 +603,9 @@ const TicketList = () => {
       if (response.status === "approved") {
         toast.success(response.message || "Ticket approved.");
       } else if (response.status === "already_checked_in") {
-        toast.warning(response.message || "Ticket has already been checked in.");
+        toast.warning(
+          response.message || "Ticket has already been checked in.",
+        );
       } else {
         toast.error(response.message || "Ticket denied.");
       }
@@ -612,15 +635,17 @@ const TicketList = () => {
         ))}
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-        <div className="space-y-4 rounded-[1.5rem] border border-secondary-100 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+      {/* One shrinkable column below xl, so the table scrolls inside it. */}
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+        <div className="min-w-0 space-y-4 rounded-[1.5rem] border border-secondary-100 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-secondary-950">
                 Ticket Category Analysis
               </p>
               <p className="text-sm text-secondary-500">
-                Compare purchase, transfer, and attendance performance by event or ticket type.
+                Compare purchase, transfer, and attendance performance by event
+                or ticket type.
               </p>
             </div>
             <select
@@ -636,17 +661,23 @@ const TicketList = () => {
               ))}
             </select>
           </div>
-          <div className="overflow-x-auto">
+          <ScrollTable label="Ticket categories">
             <table className="min-w-[720px] w-full text-sm">
               <thead className="text-left text-secondary-500">
                 <tr>
-                  {["Event", "Ticket", "Bought", "Attended", "Transferred", "Remaining", "Revenue"].map(
-                    (heading) => (
-                      <th key={heading} className="px-3 py-3 font-medium">
-                        {heading}
-                      </th>
-                    ),
-                  )}
+                  {[
+                    "Event",
+                    "Ticket",
+                    "Bought",
+                    "Attended",
+                    "Transferred",
+                    "Remaining",
+                    "Revenue",
+                  ].map((heading) => (
+                    <th key={heading} className="px-3 py-3 font-medium">
+                      {heading}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -655,7 +686,9 @@ const TicketList = () => {
                     key={`${item.eventId}-${item.category}`}
                     className="border-t border-secondary-100"
                   >
-                    <td className="px-3 py-4 text-secondary-500">{item.event}</td>
+                    <td className="px-3 py-4 text-secondary-500">
+                      {item.event}
+                    </td>
                     <td className="px-3 py-4 font-semibold text-secondary-950">
                       {item.category}
                     </td>
@@ -670,7 +703,7 @@ const TicketList = () => {
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollTable>
         </div>
 
         <div className="space-y-4 rounded-[1.5rem] border border-secondary-100 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
@@ -683,7 +716,8 @@ const TicketList = () => {
                 Event Scanner Cards
               </p>
               <p className="text-sm text-secondary-500">
-                Give scanner access, then open an event card to view the tickets created for that event.
+                Give scanner access, then open an event card to view the tickets
+                created for that event.
               </p>
             </div>
           </div>
@@ -738,22 +772,23 @@ const TicketList = () => {
                     )}
                   </span>
                 )}
-                {selectedScannerEventId === event.id && selectedEventScanners.length > 0 && (
-                  <span className="mt-2 flex flex-wrap gap-1">
-                    {selectedEventScanners.map((scanner) => (
-                      <span
-                        key={scanner.id}
-                        className={`rounded-full bg-white px-2 py-1 text-[11px] font-medium ${
-                          getScannerAccessStatus(scanner) === "Active"
-                            ? "text-cyan-700"
-                            : "text-secondary-400"
-                        }`}
-                      >
-                        {scanner.email}
-                      </span>
-                    ))}
-                  </span>
-                )}
+                {selectedScannerEventId === event.id &&
+                  selectedEventScanners.length > 0 && (
+                    <span className="mt-2 flex flex-wrap gap-1">
+                      {selectedEventScanners.map((scanner) => (
+                        <span
+                          key={scanner.id}
+                          className={`rounded-full bg-white px-2 py-1 text-[11px] font-medium ${
+                            getScannerAccessStatus(scanner) === "Active"
+                              ? "text-cyan-700"
+                              : "text-secondary-400"
+                          }`}
+                        >
+                          {scanner.email}
+                        </span>
+                      ))}
+                    </span>
+                  )}
               </button>
             ))}
             {ticketEventCards.length === 0 && (
@@ -775,7 +810,8 @@ const TicketList = () => {
                 </h2>
                 <p className="mt-1 text-sm text-secondary-500">
                   {selectedScannerTickets.length} tickets for{" "}
-                  {selectedScannerEvent.name}. Download each ticket individually.
+                  {selectedScannerEvent.name}. Download each ticket
+                  individually.
                 </p>
               </div>
               <button
@@ -819,7 +855,8 @@ const TicketList = () => {
                       Scanner Access For This Event
                     </p>
                     <p className="mt-1 text-xs text-secondary-500">
-                      Add registered user emails. Access is tied to this event and expires after event day.
+                      Add registered user emails. Access is tied to this event
+                      and expires after event day.
                     </p>
                   </div>
                   <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-semibold text-cyan-700">
@@ -835,7 +872,9 @@ const TicketList = () => {
                 <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]">
                   <Input
                     value={scannerEmailDraft}
-                    onChange={(event) => setScannerEmailDraft(event.target.value)}
+                    onChange={(event) =>
+                      setScannerEmailDraft(event.target.value)
+                    }
                     placeholder="scanner@example.com"
                     className="h-11 rounded-xl border-secondary-200 bg-white"
                   />
@@ -846,7 +885,9 @@ const TicketList = () => {
                     className="h-11 rounded-xl"
                   >
                     <MailPlus className="size-4" />
-                    {addScannerMutation.isPending ? "Giving Access" : "Give Access"}
+                    {addScannerMutation.isPending
+                      ? "Giving Access"
+                      : "Give Access"}
                   </Button>
                 </div>
                 <div className="mt-4 grid gap-2">
@@ -959,7 +1000,9 @@ const TicketList = () => {
                       <XCircle className="mt-0.5 size-5 shrink-0" />
                     )}
                     <div>
-                      <p className="text-sm font-semibold">{scanResult.title}</p>
+                      <p className="text-sm font-semibold">
+                        {scanResult.title}
+                      </p>
                       <p className="mt-1 text-sm">{scanResult.description}</p>
                     </div>
                   </div>
@@ -1029,7 +1072,7 @@ const TicketList = () => {
       </div>
 
       <div className="overflow-hidden rounded-[1.5rem] border border-secondary-100 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-        <div className="overflow-x-auto">
+        <ScrollTable label="Tickets sold">
           <table className="min-w-[980px] w-full text-sm">
             <thead className="border-b border-secondary-100 bg-white text-left text-secondary-500">
               <tr>
@@ -1159,7 +1202,7 @@ const TicketList = () => {
               )}
             </tbody>
           </table>
-        </div>
+        </ScrollTable>
 
         <div className="flex flex-col gap-4 px-4 py-5 text-secondary-500 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3 text-sm">

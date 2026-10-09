@@ -11,6 +11,10 @@ import { CalendarSearch, X } from "lucide-react";
 import React, { memo, useMemo } from "react";
 import Reveal from "../home/landing/reveal";
 import TicketCard, { TicketCardSkeleton } from "../home/landing/ticket-card";
+import ExplorePlaceFilters from "./explore-place-filters";
+import ExplorePlacePicker from "./explore-place-picker";
+import useExplorePlace from "./use-explore-place";
+import { useEventLocations } from "@/hooks/use-discovery";
 import useExploreFilters, {
   PRICE_OPTIONS,
   TWhen,
@@ -27,8 +31,21 @@ const whenLabel = (when: TWhen) => {
 };
 
 const EventList = () => {
-  const { q, when, price, categoryId, range, activeCount, setFilters, clearFilters } =
-    useExploreFilters();
+  const {
+    q,
+    when,
+    price,
+    categoryId,
+    countryCode,
+    city,
+    show,
+    range,
+    activeCount,
+    setFilters,
+    clearFilters,
+  } = useExploreFilters();
+  const { data: locations = [] } = useEventLocations();
+  const { place, isReady } = useExplorePlace();
   const { data: categories } = useCategory();
 
   const {
@@ -38,17 +55,28 @@ const EventList = () => {
     fetchNextPage,
     error,
     refetch,
-  } = useEvents({
-    limit: PAGE_SIZE,
-    q: q || undefined,
-    priceType: price,
-    categoryId,
-    startDate: range?.startDate,
-    endDate: range?.endDate,
-  });
+  } = useEvents(
+    {
+      limit: PAGE_SIZE,
+      q: q || undefined,
+      priceType: price,
+      categoryId,
+      startDate: range?.startDate,
+      endDate: range?.endDate,
+      // A location filter wins; browsing, the list follows the picked place.
+      countryCode:
+        countryCode ?? (activeCount ? undefined : place?.countryCode),
+      city: countryCode ? city : activeCount ? undefined : place?.city,
+      isTrending: show === "trending" ? true : undefined,
+      isFavorite: show === "saved" ? true : undefined,
+      status: show === "past" ? "PAST" : undefined,
+    },
+    { enabled: isReady || activeCount > 0 },
+  );
 
   const events = useMemo(
-    () => (data?.pages?.flatMap((page) => page?.data || []) || []).filter(Boolean),
+    () =>
+      (data?.pages?.flatMap((page) => page?.data || []) || []).filter(Boolean),
     [data],
   );
   const isLoading = !data && !error;
@@ -63,10 +91,28 @@ const EventList = () => {
     ].filter(Boolean);
     let text = parts.join(" ");
     text = text.charAt(0).toUpperCase() + text.slice(1);
+    if (show === "trending") text = `Trending ${text.toLowerCase()}`;
+    if (show === "saved") text = `Your saved ${text.toLowerCase()}`;
+    if (show === "past") text = `Past ${text.toLowerCase()}`;
     if (q) text += ` matching “${q}”`;
+    const place =
+      city ||
+      locations.find((item) => item.countryCode === countryCode)?.country;
+    if (place) text += ` in ${place}`;
     if (when) text += ` ${whenLabel(when)}`;
     return activeCount ? text : "Everything coming up";
-  }, [activeCount, categories, categoryId, price, q, when]);
+  }, [
+    activeCount,
+    categories,
+    categoryId,
+    city,
+    countryCode,
+    locations,
+    price,
+    q,
+    show,
+    when,
+  ]);
 
   // With no filters the first event leads, at double size.
   const hasFeature = !activeCount && events.length >= 3;
@@ -77,6 +123,12 @@ const EventList = () => {
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight text-secondary-950 md:text-3xl">
             {heading}
+            {!activeCount && (
+              <>
+                {" "}
+                <ExplorePlacePicker />
+              </>
+            )}
           </h2>
           {activeCount > 0 && (
             <button
@@ -94,24 +146,28 @@ const EventList = () => {
           aria-label="Price"
           className="flex w-fit rounded-full bg-white p-1 ring-1 ring-black/5"
         >
-          {[{ value: undefined, label: "All" }, ...PRICE_OPTIONS].map((option) => (
-            <button
-              key={option.label}
-              type="button"
-              aria-pressed={price === option.value}
-              onClick={() => setFilters({ price: option.value })}
-              className={cn(
-                "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-                price === option.value
-                  ? "bg-secondary-950 text-white"
-                  : "text-secondary-800 hover:bg-secondary-50",
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
+          {[{ value: undefined, label: "All" }, ...PRICE_OPTIONS].map(
+            (option) => (
+              <button
+                key={option.label}
+                type="button"
+                aria-pressed={price === option.value}
+                onClick={() => setFilters({ price: option.value })}
+                className={cn(
+                  "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                  price === option.value
+                    ? "bg-secondary-950 text-white"
+                    : "text-secondary-800 hover:bg-secondary-50",
+                )}
+              >
+                {option.label}
+              </button>
+            ),
+          )}
         </div>
       </div>
+
+      <ExplorePlaceFilters />
 
       {error && !data ? (
         <ErrorContainer
@@ -131,7 +187,9 @@ const EventList = () => {
           </p>
           <p className="max-w-sm text-sm text-secondary-950/60">
             {activeCount
-              ? "Try another day, price or category, or clear the filters to see everything."
+              ? show === "saved"
+                ? "Save events with the heart and they'll be here."
+                : "Try another day, place, price or category, or clear the filters to see everything."
               : "New events land every week. Check back soon."}
           </p>
           {activeCount > 0 && (

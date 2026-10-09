@@ -26,7 +26,7 @@ import usePointerTilt from "./use-pointer-tilt";
 const FEATURES = [
   {
     icon: Home,
-    title: "A feed that knows tonight",
+    title: "A feed that knows what's on",
     body: "Happening today, trending and upcoming events, and featured venues, the moment you open it.",
   },
   {
@@ -111,7 +111,7 @@ const HomeScreen: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => (
       )}
       <div className="absolute inset-0 bg-linear-to-t from-black/70 to-transparent" />
       <p className="absolute inset-x-3 bottom-2.5 truncate text-[11px] font-semibold text-white">
-        {events[0]?.name ?? "Tonight's pick"}
+        {events[0]?.name ?? "Today's pick"}
       </p>
     </div>
     <p className="text-[11px] font-bold text-secondary-950">Trending</p>
@@ -202,7 +202,7 @@ const AppShowcase = () => {
               The Turnupz app
             </p>
             <h2 className="text-3xl font-bold tracking-tight text-secondary-950 md:text-5xl">
-              The whole night out, in your pocket.
+              Every plan, in your pocket.
             </h2>
             <p className="max-w-lg text-secondary-950/60">
               Turnupz is made for your phone. Find what&apos;s on, book in a few

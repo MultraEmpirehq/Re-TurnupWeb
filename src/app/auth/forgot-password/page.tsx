@@ -1,5 +1,4 @@
 "use client";
-import SectionContainer from "@/components/layouts/section-container/section-container";
 import { Button } from "@/components/ui/button";
 import InputField from "@/components/ui/input-field";
 import { joiResolver } from "@hookform/resolvers/joi";
@@ -12,6 +11,7 @@ import { constructErrorMessage } from "@/api/functions";
 import { IUserCheckedCredentials, OTP_VERIFICATION_TYPE } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/variables";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -73,39 +73,50 @@ const ForgotPasswordPage = () => {
     [push],
   );
   return (
-    <SectionContainer className="flex flex-col items-center justify-center min-h-full py-10 md:py-16">
-      <div className="flex flex-col items-center justify-center w-full max-w-sm gap-10">
-        <div className="flex flex-col items-center justify-center text-center">
-          <h1 className="text-[clamp(1.1rem,2vw,2rem)] font-bold text-secondary-900">
-            Forgot Password 🔒
-          </h1>
-          <p className="opacity-60 max-w-xs">
-            Don&apos;t fret! Your account is just a few steps away. Just enter
-            your email and we will send you a password reset email.
-          </p>
-        </div>
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="space-y-5 w-full max-w-sm"
-        >
-          <InputField
-            inputClassName="bg-black/10"
-            placeholder="name@example.com"
-            type="email"
-            {...register("email")}
-            error={errors.email?.message}
-          />
-          <Button
-            disabled={!isValid}
-            loading={isSubmitting}
-            className="w-full"
-            type="submit"
-          >
-            Send Reset email
-          </Button>
-        </form>
+    <div className="flex w-full flex-col gap-7">
+      <div className="space-y-2">
+        <p className="text-sm font-semibold tracking-wider text-primary uppercase">
+          Forgot password
+        </p>
+        <h1 className="text-3xl font-bold tracking-tight text-secondary-950">
+          Let&apos;s get you back in
+        </h1>
+        <p className="text-secondary-950/60">
+          Enter your email and we&apos;ll send you a code to reset your
+          password.
+        </p>
       </div>
-    </SectionContainer>
+      <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-5">
+        <InputField
+          label="Email"
+          labelClassName="text-secondary-950"
+          inputClassName="h-12 rounded-xl bg-[#f7f9fc]"
+          placeholder="name@example.com"
+          type="email"
+          autoComplete="email"
+          autoFocus
+          {...register("email")}
+          error={errors.email?.message}
+        />
+        <Button
+          disabled={!isValid}
+          loading={isSubmitting}
+          className="h-12 w-full rounded-full bg-secondary text-base text-white hover:bg-secondary-600"
+          type="submit"
+        >
+          Send reset code
+        </Button>
+      </form>
+      <p className="text-center text-sm text-secondary-950/60">
+        Remembered it?{" "}
+        <Link
+          href={ROUTES.LOGIN.href}
+          className="font-semibold text-primary hover:underline"
+        >
+          Back to log in
+        </Link>
+      </p>
+    </div>
   );
 };
 

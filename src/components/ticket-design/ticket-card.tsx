@@ -1,9 +1,10 @@
 "use client";
 
+import { formatEventTime } from "@/lib/event-time";
 import { IEventDetailsType, IUserTicketType } from "@/lib/types";
 import { ROUTES } from "@/lib/variables";
 import { Button } from "@/components/ui/button";
-import { format, startOfDay } from "date-fns";
+import { startOfDay } from "date-fns";
 import { Download, SendHorizontal } from "lucide-react";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
@@ -283,7 +284,8 @@ const TicketCard: React.FC<TicketCardProps> = ({
                   <line x1="8" x2="8" y1="2" y2="6" />
                   <line x1="3" x2="21" y1="10" y2="10" />
                 </svg>
-                <span>{format(eventDate, "EEE, MMM d, yyyy · h:mm a")}</span>
+                {/* On the venue's clock, like every other event time. */}
+                <span>{formatEventTime(eventDate, event?.timezone)}</span>
               </div>
             )}
             {event?.venue?.name && (
@@ -527,7 +529,9 @@ const TicketCard: React.FC<TicketCardProps> = ({
                   href={`${ROUTES.PROFILE_TICKETS.href}/transfer/${userTicket.id}`}
                 >
                   <SendHorizontal className="size-3.5" />
-                  {userTicket.transfer ? "View Transfer" : "Transfer"}
+                  {userTicket.transfer?.status === "PENDING"
+                    ? "View Transfer"
+                    : "Transfer"}
                 </Link>
               </Button>
             )}

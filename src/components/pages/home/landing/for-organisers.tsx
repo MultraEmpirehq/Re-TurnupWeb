@@ -118,7 +118,7 @@ const ForOrganisers = () => {
             >
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-white/70">
-                  Checked in tonight
+                  Checked in today
                 </span>
                 <span className="flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-1 text-[11px] font-semibold text-emerald-300">
                   <span className="size-1.5 animate-pulse rounded-full bg-emerald-300" />

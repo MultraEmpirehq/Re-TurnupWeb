@@ -27,6 +27,10 @@ interface ICalendarSelectProps {
   dateModifiers?: React.ComponentProps<typeof Calendar>["modifiers"];
   required?: boolean;
   disabled?: boolean;
+  /** Days before this can't be picked. */
+  minDate?: Date;
+  /** Days after this can't be picked. */
+  maxDate?: Date;
 }
 
 const DateSelect: React.FC<ICalendarSelectProps> = ({
@@ -44,6 +48,8 @@ const DateSelect: React.FC<ICalendarSelectProps> = ({
   dateModifiers,
   required,
   disabled,
+  minDate,
+  maxDate,
 }) => {
   const [open, setOpen] = useState(false);
 
@@ -92,6 +98,14 @@ const DateSelect: React.FC<ICalendarSelectProps> = ({
             captionLayout="dropdown"
             onSelect={handleSelect}
             modifiers={dateModifiers}
+            disabled={[
+              ...(minDate ? [{ before: minDate }] : []),
+              ...(maxDate ? [{ after: maxDate }] : []),
+            ]}
+            startMonth={minDate}
+            endMonth={maxDate}
+            // Opens on the latest allowed month rather than one that's all greyed out.
+            defaultMonth={date ?? maxDate}
           />
         </PopoverContent>
       </Popover>

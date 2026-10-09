@@ -1,9 +1,19 @@
 "use client";
 
+import ScrollTable from "@/components/ui/scroll-table";
 import EmptyContainer from "@/components/ui/empty-container";
 import { Button } from "@/components/ui/button";
-import { useVendorTicketLedger, VendorTicketLedgerApiRecord } from "@/hooks/use-vendor-tickets";
-import { ArrowLeft, CalendarDays, Mail, MapPin, TicketIcon } from "lucide-react";
+import {
+  useVendorTicketLedger,
+  VendorTicketLedgerApiRecord,
+} from "@/hooks/use-vendor-tickets";
+import {
+  ArrowLeft,
+  CalendarDays,
+  Mail,
+  MapPin,
+  TicketIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import React, { memo, useMemo } from "react";
@@ -62,10 +72,12 @@ const mapLedgerApiRecord = (
   amount: getMoneyLabel(record.amount),
   amountNumber: getMoneyAmount(record.amount),
   status:
-    record.transferStatus === "claimed" || record.transferStatus === "transferred"
+    record.transferStatus === "claimed" ||
+    record.transferStatus === "transferred"
       ? "Transferred"
       : "Not Transferred",
-  entryStatus: record.entryStatus === "checked_in" ? "Checked In" : "Not Checked In",
+  entryStatus:
+    record.entryStatus === "checked_in" ? "Checked In" : "Not Checked In",
   venue: [record.venueName, record.venueAddress].filter(Boolean).join(", "),
   issueDate: formatDate(record.issueDate),
   transferDate: undefined,
@@ -130,7 +142,8 @@ const VendorTicketDetailPage = () => {
             Ticket transfer details
           </h1>
           <p className="max-w-2xl text-sm leading-6 text-secondary-500">
-            Review the ticket owner, transfer state, and the amount tied to this purchase from the vendor dashboard.
+            Review the ticket owner, transfer state, and the amount tied to this
+            purchase from the vendor dashboard.
           </p>
         </div>
         <Button
@@ -174,24 +187,31 @@ const VendorTicketDetailPage = () => {
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-secondary-400">
                 Issued Date
               </p>
-              <p className="mt-1 font-semibold text-secondary-900">{ticket.issueDate}</p>
+              <p className="mt-1 font-semibold text-secondary-900">
+                {ticket.issueDate}
+              </p>
               {ticket.transferDate && (
                 <>
                   <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-secondary-400">
                     Transfer Date
                   </p>
-                  <p className="mt-1 font-semibold text-secondary-900">{ticket.transferDate}</p>
+                  <p className="mt-1 font-semibold text-secondary-900">
+                    {ticket.transferDate}
+                  </p>
                 </>
               )}
             </div>
           </div>
         </div>
 
-        <div className="grid gap-8 px-6 py-8 sm:px-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.9fr)]">
-          <div className="space-y-8">
+        {/* One shrinkable column on phones, so the table scrolls inside it. */}
+        <div className="grid grid-cols-1 gap-8 px-6 py-8 sm:px-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.9fr)]">
+          <div className="min-w-0 space-y-8">
             <div
               className={`grid gap-4 ${
-                ticket.status === "Transferred" ? "sm:grid-cols-2" : "sm:grid-cols-1"
+                ticket.status === "Transferred"
+                  ? "sm:grid-cols-2"
+                  : "sm:grid-cols-1"
               }`}
             >
               <div className="rounded-[1.6rem] border border-slate-200 bg-slate-50/70 p-5">
@@ -231,7 +251,8 @@ const VendorTicketDetailPage = () => {
                       {ticket.transferredToEmail}
                     </p>
                     <p>
-                      The ticket is now assigned to this recipient through the Turnupz transfer flow.
+                      The ticket is now assigned to this recipient through the
+                      Turnupz transfer flow.
                     </p>
                   </div>
                 </div>
@@ -240,13 +261,17 @@ const VendorTicketDetailPage = () => {
 
             <div className="overflow-hidden rounded-[1.75rem] border border-secondary-100">
               <div className="border-b border-secondary-100 bg-slate-50/70 px-5 py-4">
-                <h3 className="text-lg font-semibold text-secondary-950">Ticket Details</h3>
+                <h3 className="text-lg font-semibold text-secondary-950">
+                  Ticket Details
+                </h3>
               </div>
-              <div className="overflow-x-auto">
+              <ScrollTable label="Ticket details">
                 <table className="min-w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-sky-400/70 text-xs uppercase tracking-[0.24em] text-secondary-400">
-                      <th className="px-5 py-4 font-semibold">Ticket Category</th>
+                      <th className="px-5 py-4 font-semibold">
+                        Ticket Category
+                      </th>
                       <th className="px-5 py-4 font-semibold">Price</th>
                       <th className="px-5 py-4 font-semibold">Qty</th>
                       <th className="px-5 py-4 font-semibold">Amount</th>
@@ -254,7 +279,9 @@ const VendorTicketDetailPage = () => {
                   </thead>
                   <tbody>
                     <tr className="border-b border-secondary-100 text-secondary-700">
-                      <td className="px-5 py-4 font-medium text-secondary-950">{ticket.category}</td>
+                      <td className="px-5 py-4 font-medium text-secondary-950">
+                        {ticket.category}
+                      </td>
                       <td className="px-5 py-4">{ticket.price}</td>
                       <td className="px-5 py-4">{ticket.quantity}</td>
                       <td className="px-5 py-4">{ticket.amount}</td>
@@ -265,16 +292,24 @@ const VendorTicketDetailPage = () => {
                       ["Fee", fee],
                       ["Total", ticket.amount],
                     ].map(([label, value]) => (
-                      <tr key={label} className="border-b border-secondary-100 last:border-b-0">
-                        <td className="px-5 py-3 text-secondary-500" colSpan={3}>
+                      <tr
+                        key={label}
+                        className="border-b border-secondary-100 last:border-b-0"
+                      >
+                        <td
+                          className="px-5 py-3 text-secondary-500"
+                          colSpan={3}
+                        >
                           {label}
                         </td>
-                        <td className="px-5 py-3 font-medium text-secondary-700">{value}</td>
+                        <td className="px-5 py-3 font-medium text-secondary-700">
+                          {value}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </ScrollTable>
             </div>
           </div>
 
@@ -282,24 +317,34 @@ const VendorTicketDetailPage = () => {
             <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-sky-200/80">
               Vendor Summary
             </p>
-            <h3 className="mt-4 text-2xl font-semibold leading-tight">{ticket.event}</h3>
+            <h3 className="mt-4 text-2xl font-semibold leading-tight">
+              {ticket.event}
+            </h3>
             <div className="mt-6 space-y-4 text-sm text-slate-300">
               <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
                 <span className="text-slate-400">Ticket ID</span>
-                <span className="text-right font-medium text-white">{ticket.id}</span>
+                <span className="text-right font-medium text-white">
+                  {ticket.id}
+                </span>
               </div>
               <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
                 <span className="text-slate-400">Current Status</span>
-                <span className="text-right font-medium text-white">{ticket.status}</span>
+                <span className="text-right font-medium text-white">
+                  {ticket.status}
+                </span>
               </div>
               <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
                 <span className="text-slate-400">Venue</span>
-                <span className="text-right font-medium text-white">{ticket.venue}</span>
+                <span className="text-right font-medium text-white">
+                  {ticket.venue}
+                </span>
               </div>
               <div className="flex items-start justify-between gap-4">
                 <span className="text-slate-400">Table View</span>
                 <span className="text-right font-medium text-white">
-                  {ticket.status === "Transferred" ? "Buyer + Recipient" : "Buyer only"}
+                  {ticket.status === "Transferred"
+                    ? "Buyer + Recipient"
+                    : "Buyer only"}
                 </span>
               </div>
             </div>

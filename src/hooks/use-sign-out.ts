@@ -1,3 +1,4 @@
+import { postData } from "@/api";
 import { ROUTES } from "@/lib/variables";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
 import { useRouter } from "next/navigation";
@@ -15,6 +16,9 @@ const useSignOut = () => {
   return useCallback(() => {
     const destination =
       role === EUserRoles.ADMIN ? ROUTES.ADMIN_LOGIN.href : ROUTES.HOME.href;
+    // Ends the session on the server too, so it leaves the signed-in devices
+    // list. Best effort: signing out here never waits on it.
+    void postData("/user/logout").catch(() => undefined);
     clearStore();
     router.push(destination);
   }, [clearStore, role, router]);

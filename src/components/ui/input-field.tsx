@@ -4,6 +4,7 @@ import React, {
   forwardRef,
   memo,
   useCallback,
+  useEffect,
   useId,
   useImperativeHandle,
   useMemo,
@@ -15,6 +16,9 @@ import { Input } from "./input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+
+/** How long a revealed password stays visible. */
+const PASSWORD_REVEAL_MS = 5000;
 
 // Types
 interface InputFieldProps
@@ -207,6 +211,16 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
     const errorId = `${inputId}-error`;
     const helperId = `${inputId}-helper`;
     const [showPassword, setShowPassword] = useState(false);
+    // A revealed password hides itself again after a few seconds, so it isn't
+    // left on screen for someone looking over a shoulder.
+    useEffect(() => {
+      if (!showPassword) return;
+      const timer = setTimeout(
+        () => setShowPassword(false),
+        PASSWORD_REVEAL_MS,
+      );
+      return () => clearTimeout(timer);
+    }, [showPassword]);
 
     const inputRef = useRef<HTMLInputElement>(null);
 

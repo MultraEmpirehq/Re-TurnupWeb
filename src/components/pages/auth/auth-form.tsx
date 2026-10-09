@@ -315,7 +315,7 @@ const AuthForm = () => {
               disabled={!isValid || isBusy}
               loading={isSubmitting}
               type="submit"
-              className="h-12 w-full rounded-full bg-secondary-950 text-base text-white hover:bg-secondary-900"
+              className="h-12 w-full rounded-full bg-secondary text-base text-white hover:bg-secondary-600"
             >
               {shouldShowLoginForm ? "Log in" : "Continue with email"}
             </Button>

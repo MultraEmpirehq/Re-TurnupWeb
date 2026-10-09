@@ -9,6 +9,11 @@ import DateSelect from "@/components/ui/date-select";
 import GenderSelect from "@/components/ui/gender-select";
 import InputField from "@/components/ui/input-field";
 import useAuth from "@/hooks/use-auth";
+import {
+  adultAgeMessage,
+  earliestBirthDate,
+  latestAdultBirthDate,
+} from "@/lib/age";
 import { resolveAttachmentUrl } from "@/lib/functions";
 import useUserStore, {
   EUserGenders,
@@ -26,9 +31,10 @@ interface IProfileFormValues {
   firstName: string;
   lastName: string;
   username: string;
-  dateOfBirth: Date;
+  dateOfBirth?: Date;
   gender: EUserGenders;
-  mobileNumber: string;
+  // The API's field is `phone`; anything else is rejected and the whole save fails.
+  phone: string;
 }
 
 const schema = Joi.object({
@@ -44,15 +50,26 @@ const schema = Joi.object({
     "string.empty": "Username is required",
     "any.required": "Username is required",
   }),
-  dateOfBirth: Joi.date().required().messages({
-    "date.base": "Date of birth is required",
-    "any.required": "Date of birth is required",
-  }),
+  dateOfBirth: Joi.date()
+    .required()
+    .custom((value: Date, helpers) =>
+      value > latestAdultBirthDate() ? helpers.error("date.adult") : value,
+    )
+    .messages({
+      "date.base": "Date of birth is required",
+      "any.required": "Date of birth is required",
+      "date.adult": adultAgeMessage,
+    }),
   gender: Joi.string().required().messages({
     "string.empty": "Gender is required",
     "any.required": "Gender is required",
   }),
-  mobileNumber: Joi.string().allow("").optional(),
+  // The same rule as the API, so a bad number is caught here, not on save.
+  phone: Joi.string()
+    .allow("")
+    .pattern(/^\+?[0-9 ()-]{7,20}$/)
+    .optional()
+    .messages({ "string.pattern.base": "Please enter a valid phone number" }),
 });
 
 const roleLabels: Record<EUserRoles, string> = {
@@ -80,11 +97,12 @@ const ProfileDetailsForm = () => {
       firstName: userDetails?.firstName ?? "",
       lastName: userDetails?.lastName ?? "",
       username: userDetails?.username ?? "",
+      // Left empty rather than today, which would never be old enough.
       dateOfBirth: userDetails?.dateOfBirth
         ? new Date(userDetails.dateOfBirth)
-        : new Date(),
+        : undefined,
       gender: userDetails?.gender ?? EUserGenders.MALE,
-      mobileNumber: userDetails?.mobileNumber ?? "",
+      phone: userDetails?.phone ?? "",
     }),
     [userDetails],
   );
@@ -94,7 +112,7 @@ const ProfileDetailsForm = () => {
     control,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, dirtyFields },
   } = useForm<IProfileFormValues>({
     resolver: joiResolver(schema),
     defaultValues,
@@ -155,12 +173,23 @@ const ProfileDetailsForm = () => {
   );
 
   const onSubmit = useCallback(
-    async (body: IProfileFormValues) => {
+    async (values: IProfileFormValues) => {
+      // Only what was changed goes up, so a field the API doesn't know yet
+      // (or one left as it was) can't fail the whole save.
+      const body = Object.fromEntries(
+        Object.entries(values).filter(
+          ([key]) => dirtyFields[key as keyof IProfileFormValues],
+        ),
+      ) as Partial<IProfileFormValues>;
+      if (Object.keys(body).length === 0) {
+        setIsEditing(false);
+        return;
+      }
       try {
-        const { data } = await patchData<IProfileFormValues, TUserDetails>(
-          "/user",
-          body,
-        );
+        const { data } = await patchData<
+          Partial<IProfileFormValues>,
+          TUserDetails
+        >("/user", body);
         await performAuthOperation(data?.data);
         toast.success("Profile updated successfully");
         setIsEditing(false);
@@ -173,7 +202,7 @@ const ProfileDetailsForm = () => {
         );
       }
     },
-    [performAuthOperation],
+    [performAuthOperation, dirtyFields],
   );
 
   const handleCancelEdit = useCallback(() => {
@@ -327,8 +356,8 @@ const ProfileDetailsForm = () => {
             label="Phone Number"
             placeholder="Enter your phone number"
             disabled={!isEditing}
-            {...register("mobileNumber")}
-            error={errors.mobileNumber?.message}
+            {...register("phone")}
+            error={errors.phone?.message}
           />
           <Controller
             control={control}
@@ -342,6 +371,9 @@ const ProfileDetailsForm = () => {
                 error={fieldState?.error?.message}
                 className="w-full"
                 disabled={!isEditing}
+                minDate={earliestBirthDate()}
+                maxDate={latestAdultBirthDate()}
+                helperText="You must be 18 or older."
               />
             )}
           />

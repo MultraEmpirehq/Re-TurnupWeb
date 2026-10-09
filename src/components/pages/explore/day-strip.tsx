@@ -5,7 +5,10 @@ import useIsClient from "@/hooks/use-is-client";
 import { cn } from "@/lib/utils";
 import { addDays, formatDate, isWeekend } from "date-fns";
 import React, { memo, useMemo } from "react";
-import useExploreFilters, { toDayKey, WHEN_OPTIONS } from "./use-explore-filters";
+import useExploreFilters, {
+  toDayKey,
+  WHEN_OPTIONS,
+} from "./use-explore-filters";
 
 const DAYS = 14;
 const SHORTCUTS = WHEN_OPTIONS.filter((option) =>
@@ -38,7 +41,10 @@ const DayStrip = () => {
         >
           {!isClient &&
             Array.from({ length: 10 }).map((_, index) => (
-              <Skeleton key={index} className="h-[74px] w-[58px] shrink-0 rounded-2xl" />
+              <Skeleton
+                key={index}
+                className="h-[74px] w-[58px] shrink-0 rounded-2xl"
+              />
             ))}
           {days.map((day, offset) => {
             const key = toDayKey(day);

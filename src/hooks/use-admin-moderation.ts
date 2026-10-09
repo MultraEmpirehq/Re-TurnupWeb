@@ -1,4 +1,4 @@
-import { getData, patchData } from "@/api";
+import { getData, patchData, postData } from "@/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const MODERATION_PAGE_SIZE = 20;
@@ -166,4 +166,39 @@ export const useSetUserSuspension = () =>
       reason?: string;
     }) => patchData(`/admin/users/${id}/suspension`, { suspended, reason }),
     ["admin-users", "admin-user"],
+  );
+
+// Ticket transfers ------------------------------------------------------------
+
+export interface IAdminUserTransfer {
+  id: string;
+  status: "PENDING" | "CLAIMED" | "CANCELLED";
+  direction: "sent" | "received";
+  createdAt: string;
+  claimedAt: string | null;
+  from: { name: string | null; email?: string };
+  to: { name: string | null; email: string };
+  ticketName: string;
+  ticketCode?: string;
+  event: { id: string; name: string; date: string } | null;
+}
+
+export const useAdminUserTransfers = (userId?: string) =>
+  useQuery({
+    queryKey: ["admin-user-transfers", userId],
+    queryFn: async () => {
+      const { data } = await getData<IAdminUserTransfer[]>(
+        `/admin/users/${userId}/transfers`,
+      );
+      return data?.data ?? [];
+    },
+    enabled: !!userId,
+    retry: 0,
+  });
+
+export const useAdminCancelTransfer = () =>
+  useModerationAction(
+    ({ id, reason }: { id: string; reason: string }) =>
+      postData(`/admin/transfers/${id}/cancel`, { reason }),
+    ["admin-user-transfers"],
   );

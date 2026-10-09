@@ -23,7 +23,8 @@ export type TUserDetails = {
   name?: string;
   firstName?: string;
   lastName?: string;
-  mobileNumber?: string;
+  /** Phone number, international format; what the API calls `phone`. */
+  phone?: string;
   isMobileNumberVerified?: boolean;
   isEmailVerified?: boolean;
   role?: EUserRoles;

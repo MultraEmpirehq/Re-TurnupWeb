@@ -46,19 +46,24 @@ const Spotlight = () => {
       [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }],
       { duration: STORY_MS, easing: "linear", fill: "forwards" },
     );
-    animation.onfinish = () => setIndex((current) => (current + 1) % events.length);
+    animation.onfinish = () =>
+      setIndex((current) => (current + 1) % events.length);
     return () => animation.cancel();
   }, [index, events.length, reducedMotion]);
 
   useEffect(() => {
     const bar = barRef.current;
-    bar?.getAnimations().forEach((animation) =>
-      isPaused ? animation.pause() : animation.play(),
-    );
+    bar
+      ?.getAnimations()
+      .forEach((animation) =>
+        isPaused ? animation.pause() : animation.play(),
+      );
   }, [isPaused, index]);
 
   if (isLoading) {
-    return <Skeleton className="aspect-[4/5] w-full rounded-[2rem] bg-white/10" />;
+    return (
+      <Skeleton className="aspect-[4/5] w-full rounded-[2rem] bg-secondary-100" />
+    );
   }
   if (!events.length) return null;
 
@@ -80,7 +85,9 @@ const Spotlight = () => {
           aria-hidden={itemIndex !== index}
           className={cn(
             "absolute inset-0 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
-            itemIndex === index ? "scale-100 opacity-100" : "scale-105 opacity-0",
+            itemIndex === index
+              ? "scale-100 opacity-100"
+              : "scale-105 opacity-0",
           )}
         >
           <CustomImageComponent
@@ -97,8 +104,13 @@ const Spotlight = () => {
       {/* Progress: one segment per story. */}
       <div className="absolute inset-x-4 top-4 flex gap-1.5">
         {events.map((item, itemIndex) => (
-          <span key={item.id} className="h-1 flex-1 overflow-hidden rounded-full bg-white/25">
-            {itemIndex < index && <span className="block h-full w-full bg-white" />}
+          <span
+            key={item.id}
+            className="h-1 flex-1 overflow-hidden rounded-full bg-white/25"
+          >
+            {itemIndex < index && (
+              <span className="block h-full w-full bg-white" />
+            )}
             {itemIndex === index && (
               <span
                 ref={barRef}
@@ -138,7 +150,10 @@ const Spotlight = () => {
             {event.category.name}
           </span>
         )}
-        <h3 key={event.id} className="text-2xl leading-tight font-bold text-white">
+        <h3
+          key={event.id}
+          className="text-2xl leading-tight font-bold text-white"
+        >
           {event.name}
         </h3>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/70">

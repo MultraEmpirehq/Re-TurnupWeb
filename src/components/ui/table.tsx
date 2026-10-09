@@ -3,19 +3,23 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import ScrollTable from "./scroll-table";
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+/** Scrolls sideways when wider than its space, never squeezing columns. */
+function Table({
+  className,
+  label,
+  fadeClassName,
+  ...props
+}: React.ComponentProps<"table"> & { label?: string; fadeClassName?: string }) {
   return (
-    <div
-      data-slot="table-container"
-      className="relative w-full overflow-x-auto"
-    >
+    <ScrollTable label={label} fadeClassName={fadeClassName}>
       <table
         data-slot="table"
         className={cn("w-full caption-bottom text-sm", className)}
         {...props}
       />
-    </div>
+    </ScrollTable>
   );
 }
 
