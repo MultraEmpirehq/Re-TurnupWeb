@@ -17,6 +17,7 @@ import Link from "next/link";
 import React, { memo } from "react";
 import StatusPill from "../status-pill";
 import VerificationDecisionPanel from "./verification-decision-panel";
+import PayoutSetupPanel from "./payout-setup-panel";
 import {
   approvalLevelLabel,
   formatDate,
@@ -247,6 +248,9 @@ const Details: React.FC<{ verification: IVendorVerification }> = ({
                 <Field label="SWIFT">{verification.swiftCode}</Field>
               )}
             </FieldGrid>
+            <div className="mt-4">
+              <PayoutSetupPanel verification={verification} />
+            </div>
           </Section>
 
           {verification.crossBorderCountries?.length > 0 && (

@@ -1,748 +1,368 @@
 "use client";
 
-import InputField from "@/components/ui/input-field";
-import SelectField from "@/components/ui/select-field";
-import ComboboxSelect from "@/components/ui/combobox-select";
+import { constructErrorMessage } from "@/api/functions";
+import { VendorVerificationNotice } from "@/components/pages/app/vendor-verification";
 import { Button } from "@/components/ui/button";
+import ErrorContainer from "@/components/ui/error-container";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  useVendorVerificationSnapshot,
-  VendorVerificationNotice,
-} from "@/components/pages/app/vendor-verification";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
-  useCreateVendorTransfer,
-  useDeleteVendorWalletCard,
-  useRequestVendorWithdrawal,
-  useSaveVendorWalletCard,
-  useVendorWallet,
+  payoutAttemptMessage,
+  PayoutSetupAttempt,
+  useRetryPayoutSetup,
+  useVendorEarnings,
+  useVendorSales,
+  VendorCurrencyEarnings,
+  VendorPayoutAccount,
 } from "@/hooks/use-vendor-wallet";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  Banknote,
-  CreditCard,
-  Download,
-  Globe2,
-  Landmark,
-  Plus,
-  ShieldCheck,
-  Trash2,
-  WalletCards,
-} from "lucide-react";
-import Link from "next/link";
-import React, { memo, useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { Landmark, ReceiptText, RefreshCw, ShieldCheck } from "lucide-react";
+import React, { memo, useState } from "react";
 import { toast } from "sonner";
-import { PriceDetailsType } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+const cardClassName =
+  "rounded-[1.5rem] border border-secondary-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]";
 
-type TTransferDestination = {
-  code: string;
-  label: string;
-  currency: string;
-  payout: string;
+const PROVIDER_LABELS: Record<VendorPayoutAccount["provider"], string> = {
+  FLUTTERWAVE: "Flutterwave",
+  PAYSTACK: "Paystack",
+  STRIPE: "Stripe",
 };
 
-const transferDestinations: TTransferDestination[] = [
-  { code: "NG", label: "Nigeria", currency: "NGN", payout: "Bank transfer" },
-  { code: "US", label: "United States", currency: "USD", payout: "ACH / wire" },
-  { code: "GB", label: "United Kingdom", currency: "GBP", payout: "Bank transfer" },
-  { code: "CA", label: "Canada", currency: "CAD", payout: "Interac / wire" },
-  { code: "AE", label: "United Arab Emirates", currency: "AED", payout: "Bank transfer" },
-  { code: "ZA", label: "South Africa", currency: "ZAR", payout: "Bank transfer" },
-];
+/** Where the organiser's share of each sale goes, or why it can't yet. */
+const PayoutAccountCard: React.FC<{ account: VendorPayoutAccount | null }> = ({
+  account,
+}) => {
+  const retry = useRetryPayoutSetup();
+  const [attempt, setAttempt] = useState<PayoutSetupAttempt>();
+  const message = payoutAttemptMessage(attempt);
 
-const getMoneyAmount = (money?: PriceDetailsType | number) =>
-  typeof money === "number" ? money : Number(money?.amount ?? 0);
+  const setUp = () =>
+    retry.mutate(undefined, {
+      onSuccess: (result) => {
+        setAttempt(result?.attempt);
+        if (result?.attempt?.status === "active") {
+          toast.success("You're set up to be paid directly.");
+        }
+      },
+      onError: (error) =>
+        toast.error(
+          constructErrorMessage(
+            error as TApiErrorResponseType,
+            "Couldn't set up payouts.",
+          ),
+        ),
+    });
 
-const moneyFormatter = (
-  money: PriceDetailsType | number,
-  currency = "USD",
-) => {
-  if (typeof money !== "number" && money.formatted?.withCurrency) {
-    return money.formatted.withCurrency;
+  if (account?.status === "ACTIVE") {
+    return (
+      <section className={cardClassName}>
+        <div className="flex items-start gap-4">
+          <span className="rounded-2xl bg-emerald-50 p-3 text-emerald-700">
+            <Landmark className="size-5" />
+          </span>
+          <div className="min-w-0 space-y-1">
+            <p className="text-sm text-secondary-500">You&apos;re paid to</p>
+            <p className="text-lg font-semibold text-secondary-950">
+              {account.bankName ?? "Your bank"}
+              {account.accountLast4 ? ` ••${account.accountLast4}` : ""}
+            </p>
+            <p className="text-sm leading-6 text-secondary-500">
+              Your share of each ticket ({account.currency}) is paid to this
+              account by {PROVIDER_LABELS[account.provider]} on its settlement
+              schedule. Turnupz never holds it.
+            </p>
+            {!account.livemode && (
+              <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">
+                Test mode
+              </span>
+            )}
+          </div>
+        </div>
+      </section>
+    );
   }
-  const amount = getMoneyAmount(money);
-  const locale = typeof money !== "number" ? money.currency?.locale : "en-US";
-  const code = typeof money !== "number" ? money.currency?.code : currency;
-  return new Intl.NumberFormat(locale || "en-US", {
-    style: "currency",
-    currency: code || currency,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
-const WalletPage = () => {
-  const [isWithdrawDialogOpen, setIsWithdrawDialogOpen] = useState(false);
-  const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [withdrawChannel, setWithdrawChannel] = useState("bank");
-  const [transferCountry, setTransferCountry] = useState("NG");
-  const [transferAmount, setTransferAmount] = useState("");
-  const [recipientName, setRecipientName] = useState("");
-  const [recipientAccount, setRecipientAccount] = useState("");
-  const [cardHolder, setCardHolder] = useState("");
-  const [cardLast4, setCardLast4] = useState("");
-  const [cardBrand, setCardBrand] = useState("Visa");
-  const verification = useVendorVerificationSnapshot();
-  const walletQuery = useVendorWallet();
-  const withdrawalMutation = useRequestVendorWithdrawal();
-  const transferMutation = useCreateVendorTransfer();
-  const saveCardMutation = useSaveVendorWalletCard();
-  const deleteCardMutation = useDeleteVendorWalletCard();
-  const isPayoutLocked = verification.status !== "approved";
-
-  const selectedDestination =
-    transferDestinations.find((destination) => destination.code === transferCountry) ??
-    transferDestinations[0];
-
-  const availableBalance = walletQuery.data?.balances.availableBalance;
-  const pendingBalance = walletQuery.data?.balances.pendingBalance;
-  const reservedBalance = walletQuery.data?.balances.reservedBalance;
-  const walletCurrency = walletQuery.data?.balances.currency ?? "USD";
-  const savedCards = walletQuery.data?.savedCards ?? [];
-  const withdrawalFee = 0;
-  const transferFee = 0;
-
-  const withdrawNet = useMemo(() => {
-    const amount = Number(withdrawAmount || 0);
-    return Math.max(amount - withdrawalFee, 0);
-  }, [withdrawAmount]);
-
-  const transferTotal = useMemo(() => {
-    const amount = Number(transferAmount || 0);
-    return Math.max(amount + transferFee, 0);
-  }, [transferAmount]);
-
-  const handleWithdraw = () => {
-    if (isPayoutLocked) {
-      toast.error("Complete vendor verification before requesting payouts.");
-      return;
-    }
-
-    const amount = Number(withdrawAmount || 0);
-    if (amount <= 0) {
-      toast.error("Enter a valid withdrawal amount");
-      return;
-    }
-    withdrawalMutation.mutate(
-      { amount, method: withdrawChannel },
-      {
-        onSuccess: () => {
-          setIsWithdrawDialogOpen(false);
-          toast.success("Withdrawal request created for review");
-        },
-        onError: () => toast.error("Unable to create withdrawal request."),
-      },
-    );
-  };
-
-  const handleTransfer = () => {
-    const amount = Number(transferAmount || 0);
-    if (amount <= 0 || !recipientName.trim() || !recipientAccount.trim()) {
-      toast.error("Complete the transfer details first");
-      return;
-    }
-    transferMutation.mutate(
-      {
-        amount,
-        country: selectedDestination.code,
-        recipientName: recipientName.trim(),
-        recipientAccount: recipientAccount.trim(),
-      },
-      {
-        onSuccess: () =>
-          toast.success(`Transfer request created for ${selectedDestination.label}`),
-        onError: () => toast.error("Unable to create transfer request."),
-      },
-    );
-  };
-
-  const handleAddCard = () => {
-    if (!cardHolder.trim() || !cardLast4.trim()) {
-      toast.error("Add the card holder and last 4 digits");
-      return;
-    }
-
-    saveCardMutation.mutate(
-      {
-        brand: cardBrand,
-        last4: cardLast4.trim(),
-        holder: cardHolder.trim(),
-      },
-      {
-        onSuccess: () => {
-          setCardHolder("");
-          setCardLast4("");
-          toast.success("Card saved to vendor wallet");
-        },
-        onError: () => toast.error("Unable to save card."),
-      },
-    );
-  };
-
-  const handleDeleteCard = (cardId: string) => {
-    deleteCardMutation.mutate(cardId, {
-      onSuccess: () => toast.success("Saved card removed"),
-      onError: () => toast.error("Unable to remove saved card."),
-    });
-  };
-
-  const handleExportWalletReport = () => {
-    const walletSnapshot = {
-      exportedAt: new Date().toISOString(),
-      balances: {
-        availableBalance,
-        pendingBalance,
-        reservedBalance,
-      },
-      withdrawPreview: {
-        requested: Number(withdrawAmount || 0),
-        fee: withdrawalFee,
-        net: withdrawNet,
-      },
-      transferPreview: {
-        country: selectedDestination.label,
-        currency: selectedDestination.currency,
-        amount: Number(transferAmount || 0),
-        fee: transferFee,
-        total: transferTotal,
-      },
-      savedCards,
-    };
-
-    const blob = new Blob([JSON.stringify(walletSnapshot, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `turnupz-wallet-report-${new Date().toISOString().slice(0, 10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    toast.success("Wallet report downloaded");
-  };
 
   return (
-    <>
-      <Dialog open={isWithdrawDialogOpen} onOpenChange={setIsWithdrawDialogOpen}>
-        <DialogContent className="max-w-xl rounded-[1.6rem]">
-          <DialogHeader>
-            <DialogTitle>Request Withdrawal</DialogTitle>
-            <DialogDescription>
-              Review your payout amount, fee, and destination before sending this
-              withdrawal request for vendor review.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-4 md:grid-cols-2">
-              <InputField
-                label="Withdrawal Amount"
-                type="number"
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
-                placeholder="Enter amount"
-              />
-              <SelectField
-                label="Payout Method"
-                value={withdrawChannel}
-                setValue={setWithdrawChannel}
-                options={[
-                  { label: "Bank Transfer", value: "bank" },
-                  { label: "Vendor Wallet", value: "wallet" },
-                  { label: "Instant Cashout", value: "instant" },
-                ]}
-              />
-            </div>
-
-            <div className="rounded-[1.2rem] bg-secondary-50 p-4">
-              <div className="flex items-center justify-between py-2 text-sm">
-                <span className="text-secondary-500">Requested</span>
-                <span className="font-semibold text-secondary-950">
-                {moneyFormatter(Number(withdrawAmount || 0), walletCurrency)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-2 text-sm">
-                <span className="text-secondary-500">Fee</span>
-                <span className="font-semibold text-secondary-950">
-                {moneyFormatter(withdrawalFee, walletCurrency)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between border-t border-secondary-100 py-3 text-sm">
-                <span className="text-secondary-500">Net payout</span>
-                <span className="text-lg font-semibold text-secondary-950">
-                  {moneyFormatter(withdrawNet, walletCurrency)}
-                </span>
-              </div>
-            </div>
+    <section className={cardClassName}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-4">
+          <span className="rounded-2xl bg-secondary-50 p-3 text-secondary-700">
+            <Landmark className="size-5" />
+          </span>
+          <div className="space-y-1">
+            <p className="text-lg font-semibold text-secondary-950">
+              Get paid directly
+            </p>
+            <p className="max-w-xl text-sm leading-6 text-secondary-500">
+              Once you&apos;re verified, your share of every ticket goes
+              straight to your bank through our payment partner, and Turnupz
+              keeps only its fee.
+            </p>
+            {message && (
+              <p className="text-sm font-medium text-amber-700">{message}</p>
+            )}
           </div>
+        </div>
+        <Button
+          variant="outline"
+          onClick={setUp}
+          loading={retry.isPending}
+          className="shrink-0 rounded-full border-secondary-100"
+        >
+          <RefreshCw className="size-4" />
+          Set up payouts
+        </Button>
+      </div>
+    </section>
+  );
+};
 
-          <DialogFooter className="gap-3">
-            <Button
-              variant="outline"
-              className="rounded-full border-secondary-100"
-              onClick={() => setIsWithdrawDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              className="rounded-full bg-primary text-white hover:bg-primary/90"
-              onClick={handleWithdraw}
-            >
-              Confirm Withdrawal
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+const Stat: React.FC<{
+  label: string;
+  value: string;
+  note?: string;
+  tone?: "default" | "good" | "warn";
+}> = ({ label, value, note, tone = "default" }) => (
+  <div className="min-w-0 rounded-[1.1rem] bg-secondary-50 px-4 py-4">
+    <p className="text-xs font-medium text-secondary-500">{label}</p>
+    <p
+      className={cn(
+        "mt-2 truncate text-xl font-bold tracking-tight",
+        tone === "good" && "text-emerald-700",
+        tone === "warn" && "text-amber-700",
+        tone === "default" && "text-secondary-950",
+      )}
+    >
+      {value}
+    </p>
+    {note && <p className="mt-1 text-xs leading-5 text-secondary-400">{note}</p>}
+  </div>
+);
 
-      <div className="space-y-5">
+const CurrencyEarnings: React.FC<{ totals: VendorCurrencyEarnings }> = ({
+  totals,
+}) => (
+  <section className={cardClassName}>
+    <div className="flex items-baseline justify-between gap-3">
+      <h2 className="text-base font-semibold text-secondary-950">
+        {totals.currency} sales
+      </h2>
+      <p className="text-sm text-secondary-500">
+        {totals.ticketsSold.toLocaleString()} ticket
+        {totals.ticketsSold === 1 ? "" : "s"} sold
+      </p>
+    </div>
+    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <Stat label="Ticket sales" value={totals.sales.formatted.withCurrency} />
+      <Stat label="Turnupz fee" value={totals.fees.formatted.withCurrency} />
+      <Stat
+        label="Your earnings"
+        value={totals.earnings.formatted.withCurrency}
+        tone="good"
+      />
+      <Stat
+        label="Paid to your bank"
+        value={totals.paidDirect.formatted.withCurrency}
+        note="Settled by our payment partner"
+      />
+    </div>
+    {totals.owed.amount > 0 && (
+      <p className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+        <span className="font-semibold">
+          {totals.owed.formatted.withCurrency}
+        </span>{" "}
+        from sales before direct payouts was collected by Turnupz and is owed to
+        you. We&apos;ll be in touch to settle it.
+      </p>
+    )}
+    {totals.refunded.amount > 0 && (
+      <p className="mt-3 text-xs text-secondary-400">
+        {totals.refunded.formatted.withCurrency} refunded to buyers, not
+        counted above.
+      </p>
+    )}
+  </section>
+);
+
+const SalesTable = () => {
+  const [page, setPage] = useState(1);
+  const { data, isLoading, error, refetch } = useVendorSales(page);
+  const sales = data?.sales ?? [];
+  const pagination = data?.pagination;
+
+  return (
+    <section className={cardClassName}>
+      <div className="flex items-center gap-3">
+        <span className="rounded-2xl bg-secondary-50 p-2.5 text-secondary-700">
+          <ReceiptText className="size-4" />
+        </span>
+        <h2 className="text-base font-semibold text-secondary-950">Sales</h2>
+      </div>
+
+      {isLoading ? (
+        <div className="mt-4 space-y-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-10 rounded-xl" />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="py-10">
+          <ErrorContainer
+            error={constructErrorMessage(
+              error as TApiErrorResponseType,
+              "Couldn't load your sales.",
+            )}
+            retryFunction={refetch}
+          />
+        </div>
+      ) : sales.length === 0 ? (
+        <p className="py-10 text-center text-sm text-secondary-500">
+          No ticket sales yet. They&apos;ll show here as people buy.
+        </p>
+      ) : (
+        <div className="mt-4">
+          <Table label="Sales">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Event</TableHead>
+                <TableHead>Tickets</TableHead>
+                <TableHead className="text-right">Paid</TableHead>
+                <TableHead className="text-right">Fee</TableHead>
+                <TableHead className="text-right">You earn</TableHead>
+                <TableHead>Paid to</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sales.map((sale) => (
+                <TableRow
+                  key={sale.id}
+                  className={cn(sale.status === "refunded" && "opacity-60")}
+                >
+                  <TableCell>{format(new Date(sale.date), "d MMM yyyy")}</TableCell>
+                  <TableCell className="font-medium text-secondary-950">
+                    {sale.event?.name ?? "Event"}
+                  </TableCell>
+                  <TableCell>
+                    {sale.quantity} × {sale.ticketName ?? "Ticket"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {sale.amount.formatted.withCurrency}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {sale.fee.formatted.withCurrency}
+                  </TableCell>
+                  <TableCell className="text-right font-semibold">
+                    {sale.status === "refunded"
+                      ? "Refunded"
+                      : sale.earnings.formatted.withCurrency}
+                  </TableCell>
+                  <TableCell>
+                    {sale.settlement === "direct" ? (
+                      <span className="text-emerald-700">
+                        {sale.settledTo ?? "Your bank"}
+                      </span>
+                    ) : (
+                      <span className="text-amber-700">Owed by Turnupz</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {pagination && pagination.totalPage > 1 && (
+            <div className="mt-4 flex items-center justify-between text-sm text-secondary-500">
+              <span>
+                Page {pagination.presentPage} of {pagination.totalPage}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full"
+                  disabled={!pagination.previousPage}
+                  onClick={() => setPage((current) => Math.max(current - 1, 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full"
+                  disabled={!pagination.nextPage}
+                  onClick={() => setPage((current) => current + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+};
+
+/**
+ * An organiser's earnings: where they're paid, what they've sold and what
+ * they've earned. The payment platform pays them directly, so there's no
+ * balance to withdraw.
+ */
+const WalletPage = () => {
+  const { data, isLoading, error, refetch } = useVendorEarnings();
+
+  return (
+    <div className="space-y-5">
       <VendorVerificationNotice context="wallet" />
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <span className="text-[0.75rem] font-bold uppercase tracking-[0.22em] text-secondary-400">
-            Vendor Wallet
-          </span>
-          <h1 className="mt-3 max-w-5xl text-3xl font-bold tracking-tight text-secondary-950 md:text-[2.15rem] xl:text-[2.35rem]">
-            Control payouts, cards, and global transfers
-          </h1>
-          <p className="mt-2 max-w-4xl text-sm leading-6 text-secondary-500">
-            Move your event earnings, store payment methods, send funds across
-            countries, and keep vendor cash flow organized in one wallet screen.
-          </p>
+      <div>
+        <span className="text-[0.75rem] font-bold uppercase tracking-[0.22em] text-secondary-400">
+          Earnings
+        </span>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight text-secondary-950 md:text-[2.15rem]">
+          What you&apos;ve sold and earned
+        </h1>
+        <p className="mt-2 flex max-w-3xl items-start gap-2 text-sm leading-6 text-secondary-500">
+          <ShieldCheck className="mt-0.5 size-4 shrink-0 text-secondary-400" />
+          Ticket payments are split as they&apos;re made: your share goes to
+          your bank through our payment partner and Turnupz keeps its fee, so
+          there&apos;s nothing to withdraw.
+        </p>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-4">
+          <Skeleton className="h-28 rounded-[1.5rem]" />
+          <Skeleton className="h-44 rounded-[1.5rem]" />
         </div>
-      </div>
+      ) : error ? (
+        <ErrorContainer
+          error={constructErrorMessage(
+            error as TApiErrorResponseType,
+            "Couldn't load your earnings.",
+          )}
+          retryFunction={refetch}
+        />
+      ) : (
+        <>
+          <PayoutAccountCard account={data?.payoutAccount ?? null} />
+          {(data?.currencies ?? []).map((totals) => (
+            <CurrencyEarnings key={totals.currency} totals={totals} />
+          ))}
+        </>
+      )}
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <section className="rounded-[1.5rem] border border-secondary-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm text-secondary-500">Available Balance</p>
-              <p className="mt-3 text-[2rem] font-bold tracking-tight text-secondary-950 xl:text-3xl">
-                {moneyFormatter(availableBalance ?? 0, walletCurrency)}
-              </p>
-            </div>
-            <span className="rounded-2xl bg-secondary-50 p-3 text-secondary-700">
-              <WalletCards className="size-5" />
-            </span>
-          </div>
-          <p className="mt-4 text-xs leading-5 text-secondary-400">
-            Ready for withdrawal, transfers, or vendor card funding.
-          </p>
-        </section>
-
-        <section className="rounded-[1.5rem] border border-secondary-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm text-secondary-500">Pending Payouts</p>
-              <p className="mt-3 text-[2rem] font-bold tracking-tight text-secondary-950 xl:text-3xl">
-                {moneyFormatter(pendingBalance ?? 0, walletCurrency)}
-              </p>
-            </div>
-            <span className="rounded-2xl bg-secondary-50 p-3 text-secondary-700">
-              <ArrowDownLeft className="size-5" />
-            </span>
-          </div>
-          <p className="mt-4 text-xs leading-5 text-secondary-400">
-            Waiting on settlement from ticket revenue and vendor releases.
-          </p>
-        </section>
-
-        <section className="rounded-[1.5rem] border border-secondary-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm text-secondary-500">Reserved Funds</p>
-              <p className="mt-3 text-[2rem] font-bold tracking-tight text-secondary-950 xl:text-3xl">
-                {moneyFormatter(reservedBalance ?? 0, walletCurrency)}
-              </p>
-            </div>
-            <span className="rounded-2xl bg-secondary-50 p-3 text-secondary-700">
-              <ShieldCheck className="size-5" />
-            </span>
-          </div>
-          <p className="mt-4 text-xs leading-5 text-secondary-400">
-            Held for chargeback protection, refunds, and payout safeguards.
-          </p>
-        </section>
-      </div>
-
-      <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="space-y-6">
-          <section className="rounded-[1.6rem] border border-secondary-100 bg-white p-5 xl:p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                <div className="max-w-3xl space-y-4">
-                <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-secondary-400">
-                  Withdrawals
-                </p>
-                <h2 className="mt-3 text-[1.85rem] font-semibold tracking-tight text-secondary-950 xl:text-2xl">
-                  Withdraw vendor earnings
-                </h2>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-secondary-500">
-                  Send cleared funds to your bank, wallet balance, or preferred
-                  payout rail without leaving the dashboard.
-                </p>
-              </div>
-                <span className="inline-flex h-fit rounded-full bg-secondary-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-secondary-500">
-                  Same day review
-                </span>
-              </div>
-
-              <div className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <InputField
-                    label="Withdrawal Amount"
-                    type="number"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    placeholder="Enter amount"
-                  />
-                  <SelectField
-                    label="Payout Method"
-                    value={withdrawChannel}
-                    setValue={setWithdrawChannel}
-                    options={[
-                      { label: "Bank Transfer", value: "bank" },
-                      { label: "Vendor Wallet", value: "wallet" },
-                      { label: "Instant Cashout", value: "instant" },
-                    ]}
-                  />
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-3">
-                  <div className="flex min-h-[116px] min-w-0 flex-col rounded-[1.1rem] bg-secondary-50 px-4 py-4">
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-secondary-400">
-                      Requested
-                    </p>
-                    <p className="mt-auto pt-5 text-[1.9rem] leading-[1.05] font-semibold tracking-tight text-secondary-950">
-                      {moneyFormatter(Number(withdrawAmount || 0), walletCurrency)}
-                    </p>
-                  </div>
-                  <div className="flex min-h-[116px] min-w-0 flex-col rounded-[1.1rem] bg-secondary-50 px-4 py-4">
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-secondary-400">
-                      Fee
-                    </p>
-                    <p className="mt-auto pt-5 text-[1.9rem] leading-[1.05] font-semibold tracking-tight text-secondary-950">
-                      {moneyFormatter(withdrawalFee, walletCurrency)}
-                    </p>
-                  </div>
-                  <div className="flex min-h-[116px] min-w-0 flex-col rounded-[1.1rem] bg-secondary-50 px-4 py-4">
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-secondary-400">
-                      Net Payout
-                    </p>
-                    <p className="mt-auto pt-5 text-[1.9rem] leading-[1.05] font-semibold tracking-tight text-secondary-950">
-                      {moneyFormatter(withdrawNet, walletCurrency)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    className="rounded-full bg-secondary-500 px-5 text-white hover:bg-secondary-600"
-                    onClick={() => {
-                      if (isPayoutLocked) {
-                        toast.error(
-                          "Complete vendor verification before requesting payouts.",
-                        );
-                        return;
-                      }
-                      setIsWithdrawDialogOpen(true);
-                    }}
-                  >
-                    <Banknote className="mr-2 size-4" />
-                    Request Withdrawal
-                  </Button>
-                  <Button asChild variant="outline" className="rounded-full border-secondary-100">
-                    <Link href="/app/wallet/payout-history">
-                      View Payout History
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-[1.6rem] border border-secondary-100 bg-white p-5 xl:p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                <div className="max-w-3xl space-y-4">
-                <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-secondary-400">
-                  Global Transfer
-                </p>
-                <h2 className="mt-3 text-[1.85rem] font-semibold tracking-tight text-secondary-950 xl:text-2xl">
-                  Send money across countries
-                </h2>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-secondary-500">
-                  Move funds to vendors, suppliers, venues, and collaborators in
-                  multiple supported countries from the same wallet balance.
-                </p>
-              </div>
-                <span className="inline-flex h-fit rounded-full bg-secondary-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-secondary-500">
-                  Multi-currency
-                </span>
-              </div>
-
-              <div className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <ComboboxSelect
-                    label="Destination Country"
-                    item={transferCountry}
-                    setItem={setTransferCountry}
-                    placeholder="Select destination country"
-                    emptyText="No country found."
-                    items={transferDestinations.map((destination) => ({
-                      label: `${destination.label} (${destination.currency})`,
-                      value: destination.code,
-                    }))}
-                  />
-                  <InputField
-                    label="Transfer Amount"
-                    type="number"
-                    value={transferAmount}
-                    onChange={(e) => setTransferAmount(e.target.value)}
-                    placeholder="Enter amount"
-                  />
-                  <InputField
-                    label="Recipient Name"
-                    value={recipientName}
-                    onChange={(e) => setRecipientName(e.target.value)}
-                    placeholder="Recipient name"
-                  />
-                  <InputField
-                    label="Account / Routing Reference"
-                    value={recipientAccount}
-                    onChange={(e) => setRecipientAccount(e.target.value)}
-                    placeholder="Account or routing reference"
-                  />
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  <div className="flex min-h-[112px] min-w-0 flex-col rounded-[1.1rem] bg-secondary-50 px-4 py-4">
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-secondary-400">
-                      Country
-                    </p>
-                    <p className="mt-auto pt-5 text-base leading-6 font-semibold text-secondary-950">
-                      {selectedDestination.label}
-                    </p>
-                  </div>
-                  <div className="flex min-h-[112px] min-w-0 flex-col rounded-[1.1rem] bg-secondary-50 px-4 py-4">
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-secondary-400">
-                      Currency
-                    </p>
-                    <p className="mt-auto pt-5 text-base leading-6 font-semibold text-secondary-950">
-                      {selectedDestination.currency}
-                    </p>
-                  </div>
-                  <div className="flex min-h-[112px] min-w-0 flex-col rounded-[1.1rem] bg-secondary-50 px-4 py-4">
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-secondary-400">
-                      Payout Rail
-                    </p>
-                    <p className="mt-auto pt-5 text-base leading-6 font-semibold text-secondary-950 break-words">
-                      {selectedDestination.payout}
-                    </p>
-                  </div>
-                  <div className="flex min-h-[112px] min-w-0 flex-col rounded-[1.1rem] bg-secondary-50 px-4 py-4">
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-secondary-400">
-                      Total Debit
-                    </p>
-                    <p className="mt-auto pt-5 text-[1.35rem] leading-tight font-semibold tracking-tight text-secondary-950">
-                      {moneyFormatter(transferTotal, selectedDestination.currency)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    className="rounded-full bg-secondary-500 px-5 text-white hover:bg-secondary-600"
-                    onClick={handleTransfer}
-                  >
-                    <Globe2 className="mr-2 size-4" />
-                    Create Transfer
-                  </Button>
-                  <Button variant="outline" className="rounded-full border-secondary-100">
-                    Save Beneficiary
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <div className="space-y-6">
-          <section className="rounded-[1.6rem] border border-secondary-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-secondary-400">
-                  Saved Cards
-                </p>
-                <h2 className="mt-3 text-[1.85rem] font-semibold tracking-tight text-secondary-950 xl:text-2xl">
-                  Payment methods
-                </h2>
-              </div>
-              <span className="rounded-2xl bg-secondary-50 p-3 text-secondary-700">
-                <CreditCard className="size-5" />
-              </span>
-            </div>
-
-            <div className="mt-5 space-y-3">
-              {savedCards.length === 0 && (
-                <div className="rounded-[1.2rem] border border-dashed border-secondary-200 bg-secondary-50 p-5 text-sm text-secondary-500">
-                  No saved payment methods yet.
-                </div>
-              )}
-              {savedCards.map((card) => (
-                <div
-                  key={card.id}
-                  className="rounded-[1.2rem] border border-secondary-100 bg-secondary-50 p-4"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-semibold text-secondary-950">
-                        {card.brand} •••• {card.last4}
-                      </p>
-                      <p className="mt-1 text-xs text-secondary-500">
-                        {card.holder} · Expires {card.expiry}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-500">
-                      {card.type}
-                    </span>
-                  </div>
-                  <div className="mt-4 flex justify-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="rounded-full border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600"
-                      onClick={() => handleDeleteCard(card.id)}
-                      disabled={deleteCardMutation.isPending}
-                    >
-                      <Trash2 className="mr-2 size-4" />
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 grid gap-4">
-              <InputField
-                label="Card Holder"
-                value={cardHolder}
-                onChange={(e) => setCardHolder(e.target.value)}
-                placeholder="Card holder name"
-              />
-              <div className="grid gap-4 md:grid-cols-2">
-                <SelectField
-                  label="Card Brand"
-                  value={cardBrand}
-                  setValue={setCardBrand}
-                  options={[
-                    { label: "Visa", value: "Visa" },
-                    { label: "Mastercard", value: "Mastercard" },
-                    { label: "Verve", value: "Verve" },
-                  ]}
-                />
-                <InputField
-                  label="Last 4 Digits"
-                  value={cardLast4}
-                  onChange={(e) => setCardLast4(e.target.value)}
-                  placeholder="Last 4"
-                  maxLength={4}
-                />
-              </div>
-              <Button variant="outline" className="rounded-full border-secondary-100" onClick={handleAddCard}>
-                <Plus className="mr-2 size-4" />
-                Save Card
-              </Button>
-            </div>
-          </section>
-
-          <section className="rounded-[1.6rem] border border-secondary-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-            <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-secondary-400">
-              Wallet Tools
-            </p>
-            <div className="mt-5 space-y-3">
-              {[
-                {
-                  icon: Landmark,
-                  title: "Bank Accounts",
-                  text: "Store multiple payout accounts for events across regions.",
-                },
-                {
-                  icon: ArrowUpRight,
-                  title: "Scheduled Payouts",
-                  text: "Automate weekly or post-event settlements from cleared funds.",
-                },
-                {
-                  icon: ShieldCheck,
-                  title: "Fraud Protection",
-                  text: "Review held funds, payout checks, and card-verification status.",
-                },
-                {
-                  icon: Globe2,
-                  title: "International Beneficiaries",
-                  text: "Save repeat transfer destinations for venues, agencies, and artists.",
-                },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="flex items-start gap-3 rounded-[1.1rem] bg-secondary-50 p-4"
-                >
-                  <span className="rounded-2xl bg-white p-2 text-secondary-700">
-                    <item.icon className="size-4" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-secondary-950">
-                      {item.title}
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-secondary-500">
-                      {item.text}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-[1.6rem] bg-secondary-900 p-5 text-white shadow-[0_20px_55px_rgba(15,23,42,0.18)]">
-            <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-white/60">
-              Vendor Treasury
-            </p>
-            <h2 className="mt-3 text-[1.85rem] font-semibold tracking-tight xl:text-2xl">
-              Keep every payout path ready
-            </h2>
-            <p className="mt-3 text-sm leading-6 text-white/75">
-              Use your wallet to collect event earnings, settle production teams,
-              and move money internationally without leaving the vendor dashboard.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Button asChild className="rounded-full bg-white px-5 text-secondary-950 hover:bg-white/90">
-                <Link href="/app/wallet/review-treasury">
-                Review Treasury
-                </Link>
-              </Button>
-              <Button
-                variant="outline"
-                className="rounded-full border-white/20 bg-white/5 text-white hover:bg-white/10"
-                onClick={handleExportWalletReport}
-              >
-                <Download className="mr-2 size-4" />
-                Export Wallet Report
-              </Button>
-            </div>
-          </section>
-        </div>
-      </div>
-      </div>
-    </>
+      <SalesTable />
+    </div>
   );
 };
 

@@ -11,6 +11,7 @@ import { CheckCircle2, Clock3, MapPin, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { IVerificationDocument } from "@/lib/types";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
 import {
@@ -61,6 +62,8 @@ interface VerificationFormState {
   payoutCountry: string;
   payoutCurrency: string;
   bankName: string;
+  /** The bank's code from the provider's list, for countries paid directly. */
+  bankCode: string;
   accountNumber: string;
   routingNumber: string;
   sortCode: string;
@@ -124,6 +127,7 @@ const defaultFormState: VerificationFormState = {
   payoutCountry: "",
   payoutCurrency: "",
   bankName: "",
+  bankCode: "",
   accountNumber: "",
   routingNumber: "",
   sortCode: "",
@@ -171,6 +175,11 @@ const payoutCountries: Array<{
   currency: string;
   requirements: string[];
   fields: PayoutRequirementField[];
+  /**
+   * Paid by the payment provider straight to the organiser's bank, so the bank
+   * is picked from the provider's list (which gives its code).
+   */
+  directPayout?: boolean;
 }> = [
   {
     code: "NG",
@@ -182,6 +191,7 @@ const payoutCountries: Array<{
       "Account holder name must match vendor or business name",
     ],
     fields: ["bankName", "accountNumber"],
+    directPayout: true,
   },
   {
     code: "CA",
@@ -222,6 +232,7 @@ const payoutCountries: Array<{
     currency: "ZAR",
     requirements: ["Bank name", "Account number", "Branch/routing code"],
     fields: ["bankName", "routingNumber", "accountNumber"],
+    directPayout: true,
   },
 ];
 
@@ -307,6 +318,7 @@ const buildFormFromApi = (
     payoutCurrency:
       data.payoutCurrency ?? findPayoutCountry(data.payoutCountry)?.currency ?? "",
     bankName: data.bankName ?? "",
+    bankCode: data.bankCode ?? "",
     accountNumber: "",
     routingNumber: "",
     sortCode: "",
@@ -566,6 +578,54 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
     [form.payoutCountry],
   );
 
+  // Banks the payment provider can pay organisers to, where it pays them directly.
+  const directPayoutCountry = selectedPayoutCountry?.directPayout
+    ? selectedPayoutCountry.code
+    : undefined;
+  const payoutBanks = useQuery({
+    queryKey: ["payout-banks", directPayoutCountry],
+    queryFn: async () => {
+      const { data } = await getData<{ code: string; name: string }[]>(
+        `/vendor/verification/banks?country=${directPayoutCountry}`,
+      );
+      return data?.data ?? [];
+    },
+    enabled: !!directPayoutCountry,
+    staleTime: 60 * 60 * 1000,
+  });
+
+  // The name on a Nigerian account, once it's a full NUBAN with a bank picked,
+  // after a pause in typing, so the organiser can see it's theirs.
+  const [accountToCheck, setAccountToCheck] = useState<string>();
+  useEffect(() => {
+    const ready =
+      directPayoutCountry === "NG" &&
+      /^[0-9]{10}$/.test(form.accountNumber.trim()) &&
+      !!form.bankCode;
+    const timer = setTimeout(
+      () =>
+        setAccountToCheck(
+          ready ? `${form.accountNumber.trim()}:${form.bankCode}` : undefined,
+        ),
+      500,
+    );
+    return () => clearTimeout(timer);
+  }, [directPayoutCountry, form.accountNumber, form.bankCode]);
+  const resolvedAccount = useQuery({
+    queryKey: ["payout-account-name", accountToCheck],
+    queryFn: async () => {
+      const [accountNumber, bankCode] = (accountToCheck ?? "").split(":");
+      const { data } = await postData<
+        { accountNumber: string; bankCode: string },
+        { accountName: string }
+      >("/vendor/verification/resolve-account", { accountNumber, bankCode });
+      return data?.data?.accountName ?? null;
+    },
+    enabled: !!accountToCheck,
+    retry: false,
+    staleTime: Infinity,
+  });
+
   const completionCount = useMemo(() => {
     const requiredFields = [
       form.legalFirstName,
@@ -809,6 +869,9 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
 
     if (fields.includes("bankName") && !form.bankName.trim()) {
       errors.bankName = "Bank name is required.";
+    } else if (selectedPayoutCountry?.directPayout && !form.bankCode) {
+      // Saved before the bank list existed: it has to be picked again.
+      errors.bankName = "Pick your bank from the list.";
     }
 
     if (
@@ -853,12 +916,14 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
     form.payoutCurrency,
     form.accountHolderName,
     form.bankName,
+    form.bankCode,
     form.accountNumber,
     form.routingNumber,
     form.sortCode,
     form.iban,
     form.swiftCode,
     selectedPayoutCountry?.fields,
+    selectedPayoutCountry?.directPayout,
     maskedPayoutDetails,
   ]);
 
@@ -960,6 +1025,7 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
       payoutCountry: country?.name ?? countryValue,
       payoutCurrency: country?.currency || current.payoutCurrency,
       bankName: "",
+      bankCode: "",
       accountNumber: "",
       routingNumber: "",
       sortCode: "",
@@ -1062,6 +1128,7 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
         "payoutCountry",
         "payoutCurrency",
         "bankName",
+        "bankCode",
         "accountNumber",
         "routingNumber",
         "sortCode",
@@ -1748,15 +1815,45 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
                     : undefined
                 }
               >
-                <Input
-                  value={form.bankName}
-                  onBlur={() => markPayoutFieldTouched("bankName")}
-                  onChange={(event) => {
-                    updateField("bankName", event.target.value);
-                    markPayoutFieldTouched("bankName");
-                  }}
-                  className="h-11 rounded-xl"
-                />
+                {selectedPayoutCountry.directPayout ? (
+                  <ComboboxSelect
+                    item={form.bankCode}
+                    setItem={(code) => {
+                      const bank = payoutBanks.data?.find(
+                        (option) => option.code === code,
+                      );
+                      updateField("bankCode", code);
+                      updateField("bankName", bank?.name ?? "");
+                      markPayoutFieldTouched("bankName");
+                    }}
+                    items={(payoutBanks.data ?? []).map((bank) => ({
+                      value: bank.code,
+                      label: bank.name,
+                    }))}
+                    isLoading={payoutBanks.isLoading}
+                    refetch={payoutBanks.refetch}
+                    fetchingError={
+                      payoutBanks.error ? "Couldn't load banks." : undefined
+                    }
+                    placeholder={
+                      form.bankName && !form.bankCode
+                        ? `${form.bankName}: pick it from the list`
+                        : "Select your bank"
+                    }
+                    emptyText="No bank found."
+                    inputClassName="h-11 rounded-xl"
+                  />
+                ) : (
+                  <Input
+                    value={form.bankName}
+                    onBlur={() => markPayoutFieldTouched("bankName")}
+                    onChange={(event) => {
+                      updateField("bankName", event.target.value);
+                      markPayoutFieldTouched("bankName");
+                    }}
+                    className="h-11 rounded-xl"
+                  />
+                )}
               </Field>
             )}
             {selectedPayoutCountry?.fields.includes("accountNumber") && (
@@ -1784,6 +1881,22 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
                   }}
                   className="h-11 rounded-xl"
                 />
+                {resolvedAccount.isFetching && (
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    Checking the account…
+                  </p>
+                )}
+                {resolvedAccount.data && (
+                  <p className="mt-1.5 text-xs font-medium text-emerald-700">
+                    Account name: {resolvedAccount.data}
+                  </p>
+                )}
+                {resolvedAccount.isError && (
+                  <p className="mt-1.5 text-xs text-amber-700">
+                    We couldn&apos;t find that account at this bank. Check the
+                    number.
+                  </p>
+                )}
               </Field>
             )}
             {selectedPayoutCountry?.fields.includes("routingNumber") && (
