@@ -14,6 +14,25 @@ import React, { memo, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { APPROVAL_LEVELS } from "./verification-utils";
 
+/** Common reasons, to start from (and edit) rather than type each time. */
+const REASONS: Record<"rejected" | "needs_more_info", string[]> = {
+  needs_more_info: [
+    "The ID document is too blurry to read. Please upload a clearer photo.",
+    "The name on your ID doesn't match the legal name you gave. Please check both.",
+    "The bank account holder's name doesn't match your legal or business name.",
+    "Please pick your bank from the list so we can pay you directly.",
+    "Please add your business registration number and certificate.",
+    "Your ID document has expired. Please upload a current one.",
+  ],
+  rejected: [
+    "We couldn't verify your identity from the documents provided.",
+    "The bank account belongs to someone else.",
+    "These details are already used by another vendor account.",
+    "Applicants must be at least 18.",
+    "This business couldn't be found in the business registry.",
+  ],
+};
+
 const DECISIONS: { value: TVerificationDecision; label: string }[] = [
   { value: "approved", label: "Approve" },
   { value: "needs_more_info", label: "Needs more info" },
@@ -146,11 +165,31 @@ const VerificationDecisionPanel: React.FC<{
               ? "Why is this being rejected? The vendor is told."
               : "What does the vendor need to supply?"}
           </label>
+          <div className="flex flex-wrap gap-1.5">
+            {REASONS[decision as "rejected" | "needs_more_info"].map(
+              (reason) => (
+                <button
+                  key={reason}
+                  type="button"
+                  onClick={() =>
+                    setMessage((current) =>
+                      current.includes(reason)
+                        ? current
+                        : [current.trim(), reason].filter(Boolean).join("\n"),
+                    )
+                  }
+                  className="rounded-full border border-border px-2.5 py-1 text-left text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  {reason}
+                </button>
+              ),
+            )}
+          </div>
           <Textarea
             id="review-reason"
             value={message}
             onChange={(event) => setMessage(event.target.value)}
-            placeholder="The ID document is too blurry to read."
+            placeholder="Pick a reason above or write your own."
             rows={4}
           />
         </div>

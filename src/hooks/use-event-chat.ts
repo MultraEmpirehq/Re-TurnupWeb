@@ -7,7 +7,13 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { uploadAttachment } from "@/api/attachments";
 
-type BackendSenderRole = "vendor" | "scanner" | "attendee" | "system";
+type BackendSenderRole =
+  | "vendor"
+  | "scanner"
+  | "attendee"
+  | "system"
+  // The Turnupz team, in a support chat.
+  | "admin";
 type BackendMessageKind = "text" | "event-update" | "image" | "file";
 type BackendRequestMessageKind = "TEXT" | "IMAGE" | "FILE" | "EVENT_UPDATE";
 
@@ -17,6 +23,7 @@ export interface BackendChatConversation {
   eventName?: string;
   name?: string;
   conversationType?: "group" | "private";
+  type?: "EVENT_GROUP" | "DIRECT" | "SUPPORT";
   announcementMode?: boolean;
   memberListVisibility?: "visible" | "private";
   pinnedMessageId?: string;
@@ -85,6 +92,7 @@ const toParticipantRole = (
 ): IEventChatParticipant["memberRole"] => {
   if (role === "vendor") return "vendor";
   if (role === "scanner") return "scanner";
+  if (role === "admin") return "team";
   return "attendee";
 };
 
@@ -110,6 +118,7 @@ const mapConversation = (chat: BackendChatConversation): IEventChatGroup => {
     lastActivityAt: chat.lastActivityAt || chat.createdAt || now,
     preview: chat.preview || `Community chat for ${eventName}.`,
     conversationType: chat.conversationType || "group",
+    isSupport: chat.type === "SUPPORT",
     announcementMode: !!chat.announcementMode,
     muted: !!chat.muted,
     memberListVisibility: chat.memberListVisibility || "visible",

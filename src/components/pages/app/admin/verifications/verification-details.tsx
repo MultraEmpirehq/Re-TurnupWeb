@@ -4,20 +4,32 @@ import { constructErrorMessage } from "@/api/functions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import ErrorContainer from "@/components/ui/error-container";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAdminVerification } from "@/hooks/use-admin-verifications";
+import {
+  IVerificationReview,
+  useAdminVerification,
+  useNextInQueue,
+  useVerificationReview,
+} from "@/hooks/use-admin-verifications";
 import {
   IVendorVerification,
   IVerificationDocument,
-  TVerificationStepKey,
 } from "@/lib/types";
 import { ROUTES } from "@/lib/variables";
-import { ArrowLeft, ExternalLink, FileText } from "lucide-react";
+import { ArrowLeft, ArrowRight, Copy, FileText, Maximize2 } from "lucide-react";
+import { toast } from "sonner";
 import Image from "next/image";
 import Link from "next/link";
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import StatusPill from "../status-pill";
 import VerificationDecisionPanel from "./verification-decision-panel";
 import PayoutSetupPanel from "./payout-setup-panel";
+import DocumentViewer from "./document-viewer";
+import ReviewChecks from "./review-checks";
+import RevealableAccount from "./revealable-account";
+import StepReview from "./step-review";
+import VendorActivity from "./vendor-activity";
+import VendorChatPanel from "./vendor-chat-panel";
+import VerificationHistory from "./verification-history";
 import {
   approvalLevelLabel,
   formatDate,
@@ -26,13 +38,6 @@ import {
   vendorTypeLabel,
 } from "./verification-utils";
 
-const STEPS: { key: TVerificationStepKey; label: string }[] = [
-  { key: "vendorType", label: "Vendor type" },
-  { key: "identity", label: "Identity" },
-  { key: "business", label: "Business" },
-  { key: "payout", label: "Payout" },
-  { key: "crossBorder", label: "Cross-border" },
-];
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
   title,
@@ -66,7 +71,9 @@ const FieldGrid: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 const DocumentCard: React.FC<{
   label: string;
   document?: IVerificationDocument | null;
-}> = ({ label, document }) => {
+  compare?: { label: string; value: string | null | undefined }[];
+}> = ({ label, document, compare }) => {
+  const [open, setOpen] = useState(false);
   if (!document?.url) {
     return (
       <div className="flex flex-col gap-2">
@@ -81,10 +88,9 @@ const DocumentCard: React.FC<{
   return (
     <div className="flex flex-col gap-2">
       <span className="text-xs text-muted-foreground">{label}</span>
-      <a
-        href={document.url}
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
         className="group relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg border border-border bg-muted"
       >
         {isImageDocument(document) ? (
@@ -99,9 +105,16 @@ const DocumentCard: React.FC<{
           <FileText className="size-10 text-muted-foreground" />
         )}
         <span className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-md bg-white/90 px-2 py-1 text-xs font-medium text-foreground shadow-sm">
-          Open <ExternalLink className="size-3" />
+          View <Maximize2 className="size-3" />
         </span>
-      </a>
+      </button>
+      <DocumentViewer
+        label={label}
+        document={document}
+        open={open}
+        onOpenChange={setOpen}
+        compare={compare}
+      />
     </div>
   );
 };
@@ -119,9 +132,11 @@ const LoadingState = () => (
   </div>
 );
 
-const Details: React.FC<{ verification: IVendorVerification }> = ({
-  verification,
-}) => {
+const Details: React.FC<{
+  verification: IVendorVerification;
+  review?: IVerificationReview;
+  isLoadingReview: boolean;
+}> = ({ verification, review, isLoadingReview }) => {
   const name = vendorName(verification);
   const initials =
     name
@@ -158,9 +173,24 @@ const Details: React.FC<{ verification: IVendorVerification }> = ({
             <p className="truncate text-sm text-muted-foreground">
               {verification.vendor?.email ?? "—"}
               <span className="mx-1.5">·</span>
-              <span className="font-mono text-xs">
-                {verification.reference ?? "No reference"}
-              </span>
+              {verification.reference ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigator.clipboard
+                      ?.writeText(verification.reference!)
+                      .then(() => toast.success("Reference copied"))
+                      .catch(() => undefined)
+                  }
+                  className="inline-flex items-center gap-1 font-mono text-xs hover:text-foreground"
+                  title="Copy reference"
+                >
+                  {verification.reference}
+                  <Copy className="size-3" />
+                </button>
+              ) : (
+                <span className="font-mono text-xs">No reference</span>
+              )}
             </p>
           </div>
         </div>
@@ -173,6 +203,8 @@ const Details: React.FC<{ verification: IVendorVerification }> = ({
           <StatusPill status={verification.status} />
         </div>
       </div>
+
+      <ReviewChecks review={review} isLoading={isLoadingReview} />
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-4">
@@ -221,10 +253,42 @@ const Details: React.FC<{ verification: IVendorVerification }> = ({
               <DocumentCard
                 label="Identity document"
                 document={verification.idDocumentDetails}
+                compare={[
+                  {
+                    label: "Legal name",
+                    value: [verification.legalFirstName, verification.legalLastName]
+                      .filter(Boolean)
+                      .join(" "),
+                  },
+                  {
+                    label: "Date of birth",
+                    value: formatDate(verification.dateOfBirth),
+                  },
+                  {
+                    label: "Country of residence",
+                    value: verification.countryOfResidence,
+                  },
+                  { label: "Address", value: verification.address },
+                ]}
               />
               <DocumentCard
                 label="Supporting document"
                 document={verification.supportingDocumentDetails}
+                compare={[
+                  { label: "Business name", value: verification.businessName },
+                  {
+                    label: "Registration number",
+                    value: verification.businessRegistrationNumber,
+                  },
+                  {
+                    label: "Business address",
+                    value: verification.businessAddress,
+                  },
+                  {
+                    label: "Hosting in",
+                    value: verification.crossBorderCountries?.join(", "),
+                  },
+                ]}
               />
             </div>
           </Section>
@@ -236,8 +300,18 @@ const Details: React.FC<{ verification: IVendorVerification }> = ({
               </Field>
               <Field label="Bank">{verification.bankName}</Field>
               <Field label="Account">
-                {verification.accountNumberLast4 &&
-                  `•••• ${verification.accountNumberLast4}`}
+                <RevealableAccount
+                  verificationId={verification.id}
+                  last4={
+                    verification.accountNumberLast4 ??
+                    verification.payoutAccountLast4 ??
+                    verification.ibanLast4
+                  }
+                />
+              </Field>
+              <Field label="Name at the bank">
+                {review?.bankAccountName ??
+                  (isLoadingReview ? "Checking…" : null)}
               </Field>
               <Field label="Payout country">{verification.payoutCountry}</Field>
               <Field label="Currency">{verification.payoutCurrency}</Field>
@@ -268,28 +342,7 @@ const Details: React.FC<{ verification: IVendorVerification }> = ({
         </div>
 
         <div className="space-y-4 lg:sticky lg:top-[92px]">
-          <Section title="Steps">
-            <ul className="space-y-2.5">
-              {STEPS.map((step) => (
-                <li
-                  key={step.key}
-                  className="flex items-center justify-between gap-3 text-sm"
-                >
-                  <span>{step.label}</span>
-                  <StatusPill
-                    status={
-                      verification.stepStatuses?.[step.key] ?? "not_started"
-                    }
-                  />
-                </li>
-              ))}
-            </ul>
-            {verification.reviewedAt && (
-              <p className="border-t border-border pt-3 text-xs text-muted-foreground">
-                Last reviewed {formatDate(verification.reviewedAt, true)}
-              </p>
-            )}
-          </Section>
+          <StepReview verification={verification} />
 
           {!!lastDecisionNote && (
             <div className="rounded-xl bg-muted p-4">
@@ -299,6 +352,20 @@ const Details: React.FC<{ verification: IVendorVerification }> = ({
               <p className="text-sm">{lastDecisionNote}</p>
             </div>
           )}
+
+          <section className="space-y-3 rounded-xl border border-border bg-card p-5">
+            <div>
+              <h2 className="font-semibold">Talk to the vendor</h2>
+              <p className="text-xs text-muted-foreground">
+                Ask about anything while it&apos;s pending, without sending a
+                decision.
+              </p>
+            </div>
+            <VendorChatPanel verification={verification} />
+          </section>
+
+          <VendorActivity review={review} isLoading={isLoadingReview} />
+          <VerificationHistory history={review?.history} />
 
           {hasSubmitted ? (
             <VerificationDecisionPanel verification={verification} />
@@ -316,16 +383,32 @@ const Details: React.FC<{ verification: IVendorVerification }> = ({
 
 const VerificationDetails: React.FC<{ id: string }> = ({ id }) => {
   const { data, error, isLoading, refetch } = useAdminVerification(id);
+  const review = useVerificationReview(id);
+  const queue = useNextInQueue(id);
 
   return (
     <div className="space-y-4">
-      <Link
-        href={ROUTES.ADMIN_VERIFICATIONS.href}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" />
-        All verifications
-      </Link>
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          href={ROUTES.ADMIN_VERIFICATIONS.href}
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" />
+          All verifications
+        </Link>
+        {queue.data?.nextId && (
+          <Link
+            href={`${ROUTES.ADMIN_VERIFICATIONS.href}/${queue.data.nextId}`}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-secondary-700 hover:text-secondary-900"
+          >
+            Next application
+            <span className="text-xs font-normal text-muted-foreground">
+              ({queue.data.waiting} waiting)
+            </span>
+            <ArrowRight className="size-4" />
+          </Link>
+        )}
+      </div>
 
       {isLoading && <LoadingState />}
 
@@ -339,7 +422,13 @@ const VerificationDetails: React.FC<{ id: string }> = ({ id }) => {
         />
       )}
 
-      {!!data && <Details verification={data} />}
+      {!!data && (
+        <Details
+          verification={data}
+          review={review.data}
+          isLoadingReview={review.isLoading}
+        />
+      )}
     </div>
   );
 };
