@@ -54,7 +54,9 @@ const GenderSelect: React.FC<IGenderSelectProps> = ({
       )}
       <Select
         value={gender}
-        onValueChange={(v) => setGender(v as EUserGenders)}
+        // Radix can report "" when the form resets around it; that isn't a
+        // choice, and taking it would wipe the saved gender.
+        onValueChange={(v) => v && setGender(v as EUserGenders)}
         disabled={disabled}
       >
         <SelectTrigger className={cn("w-[180px]", inputClassName)}>

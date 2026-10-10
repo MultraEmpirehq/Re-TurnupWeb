@@ -84,7 +84,17 @@ const GeneralFooterComponent = () => (
     </SectionContainer>
 
     <SectionContainer className="flex flex-col gap-3 border-t border-white/10 py-6 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between">
-      <p>&copy; {new Date().getFullYear()} Turnupz. All rights reserved.</p>
+      <p>
+        &copy; {new Date().getFullYear()} Turnupz. All rights reserved.
+        {/* Kept quiet: it's for staff, not visitors. */}
+        <span className="mx-2 text-white/20">·</span>
+        <Link
+          href={ROUTES.ADMIN_LOGIN.href}
+          className="transition-colors hover:text-white"
+        >
+          Admin login
+        </Link>
+      </p>
       <p>
         <span className="bg-linear-to-r from-secondary-300 to-primary-300 bg-clip-text font-semibold text-transparent">
           Turning up
