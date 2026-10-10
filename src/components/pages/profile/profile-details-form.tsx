@@ -22,7 +22,20 @@ import useUserStore, {
 } from "@/stores/user-store";
 import { joiResolver } from "@hookform/resolvers/joi";
 import Joi from "joi";
-import { Camera, Pencil } from "lucide-react";
+import { format } from "date-fns";
+import {
+  BadgeCheck,
+  CalendarDays,
+  Camera,
+  CircleAlert,
+  CircleHelp,
+  KeyRound,
+  Mail,
+  Pencil,
+  Phone,
+} from "lucide-react";
+import Link from "next/link";
+import { ROUTES } from "@/lib/variables";
 import React, { memo, useCallback, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -210,13 +223,29 @@ const ProfileDetailsForm = () => {
     setIsEditing(false);
   }, [reset, defaultValues]);
 
+  // Vendors and admins keep their settings in the dashboard.
+  const settingsHref =
+    userDetails?.role === EUserRoles.USER || !userDetails?.role
+      ? ROUTES.PROFILE_SETTINGS.href
+      : ROUTES.SETTINGS.href;
+  const memberSince = userDetails?.createdAt
+    ? format(new Date(userDetails.createdAt), "MMMM yyyy")
+    : null;
+
   return (
-    <div className="space-y-6">
-      <section className={cardClassName}>
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="relative shrink-0">
-              <Avatar className="size-20 rounded-3xl shadow-sm shadow-secondary-800/25">
+    // Laid out by the space it's given (a container query), not the screen: the
+    // account page gives it the full width, the dashboard a narrower column.
+    <div className="@container space-y-6">
+      {/* Who they are: photo, name, how they sign in. */}
+      <section className="overflow-hidden rounded-[1.75rem] border border-secondary-100 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+        <div
+          aria-hidden
+          className="h-28 bg-linear-to-r from-secondary-400 via-primary-300 to-primary sm:h-36"
+        />
+        <div className="flex flex-col gap-5 px-6 pb-6 sm:px-8 @3xl:flex-row @3xl:items-end @3xl:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <div className="relative -mt-12 w-fit shrink-0 sm:-mt-14">
+              <Avatar className="size-24 rounded-[1.75rem] ring-4 ring-white shadow-md sm:size-28">
                 <AvatarImage
                   src={
                     resolveAttachmentUrl(
@@ -227,7 +256,7 @@ const ProfileDetailsForm = () => {
                   alt={displayName}
                   className="object-cover"
                 />
-                <AvatarFallback className="rounded-3xl bg-secondary-800 text-xl font-semibold text-white">
+                <AvatarFallback className="rounded-[1.75rem] bg-secondary-800 text-2xl font-semibold text-white">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -235,7 +264,7 @@ const ProfileDetailsForm = () => {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploadingAvatar}
-                className="absolute -right-1 -bottom-1 flex size-8 cursor-pointer items-center justify-center rounded-full bg-secondary-400 text-white ring-4 ring-white transition-colors hover:bg-secondary-500 disabled:opacity-50"
+                className="absolute -right-1 -bottom-1 flex size-9 cursor-pointer items-center justify-center rounded-full bg-secondary-400 text-white ring-4 ring-white transition-colors hover:bg-secondary-500 disabled:opacity-50"
                 aria-label="Upload profile photo"
               >
                 <Camera className="size-4" />
@@ -249,153 +278,215 @@ const ProfileDetailsForm = () => {
                 aria-label="Upload profile photo"
               />
             </div>
-            <div className="min-w-0">
-              <h2 className="truncate text-2xl font-bold text-secondary-950">
+            <div className="min-w-0 pb-1">
+              <h1 className="truncate text-2xl font-bold text-secondary-950 sm:text-3xl">
                 {displayName}
-              </h2>
-              {userDetails?.username && (
-                <p className="mt-1 text-sm text-secondary-500">
-                  @{userDetails.username}
-                </p>
-              )}
-              {userDetails?.email && (
-                <p className="mt-1 truncate text-sm text-secondary-500">
-                  {userDetails.email}
-                </p>
-              )}
+              </h1>
+              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-secondary-500">
+                {userDetails?.username && <span>@{userDetails.username}</span>}
+                {memberSince && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <CalendarDays className="size-3.5" />
+                    Member since {memberSince}
+                  </span>
+                )}
+              </p>
             </div>
           </div>
           {userDetails?.role && (
-            <div className="w-fit rounded-3xl bg-secondary-50 px-4 py-3 text-sm text-secondary-600">
+            <span className="w-fit rounded-full bg-secondary-50 px-4 py-2 text-sm font-medium text-secondary-700">
               {roleLabels[userDetails.role]}
-            </div>
+            </span>
           )}
         </div>
       </section>
 
-      <section className={cardClassName}>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-xs font-bold tracking-[0.2em] text-secondary-400 uppercase">
-              Profile details
-            </p>
-            <h2 className="mt-2 text-2xl font-bold text-secondary-950">
-              Personal information
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm text-secondary-500">
-              The name, username and contact details used across bookings and
-              communication.
-            </p>
-          </div>
-          <div className="flex shrink-0 gap-2">
-            {!isEditing ? (
-              <Button
-                variant="outline"
-                onClick={() => setIsEditing(true)}
-                className="h-11 rounded-2xl border-secondary-200 px-5 font-semibold text-secondary-950 hover:bg-secondary-50"
-              >
-                <Pencil className="size-3.5" />
-                Edit
-              </Button>
-            ) : (
-              <>
+      <div className="grid grid-cols-1 items-start gap-6 @5xl:grid-cols-[minmax(0,1fr)_340px]">
+        <section className={cardClassName}>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-secondary-950">
+                Personal information
+              </h2>
+              <p className="mt-1 max-w-2xl text-sm text-secondary-500">
+                Used on your tickets and orders, and by organisers to reach you
+                about events you&apos;re going to.
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              {!isEditing ? (
                 <Button
-                  variant="ghost"
-                  onClick={handleCancelEdit}
-                  disabled={isSubmitting}
-                  className="h-11 rounded-2xl px-5 font-semibold"
+                  variant="outline"
+                  onClick={() => setIsEditing(true)}
+                  className="h-11 rounded-2xl border-secondary-200 px-5 font-semibold text-secondary-950 hover:bg-secondary-50"
                 >
-                  Cancel
+                  <Pencil className="size-3.5" />
+                  Edit
                 </Button>
-                <Button
-                  onClick={handleSubmit(onSubmit)}
-                  loading={isSubmitting}
-                  className="h-11 rounded-2xl bg-secondary-400 px-5 font-semibold text-white hover:bg-secondary-500"
-                >
-                  Save changes
-                </Button>
-              </>
-            )}
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    onClick={handleCancelEdit}
+                    disabled={isSubmitting}
+                    className="h-11 rounded-2xl px-5 font-semibold"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSubmit(onSubmit)}
+                    loading={isSubmitting}
+                    className="h-11 rounded-2xl bg-secondary-400 px-5 font-semibold text-white hover:bg-secondary-500"
+                  >
+                    Save changes
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
-        </div>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2"
-        >
-          <InputField
-            label="First Name"
-            placeholder="Enter your first name"
-            disabled={!isEditing}
-            {...register("firstName")}
-            error={errors.firstName?.message}
-          />
-          <InputField
-            label="Last Name"
-            placeholder="Enter your last name"
-            disabled={!isEditing}
-            {...register("lastName")}
-            error={errors.lastName?.message}
-          />
-          <InputField
-            label="Username"
-            placeholder="Enter your username"
-            disabled={!isEditing}
-            {...register("username")}
-            error={errors.username?.message}
-          />
-          <InputField
-            label="Email"
-            placeholder="Email address"
-            disabled
-            value={userDetails?.email ?? ""}
-            readOnly
-            helperText="Your email is used to sign in and can't be changed here."
-          />
-          <InputField
-            label="Phone Number"
-            placeholder="Enter your phone number"
-            disabled={!isEditing}
-            {...register("phone")}
-            error={errors.phone?.message}
-          />
-          <Controller
-            control={control}
-            name="dateOfBirth"
-            render={({ field, fieldState }) => (
-              <DateSelect
-                date={field.value}
-                setDate={field.onChange}
-                label="Date of Birth"
-                placeholder="Select your date of birth"
-                error={fieldState?.error?.message}
-                className="w-full"
-                disabled={!isEditing}
-                minDate={earliestBirthDate()}
-                maxDate={latestAdultBirthDate()}
-                helperText="You must be 18 or older."
-              />
-            )}
-          />
-          <Controller
-            control={control}
-            name="gender"
-            render={({ field, fieldState }) => (
-              <GenderSelect
-                gender={field.value}
-                setGender={field.onChange}
-                label="Gender"
-                placeholder="Select your gender"
-                error={fieldState?.error?.message}
-                className="w-full"
-                disabled={!isEditing}
-              />
-            )}
-          />
-          {/* Lets Enter submit while editing. */}
-          <button type="submit" hidden disabled={!isEditing} />
-        </form>
-      </section>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2"
+          >
+            <InputField
+              label="First Name"
+              placeholder="Enter your first name"
+              disabled={!isEditing}
+              {...register("firstName")}
+              error={errors.firstName?.message}
+            />
+            <InputField
+              label="Last Name"
+              placeholder="Enter your last name"
+              disabled={!isEditing}
+              {...register("lastName")}
+              error={errors.lastName?.message}
+            />
+            <InputField
+              label="Username"
+              placeholder="Enter your username"
+              disabled={!isEditing}
+              {...register("username")}
+              error={errors.username?.message}
+            />
+            <InputField
+              label="Phone Number"
+              placeholder="+234 801 234 5678"
+              disabled={!isEditing}
+              {...register("phone")}
+              error={errors.phone?.message}
+            />
+            <Controller
+              control={control}
+              name="dateOfBirth"
+              render={({ field, fieldState }) => (
+                <DateSelect
+                  date={field.value}
+                  setDate={field.onChange}
+                  label="Date of Birth"
+                  placeholder="Select your date of birth"
+                  error={fieldState?.error?.message}
+                  className="w-full"
+                  disabled={!isEditing}
+                  minDate={earliestBirthDate()}
+                  maxDate={latestAdultBirthDate()}
+                  helperText="You must be 18 or older."
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="gender"
+              render={({ field, fieldState }) => (
+                <GenderSelect
+                  gender={field.value}
+                  setGender={field.onChange}
+                  label="Gender"
+                  placeholder="Select your gender"
+                  error={fieldState?.error?.message}
+                  className="w-full"
+                  inputClassName="w-full"
+                  disabled={!isEditing}
+                />
+              )}
+            />
+            {/* Lets Enter submit while editing. */}
+            <button type="submit" hidden disabled={!isEditing} />
+          </form>
+        </section>
+
+        {/* How they sign in, and where to change the rest. */}
+        <aside className="space-y-6">
+          <section className={cardClassName}>
+            <h2 className="text-base font-bold text-secondary-950">
+              Sign-in &amp; security
+            </h2>
+            <ul className="mt-5 space-y-4 text-sm">
+              <li className="flex items-start gap-3">
+                <Mail className="mt-0.5 size-4 shrink-0 text-secondary-400" />
+                <div className="min-w-0">
+                  <p className="text-secondary-500">Email</p>
+                  <p className="truncate font-medium text-secondary-950">
+                    {userDetails?.email ?? "Not set"}
+                  </p>
+                  {userDetails?.isEmailVerified === false ? (
+                    <p className="mt-1 inline-flex items-center gap-1 text-xs text-amber-700">
+                      <CircleAlert className="size-3.5" />
+                      Not verified yet
+                    </p>
+                  ) : (
+                    <p className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-700">
+                      <BadgeCheck className="size-3.5" />
+                      Verified · used to sign in
+                    </p>
+                  )}
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <Phone className="mt-0.5 size-4 shrink-0 text-secondary-400" />
+                <div className="min-w-0">
+                  <p className="text-secondary-500">Phone</p>
+                  <p className="font-medium text-secondary-950">
+                    {userDetails?.phone || "Not added"}
+                  </p>
+                </div>
+              </li>
+            </ul>
+            <Button
+              asChild
+              variant="outline"
+              className="mt-6 h-11 w-full rounded-2xl border-secondary-200 font-semibold"
+            >
+              <Link href={settingsHref}>
+                <KeyRound className="size-4" />
+                Password, devices &amp; notifications
+              </Link>
+            </Button>
+          </section>
+
+          <section className="rounded-[1.75rem] bg-secondary-50 p-6 sm:p-8">
+            <div className="flex items-start gap-3">
+              <CircleHelp className="mt-0.5 size-5 shrink-0 text-secondary-500" />
+              <div>
+                <p className="text-sm font-semibold text-secondary-950">
+                  Need to change your email?
+                </p>
+                <p className="mt-1 text-sm leading-6 text-secondary-500">
+                  It&apos;s how you sign in, so our team changes it for you
+                  after checking it&apos;s you.
+                </p>
+                <Link
+                  href={ROUTES.PROFILE_HELP.href}
+                  className="mt-3 inline-block text-sm font-semibold text-secondary-600 hover:text-secondary-900 hover:underline"
+                >
+                  Contact support
+                </Link>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </div>
     </div>
   );
 };
