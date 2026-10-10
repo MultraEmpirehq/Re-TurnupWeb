@@ -6,7 +6,7 @@ import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import joi from "joi";
 import { useForm } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
-import { getData, postData } from "@/api";
+import { getData, postData, WEB_CLIENT_HEADERS } from "@/api";
 import { Separator } from "@/components/ui/separator";
 import MagicLinkModal from "@/components/pages/auth/magic-link-modal";
 import { toast } from "sonner";
@@ -182,10 +182,14 @@ const AuthForm = () => {
             if (redirectTo) {
               registerUrl.searchParams.set("redirect", redirectTo);
             }
-            await postData("/auth/register", {
-              email: body.email,
-              url: decodeURIComponent(registerUrl.toString()),
-            });
+            await postData(
+              "/auth/register",
+              {
+                email: body.email,
+                url: decodeURIComponent(registerUrl.toString()),
+              },
+              { headers: WEB_CLIENT_HEADERS },
+            );
             setMagicLinkEmail(body?.email);
             return;
           }

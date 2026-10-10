@@ -8,7 +8,8 @@ export interface IEventChatParticipant {
   id: string;
   name: string;
   role: "vendor" | "member";
-  memberRole?: "vendor" | "scanner" | "attendee";
+  /** "team" is Turnupz staff, in a support chat. */
+  memberRole?: "vendor" | "scanner" | "attendee" | "team";
   email?: string;
   avatar?: string;
   isBlocked?: boolean;
@@ -48,6 +49,8 @@ export interface IEventChatGroup {
   lastActivityAt: string;
   preview: string;
   conversationType?: "group" | "private";
+  /** A chat with the Turnupz team, not an event community. */
+  isSupport?: boolean;
   announcementMode?: boolean;
   muted?: boolean;
   memberListVisibility?: "visible" | "private";

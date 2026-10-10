@@ -51,6 +51,10 @@ const ACTIONS: Record<string, { label: string; tone: string }> = {
     label: "Reviewed verification",
     tone: "bg-blue-50 text-blue-700",
   },
+  "vendor_verification.payout_revealed": {
+    label: "Viewed bank details",
+    tone: "bg-violet-50 text-violet-700",
+  },
   "event.deleted": { label: "Deleted event", tone: "bg-red-50 text-red-700" },
   "event.suspended": {
     label: "Suspended event",

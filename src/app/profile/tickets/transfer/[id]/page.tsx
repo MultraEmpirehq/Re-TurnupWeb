@@ -211,8 +211,10 @@ export default function TransferTicketPage() {
   const ticket = useMemo(() => {
     const tickets = data?.data ?? [];
     const held = tickets.find((item) => item.id === userTicketId);
-    if (held) return toUserTicketType(held);
-    if (!pendingSent) return null;
+    if (held?.ticket) return toUserTicketType(held);
+    // An older api sends a sent ticket without its `ticket` (the event and
+    // price), which would crash the page; it reads as not found instead.
+    if (!pendingSent?.userTicket?.ticket) return null;
     return toUserTicketType({
       ...pendingSent.userTicket,
       transfer: {

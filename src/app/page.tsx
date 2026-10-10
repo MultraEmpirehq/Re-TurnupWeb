@@ -5,8 +5,6 @@ import LandingHero from "@/components/pages/home/landing/hero";
 import HowItWorks from "@/components/pages/home/landing/how-it-works";
 import VibeLinks from "@/components/pages/home/landing/vibe-links";
 
-export const dynamic = "force-dynamic";
-
 export default function Home() {
   return (
     <div>
