@@ -19,6 +19,7 @@ import StarList from "@/components/ui/star-list";
 import { MapPinIcon } from "lucide-react";
 import EventsWithVenueIdList from "@/components/pages/explore/events-with-venue-id-list";
 import { resolveAttachmentUrls } from "@/lib/functions";
+import FollowButton from "@/components/discovery/follow-button";
 
 const EventDetails = () => {
   const params = useParams();
@@ -102,7 +103,14 @@ const EventDetails = () => {
         )}
       </div>
       <div className="space-y-2 pt-2">
-        <h1 className="text-2xl font-bold">{data?.name || "Venue Name"}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h1 className="text-2xl font-bold">{data?.name || "Venue Name"}</h1>
+          <FollowButton
+            type="VENUE"
+            id={id?.toString()}
+            name={data?.name || "this venue"}
+          />
+        </div>
         <StarList rating={data?.rating || 0} totalStars={5} />
         <p className="opacity-60 text-sm">
           Up to {data?.totalAvailableSeat || 0} seats

@@ -11,6 +11,7 @@ import { addEventNotification } from "@/lib/event-notifications";
 import { appendEventChatMessage, ensureEventChatGroup } from "@/lib/event-chat";
 import {
   IEventActivityDetails,
+  IPerformerSummary,
   IEventBlogPostDetails,
   IEventPassAssignmentDetails,
   IEventTicketOptionDetails,
@@ -24,6 +25,7 @@ import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { uploadAttachment, uploadAttachments } from "@/api/attachments";
 import TimezoneSelect from "@/components/ui/timezone-select";
+import LineupPicker from "@/components/discovery/lineup-picker";
 import {
   DEFAULT_EVENT_TIMEZONE,
   instantToWallTimeInZone,
@@ -121,6 +123,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
   });
   // Dates in this form are held on the event's clock and converted on save.
   const [timezone, setTimezone] = useState(DEFAULT_EVENT_TIMEZONE);
+  const [lineup, setLineup] = useState<IPerformerSummary[]>([]);
   const [saleMethod, setSaleMethod] = useState("");
   const [ticketUrl, setTicketUrl] = useState("");
   const [activities, setActivities] = useState<IEventActivityDetails[]>([]);
@@ -159,6 +162,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     setSaleMethod(data.saleMethod ?? "");
     setTicketUrl(data.ticketUrl ?? "");
     setTimezone(data.timezone || DEFAULT_EVENT_TIMEZONE);
+    setLineup(data.performers ?? []);
     setActivities(
       (data.activities ?? []).map((activity) => ({
         ...activity,
@@ -600,6 +604,11 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
           ).toISOString(),
         );
         formData.append("timezone", timezone);
+        // Always sent, in billing order, so taking everyone off clears the line-up.
+        formData.append(
+          "performerIds",
+          JSON.stringify(lineup.map((performer) => performer.id)),
+        );
         formData.append("description", formValues.description);
         if (saleMethod) formData.append("saleMethod", saleMethod);
         if (saleMethod === "external_link" && ticketUrl.trim()) {
@@ -1450,6 +1459,10 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                   </div>
                 ))}
               </div>
+            </div>
+
+            <div className="rounded-[1.3rem] bg-secondary-50 p-4">
+              <LineupPicker value={lineup} onChange={setLineup} />
             </div>
 
             <div className="space-y-4">

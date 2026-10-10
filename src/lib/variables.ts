@@ -133,6 +133,12 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Categories",
     href: "/app/categories",
   },
+  // Vendors add performers to line-ups; admins look after all of them.
+  PERFORMERS: {
+    shouldShowIn: [ROUTE_TYPE.APP_ROUTE],
+    label: "Performers",
+    href: "/app/performers",
+  },
   CREATE_VENUE: {
     shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.ADMIN_ONLY],
     label: "Create Venue",
@@ -199,6 +205,16 @@ export const ROUTES: { [key: string]: RouteProps } = {
     shouldShowIn: [],
     label: "Tickets",
     href: "/profile/tickets",
+  },
+  PROFILE_FOLLOWING: {
+    shouldShowIn: [],
+    label: "Following",
+    href: "/profile/following",
+  },
+  PROFILE_SETTINGS: {
+    shouldShowIn: [],
+    label: "Settings",
+    href: "/profile/settings",
   },
   PROFILE_HELP: {
     shouldShowIn: [],

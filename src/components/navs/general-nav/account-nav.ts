@@ -4,6 +4,7 @@ import {
   CalendarPlus,
   ChartNoAxesCombined,
   CircleHelp,
+  Heart,
   LayoutDashboard,
   LucideIcon,
   MessagesSquare,
@@ -45,6 +46,16 @@ const chats: TAccountLink = {
   href: ROUTES.MESSAGES.href,
   icon: MessagesSquare,
 };
+const following: TAccountLink = {
+  label: ROUTES.PROFILE_FOLLOWING.label,
+  href: ROUTES.PROFILE_FOLLOWING.href,
+  icon: Heart,
+};
+const dashboardSettings: TAccountLink = {
+  label: ROUTES.SETTINGS.label,
+  href: ROUTES.SETTINGS.href,
+  icon: Settings,
+};
 const help: TAccountLink = {
   label: "Help",
   href: ROUTES.PROFILE_HELP.href,
@@ -76,6 +87,12 @@ const ATTENDEE_NAV: TAccountNav = {
       myTickets,
       myOrders,
       chats,
+      following,
+      {
+        label: ROUTES.PROFILE_SETTINGS.label,
+        href: ROUTES.PROFILE_SETTINGS.href,
+        icon: Settings,
+      },
     ],
     [help],
   ],
@@ -103,16 +120,7 @@ const VENDOR_NAV: TAccountNav = {
       },
       { label: ROUTES.WALLET.label, href: ROUTES.WALLET.href, icon: Wallet },
     ],
-    [
-      myTickets,
-      myOrders,
-      dashboardProfile,
-      {
-        label: ROUTES.SETTINGS.label,
-        href: ROUTES.SETTINGS.href,
-        icon: Settings,
-      },
-    ],
+    [myTickets, myOrders, following, dashboardProfile, dashboardSettings],
     [help],
   ],
 };
@@ -134,7 +142,7 @@ const ADMIN_NAV: TAccountNav = {
         icon: ShieldCheck,
       },
     ],
-    [myTickets, myOrders, dashboardProfile],
+    [myTickets, myOrders, following, dashboardProfile, dashboardSettings],
     [help],
   ],
 };

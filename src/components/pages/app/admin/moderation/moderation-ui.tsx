@@ -1,5 +1,6 @@
 "use client";
 
+import ScrollRow from "@/components/ui/scroll-row";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,25 +35,27 @@ export const FilterTabs = <T extends string | undefined>({
   value: T;
   onChange: (value: T) => void;
 }) => (
-  <div className="inline-flex flex-wrap rounded-lg border border-border bg-card p-1">
-    {tabs.map((tab) => (
-      <Button
-        key={tab.label}
-        type="button"
-        variant="ghost"
-        size="sm"
-        aria-pressed={value === tab.value}
-        onClick={() => onChange(tab.value)}
-        className={cn(
-          "rounded-md px-4",
-          value === tab.value &&
-            "bg-secondary-800 text-white hover:bg-secondary-800 hover:text-white",
-        )}
-      >
-        {tab.label}
-      </Button>
-    ))}
-  </div>
+  <ScrollRow>
+    <div className="inline-flex rounded-lg border border-border bg-card p-1">
+      {tabs.map((tab) => (
+        <Button
+          key={tab.label}
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-pressed={value === tab.value}
+          onClick={() => onChange(tab.value)}
+          className={cn(
+            "rounded-md px-4",
+            value === tab.value &&
+              "bg-secondary-800 text-white hover:bg-secondary-800 hover:text-white",
+          )}
+        >
+          {tab.label}
+        </Button>
+      ))}
+    </div>
+  </ScrollRow>
 );
 
 export const ListSkeleton = () => (

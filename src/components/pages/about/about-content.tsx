@@ -40,7 +40,7 @@ const features = [
   {
     title: "Discover Events:",
     description:
-      "Explore curated experiences based on your interests, location, or trending vibes.",
+      "Explore curated experiences based on your interests, location, or what's trending.",
   },
   {
     title: "Create Events:",

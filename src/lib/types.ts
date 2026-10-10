@@ -35,7 +35,8 @@ export type TAttachmentPurpose =
   | "ID_DOCUMENT"
   | "SUPPORTING_DOCUMENT"
   | "CHAT_ASSET"
-  | "AVATAR";
+  | "AVATAR"
+  | "PERFORMER_IMAGE";
 
 /**
  * A stored file. `id` is null for anything uploaded before attachments existed,
@@ -213,6 +214,11 @@ export interface IEventDetailsType {
   eventStateCode?: string;
   eventCity?: string;
   category?: { id: string; name: string };
+  /** The organiser's user id: what their planner page and follows go by. */
+  organizerId?: string;
+  /** Who's on the bill, headliner first. */
+  performers?: IPerformerSummary[];
+  isFavorite?: boolean;
   customCategoryName?: string;
   country?: string;
   countryCode?: string;
@@ -304,7 +310,9 @@ export interface IUserTicketType {
 export type TicketTransferResponseType = {
   id: string;
   status: string;
-  toEmail: string;
+  /** Only when they have no account; account holders show by name and @username. */
+  toEmail: string | null;
+  recipientUsername?: string | null;
   createdAt: Date;
   claimedAt: Date | null;
   recipientName: string | null;
@@ -463,4 +471,67 @@ export interface IVendorVerification {
   stepStatuses?: Partial<Record<TVerificationStepKey, TVerificationStatus>>;
   createdAt: string;
   updatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Performers, planners, follows
+// ---------------------------------------------------------------------------
+
+export type TPerformerType =
+  | "ARTIST"
+  | "DJ"
+  | "BAND"
+  | "SPEAKER"
+  | "COMEDIAN"
+  | "HOST"
+  | "ATHLETE"
+  | "CHEF"
+  | "OTHER";
+
+export interface IPerformerSummary {
+  id: string;
+  name: string;
+  type: TPerformerType;
+  image?: string | null;
+}
+
+export interface IPerformer extends IPerformerSummary {
+  bio?: string | null;
+  countryCode?: string | null;
+  country?: string | null;
+  instagram?: string | null;
+  twitter?: string | null;
+  website?: string | null;
+  upcomingEventsCount: number;
+  /** The viewer added it, so they can edit or remove it (admins always can). */
+  isOwner?: boolean;
+  /** Position on a chart, when it came from one. */
+  rank?: number;
+}
+
+export interface IPlanner {
+  /** Their user id: the organizerId on events, and what they're followed by. */
+  id: string;
+  name: string;
+  image?: string | null;
+  upcomingEvents: number;
+}
+
+export interface IEventLocation {
+  countryCode: string;
+  country: string;
+  count: number;
+  cities: { name: string; count: number }[];
+}
+
+export type TFollowTargetType = "PERFORMER" | "VENUE" | "PLANNER";
+
+export interface IFollowedItem {
+  targetType: TFollowTargetType;
+  targetId: string;
+  name: string;
+  image: string | null;
+  subtitle: string | null;
+  upcomingEvents: number;
+  followedAt: string;
 }

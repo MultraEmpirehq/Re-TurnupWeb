@@ -132,7 +132,7 @@ const RegisterTokenForm = () => {
         <Button
           disabled={!isValid}
           loading={isSubmitting}
-          className="h-12 w-full rounded-full bg-secondary-950 text-base text-white hover:bg-secondary-900"
+          className="h-12 w-full rounded-full bg-secondary text-base text-white hover:bg-secondary-600"
           type="submit"
         >
           Continue

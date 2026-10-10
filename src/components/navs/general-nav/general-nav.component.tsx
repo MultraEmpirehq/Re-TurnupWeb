@@ -54,11 +54,8 @@ const GeneralNavComponent = () => {
   // On pages with a dark hero the header floats over it: clear at the top, then
   // frosted glass once the page moves. Everywhere else it is the usual brand bar.
   // Pages that open on a dark hero, which the header floats over.
-  const isHome = [
-    ROUTES.HOME.href,
-    ROUTES.EXPLORE.href,
-    ROUTES.PRICING.href,
-  ].includes(pathname);
+  // (Explore is light now, like the app's, so it takes the usual brand bar.)
+  const isHome = [ROUTES.HOME.href, ROUTES.PRICING.href].includes(pathname);
   const [isScrolled, setIsScrolled] = useState(false);
   useEffect(() => {
     const update = () => setIsScrolled(window.scrollY > 24);

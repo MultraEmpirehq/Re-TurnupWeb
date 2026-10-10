@@ -26,7 +26,7 @@ const VibeLinks = () => {
       <SectionContainer className="space-y-10">
         <Reveal className="max-w-xl space-y-3">
           <p className="text-sm font-semibold tracking-wider text-primary uppercase">
-            Pick a vibe
+            Browse by category
           </p>
           <h2 className="text-3xl font-bold tracking-tight text-secondary-950 md:text-5xl">
             What are you in the mood for?
@@ -76,7 +76,7 @@ const VibeLinks = () => {
             );
           })}
 
-          {/* Always last: everything, for when no one vibe fits. */}
+          {/* Always last: everything, for when no one category fits. */}
           <Reveal delay={tiles.length * 60}>
             <Link
               href={ROUTES.EXPLORE.href}

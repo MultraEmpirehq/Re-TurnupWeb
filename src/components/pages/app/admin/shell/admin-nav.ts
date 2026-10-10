@@ -18,6 +18,7 @@ import {
   LucideIcon,
   Mail,
   MapPin,
+  Mic,
   Megaphone,
   MessageSquareText,
   Newspaper,
@@ -139,6 +140,12 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         href: ROUTES.CATEGORIES.href,
         icon: Tags,
         alsoActiveOn: [ROUTES.CREATE_CATEGORY.href],
+        permission: "CATALOGUE_MANAGE",
+      },
+      {
+        label: ROUTES.PERFORMERS.label,
+        href: ROUTES.PERFORMERS.href,
+        icon: Mic,
         permission: "CATALOGUE_MANAGE",
       },
       {

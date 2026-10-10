@@ -8,16 +8,20 @@ import { IVenueDetailsType } from "@/lib/types";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Building2 } from "lucide-react";
 import React, { memo, useMemo } from "react";
+import useExploreFilters from "./use-explore-filters";
 
-const getVenues = async (page = 1) => {
+const getVenues = async (page = 1, q = "") => {
   const urlSearchParams = new URLSearchParams();
   urlSearchParams.set("page", page?.toString());
+  if (q) urlSearchParams.set("q", q);
   const url = `/venues?${urlSearchParams.toString()}`;
   const { data } = await getData<IVenueDetailsType[]>(url);
   return data;
 };
 
+/** The Venues tab: every venue, searched by the box above (as in the app, everywhere). */
 const VenueContent = () => {
+  const { q } = useExploreFilters();
   const {
     data,
     hasNextPage,
@@ -26,10 +30,10 @@ const VenueContent = () => {
     error,
     refetch,
   } = useInfiniteQuery({
-    queryFn: ({ pageParam }) => getVenues(pageParam),
+    queryFn: ({ pageParam }) => getVenues(pageParam, q),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage?.pagination?.nextPage,
-    queryKey: ["venues"],
+    queryKey: ["explore-venues", q],
   });
   const isLoading = useMemo(() => !data, [data]);
   const venues = useMemo(() => {

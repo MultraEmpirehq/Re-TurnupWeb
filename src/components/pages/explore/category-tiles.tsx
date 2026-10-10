@@ -84,7 +84,8 @@ const CategoryTiles = () => {
               isActive
                 ? "-translate-y-1 shadow-[0_18px_30px_-14px_rgba(2,6,23,0.55)] ring-4 ring-secondary-950/90 ring-offset-2 ring-offset-[#f7f9fc]"
                 : "hover:-translate-y-1 hover:shadow-[0_18px_30px_-16px_rgba(2,6,23,0.5)]",
-              isDimmed && "opacity-55 saturate-50 hover:opacity-90 hover:saturate-100",
+              isDimmed &&
+                "opacity-55 saturate-50 hover:opacity-90 hover:saturate-100",
             )}
           >
             <Icon

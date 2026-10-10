@@ -20,6 +20,11 @@ import React, { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useDebouncedCallback } from "use-debounce";
+import {
+  adultAgeMessage,
+  earliestBirthDate,
+  latestAdultBirthDate,
+} from "@/lib/age";
 
 const CountrySelect = nextDynamic(
   () => import("@/components/ui/country-select"),
@@ -33,7 +38,7 @@ interface IFormValues {
   firstName: string;
   lastName: string;
   username: string;
-  dateOfBirth: Date;
+  dateOfBirth?: Date;
   gender: EUserGenders;
   country: string;
   postalCode: string;
@@ -55,10 +60,16 @@ const schema = Joi.object({
     "string.empty": "Username is required",
     "any.required": "Username is required",
   }),
-  dateOfBirth: Joi.date().required().messages({
-    "date.empty": "Date of birth is required",
-    "any.required": "Date of birth is required",
-  }),
+  dateOfBirth: Joi.date()
+    .required()
+    .custom((value: Date, helpers) =>
+      value > latestAdultBirthDate() ? helpers.error("date.adult") : value,
+    )
+    .messages({
+      "date.base": "Date of birth is required",
+      "any.required": "Date of birth is required",
+      "date.adult": adultAgeMessage,
+    }),
   gender: Joi.string().required().messages({
     "string.empty": "Gender is required",
     "any.required": "Gender is required",
@@ -81,7 +92,8 @@ const defaultValues: IFormValues = {
   firstName: "",
   lastName: "",
   username: "",
-  dateOfBirth: new Date(),
+  // Left empty rather than today, which would never be old enough.
+  dateOfBirth: undefined,
   gender: EUserGenders.MALE,
   country: "",
   postalCode: "",
@@ -275,6 +287,9 @@ const CompleteUserForm = () => {
                 error={fieldState?.error?.message}
                 className="w-full"
                 inputClassName="w-full h-12 rounded-xl bg-[#f7f9fc]"
+                minDate={earliestBirthDate()}
+                maxDate={latestAdultBirthDate()}
+                helperText="You must be 18 or older."
               />
             )}
           />
@@ -322,7 +337,7 @@ const CompleteUserForm = () => {
           />
         </div>
         <Button
-          className="mt-2 h-12 w-full rounded-full bg-secondary-950 text-base text-white hover:bg-secondary-900"
+          className="mt-2 h-12 w-full rounded-full bg-secondary text-base text-white hover:bg-secondary-600"
           type="submit"
           disabled={!isValid}
           loading={isSubmitting}

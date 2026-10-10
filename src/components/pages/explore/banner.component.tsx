@@ -5,17 +5,16 @@ import { Search, X } from "lucide-react";
 import React, { memo, useEffect, useRef, useState } from "react";
 import Spotlight from "./spotlight";
 import useExploreFilters from "./use-explore-filters";
-
-// Fixed positions so the server and the browser draw the same sky.
-const STARS = Array.from({ length: 22 }, (_, index) => ({
-  top: `${(index * 41 + 7) % 100}%`,
-  left: `${(index * 67 + 11) % 100}%`,
-  size: index % 4 === 0 ? 3 : 2,
-  delay: `${(index % 6) * 0.7}s`,
-}));
+import ExplorePlacePicker from "./explore-place-picker";
 
 const ExploreBannerComponent = () => {
-  const { q, setFilters } = useExploreFilters();
+  const { q, tab, setFilters } = useExploreFilters();
+  const placeholder = {
+    events: "Search events, places, venues",
+    venues: "Search venues by name",
+    performers: "Search performers by name",
+    places: "Search countries or cities",
+  }[tab];
   const [search, setSearch] = useState(q);
   const lastSent = useRef(q);
 
@@ -39,43 +38,29 @@ const ExploreBannerComponent = () => {
   }, [q]);
 
   return (
-    <section className="relative isolate overflow-hidden bg-secondary-950">
+    // The app's light Explore: the same page colour and brand wash as sign-in.
+    <section className="relative isolate overflow-hidden bg-[#fbf9ff]">
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        {STARS.map((star, index) => (
-          <span
-            key={index}
-            className="animate-landing-twinkle absolute rounded-full bg-white"
-            style={{
-              top: star.top,
-              left: star.left,
-              width: star.size,
-              height: star.size,
-              animationDelay: star.delay,
-            }}
-          />
-        ))}
-        <div className="absolute -top-48 left-1/4 size-[32rem] rounded-full bg-secondary/25 blur-[120px]" />
-        <div className="absolute -right-32 -bottom-56 size-[34rem] rounded-full bg-primary/25 blur-[130px]" />
-        <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/20 to-transparent" />
+        <div className="absolute -top-56 -left-40 size-[36rem] rounded-full bg-secondary/20 blur-[140px]" />
+        <div className="absolute -right-32 -bottom-56 size-[34rem] rounded-full bg-primary/15 blur-[140px]" />
       </div>
 
       {/* Extra room at the bottom: the date strip rides up over the banner. */}
-      <SectionContainer className="grid items-center gap-12 pt-32 pb-32 md:pt-40 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
+      <SectionContainer className="grid items-center gap-12 pt-12 pb-32 md:pt-16 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
         <div className="flex flex-col items-start gap-7">
           <div className="space-y-4">
-            <p className="text-sm font-semibold tracking-wider text-primary-300 uppercase">
+            <p className="text-sm font-semibold tracking-wider text-primary uppercase">
               Explore
             </p>
-            <h1 className="text-4xl leading-[1.05] font-bold tracking-tight text-white sm:text-6xl">
-              Your city,
+            <h1 className="text-4xl leading-[1.05] font-bold tracking-tight text-secondary-950 sm:text-6xl">
+              Find what&apos;s on
               <br />
-              <span className="bg-linear-to-r from-secondary-300 via-primary-300 to-primary bg-clip-text text-transparent">
-                after dark.
-              </span>
+              {/* Where Explore looks; changing it here changes every section. */}
+              <ExplorePlacePicker className="bg-linear-to-r from-secondary via-primary-400 to-primary bg-clip-text text-transparent no-underline hover:no-underline [&_svg]:text-primary" />
             </h1>
-            <p className="max-w-md text-white/60">
-              Concerts, owambes, comedy, food, art and more. Pick a day, pick a
-              vibe, grab a ticket.
+            <p className="max-w-md text-secondary-950/60">
+              Concerts, conferences, sports, food, comedy, art and more. Pick a
+              day, find your thing, grab a ticket.
             </p>
           </div>
 
@@ -86,29 +71,32 @@ const ExploreBannerComponent = () => {
               lastSent.current = search.trim();
               setFilters({ q: search.trim() || undefined });
             }}
-            className="group flex w-full max-w-[560px] items-center gap-3 rounded-full bg-white/[0.08] py-2 pr-2 pl-5 ring-1 ring-white/15 backdrop-blur-xl transition-all duration-300 focus-within:bg-white/[0.12] focus-within:ring-white/35"
+            className="group flex w-full max-w-[560px] items-center gap-3 rounded-full bg-white py-2 pr-2 pl-5 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.35)] ring-1 ring-black/5 transition-all duration-300 focus-within:ring-secondary/40"
           >
-            <Search className="size-5 shrink-0 text-white/60" aria-hidden />
+            <Search
+              className="size-5 shrink-0 text-secondary-950/45"
+              aria-hidden
+            />
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search events by name"
-              aria-label="Search events"
-              className="h-10 min-w-0 flex-1 bg-transparent text-base text-white outline-none placeholder:text-white/45"
+              placeholder={placeholder}
+              aria-label={placeholder}
+              className="h-10 min-w-0 flex-1 bg-transparent text-base text-secondary-950 outline-none placeholder:text-secondary-950/40"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch("")}
                 aria-label="Clear search"
-                className="flex size-8 shrink-0 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                className="flex size-8 shrink-0 items-center justify-center rounded-full text-secondary-950/50 transition-colors hover:bg-secondary-950/5 hover:text-secondary-950"
               >
                 <X className="size-4" />
               </button>
             )}
             <button
               type="submit"
-              className="h-10 shrink-0 rounded-full bg-white px-5 text-sm font-semibold text-secondary-950 transition-colors hover:bg-white/90"
+              className="h-10 shrink-0 rounded-full bg-secondary px-5 text-sm font-semibold text-white transition-colors hover:bg-secondary-600"
             >
               Search
             </button>

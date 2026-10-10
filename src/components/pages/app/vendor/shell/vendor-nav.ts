@@ -1,5 +1,6 @@
 import { ROUTES } from "@/lib/variables";
 import {
+  Mic,
   CalendarDays,
   CalendarPlus,
   ChartNoAxesCombined,
@@ -30,6 +31,12 @@ export const VENDOR_NAV_ITEMS: TVendorNavItem[] = [
     label: "Listings",
     href: ROUTES.EVENTS.href,
     icon: CalendarDays,
+    requiresVerification: true,
+  },
+  {
+    label: ROUTES.PERFORMERS.label,
+    href: ROUTES.PERFORMERS.href,
+    icon: Mic,
     requiresVerification: true,
   },
   {

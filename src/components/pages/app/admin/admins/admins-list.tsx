@@ -46,9 +46,7 @@ const errorText = (error: unknown, fallback: string) =>
   constructErrorMessage(error as TApiErrorResponseType, fallback);
 
 type TEditor =
-  | { mode: "add" }
-  | { mode: "edit"; admin: IAdminSummary }
-  | undefined;
+  { mode: "add" } | { mode: "edit"; admin: IAdminSummary } | undefined;
 
 type TConfirm =
   | { kind: "suspend" | "reactivate" | "remove"; admin: IAdminSummary }
@@ -119,7 +117,9 @@ const PermissionPicker: React.FC<{
                 id={id}
                 checked={selected.has(permission)}
                 disabled={isLocked || disabled}
-                onCheckedChange={(checked) => toggle(permission, checked === true)}
+                onCheckedChange={(checked) =>
+                  toggle(permission, checked === true)
+                }
                 className="mt-0.5"
               />
               <Label htmlFor={id} className="flex flex-col items-start gap-0.5">
@@ -152,7 +152,9 @@ const PermissionChips: React.FC<{ permissions: TAdminPermission[] }> = ({
     );
   }
   if (!permissions.length) {
-    return <span className="text-xs text-muted-foreground">No permissions</span>;
+    return (
+      <span className="text-xs text-muted-foreground">No permissions</span>
+    );
   }
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -266,23 +268,25 @@ const AdminsList = () => {
     !unchanged &&
     (editor?.mode !== "add" || /\S+@\S+\.\S+/.test(email.trim()));
 
-  const confirmCopy = confirm && {
-    suspend: {
-      title: `Suspend ${confirm.admin.email}?`,
-      body: "They are signed out on every device straight away and can't sign in until reactivated. Their permissions are kept.",
-      action: "Suspend",
-    },
-    reactivate: {
-      title: `Reactivate ${confirm.admin.email}?`,
-      body: "They can sign in again, with the permissions they had before.",
-      action: "Reactivate",
-    },
-    remove: {
-      title: `Remove ${confirm.admin.email} as an admin?`,
-      body: "Their permissions are taken away. The account stays, as a vendor if they ever applied to sell, otherwise as a regular user.",
-      action: "Remove admin",
-    },
-  }[confirm.kind];
+  const confirmCopy =
+    confirm &&
+    {
+      suspend: {
+        title: `Suspend ${confirm.admin.email}?`,
+        body: "They are signed out on every device straight away and can't sign in until reactivated. Their permissions are kept.",
+        action: "Suspend",
+      },
+      reactivate: {
+        title: `Reactivate ${confirm.admin.email}?`,
+        body: "They can sign in again, with the permissions they had before.",
+        action: "Reactivate",
+      },
+      remove: {
+        title: `Remove ${confirm.admin.email} as an admin?`,
+        body: "Their permissions are taken away. The account stays, as a vendor if they ever applied to sell, otherwise as a regular user.",
+        action: "Remove admin",
+      },
+    }[confirm.kind];
 
   return (
     <div className="space-y-6">
@@ -293,8 +297,8 @@ const AdminsList = () => {
           </h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
             Each admin can only use what their permissions allow. You can grant
-            and take away only the permissions you hold yourself, and you can&apos;t
-            change your own.
+            and take away only the permissions you hold yourself, and you
+            can&apos;t change your own.
           </p>
         </div>
         <Button

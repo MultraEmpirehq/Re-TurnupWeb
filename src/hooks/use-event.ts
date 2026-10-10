@@ -13,6 +13,15 @@ interface IEventParams {
   status?: "UPCOMING" | "PAST";
   priceType?: "FREE" | "EXTERNAL_LINK" | "PAID";
   isTrending?: boolean;
+  /** The signed-in person's saved events. */
+  isFavorite?: boolean;
+  /** One performer's events. */
+  performerId?: string;
+  /** One organiser's published events: a planner's page. */
+  organizerId?: string;
+  /** ISO country code, e.g. "NG". */
+  countryCode?: string;
+  city?: string;
   /** Admins only: include suspended events. */
   includeSuspended?: boolean;
 }
@@ -91,6 +100,11 @@ const getEvents = async (
   if (params.status) urlParams.set("status", params.status);
   if (params.priceType) urlParams.set("priceType", params.priceType);
   if (params.includeSuspended) urlParams.set("includeSuspended", "true");
+  if (params.isFavorite) urlParams.set("isFavorite", "true");
+  if (params.performerId) urlParams.set("performerId", params.performerId);
+  if (params.organizerId) urlParams.set("organizerId", params.organizerId);
+  if (params.countryCode) urlParams.set("countryCode", params.countryCode);
+  if (params.city) urlParams.set("city", params.city);
   if (params.isTrending !== undefined) {
     urlParams.set("isTrending", params.isTrending.toString());
   }
@@ -99,11 +113,8 @@ const getEvents = async (
 
   const response = await getData<any>(url);
 
-  console.log("RAW EVENTS HOOK RESPONSE:", response);
-
   const normalized = normalizeEventsResponse(response);
 
-  console.log("NORMALIZED EVENTS HOOK RESPONSE:", normalized);
 
   return normalized;
 };

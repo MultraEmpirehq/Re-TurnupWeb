@@ -11,7 +11,7 @@ const STEPS = [
   {
     icon: Compass,
     title: "Discover",
-    body: "Browse what's on near you by vibe, date or venue, and save the ones you like.",
+    body: "Browse what's on near you by category, date or venue, and save the ones you like.",
   },
   {
     icon: Ticket,
@@ -78,7 +78,7 @@ const Screen: React.FC<{ step: number }> = ({ step }) => (
       )}
     >
       <div className="h-24 rounded-2xl bg-linear-to-br from-primary-200 to-primary-500" />
-      {["Regular", "VIP", "Table for 4"].map((tier, index) => (
+      {["Regular", "VIP", "Group of 4"].map((tier, index) => (
         <div
           key={tier}
           className={cn(

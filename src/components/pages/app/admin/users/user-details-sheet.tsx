@@ -18,6 +18,7 @@ import { constructErrorMessage } from "@/api/functions";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { useSetUserSuspension } from "@/hooks/use-admin-moderation";
 import { NoteDialog } from "../moderation/moderation-ui";
+import UserTransfers from "./user-transfers";
 import { toast } from "sonner";
 import StatusPill from "../status-pill";
 
@@ -172,6 +173,8 @@ const UserDetailsSheet: React.FC<{
               {data.role === EUserRoles.VENDOR && !!data.vendorVerification && (
                 <VerificationBlock verification={data.vendorVerification} />
               )}
+
+              <UserTransfers userId={data.id} />
 
               {canSuspend && (
                 <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-4">
