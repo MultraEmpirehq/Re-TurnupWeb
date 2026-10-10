@@ -10,11 +10,6 @@ const api = axios.create({
   baseURL: apiBaseUrl,
   withCredentials: true,
   timeout: 30000,
-  headers: {
-    // A string: axios drops headers set to `false`, and the API treats a
-    // missing header as the app, which skips the sign-up and login emails.
-    "x-mobile": "false",
-  },
 });
 
 api.interceptors.response.use(
@@ -50,6 +45,14 @@ export const setHeaderAuthorization: (token?: string) => void = (token) => {
     api.defaults.headers.common.Authorization = undefined;
   }
 };
+
+/**
+ * Tells sign-up this is the website, so it emails a link (the app gets a code
+ * instead, and a missing header counts as the app). Sent only where it matters:
+ * a custom header on every call would make the browser preflight each one.
+ * A string, since axios drops headers set to `false`.
+ */
+export const WEB_CLIENT_HEADERS = { "x-mobile": "false" } as const;
 
 export const postData = <T, D>(
   url: string,

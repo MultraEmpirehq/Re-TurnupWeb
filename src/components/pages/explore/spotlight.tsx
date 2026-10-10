@@ -27,6 +27,12 @@ const Spotlight = () => {
     [data],
   );
   const [index, setIndex] = useState(0);
+  // Stories load as they come up (the one showing and the next), not all at
+  // once, so the first one isn't sharing a phone's bandwidth with the rest.
+  const [reached, setReached] = useState(2);
+  useEffect(() => {
+    setReached((current) => Math.max(current, index + 2));
+  }, [index]);
   const [isPaused, setIsPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const barRef = useRef<HTMLSpanElement>(null);
@@ -90,13 +96,18 @@ const Spotlight = () => {
               : "scale-105 opacity-0",
           )}
         >
-          <CustomImageComponent
-            fill
-            src={item.image}
-            alt={item.name}
-            className="size-full rounded-none"
-            imageClassName="object-cover"
-          />
+          {itemIndex < reached && (
+            <CustomImageComponent
+              fill
+              src={item.image}
+              alt={item.name}
+              sizes="(min-width: 1024px) 380px, 100vw"
+              loading={itemIndex === 0 ? "eager" : "lazy"}
+              fetchPriority={itemIndex === 0 ? "high" : "low"}
+              className="size-full rounded-none"
+              imageClassName="object-cover"
+            />
+          )}
         </div>
       ))}
       <div className="absolute inset-0 bg-linear-to-t from-secondary-950 via-secondary-950/30 to-secondary-950/40" />

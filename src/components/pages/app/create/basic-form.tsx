@@ -1,5 +1,5 @@
 "use client";
-import React, { memo, useCallback, useMemo } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Joi from "joi";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,8 @@ import TimezoneSelect from "@/components/ui/timezone-select";
 import TextareaField from "@/components/ui/textarea-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrashIcon, UploadIcon } from "lucide-react";
-import { City, Country, State } from "country-state-city";
+import { Country, State } from "country-state-city";
+import type { ICity } from "country-state-city";
 
 const ComboboxSelect = dynamic(
   () => import("@/components/ui/combobox-select"),
@@ -240,15 +241,33 @@ const BasicForm: React.FC<{
     }));
   }, [eventCountryCode]);
 
-  const cityOptions = useMemo(() => {
-    if (!eventCountryCode || !eventStateCode) return [];
-    return City.getCitiesOfState(eventCountryCode, eventStateCode).map(
-      (city) => ({
+  // Every city in the world is 8 MB, so it's fetched once a state is picked
+  // rather than sent with the page.
+  const [stateCities, setStateCities] = useState<ICity[]>([]);
+  useEffect(() => {
+    if (!eventCountryCode || !eventStateCode) {
+      setStateCities([]);
+      return;
+    }
+    let cancelled = false;
+    import("country-state-city/lib/city").then(({ default: City }) => {
+      if (!cancelled) {
+        setStateCities(City.getCitiesOfState(eventCountryCode, eventStateCode));
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [eventCountryCode, eventStateCode]);
+
+  const cityOptions = useMemo(
+    () =>
+      stateCities.map((city) => ({
         label: city.name,
         value: city.name,
-      }),
-    );
-  }, [eventCountryCode, eventStateCode]);
+      })),
+    [stateCities],
+  );
 
   return (
     <form className="space-y-6 md:space-y-10">
