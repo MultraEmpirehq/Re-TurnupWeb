@@ -11,7 +11,9 @@ const api = axios.create({
   withCredentials: true,
   timeout: 30000,
   headers: {
-    "x-mobile": false,
+    // A string: axios drops headers set to `false`, and the API treats a
+    // missing header as the app, which skips the sign-up and login emails.
+    "x-mobile": "false",
   },
 });
 
