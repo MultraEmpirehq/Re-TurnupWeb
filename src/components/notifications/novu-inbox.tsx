@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
 import { BellIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useInboxToken } from "@/hooks/use-inbox-token";
@@ -11,7 +10,7 @@ import Link from "next/link";
 
 // Novu's inbox (with its live socket) is ~145 KB, so it's only fetched once the
 // api says the inbox is switched on; until then every dashboard page skips it.
-const Inbox = dynamic(() => import("@novu/react").then((mod) => mod.Inbox), {
+const NovuInboxWidget = dynamic(() => import("./novu-inbox-widget"), {
   ssr: false,
 });
 
@@ -25,7 +24,6 @@ const Inbox = dynamic(() => import("@novu/react").then((mod) => mod.Inbox), {
  * unread badge so new notifications are visible without opening anything.
  */
 export const NovuInbox = () => {
-  const router = useRouter();
   const { data: token, isPending } = useInboxToken();
   const unreadCount = useUnreadNotificationCount();
 
@@ -60,19 +58,12 @@ export const NovuInbox = () => {
   }
 
   return (
-    <Inbox
+    <NovuInboxWidget
       applicationIdentifier={token.applicationIdentifier}
       subscriberId={token.subscriberId}
       subscriberHash={token.subscriberHash}
-      {...(token.apiUrl ? { backendUrl: token.apiUrl } : {})}
-      {...(token.socketUrl ? { socketUrl: token.socketUrl } : {})}
-      routerPush={(path: string) => router.push(path)}
-      appearance={{
-        variables: {
-          colorPrimary: "#6C63FF",
-          colorForeground: "#1f2937",
-        },
-      }}
+      backendUrl={token.apiUrl ?? undefined}
+      socketUrl={token.socketUrl ?? undefined}
     />
   );
 };
