@@ -10,8 +10,6 @@ import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import React, { memo, useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
-import html2canvas from "html2canvas-pro";
-import { jsPDF } from "jspdf";
 
 interface TicketCardProps {
   userTicket: IUserTicketType;
@@ -100,7 +98,13 @@ const TicketCard: React.FC<TicketCardProps> = ({
     if (!ticketRef.current) return;
     setIsDownloading(true);
     try {
-      await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 100)));
+      // Fetched on tap: together they're ~130 KB that every tickets page
+      // would otherwise download just in case.
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import("html2canvas-pro"),
+        import("jspdf"),
+        new Promise((r) => requestAnimationFrame(() => setTimeout(r, 100))),
+      ]);
       const canvas = await html2canvas(ticketRef.current, {
         scale: 2,
         useCORS: true,

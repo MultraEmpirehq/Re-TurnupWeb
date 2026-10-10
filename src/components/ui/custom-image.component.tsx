@@ -2,17 +2,8 @@
 import { cn } from "@/lib/utils";
 import { cva } from "class-variance-authority";
 import Image from "next/image";
+import { ImageOff } from "lucide-react";
 import React, { memo, useState } from "react";
-import dynamic from "next/dynamic";
-// import { Player } from "@lottiefiles/react-lottie-player";
-import { BrokenLinkAnimation, LoadingImageAnimation } from "@/assets/lotties";
-
-const Player = dynamic(
-  () => import("@lottiefiles/react-lottie-player").then((mod) => mod.Player),
-  {
-    ssr: false,
-  },
-);
 
 const imageVariantClassName = cva("relative rounded-lg overflow-hidden", {
   variants: {
@@ -85,24 +76,20 @@ const CustomImageComponent = React.forwardRef<
             {...props}
           />
         )}
+        {/* Plain CSS rather than an animation player per image: a page of cards
+            would otherwise run dozens of them on the phone's main thread. */}
         {!isLoaded && !hasError && src && (
-          <div className="size-full bg-gray-100 dark:bg-white/5 flex flex-col items-center justify-center absolute -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2">
-            <Player
-              autoplay
-              loop
-              src={LoadingImageAnimation}
-              className=" w-[20%] min-w-[50px]"
-            ></Player>
-          </div>
+          <div
+            aria-hidden
+            className="absolute inset-0 animate-pulse bg-gray-100 dark:bg-white/5"
+          />
         )}
         {(hasError || !src) && (
-          <div className="size-full bg-gray-100 dark:bg-white/5 flex flex-col items-center justify-center absolute -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2">
-            <Player
-              autoplay
-              loop
-              src={BrokenLinkAnimation}
-              className=" w-[20%] min-w-[50px]"
-            ></Player>
+          <div
+            aria-hidden
+            className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-300 dark:bg-white/5 dark:text-white/20"
+          >
+            <ImageOff className="size-[20%] min-h-5 min-w-5 max-h-10 max-w-10" />
           </div>
         )}
       </div>

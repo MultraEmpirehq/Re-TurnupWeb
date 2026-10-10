@@ -1,6 +1,6 @@
 "use client";
 
-import { Inbox } from "@novu/react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { BellIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,12 @@ import { useInboxToken } from "@/hooks/use-inbox-token";
 import { useUnreadNotificationCount } from "@/hooks/use-unread-notifications";
 import { ROUTES } from "@/lib/variables";
 import Link from "next/link";
+
+// Novu's inbox (with its live socket) is ~145 KB, so it's only fetched once the
+// api says the inbox is switched on; until then every dashboard page skips it.
+const Inbox = dynamic(() => import("@novu/react").then((mod) => mod.Inbox), {
+  ssr: false,
+});
 
 /**
  * The bell in the dashboard nav.

@@ -1,193 +1,116 @@
-import { deleteData, getData, postData } from "@/api";
+import { getData, postData } from "@/api";
 import { PriceDetailsType } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export interface VendorWalletBalance {
-  availableBalance: PriceDetailsType;
-  pendingBalance: PriceDetailsType;
-  reservedBalance: PriceDetailsType;
-  currency?: string;
+/**
+ * An organiser's earnings. Turnupz doesn't hold their money: ticket payments
+ * split at checkout and the payment platform pays their share to their bank,
+ * so there's nothing to withdraw, only a report of what came in.
+ */
+
+export interface VendorPayoutAccount {
+  provider: "FLUTTERWAVE" | "PAYSTACK" | "STRIPE";
+  status: "ACTIVE" | "DISABLED";
+  livemode: boolean;
+  country: string;
+  currency: string;
+  bankName: string | null;
+  accountLast4: string | null;
 }
 
-export interface VendorWalletCard {
-  id: string;
-  brand: string;
-  last4: string;
-  expiry?: string;
-  holder?: string;
-  type?: "virtual" | "debit" | "credit" | string;
+export interface VendorCurrencyEarnings {
+  currency: string;
+  ticketsSold: number;
+  sales: PriceDetailsType;
+  fees: PriceDetailsType;
+  earnings: PriceDetailsType;
+  /** Paid to the organiser's bank by the payment platform. */
+  paidDirect: PriceDetailsType;
+  /** Collected by Turnupz before direct payouts, still owed to them. */
+  owed: PriceDetailsType;
+  refunded: PriceDetailsType;
 }
 
-export interface VendorWalletPayout {
+export interface VendorEarnings {
+  payoutAccount: VendorPayoutAccount | null;
+  currencies: VendorCurrencyEarnings[];
+}
+
+export interface VendorSale {
   id: string;
   date: string;
-  method: string;
+  event: { id: string; name: string } | null;
+  ticketName: string | null;
+  quantity: number;
+  status: "paid" | "refunded";
+  provider: VendorPayoutAccount["provider"];
+  settlement: "direct" | "held";
+  settledTo: string | null;
   amount: PriceDetailsType;
   fee: PriceDetailsType;
-  net: PriceDetailsType;
-  status: string;
-  currency?: string;
+  earnings: PriceDetailsType;
 }
 
-export interface VendorWalletResponse {
-  availableBalance?: PriceDetailsType | number;
-  pendingBalance?: PriceDetailsType | number;
-  reservedBalance?: PriceDetailsType | number;
-  currency?: string | PriceDetailsType["currency"];
-  savedCards?: VendorWalletCard[];
-  cards?: VendorWalletCard[];
-}
+export type PayoutSetupAttempt =
+  | { status: "active"; provider: VendorPayoutAccount["provider"] }
+  | { status: "unsupported_country" | "not_configured" | "not_approved" }
+  | { status: "missing_details"; missing: string[] }
+  | { status: "failed"; message: string };
 
-const buildMoney = (
-  value: PriceDetailsType | number | undefined,
-  currency = "USD",
-): PriceDetailsType => {
-  if (value && typeof value !== "number" && "amount" in value) {
-    return value;
-  }
-
-  const amount = Number(value ?? 0);
-  const formatted = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount);
-
-  return {
-    amount,
-    currency: {
-      code: currency,
-      symbol: currency,
-      name: currency,
-      locale: "en-US",
-    },
-    formatted: {
-      withCurrency: formatted,
-      withoutCurrency: amount.toLocaleString(),
-    },
-    parts: {
-      whole: amount,
-      subUnit: 0,
-      smallestUnit: amount,
-    },
-  };
-};
-
-const getMoneyCurrencyCode = (
-  value?: PriceDetailsType | PriceDetailsType["currency"] | number | string,
-) => {
-  if (typeof value === "string") return value;
-  if (!value || typeof value === "number") return undefined;
-  if ("currency" in value && value.currency?.code) {
-    return value.currency.code;
-  }
-  if ("code" in value) {
-    return value.code;
-  }
-  return undefined;
-};
-
-const normalizeListResponse = <T>(payload: unknown): T[] => {
-  if (Array.isArray(payload)) return payload as T[];
-  if (
-    payload &&
-    typeof payload === "object" &&
-    "data" in payload &&
-    Array.isArray((payload as { data?: unknown }).data)
-  ) {
-    return (payload as { data: T[] }).data;
-  }
-  return [];
-};
-
-export const useVendorWallet = () =>
+export const useVendorEarnings = () =>
   useQuery({
-    queryKey: ["vendor-wallet"],
+    queryKey: ["vendor-earnings"],
     queryFn: async () => {
-      const response = await getData<VendorWalletResponse>("/vendor/wallet");
-      const payload = response.data.data ?? {};
-      const currency =
-        getMoneyCurrencyCode(payload.currency) ||
-        getMoneyCurrencyCode(payload.availableBalance) ||
-        "USD";
-      return {
-        balances: {
-          availableBalance: buildMoney(payload.availableBalance, currency),
-          pendingBalance: buildMoney(payload.pendingBalance, currency),
-          reservedBalance: buildMoney(payload.reservedBalance, currency),
-          currency,
-        } satisfies VendorWalletBalance,
-        savedCards: payload.savedCards ?? payload.cards ?? [],
-      };
+      const { data } = await getData<VendorEarnings>("/vendor/wallet");
+      return data?.data ?? { payoutAccount: null, currencies: [] };
     },
-    retry: 0,
   });
 
-export const useVendorPayoutHistory = () =>
+export const useVendorSales = (page = 1) =>
   useQuery({
-    queryKey: ["vendor-wallet-payouts"],
+    queryKey: ["vendor-sales", page],
     queryFn: async () => {
-      const response = await getData<VendorWalletPayout[]>("/vendor/wallet/payouts");
-      return normalizeListResponse<VendorWalletPayout>(response.data.data);
+      const { data } = await getData<VendorSale[]>(
+        `/vendor/wallet/sales?page=${page}&limit=20`,
+      );
+      return { sales: data?.data ?? [], pagination: data?.pagination };
     },
-    retry: 0,
+    placeholderData: (previous) => previous,
   });
 
-export const useRequestVendorWithdrawal = () => {
+/** Tries setting up payouts again; `attempt` says how it went. */
+export const useRetryPayoutSetup = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { amount: number; method: string }) => {
-      await postData<typeof body, unknown>("/vendor/wallet/withdrawals", body);
+    mutationFn: async () => {
+      const { data } = await postData<
+        undefined,
+        { account: VendorPayoutAccount | null; attempt?: PayoutSetupAttempt }
+      >("/vendor/verification/payout-account");
+      return data?.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendor-wallet"] });
-      queryClient.invalidateQueries({ queryKey: ["vendor-wallet-payouts"] });
-    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["vendor-earnings"] }),
   });
 };
 
-export const useCreateVendorTransfer = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (body: {
-      amount: number;
-      country: string;
-      recipientName: string;
-      recipientAccount: string;
-    }) => {
-      await postData<typeof body, unknown>("/vendor/wallet/transfers", body);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendor-wallet"] });
-      queryClient.invalidateQueries({ queryKey: ["vendor-wallet-payouts"] });
-    },
-  });
-};
-
-export const useSaveVendorWalletCard = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (body: {
-      brand: string;
-      last4: string;
-      holder: string;
-    }) => {
-      await postData<typeof body, unknown>("/vendor/wallet/cards", body);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendor-wallet"] });
-    },
-  });
-};
-
-export const useDeleteVendorWalletCard = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (cardId: string) => {
-      await deleteData(`/vendor/wallet/cards/${cardId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendor-wallet"] });
-    },
-  });
+/** Why payouts aren't set up yet, in the organiser's terms. */
+export const payoutAttemptMessage = (attempt?: PayoutSetupAttempt) => {
+  switch (attempt?.status) {
+    case undefined:
+    case "active":
+      return null;
+    case "not_approved":
+      return "Payouts are set up once your verification is approved.";
+    case "unsupported_country":
+      return "Direct payouts aren't available in your payout country yet. We'll be in touch about getting you paid.";
+    case "not_configured":
+      return "Direct payouts aren't switched on yet. Try again later.";
+    case "missing_details":
+      return attempt.missing.includes("bankCode")
+        ? "We need your bank picked from our list. Contact support and we'll set it for you."
+        : `Your payout details are missing: ${attempt.missing.join(", ")}.`;
+    case "failed":
+      return `The payment provider couldn't set up your payouts: ${attempt.message}`;
+  }
 };

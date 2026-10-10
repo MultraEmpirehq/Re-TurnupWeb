@@ -458,6 +458,18 @@ export interface IVendorVerification {
   payoutCurrency: string | null;
   accountHolderName: string | null;
   bankName: string | null;
+  /** The bank's code from the payment provider's list, for direct payouts. */
+  bankCode?: string | null;
+  /** Where the vendor is paid once approved; null until it's set up (admin view). */
+  payoutAccount?: {
+    provider: "FLUTTERWAVE" | "PAYSTACK" | "STRIPE";
+    status: "ACTIVE" | "DISABLED";
+    livemode: boolean;
+    country: string;
+    currency: string;
+    bankName: string | null;
+    accountLast4: string | null;
+  } | null;
   accountNumberLast4: string | null;
   payoutAccountLast4: string | null;
   ibanLast4: string | null;

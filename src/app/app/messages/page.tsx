@@ -23,6 +23,7 @@ import {
   updateEventChatGroupSettings,
 } from "@/lib/event-chat";
 import { cn } from "@/lib/utils";
+import { useSearchParams } from "next/navigation";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
 import {
   BellIcon,
@@ -146,6 +147,13 @@ const MessagesPage = () => {
   const [groups, setGroups] = React.useState<IEventChatGroup[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<TChatStatus>("groups");
   const [selectedConversationId, setSelectedConversationId] = useState("");
+  // A link to one chat (e.g. from a notification) opens it.
+  const linkedChatId = useSearchParams().get("chat");
+  React.useEffect(() => {
+    if (!linkedChatId) return;
+    setSelectedStatus("all");
+    setSelectedConversationId(linkedChatId);
+  }, [linkedChatId]);
   const [draftMessage, setDraftMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showGroupOptions, setShowGroupOptions] = useState(false);
@@ -500,7 +508,9 @@ const MessagesPage = () => {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-secondary-950">
-                          {conversation.eventName} Community
+                          {conversation.isSupport
+                            ? conversation.eventName
+                            : `${conversation.eventName} Community`}
                         </p>
                         <p className="mt-1 line-clamp-2 text-xs leading-5 text-secondary-500">
                           {conversation.preview}
@@ -523,7 +533,9 @@ const MessagesPage = () => {
                         {conversation.status}
                       </span>
                       <span className="text-[10px] uppercase tracking-[0.18em] text-secondary-400">
-                        {conversation.members.length} members
+                        {conversation.isSupport
+                          ? "Turnupz team"
+                          : `${conversation.members.length} members`}
                       </span>
                     </div>
                   </div>
@@ -545,10 +557,16 @@ const MessagesPage = () => {
               <div>
                 <p className="text-sm font-semibold text-secondary-950">
                   {activeConversation?.eventName
-                    ? `${activeConversation.eventName} Community`
+                    ? activeConversation.isSupport
+                      ? activeConversation.eventName
+                      : `${activeConversation.eventName} Community`
                     : "No chat selected"}
                 </p>
-                {activeConversation ? (
+                {activeConversation?.isSupport ? (
+                  <p className="text-xs text-secondary-400">
+                    The Turnupz team, about your account
+                  </p>
+                ) : activeConversation ? (
                   <Link
                     href={`/app/messages/${activeConversation.id}/members`}
                     className="text-xs font-medium text-secondary-400 underline-offset-4 hover:text-primary hover:underline"
@@ -569,7 +587,7 @@ const MessagesPage = () => {
                   size="icon"
                   className="rounded-full text-secondary-500"
                   onClick={() => setShowGroupOptions((current) => !current)}
-                  disabled={!activeConversation}
+                  disabled={!activeConversation || activeConversation.isSupport}
                   aria-label="More group options"
                 >
                   <EllipsisIcon className="size-5" />
@@ -930,7 +948,9 @@ const MessagesPage = () => {
                           ? "Vendor"
                           : message.senderMemberRole === "scanner"
                             ? "Scanner"
-                            : "Attendee"}
+                            : message.senderMemberRole === "team"
+                              ? "Turnupz team"
+                              : "Attendee"}
                       </span>
                       <span>{formatMessageTime(message.createdAt)}</span>
                     </div>
@@ -966,7 +986,7 @@ const MessagesPage = () => {
                           </button>
                         );
                       })}
-                      {isVendorSender ? (
+                      {isVendorSender && !activeConversation?.isSupport ? (
                         <>
                           <button
                             type="button"
@@ -1036,7 +1056,9 @@ const MessagesPage = () => {
                     activeConversation
                       ? activeConversation.announcementMode && !isVendorSender
                         ? "Announcement mode is on. You can react, but cannot type."
-                        : "Type a message to your event community..."
+                        : activeConversation.isSupport
+                          ? "Reply to the Turnupz team..."
+                          : "Type a message to your event community..."
                       : "Select a conversation to send a message..."
                   }
                   disabled={!canType}
