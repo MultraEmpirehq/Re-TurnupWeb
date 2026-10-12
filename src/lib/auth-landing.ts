@@ -1,5 +1,9 @@
 import { getData } from "@/api";
 import { ROUTES } from "@/lib/variables";
+import {
+  completeProfileRoute,
+  needsProfileDetails,
+} from "@/lib/profile-complete";
 import { EUserRoles, TUserDetails } from "@/stores/user-store";
 
 /**
@@ -15,6 +19,9 @@ export const resolveLandingRoute = async (
   user?: TUserDetails | null,
   redirectTo?: string | null,
 ) => {
+  // Sign-up isn't finished until the details are in, wherever they were going.
+  if (needsProfileDetails(user)) return completeProfileRoute(redirectTo);
+
   if (redirectTo) return redirectTo;
 
   if (user?.role === EUserRoles.ADMIN) return ROUTES.ADMIN_OVERVIEW.href;

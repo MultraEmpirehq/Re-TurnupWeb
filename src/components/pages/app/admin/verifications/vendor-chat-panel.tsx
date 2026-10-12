@@ -50,9 +50,10 @@ const VendorChatPanel: React.FC<{ verification: IVendorVerification }> = ({
 
   const chat = useMutation({
     mutationFn: async () => {
-      const { data } = await postData<undefined, { id: string; isNew: boolean }>(
-        `/admin/vendor-verifications/${verification.id}/chat`,
-      );
+      const { data } = await postData<
+        undefined,
+        { id: string; isNew: boolean }
+      >(`/admin/vendor-verifications/${verification.id}/chat`);
       return data?.data;
     },
     onError: (error) =>
@@ -140,7 +141,9 @@ const VendorChatPanel: React.FC<{ verification: IVendorVerification }> = ({
               </div>
             ) : items.length === 0 ? (
               <div className="space-y-3 py-6 text-center text-sm text-muted-foreground">
-                <p>No messages yet. Start with one of these, or write your own.</p>
+                <p>
+                  No messages yet. Start with one of these, or write your own.
+                </p>
                 <div className="flex flex-col gap-2">
                   {OPENERS.map((opener) => (
                     <button
@@ -160,7 +163,10 @@ const VendorChatPanel: React.FC<{ verification: IVendorVerification }> = ({
                 return (
                   <div
                     key={message.id}
-                    className={cn("flex", fromTeam ? "justify-end" : "justify-start")}
+                    className={cn(
+                      "flex",
+                      fromTeam ? "justify-end" : "justify-start",
+                    )}
                   >
                     <div
                       className={cn(
@@ -171,7 +177,9 @@ const VendorChatPanel: React.FC<{ verification: IVendorVerification }> = ({
                       )}
                     >
                       <p className="text-[11px] font-semibold opacity-70">
-                        {fromTeam ? `${message.senderName} · Team` : message.senderName}
+                        {fromTeam
+                          ? `${message.senderName} · Team`
+                          : message.senderName}
                       </p>
                       <p className="mt-0.5 whitespace-pre-line break-words">
                         {message.body}

@@ -81,7 +81,7 @@ const PayoutAccountCard: React.FC<{ account: VendorPayoutAccount | null }> = ({
               schedule. Turnupz never holds it.
             </p>
             {!account.livemode && (
-              <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">
+              <span className="inline-flex rounded-full bg-secondary-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-secondary-700">
                 Test mode
               </span>
             )}
@@ -108,7 +108,7 @@ const PayoutAccountCard: React.FC<{ account: VendorPayoutAccount | null }> = ({
               keeps only its fee.
             </p>
             {message && (
-              <p className="text-sm font-medium text-amber-700">{message}</p>
+              <p className="text-sm font-medium text-secondary-700">{message}</p>
             )}
           </div>
         </div>
@@ -138,7 +138,7 @@ const Stat: React.FC<{
       className={cn(
         "mt-2 truncate text-xl font-bold tracking-tight",
         tone === "good" && "text-emerald-700",
-        tone === "warn" && "text-amber-700",
+        tone === "warn" && "text-secondary-700",
         tone === "default" && "text-secondary-950",
       )}
     >
@@ -176,7 +176,7 @@ const CurrencyEarnings: React.FC<{ totals: VendorCurrencyEarnings }> = ({
       />
     </div>
     {totals.owed.amount > 0 && (
-      <p className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+      <p className="mt-4 rounded-2xl border border-secondary-100 bg-secondary-50 px-4 py-3 text-sm leading-6 text-secondary-900">
         <span className="font-semibold">
           {totals.owed.formatted.withCurrency}
         </span>{" "}
@@ -272,7 +272,7 @@ const SalesTable = () => {
                         {sale.settledTo ?? "Your bank"}
                       </span>
                     ) : (
-                      <span className="text-amber-700">Owed by Turnupz</span>
+                      <span className="text-secondary-700">Owed by Turnupz</span>
                     )}
                   </TableCell>
                 </TableRow>

@@ -12,7 +12,7 @@ const AboutBanner = () => {
         className="rounded-none"
         imageClassName="object-cover object-center"
       />
-      <div className="absolute inset-0 bg-linear-to-r from-[#05B5FF]/70 via-transparent to-[#A855F7]/70 mix-blend-multiply" />
+      <div className="absolute inset-0 bg-linear-to-r from-[#05B5FF]/70 via-transparent to-[#0577FA]/70 mix-blend-multiply" />
       <div className="absolute inset-0 bg-black/20" />
       <div className="absolute inset-0 flex items-center justify-center">
         <h1 className="text-[clamp(2rem,6vw,4rem)] font-bold text-white">

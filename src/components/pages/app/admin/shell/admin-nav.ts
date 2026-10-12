@@ -7,6 +7,8 @@ import {
   CalendarDays,
   CalendarPlus,
   CircleDollarSign,
+  Gift,
+  Undo2,
   ClipboardCheck,
   Flag,
   FileChartColumn,
@@ -25,6 +27,7 @@ import {
   Plug,
   Receipt,
   ScrollText,
+  Sparkles,
   Settings,
   SlidersHorizontal,
   Tags,
@@ -86,10 +89,22 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
     label: "Marketing",
     department: {
       icon: Megaphone,
-      accentClassName: "bg-pink-50 text-pink-600",
+      accentClassName: "bg-primary-50 text-primary-600",
       description: "Handles campaigns, content and growth.",
     },
     items: [
+      {
+        label: "Referrals",
+        href: `${ADMIN_BASE}/marketing/referrals`,
+        icon: Gift,
+        permission: "USERS_VIEW",
+      },
+      {
+        label: "Influencer Codes",
+        href: `${ADMIN_BASE}/marketing/influencer-codes`,
+        icon: Sparkles,
+        permission: "USERS_VIEW",
+      },
       {
         label: "Campaigns",
         href: `${ADMIN_BASE}/marketing/campaigns`,
@@ -207,10 +222,16 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
     label: "Finance",
     department: {
       icon: CircleDollarSign,
-      accentClassName: "bg-amber-50 text-amber-600",
+      accentClassName: "bg-secondary-50 text-secondary-600",
       description: "Handles payments, payouts and financial records.",
     },
     items: [
+      {
+        label: "Refunds",
+        href: `${ADMIN_BASE}/finance/refunds`,
+        icon: Undo2,
+        permission: "REFUNDS_MANAGE",
+      },
       {
         label: "Transactions",
         href: `${ADMIN_BASE}/finance/transactions`,
@@ -241,7 +262,7 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
     label: "Operations",
     department: {
       icon: Settings,
-      accentClassName: "bg-teal-50 text-teal-600",
+      accentClassName: "bg-primary-50 text-primary-600",
       description: "Manages system operations, users and integrations.",
     },
     items: [

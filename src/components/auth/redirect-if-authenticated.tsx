@@ -2,6 +2,10 @@
 
 import BrandLoader from "@/components/ui/brand-loader";
 import { resolveLandingRoute } from "@/lib/auth-landing";
+import {
+  completeProfileRoute,
+  needsProfileDetails,
+} from "@/lib/profile-complete";
 import useUserStore from "@/stores/user-store";
 import { ROUTES } from "@/lib/variables";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -25,12 +29,9 @@ const RedirectWatcher = () => {
 
     const redirectTo = searchParams?.get("redirect");
 
-    if (userDetails.isAccountCreationCompleted === false) {
-      router.replace(
-        redirectTo
-          ? `${ROUTES.COMPLETE_USER_INFORMATION.href}?redirect=${encodeURIComponent(redirectTo)}`
-          : ROUTES.COMPLETE_USER_INFORMATION.href,
-      );
+    // A new account has a password before it has a name: finish sign-up first.
+    if (needsProfileDetails(userDetails)) {
+      router.replace(completeProfileRoute(redirectTo));
       return;
     }
 

@@ -346,7 +346,7 @@ const AdminsList = () => {
                       </span>
                     )}
                     {admin.isSuspended && (
-                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                      <span className="rounded-full bg-secondary-50 px-2 py-0.5 text-[11px] font-semibold text-secondary-800">
                         Suspended
                       </span>
                     )}

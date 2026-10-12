@@ -25,7 +25,7 @@ const NovuInboxWidget: React.FC<{
       routerPush={(path: string) => router.push(path)}
       appearance={{
         variables: {
-          colorPrimary: "#6C63FF",
+          colorPrimary: "#00B2FF",
           colorForeground: "#1f2937",
         },
       }}

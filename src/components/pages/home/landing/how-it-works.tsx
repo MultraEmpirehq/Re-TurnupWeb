@@ -58,7 +58,7 @@ const Screen: React.FC<{ step: number }> = ({ step }) => (
       {[
         "from-secondary-300 to-secondary-600",
         "from-primary-200 to-primary-500",
-        "from-amber-200 to-orange-400",
+        "from-secondary-200 to-secondary-400",
       ].map((gradient, index) => (
         <div key={index} className="flex items-center gap-3">
           <div className={cn("size-14 shrink-0 rounded-2xl bg-linear-to-br", gradient)} />
@@ -229,7 +229,7 @@ const HowItWorks = () => {
               {/* Book: the chosen ticket lifts off the screen toward you. */}
               <div
                 className={cn(
-                  "pointer-events-none absolute top-[54%] left-1/2 w-[78%] rounded-2xl bg-white px-4 py-3 shadow-[0_24px_40px_-14px_rgba(236,72,153,0.55)] ring-1 ring-primary-100 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  "pointer-events-none absolute top-[54%] left-1/2 w-[78%] rounded-2xl bg-white px-4 py-3 shadow-[0_24px_40px_-14px_rgba(5,119,250,0.55)] ring-1 ring-primary-100 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
                   step === 1 ? "opacity-100" : "opacity-0",
                 )}
                 style={{

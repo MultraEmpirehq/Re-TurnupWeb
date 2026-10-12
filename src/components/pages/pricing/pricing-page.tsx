@@ -120,7 +120,7 @@ const PricingPage = () => (
                 className={cn(
                   "relative flex h-full flex-col gap-6 overflow-hidden rounded-[2rem] p-8 ring-1 transition-transform duration-300 hover:-translate-y-1",
                   plan.featured
-                    ? "bg-secondary-950 text-white ring-white/10 shadow-[0_40px_80px_-40px_rgba(236,72,153,0.55)]"
+                    ? "bg-secondary-950 text-white ring-white/10 shadow-[0_40px_80px_-40px_rgba(5,119,250,0.55)]"
                     : "bg-white text-secondary-950 ring-black/5",
                 )}
               >

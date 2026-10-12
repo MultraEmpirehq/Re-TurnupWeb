@@ -21,7 +21,7 @@ const STATUS: Record<
   { icon: LucideIcon; className: string; label: string }
 > = {
   fail: { icon: CircleX, className: "text-red-600", label: "Problem" },
-  warn: { icon: CircleAlert, className: "text-amber-600", label: "Check" },
+  warn: { icon: CircleAlert, className: "text-secondary-600", label: "Check" },
   pass: { icon: CircleCheck, className: "text-emerald-600", label: "Passed" },
   info: { icon: Info, className: "text-muted-foreground", label: "Note" },
 };
@@ -68,7 +68,7 @@ const ReviewChecks: React.FC<{
               summary.fail
                 ? "text-red-700"
                 : summary.warn
-                  ? "text-amber-700"
+                  ? "text-secondary-700"
                   : "text-emerald-700",
             )}
           >
@@ -95,9 +95,7 @@ const ReviewChecks: React.FC<{
         {GROUPS.map((group) => {
           const checks = review.checks
             .filter((check) => check.group === group.key)
-            .sort(
-              (a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status),
-            );
+            .sort((a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status));
           if (!checks.length) return null;
           return (
             <div key={group.key} className="space-y-2">

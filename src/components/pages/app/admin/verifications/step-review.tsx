@@ -68,8 +68,7 @@ const StepReview: React.FC<{ verification: IVendorVerification }> = ({
       <h2 className="font-semibold">Steps</h2>
       <ul className="space-y-3">
         {STEPS.map((step) => {
-          const status =
-            verification.stepStatuses?.[step.key] ?? "not_started";
+          const status = verification.stepStatuses?.[step.key] ?? "not_started";
           return (
             <li key={step.key} className="space-y-2">
               <div className="flex items-center justify-between gap-2 text-sm">
@@ -101,7 +100,7 @@ const StepReview: React.FC<{ verification: IVendorVerification }> = ({
                           setMessage("");
                         }}
                       >
-                        <MessageSquareWarning className="size-4 text-amber-600" />
+                        <MessageSquareWarning className="size-4 text-secondary-600" />
                       </Button>
                     </>
                   )}

@@ -4,11 +4,11 @@ import React, { memo } from "react";
 
 const TONE: Record<TVerificationStatus, string> = {
   not_started: "bg-muted text-muted-foreground",
-  in_progress: "bg-amber-50 text-amber-700",
+  in_progress: "bg-secondary-50 text-secondary-700",
   submitted: "bg-blue-50 text-blue-700",
   approved: "bg-emerald-50 text-emerald-700",
   rejected: "bg-red-50 text-red-700",
-  needs_more_info: "bg-orange-50 text-orange-700",
+  needs_more_info: "bg-secondary-50 text-secondary-700",
 };
 
 const LABEL: Record<TVerificationStatus, string> = {

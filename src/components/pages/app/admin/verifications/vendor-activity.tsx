@@ -15,7 +15,7 @@ const Stat: React.FC<{ label: string; value: number; warn?: boolean }> = ({
     <p
       className={cn(
         "text-lg font-semibold tabular-nums",
-        warn && value > 0 && "text-amber-700",
+        warn && value > 0 && "text-secondary-700",
       )}
     >
       {value.toLocaleString()}
@@ -44,9 +44,9 @@ const VendorActivity: React.FC<{
         <Stat label="Suspended events" value={events.suspended} warn />
       </div>
       {reports.open > 0 && (
-        <p className="text-xs text-amber-700">
-          {reports.open} report{reports.open === 1 ? " is" : "s are"} still
-          open on their events.
+        <p className="text-xs text-secondary-700">
+          {reports.open} report{reports.open === 1 ? " is" : "s are"} still open
+          on their events.
         </p>
       )}
     </section>

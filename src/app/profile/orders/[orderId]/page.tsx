@@ -1,5 +1,6 @@
 "use client";
 
+import OrderMoneyBack from "@/components/pages/profile/order-money-back";
 import { getData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import ErrorContainer from "@/components/ui/error-container";
@@ -222,7 +223,7 @@ const OrderDetailPage = () => {
               order.status === EOrderStatus.REFUNDED
                 ? "bg-sky-50 text-sky-800"
                 : order.status === EOrderStatus.NEEDS_REVIEW
-                  ? "bg-amber-50 text-amber-800"
+                  ? "bg-secondary-50 text-secondary-800"
                   : "bg-red-50 text-red-700",
             )}
           >
@@ -232,7 +233,7 @@ const OrderDetailPage = () => {
           </p>
         )}
         {order.status === EOrderStatus.PENDING && order.holdExpiresAt && (
-          <p className="rounded-xl bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+          <p className="rounded-xl bg-secondary-50 px-4 py-3 text-sm text-secondary-800">
             Your seats are held until{" "}
             {format(new Date(order.holdExpiresAt), "h:mm a")}. Finish paying
             before then to keep them.
@@ -251,8 +252,8 @@ const OrderDetailPage = () => {
               className="flex items-center justify-between gap-3 py-2"
             >
               <div className="flex items-center gap-3">
-                <div className="size-9 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
-                  <TicketIcon className="size-4 text-cyan-700 dark:text-cyan-400" />
+                <div className="size-9 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+                  <TicketIcon className="size-4 text-primary-700 dark:text-primary-400" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">{ut.ticket.name}</p>
@@ -285,6 +286,7 @@ const OrderDetailPage = () => {
                 Ordered {format(new Date(order.createdAt), "MMM dd, yyyy")}
               </p>
             )}
+            <OrderMoneyBack order={order} className="mt-2" />
           </div>
           <div className="text-right">
             <p className="text-xs text-muted-foreground">Total</p>

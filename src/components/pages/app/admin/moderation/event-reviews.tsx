@@ -149,7 +149,7 @@ const EventReviews = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-xl border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                className="rounded-xl border-secondary-200 bg-secondary-50 text-secondary-800 hover:bg-secondary-100"
                 onClick={() => setSendingBack(event)}
               >
                 Send back

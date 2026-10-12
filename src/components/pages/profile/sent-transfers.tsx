@@ -24,7 +24,7 @@ import { toast } from "sonner";
 const STATUS: Record<TTransferStatus, { label: string; className: string }> = {
   PENDING: {
     label: "Waiting to be claimed",
-    className: "bg-amber-50 text-amber-800",
+    className: "bg-secondary-50 text-secondary-800",
   },
   CLAIMED: { label: "Claimed", className: "bg-emerald-50 text-emerald-700" },
   CANCELLED: {

@@ -42,7 +42,7 @@ const sections: TSection[] = [
         why: "To issue and validate your tickets, handle refunds and transfers, and keep financial records.",
       },
       {
-        what: "Payment details. Card and bank details you enter at checkout go directly to Paystack. We never see or store your card number; we keep the payment reference Paystack gives us.",
+        what: "Payment details. Card and bank details you enter at checkout go directly to Flutterwave. We never see or store your card number; we keep the payment reference Flutterwave gives us.",
         why: "To take payment and match it to your order.",
       },
       {
@@ -80,7 +80,7 @@ const sections: TSection[] = [
     intro:
       "We share data only with the services that help us run Turnupz, and only what each one needs:",
     items: [
-      "Paystack: payments, refunds and organiser payouts.",
+      "Flutterwave: payments, refunds and organiser payouts. Payments taken before we moved to Flutterwave stay with Paystack, which handles their refunds.",
       "Google: sign-in with Google, and Google Maps / Places to look up venue addresses.",
       "Cloudinary: storing images and documents you upload, including organiser identity documents.",
       "SendGrid: sending emails such as sign-in codes, receipts and event updates.",
@@ -148,7 +148,7 @@ const PrivacyPolicyPage = () => (
   <main className="mx-auto max-w-5xl space-y-10 px-4 py-12 sm:px-6 lg:px-8">
     <div
       role="note"
-      className="rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50 px-5 py-4 text-sm text-amber-900"
+      className="rounded-2xl border-2 border-dashed border-secondary-300 bg-secondary-50 px-5 py-4 text-sm text-secondary-900"
     >
       <p className="font-bold uppercase tracking-wider">
         Draft for legal review
