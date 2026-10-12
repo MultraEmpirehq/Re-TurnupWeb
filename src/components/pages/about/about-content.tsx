@@ -20,7 +20,7 @@ const values = [
     title: "Client-Centric Approach",
     description:
       "Whether you're hosting a private gathering or a large-scale festival, we tailor our tools and support to match your unique needs. Your success is our priority because when your event thrives, so do we.",
-    className: "bg-pink-50",
+    className: "bg-primary-50",
   },
   {
     title: "Pioneering Innovation",

@@ -10,10 +10,7 @@ import {
   useNextInQueue,
   useVerificationReview,
 } from "@/hooks/use-admin-verifications";
-import {
-  IVendorVerification,
-  IVerificationDocument,
-} from "@/lib/types";
+import { IVendorVerification, IVerificationDocument } from "@/lib/types";
 import { ROUTES } from "@/lib/variables";
 import { ArrowLeft, ArrowRight, Copy, FileText, Maximize2 } from "lucide-react";
 import { toast } from "sonner";
@@ -37,7 +34,6 @@ import {
   vendorName,
   vendorTypeLabel,
 } from "./verification-utils";
-
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
   title,
@@ -256,7 +252,10 @@ const Details: React.FC<{
                 compare={[
                   {
                     label: "Legal name",
-                    value: [verification.legalFirstName, verification.legalLastName]
+                    value: [
+                      verification.legalFirstName,
+                      verification.legalLastName,
+                    ]
                       .filter(Boolean)
                       .join(" "),
                   },
@@ -342,6 +341,15 @@ const Details: React.FC<{
         </div>
 
         <div className="space-y-4 lg:sticky lg:top-[92px]">
+          {hasSubmitted ? (
+            <VerificationDecisionPanel verification={verification} />
+          ) : (
+            <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+              This vendor hasn&apos;t submitted their application yet, so
+              there&apos;s nothing to decide.
+            </div>
+          )}
+
           <StepReview verification={verification} />
 
           {!!lastDecisionNote && (
@@ -366,15 +374,6 @@ const Details: React.FC<{
 
           <VendorActivity review={review} isLoading={isLoadingReview} />
           <VerificationHistory history={review?.history} />
-
-          {hasSubmitted ? (
-            <VerificationDecisionPanel verification={verification} />
-          ) : (
-            <div className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">
-              This vendor hasn&apos;t submitted their application yet, so
-              there&apos;s nothing to decide.
-            </div>
-          )}
         </div>
       </div>
     </div>

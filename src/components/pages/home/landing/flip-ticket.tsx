@@ -46,7 +46,7 @@ const FlipTicket = () => {
             )}
           >
             {/* Front */}
-            <div className="absolute inset-0 flex overflow-hidden rounded-[1.4rem] bg-linear-to-br from-secondary via-secondary-500 to-primary text-left text-white shadow-[0_30px_60px_-24px_rgba(236,72,153,0.6)] [backface-visibility:hidden]">
+            <div className="absolute inset-0 flex overflow-hidden rounded-[1.4rem] bg-linear-to-br from-secondary via-secondary-500 to-primary text-left text-white shadow-[0_30px_60px_-24px_rgba(5,119,250,0.6)] [backface-visibility:hidden]">
               <div className="flex flex-1 flex-col justify-between p-5">
                 <Image src={LogoWhiteSVG} alt="" className="h-6 w-auto self-start" />
                 <div>

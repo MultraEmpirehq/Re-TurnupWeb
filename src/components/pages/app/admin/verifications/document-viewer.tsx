@@ -8,12 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { IVerificationDocument } from "@/lib/types";
-import {
-  ExternalLink,
-  RotateCw,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { ExternalLink, RotateCw, ZoomIn, ZoomOut } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { isImageDocument } from "./verification-utils";
 
@@ -76,7 +71,9 @@ const DocumentViewer: React.FC<{
                   aria-label="Zoom in"
                   disabled={zoom === ZOOMS.length - 1}
                   onClick={() =>
-                    setZoom((current) => Math.min(current + 1, ZOOMS.length - 1))
+                    setZoom((current) =>
+                      Math.min(current + 1, ZOOMS.length - 1),
+                    )
                   }
                 >
                   <ZoomIn className="size-4" />
@@ -126,7 +123,9 @@ const DocumentViewer: React.FC<{
             <dl className="space-y-3 overflow-auto rounded-lg border border-border p-3 text-sm">
               {compare.map((item) => (
                 <div key={item.label}>
-                  <dt className="text-xs text-muted-foreground">{item.label}</dt>
+                  <dt className="text-xs text-muted-foreground">
+                    {item.label}
+                  </dt>
                   <dd className="break-words">{item.value || "—"}</dd>
                 </div>
               ))}

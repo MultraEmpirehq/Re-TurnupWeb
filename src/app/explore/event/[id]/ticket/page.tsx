@@ -13,6 +13,10 @@ import { formatEventTime } from "@/lib/event-time";
 import { describeTicketSaleState, ticketSaleState } from "@/lib/ticket-sales";
 import { joinEventChatGroup } from "@/lib/event-chat";
 import { ROUTES } from "@/lib/variables";
+import { readShareRef, rememberShareRef } from "@/lib/share-ref";
+import { getData } from "@/api";
+import { useQuery } from "@tanstack/react-query";
+import { Switch } from "@/components/ui/switch";
 import useUserStore from "@/stores/user-store";
 import { cn } from "@/lib/utils";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -75,8 +79,8 @@ const TicketSelectionCard: React.FC<{
       className={cn(
         "w-full overflow-hidden rounded-[1.4rem] border text-left shadow-[0_18px_45px_rgba(15,23,42,0.10)] transition",
         selected
-          ? "border-cyan-300 ring-2 ring-cyan-100"
-          : "border-transparent hover:-translate-y-0.5 hover:border-cyan-200",
+          ? "border-primary-300 ring-2 ring-primary-100"
+          : "border-transparent hover:-translate-y-0.5 hover:border-primary-200",
       )}
     >
       <div className="grid min-h-[11.5rem] bg-[linear-gradient(135deg,#319d91_0%,#1f6d86_54%,#174867_100%)] text-white sm:grid-cols-[minmax(0,1fr)_9rem]">
@@ -270,6 +274,45 @@ const TicketPage = () => {
     return formatCurrency(totalPrice, code, locale);
   }, [selectedTicket, totalPrice]);
 
+  // Turnupz Credit in the ticket's currency, spent first when switched on.
+  const { data: creditRows } = useQuery({
+    queryKey: ["credit", "balance"],
+    enabled: !!userDetails,
+    queryFn: async () =>
+      (
+        await getData<{ currency: string; available: { amount: number } }[]>(
+          "/credit",
+        )
+      ).data?.data ?? [],
+  });
+  const [useCredit, setUseCredit] = useState(true);
+  const creditAvailable =
+    creditRows?.find(
+      (row) =>
+        row.currency.toUpperCase() ===
+        selectedTicket?.price?.currency?.code?.toUpperCase(),
+    )?.available?.amount ?? 0;
+  const creditApplied =
+    useCredit && totalPrice > 0 ? Math.min(creditAvailable, totalPrice) : 0;
+  const toPay = Math.max(totalPrice - creditApplied, 0);
+  const money = useCallback(
+    (amount: number) =>
+      selectedTicket
+        ? formatCurrency(
+            amount,
+            selectedTicket.price.currency.code,
+            selectedTicket.price.currency.locale,
+          )
+        : "",
+    [selectedTicket],
+  );
+
+  // Whose link they came through, for share-link credit.
+  const refFromUrl = searchParams?.get("ref");
+  useEffect(() => {
+    rememberShareRef(eventId, refFromUrl);
+  }, [eventId, refFromUrl]);
+
   useEffect(() => {
     if (
       accessibleTickets.length > 0 &&
@@ -321,7 +364,7 @@ const TicketPage = () => {
         className={cn(
           "text-sm",
           selectedSaleNotice
-            ? "rounded-lg bg-amber-50 px-3 py-2 font-medium text-amber-800"
+            ? "rounded-lg bg-secondary-50 px-3 py-2 font-medium text-secondary-800"
             : "text-right text-muted-foreground",
         )}
       >
@@ -439,6 +482,8 @@ const TicketPage = () => {
           quantity: number;
           callbackUrl: string;
           privateAccessCode?: string;
+          useCredit?: boolean;
+          ref?: string;
         },
         { orderId: string; status: EOrderStatus; redirectUrl?: string }
       >("/order", {
@@ -449,6 +494,8 @@ const TicketPage = () => {
             ? privateAccessCode
             : undefined,
         callbackUrl: `${window.location.origin}${ROUTES.PROFILE_ORDERS.href}/{{orderId}}/success`,
+        ...(creditApplied > 0 ? { useCredit: true } : {}),
+        ref: readShareRef(eventId),
       });
       const redirectUrl = data?.data?.redirectUrl;
       if (redirectUrl) {
@@ -479,6 +526,7 @@ const TicketPage = () => {
     event,
     getTicketVisibility,
     privateAccessCode,
+    creditApplied,
   ]);
 
   const error = eventError || ticketsError;
@@ -530,9 +578,9 @@ const TicketPage = () => {
             <button
               type="button"
               onClick={() => setShowRegistrationTypes((current) => !current)}
-              className="w-full rounded-2xl border border-cyan-100 bg-cyan-50/70 p-5 text-left transition hover:border-cyan-200 hover:bg-cyan-50"
+              className="w-full rounded-2xl border border-primary-100 bg-primary-50/70 p-5 text-left transition hover:border-primary-200 hover:bg-primary-50"
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary-700">
                 Registration
               </p>
               <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -573,7 +621,7 @@ const TicketPage = () => {
                     </p>
                   </div>
                 </div>
-                <span className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500 px-4 text-sm font-semibold text-white">
+                <span className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-primary-500 px-4 text-sm font-semibold text-white">
                   {showRegistrationTypes ? "Hide Types" : "Choose Type"}
                 </span>
               </div>
@@ -614,7 +662,7 @@ const TicketPage = () => {
             {showRegistrationTypes &&
               tickets.length > 0 &&
               registrationTickets.length === 0 && (
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
+                <div className="rounded-2xl border border-secondary-200 bg-secondary-50 p-5 text-secondary-900">
                   <div className="flex items-start gap-3">
                     <LockKeyhole className="mt-0.5 size-5 shrink-0" />
                     <div>
@@ -651,7 +699,7 @@ const TicketPage = () => {
                     onClick={handleIncrement}
                     disabled={quantity >= maxQuantity}
                     aria-label="Increase quantity"
-                    className="size-9 rounded-full bg-cyan-500 text-white flex items-center justify-center transition-colors hover:bg-cyan-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    className="size-9 rounded-full bg-primary-500 text-white flex items-center justify-center transition-colors hover:bg-primary-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <Plus className="size-4" />
                   </button>
@@ -668,7 +716,7 @@ const TicketPage = () => {
                 (registrationTickets.length > 0 && !selectedTicket) ||
                 (!!selectedTicket && !isSelectedOnSale)
               }
-              className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
+              className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
             >
               {isPurchasing && "Registering..."}
               {!isPurchasing && "Register"}
@@ -679,7 +727,7 @@ const TicketPage = () => {
         {!isRegistrationOnly &&
           tickets.length > 0 &&
           accessibleTickets.length === 0 && (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
+            <div className="rounded-2xl border border-secondary-200 bg-secondary-50 p-5 text-secondary-900">
               <div className="flex items-start gap-3">
                 <LockKeyhole className="mt-0.5 size-5 shrink-0" />
                 <div>
@@ -696,7 +744,7 @@ const TicketPage = () => {
         {!isRegistrationOnly &&
           accessibleTickets.length > 0 &&
           hiddenPrivateTicketCount > 0 && (
-            <div className="rounded-2xl border border-cyan-100 bg-cyan-50/60 p-4 text-sm text-cyan-900">
+            <div className="rounded-2xl border border-primary-100 bg-primary-50/60 p-4 text-sm text-primary-900">
               {privateAccessCode
                 ? "Private ticket access applied. Only matching private categories are shown."
                 : "Some ticket categories are private and only appear through an organizer invite link."}
@@ -722,8 +770,8 @@ const TicketPage = () => {
                   const isSelected = selectedTicketId === ticket.id;
                   const isExternal = ticket.type === EXTERNAL_LINK_TYPE;
                   const borderColor = isSelected
-                    ? "border-cyan-800 dark:border-cyan-600"
-                    : "border-border group-hover:border-cyan-400";
+                    ? "border-primary-800 dark:border-primary-600"
+                    : "border-border group-hover:border-primary-400";
                   return (
                     <button
                       key={ticket.id}
@@ -736,18 +784,19 @@ const TicketPage = () => {
                           "border-2 border-dashed px-5 pt-5 pb-6 flex-1 flex flex-col gap-4",
                           isExternal ? "rounded-xl" : "border-b-0 rounded-t-xl",
                           borderColor,
-                          isSelected && "bg-cyan-50/30 dark:bg-cyan-950/20",
+                          isSelected &&
+                            "bg-primary-50/30 dark:bg-primary-950/20",
                         )}
                       >
-                        <div className="size-12 rounded-xl bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
-                          <TicketIcon className="size-6 text-cyan-700 dark:text-cyan-400" />
+                        <div className="size-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+                          <TicketIcon className="size-6 text-primary-700 dark:text-primary-400" />
                         </div>
                         <p className="font-bold text-lg">{ticket.name}</p>
                         {describeTicketSaleState(
                           ticketSaleState(ticket),
                           event?.timezone,
                         ) && (
-                          <p className="-mt-2 text-xs font-medium text-amber-700">
+                          <p className="-mt-2 text-xs font-medium text-secondary-700">
                             {describeTicketSaleState(
                               ticketSaleState(ticket),
                               event?.timezone,
@@ -783,11 +832,12 @@ const TicketPage = () => {
                             className={cn(
                               "border-2 border-t-0 border-dashed rounded-b-xl px-5 pt-4 pb-5",
                               borderColor,
-                              isSelected && "bg-cyan-50/30 dark:bg-cyan-950/20",
+                              isSelected &&
+                                "bg-primary-50/30 dark:bg-primary-950/20",
                             )}
                           >
                             <p className="font-semibold">
-                              <span className="text-cyan-700 dark:text-cyan-400 font-bold text-base">
+                              <span className="text-primary-700 dark:text-primary-400 font-bold text-base">
                                 {ticket?.price?.amount > 0 &&
                                   ticket?.price?.formatted?.withCurrency}
                                 {!ticket?.price?.amount && "Free"}
@@ -808,9 +858,9 @@ const TicketPage = () => {
             </div>
 
             {isExternalTicket ? (
-              <div className="space-y-4 border rounded-xl p-6 bg-cyan-50/30 dark:bg-cyan-950/10">
+              <div className="space-y-4 border rounded-xl p-6 bg-primary-50/30 dark:bg-primary-950/10">
                 <div className="flex items-start gap-3">
-                  <ExternalLink className="size-5 text-cyan-700 dark:text-cyan-400 mt-0.5 shrink-0" />
+                  <ExternalLink className="size-5 text-primary-700 dark:text-primary-400 mt-0.5 shrink-0" />
                   <div className="space-y-1">
                     <p className="font-semibold">
                       This ticket is sold externally
@@ -845,7 +895,7 @@ const TicketPage = () => {
                       onClick={handleIncrement}
                       disabled={quantity >= maxQuantity}
                       aria-label="Increase quantity"
-                      className="size-9 rounded-full bg-cyan-500 text-white flex items-center justify-center transition-colors hover:bg-cyan-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                      className="size-9 rounded-full bg-primary-500 text-white flex items-center justify-center transition-colors hover:bg-primary-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                     >
                       <Plus className="size-4" />
                     </button>
@@ -863,11 +913,41 @@ const TicketPage = () => {
 
                 <div className="border-t" />
 
+                {creditAvailable > 0 && totalPrice > 0 && (
+                  <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/50 p-3">
+                    <div>
+                      <p className="text-sm font-semibold">
+                        Use Turnupz Credit
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {money(creditAvailable)} available
+                      </p>
+                    </div>
+                    <Switch
+                      checked={useCredit}
+                      onCheckedChange={setUseCredit}
+                      aria-label="Use Turnupz Credit"
+                    />
+                  </div>
+                )}
+                {creditApplied > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <p className="text-muted-foreground">Turnupz Credit</p>
+                    <p className="font-semibold">−{money(creditApplied)}</p>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
-                  <p className="font-semibold text-lg">Total Price:</p>
-                  <p className="text-xl font-bold text-cyan-600">
+                  <p className="font-semibold text-lg">
+                    {creditApplied > 0 ? "To pay:" : "Total Price:"}
+                  </p>
+                  <p className="text-xl font-bold text-primary-600">
                     {(selectedTicket?.price?.amount ?? 0) > 0 &&
-                      formattedTotalPrice}
+                      (creditApplied > 0
+                        ? toPay > 0
+                          ? money(toPay)
+                          : "Covered by credit"
+                        : formattedTotalPrice)}
                     {selectedTicket && !selectedTicket?.price?.amount && "Free"}
                     {!selectedTicket && formattedTotalPrice}
                   </p>
@@ -879,7 +959,7 @@ const TicketPage = () => {
               <button
                 onClick={handleOpenExternalLink}
                 disabled={!selectedTicket?.link}
-                className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center justify-center gap-2"
+                className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center justify-center gap-2"
               >
                 <ExternalLink className="size-5" />
                 {externalLinkHost
@@ -890,7 +970,7 @@ const TicketPage = () => {
               <button
                 onClick={handlePurchase}
                 disabled={!selectedTicket || isPurchasing || !isSelectedOnSale}
-                className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
+                className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
               >
                 {isPurchasing && "Processing..."}
                 {!isPurchasing &&

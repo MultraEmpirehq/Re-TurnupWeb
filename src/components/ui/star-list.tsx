@@ -47,7 +47,7 @@ const StarList: React.FC<StarListProps> = ({
           {fill === "full" && (
             <Star
               size={size}
-              className="text-amber-500 fill-amber-500"
+              className="text-secondary-500 fill-secondary-500"
               aria-hidden
             />
           )}
@@ -61,7 +61,7 @@ const StarList: React.FC<StarListProps> = ({
               <span className="absolute inset-0 w-1/2 overflow-hidden">
                 <Star
                   size={size}
-                  className="text-amber-500 fill-amber-500"
+                  className="text-secondary-500 fill-secondary-500"
                   aria-hidden
                 />
               </span>

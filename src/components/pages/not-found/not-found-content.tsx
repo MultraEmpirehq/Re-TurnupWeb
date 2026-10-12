@@ -42,7 +42,7 @@ const NotFoundContent = () => {
             className="rounded-none"
             imageClassName="object-cover object-center"
           />
-          <div className="absolute inset-0 bg-linear-to-r from-[#05B5FF]/70 via-transparent to-[#A855F7]/70 mix-blend-multiply" />
+          <div className="absolute inset-0 bg-linear-to-r from-[#05B5FF]/70 via-transparent to-[#0577FA]/70 mix-blend-multiply" />
           <div className="absolute inset-0 bg-black/60" />
 
           <div className="relative z-10 flex min-h-[520px] md:min-h-[600px] flex-col items-center justify-center gap-6 px-6 py-12 text-center text-white">
@@ -53,7 +53,7 @@ const NotFoundContent = () => {
               className="w-[90px] md:w-[110px] overflow-hidden"
             />
 
-            <p className="text-[clamp(4.5rem,16vw,9rem)] font-bold leading-none bg-linear-to-r from-[#05B5FF] via-[#8B5CF6] to-[#EC4899] bg-clip-text text-transparent">
+            <p className="text-[clamp(4.5rem,16vw,9rem)] font-bold leading-none bg-linear-to-r from-[#05B5FF] to-[#0577FA] bg-clip-text text-transparent">
               404
             </p>
 

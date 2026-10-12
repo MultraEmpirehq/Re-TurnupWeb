@@ -31,7 +31,7 @@ import {
 } from "./moderation-ui";
 
 const STATUS_TONES: Record<TReportStatus, string> = {
-  open: "bg-amber-50 text-amber-800",
+  open: "bg-secondary-50 text-secondary-800",
   resolved: "bg-emerald-50 text-emerald-700",
   dismissed: "bg-muted text-muted-foreground",
 };

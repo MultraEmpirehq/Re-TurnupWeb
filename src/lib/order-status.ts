@@ -13,7 +13,7 @@ export const ORDER_STATUS_META: Record<
   [EOrderStatus.PENDING]: {
     label: "Awaiting payment",
     className:
-      "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+      "bg-secondary-100 text-secondary-700 dark:bg-secondary-900/30 dark:text-secondary-400",
   },
   [EOrderStatus.FAILED]: {
     label: "Failed",
@@ -26,7 +26,7 @@ export const ORDER_STATUS_META: Record<
   [EOrderStatus.NEEDS_REVIEW]: {
     label: "Being checked",
     className:
-      "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+      "bg-secondary-100 text-secondary-800 dark:bg-secondary-900/30 dark:text-secondary-300",
   },
 };
 

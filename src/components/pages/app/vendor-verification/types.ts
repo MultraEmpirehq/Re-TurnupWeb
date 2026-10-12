@@ -11,6 +11,12 @@ export type VerificationStatus =
 
 export type VendorType = "individual" | "business";
 
+/**
+ * free: free events only, no ID or bank details, approved straight away.
+ * paid: the full verification, to sell tickets.
+ */
+export type VendorPlan = "free" | "paid";
+
 export type VerificationStepKey =
   "vendorType" | "identity" | "business" | "payout" | "crossBorder" | "review";
 
@@ -115,7 +121,7 @@ export const STATUS_LABELS: Record<VerificationStatus, string> = {
 };
 
 export const STEP_LABELS: Record<VerificationStepKey, string> = {
-  vendorType: "Account type",
+  vendorType: "Hosting",
   identity: "Identity",
   business: "Business",
   payout: "Payout",
@@ -133,6 +139,12 @@ export interface SavedPayoutDigits {
 
 export type VendorVerificationApiResponse = SavedPayoutDigits & {
   status?: VerificationStatus;
+  plan?: VendorPlan | null;
+  /** Approved at any level: the verified tick. */
+  isVerified?: boolean;
+  /** Approved to sell tickets (paid or cross-border level). */
+  canSellTickets?: boolean;
+  signUpCap?: number | null;
   approvalLevel?: string | null;
   vendorType?: VendorType | null;
   legalFirstName?: string | null;
@@ -164,6 +176,8 @@ export type VendorVerificationApiResponse = SavedPayoutDigits & {
 
 /** The form, one object across every step. */
 export interface VerificationFormValues {
+  /** Blank until they choose. */
+  plan: VendorPlan | "";
   vendorType: VendorType;
   legalFirstName: string;
   legalLastName: string;
@@ -196,6 +210,7 @@ export interface VerificationFormValues {
 }
 
 export const DEFAULT_VALUES: VerificationFormValues = {
+  plan: "",
   vendorType: "individual",
   legalFirstName: "",
   legalLastName: "",
@@ -244,6 +259,7 @@ export const formFromApi = (
   const dateOfBirth = data.dateOfBirth ? new Date(data.dateOfBirth) : undefined;
   return {
     ...DEFAULT_VALUES,
+    plan: data.plan ?? "",
     vendorType: data.vendorType ?? "individual",
     legalFirstName: data.legalFirstName ?? "",
     legalLastName: data.legalLastName ?? "",
@@ -275,7 +291,7 @@ export const formFromApi = (
 
 /** Which fields each step sends, as the API names them. */
 export const STEP_FIELDS: Record<VerificationStepKey, (keyof ApiPayload)[]> = {
-  vendorType: ["vendorType"],
+  vendorType: ["plan", "vendorType"],
   identity: [
     "legalFirstName",
     "legalLastName",
@@ -314,6 +330,7 @@ export const STEP_FIELDS: Record<VerificationStepKey, (keyof ApiPayload)[]> = {
 };
 
 export interface ApiPayload {
+  plan?: VendorPlan;
   vendorType?: VendorType;
   legalFirstName?: string;
   legalLastName?: string;
@@ -362,6 +379,7 @@ export const toApiPayload = (
   const accountNumber = digits(values.accountNumber);
   const iban = clean(values.iban.replace(/\s/g, "").toUpperCase());
   const payload: ApiPayload = {
+    plan: values.plan || undefined,
     vendorType: values.vendorType,
     legalFirstName: clean(values.legalFirstName),
     legalLastName: clean(values.legalLastName),

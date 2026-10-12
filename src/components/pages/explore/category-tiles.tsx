@@ -43,12 +43,12 @@ export const CATEGORY_ICONS: [RegExp, LucideIcon][] = [
 
 export const CATEGORY_TONES = [
   "from-sky-400 to-blue-600",
-  "from-pink-400 to-rose-600",
-  "from-amber-300 to-orange-500",
-  "from-violet-400 to-purple-600",
-  "from-emerald-300 to-teal-600",
-  "from-fuchsia-400 to-pink-600",
-  "from-cyan-300 to-sky-600",
+  "from-primary-400 to-red-600",
+  "from-secondary-300 to-secondary-500",
+  "from-primary-400 to-primary-600",
+  "from-emerald-300 to-primary-600",
+  "from-primary-400 to-primary-600",
+  "from-primary-300 to-sky-600",
 ];
 
 export const categoryIconFor = (name: string) =>

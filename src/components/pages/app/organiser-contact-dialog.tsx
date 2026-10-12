@@ -38,6 +38,10 @@ interface IEventOrganiser {
     displayName: string | null;
     verificationStatus: string | null;
     approvalLevel: string | null;
+    /** Approved at any level: the verified tick. */
+    isVerified?: boolean;
+    /** Approved to sell tickets. */
+    canSellTickets?: boolean;
     eventsCreated: number;
     memberSince: string;
     isAccountDisabled: boolean;
@@ -119,10 +123,13 @@ const OrganiserContactDialog: React.FC<{
   })();
 
   const phoneDigits = organiser?.phoneNumber?.replace(/[^\d]/g, "") ?? "";
-  const verification = organiser?.verificationStatus
-    ? (VERIFICATION_LABELS[organiser.verificationStatus] ??
-      organiser.verificationStatus)
-    : "No vendor verification";
+  const verification =
+    organiser?.isVerified && !organiser.canSellTickets
+      ? "Verified · free events"
+      : organiser?.verificationStatus
+        ? (VERIFICATION_LABELS[organiser.verificationStatus] ??
+          organiser.verificationStatus)
+        : "No vendor verification";
 
   return (
     <Dialog open={!!target} onOpenChange={(open) => !open && onClose()}>
@@ -184,11 +191,10 @@ const OrganiserContactDialog: React.FC<{
                   <span
                     className={cn(
                       "inline-flex items-center gap-1",
-                      organiser.verificationStatus === "approved" &&
-                        "text-emerald-700",
+                      organiser.isVerified && "text-emerald-700",
                     )}
                   >
-                    {organiser.verificationStatus === "approved" && (
+                    {organiser.isVerified && (
                       <BadgeCheck className="size-3.5" aria-hidden />
                     )}
                     {verification}
@@ -207,7 +213,7 @@ const OrganiserContactDialog: React.FC<{
             </div>
 
             {organiser.isAccountDisabled && (
-              <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              <p className="rounded-xl bg-secondary-50 px-3 py-2 text-xs text-secondary-800">
                 This account is disabled, so they can&apos;t sign in to see
                 notifications. Email is the way to reach them.
               </p>

@@ -9,9 +9,10 @@ import React, { memo } from "react";
 
 /**
  * Admins get the sidebar console on every /app page they can open (their own pages
- * and the admin-only venue and category pages). Vendors, including those still
- * waiting on verification, get the vendor sidebar. Attendees only use a few /app
- * pages, such as their chats, so they get the site header instead of a sidebar.
+ * and the admin-only venue and category pages). Approved vendors get the vendor
+ * sidebar. Attendees, including anyone whose vendor application is still being
+ * reviewed, only use a few /app pages, such as their chats and the verification
+ * form, so they get the site header instead of a sidebar.
  */
 const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const role = useUserStore((state) => state.userDetails?.role);

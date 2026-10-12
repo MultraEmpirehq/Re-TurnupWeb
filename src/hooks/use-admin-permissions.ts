@@ -12,7 +12,8 @@ export type TAdminPermission =
   | "AUDIT_VIEW"
   | "FILES_MANAGE"
   | "USERS_MANAGE"
-  | "SUPPORT_MANAGE";
+  | "SUPPORT_MANAGE"
+  | "REFUNDS_MANAGE";
 
 /** Every permission, in the order the admin screens list them. */
 export const ADMIN_PERMISSIONS: {
@@ -59,6 +60,12 @@ export const ADMIN_PERMISSIONS: {
     value: "SUPPORT_MANAGE",
     label: "Handle inquiries",
     description: "Read and resolve messages sent through the Contact Us form.",
+  },
+  {
+    value: "REFUNDS_MANAGE",
+    label: "Handle refunds",
+    description:
+      "Refund orders, cancel events with refunds for everyone, and mark payment disputes. Moves money: give it only to people you trust with that.",
   },
   {
     value: "ADMINS_MANAGE",

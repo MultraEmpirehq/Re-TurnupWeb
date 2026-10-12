@@ -97,6 +97,27 @@ const RevealableAccount: React.FC<{
       .then(() => toast.success("Copied"))
       .catch(() => toast.error("Couldn't copy"));
 
+  // Only the last four digits were ever stored for this application (test data,
+  // or a submission from before full numbers were kept): say so, not nothing.
+  if (!shown.length) {
+    return (
+      <span className="flex flex-col gap-1.5">
+        <span className="font-mono">•••• {last4}</span>
+        <span className="text-xs text-muted-foreground">
+          The full account number isn&apos;t on file for this application, only
+          the last four digits. Ask the vendor to re-enter their bank details.
+        </span>
+        <button
+          type="button"
+          onClick={() => setRevealed(null)}
+          className="inline-flex w-fit items-center gap-1 text-xs font-medium text-secondary-600 hover:underline"
+        >
+          <EyeOff className="size-3.5" /> Hide
+        </button>
+      </span>
+    );
+  }
+
   return (
     <span className="flex flex-col gap-1.5">
       {shown.map((field) => (

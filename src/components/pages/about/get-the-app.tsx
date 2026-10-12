@@ -4,7 +4,7 @@ import React, { memo } from "react";
 
 const GetTheApp = () => {
   return (
-    <div className="bg-gradient-to-r from-[#05B5FF] via-[#8B5CF6] to-[#EC4899] relative overflow-hidden py-12 md:py-16">
+    <div className="bg-gradient-to-r from-[#05B5FF] to-[#0577FA] relative overflow-hidden py-12 md:py-16">
       <SectionContainer className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
         <div className="space-y-4 text-white">
           <h2 className="text-[clamp(1.75rem,4vw,2.75rem)] font-bold leading-tight">

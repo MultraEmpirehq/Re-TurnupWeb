@@ -89,7 +89,8 @@ const ReviewSummary: React.FC<{
 }> = ({ saved, stepStatuses, onEdit, withConfirmation }) => {
   const { control } = useFormContext<VerificationFormValues>();
   const values = useWatch({ control }) as VerificationFormValues;
-  const isBusiness = values.vendorType === "business";
+  const isFree = values.plan === "free";
+  const isBusiness = !isFree && values.vendorType === "business";
   const country = findPayoutCountry(values.payoutCountry);
   const doc = (value: VerificationFormValues["idDocument"]) =>
     !value
@@ -102,24 +103,34 @@ const ReviewSummary: React.FC<{
     <div className="space-y-4">
       <Group step="vendorType" status={stepStatuses.vendorType} onEdit={onEdit}>
         <Row
-          label="Account"
-          value={isBusiness ? "Registered business" : "Individual"}
+          label="Hosting"
+          value={isFree ? "Free events only" : "Sell tickets"}
         />
+        {!isFree && (
+          <Row
+            label="Account"
+            value={isBusiness ? "Registered business" : "Individual"}
+          />
+        )}
       </Group>
 
       <Group step="identity" status={stepStatuses.identity} onEdit={onEdit}>
         <Row
-          label="Legal name"
+          label={isFree ? "Name" : "Legal name"}
           value={[values.legalFirstName, values.legalLastName]
             .filter(Boolean)
             .join(" ")}
         />
-        <Row
-          label="Date of birth"
-          value={
-            values.dateOfBirth ? format(values.dateOfBirth, "d MMMM yyyy") : ""
-          }
-        />
+        {!isFree && (
+          <Row
+            label="Date of birth"
+            value={
+              values.dateOfBirth
+                ? format(values.dateOfBirth, "d MMMM yyyy")
+                : ""
+            }
+          />
+        )}
         <Row label="Phone" value={values.phoneNumber} />
         <Row
           label="Country of residence"
@@ -127,8 +138,12 @@ const ReviewSummary: React.FC<{
             values.countryOfResidence && countryLabel(values.countryOfResidence)
           }
         />
-        <Row label="Address" value={values.address} />
-        <Row label="Government ID" value={doc(values.idDocument)} />
+        {!isFree && (
+          <>
+            <Row label="Address" value={values.address} />
+            <Row label="Government ID" value={doc(values.idDocument)} />
+          </>
+        )}
       </Group>
 
       {isBusiness && (
@@ -144,64 +159,68 @@ const ReviewSummary: React.FC<{
         </Group>
       )}
 
-      <Group step="payout" status={stepStatuses.payout} onEdit={onEdit}>
-        <Row
-          label="Paid in"
-          value={country ? `${country.name} (${country.currency})` : ""}
-        />
-        <Row label="Account holder" value={values.accountHolderName} />
-        {country?.fields.includes("bankName") && (
-          <Row label="Bank" value={values.bankName} />
-        )}
-        {country?.fields.includes("accountNumber") && (
+      {!isFree && (
+        <Group step="payout" status={stepStatuses.payout} onEdit={onEdit}>
           <Row
-            label="Account number"
-            value={masked(values.accountNumber, saved.accountNumberLast4)}
+            label="Paid in"
+            value={country ? `${country.name} (${country.currency})` : ""}
           />
-        )}
-        {country?.fields.includes("routingNumber") && (
-          <Row
-            label={country.routingNumber?.label ?? "Routing number"}
-            value={masked(values.routingNumber, saved.routingNumberLast4)}
-          />
-        )}
-        {country?.fields.includes("sortCode") && (
-          <Row
-            label="Sort code"
-            value={masked(values.sortCode, saved.sortCodeLast4)}
-          />
-        )}
-        {country?.fields.includes("iban") && (
-          <Row label="IBAN" value={masked(values.iban, saved.ibanLast4)} />
-        )}
-        {country?.fields.includes("swiftCode") && (
-          <Row label="SWIFT / BIC" value={values.swiftCode} />
-        )}
-      </Group>
+          <Row label="Account holder" value={values.accountHolderName} />
+          {country?.fields.includes("bankName") && (
+            <Row label="Bank" value={values.bankName} />
+          )}
+          {country?.fields.includes("accountNumber") && (
+            <Row
+              label="Account number"
+              value={masked(values.accountNumber, saved.accountNumberLast4)}
+            />
+          )}
+          {country?.fields.includes("routingNumber") && (
+            <Row
+              label={country.routingNumber?.label ?? "Routing number"}
+              value={masked(values.routingNumber, saved.routingNumberLast4)}
+            />
+          )}
+          {country?.fields.includes("sortCode") && (
+            <Row
+              label="Sort code"
+              value={masked(values.sortCode, saved.sortCodeLast4)}
+            />
+          )}
+          {country?.fields.includes("iban") && (
+            <Row label="IBAN" value={masked(values.iban, saved.ibanLast4)} />
+          )}
+          {country?.fields.includes("swiftCode") && (
+            <Row label="SWIFT / BIC" value={values.swiftCode} />
+          )}
+        </Group>
+      )}
 
-      <Group
-        step="crossBorder"
-        status={stepStatuses.crossBorder}
-        onEdit={onEdit}
-      >
-        {values.hostsAbroad ? (
-          <>
-            <Row
-              label="Countries"
-              value={(values.crossBorderCountries ?? [])
-                .map(countryLabel)
-                .join(", ")}
-            />
-            <Row label="Why" value={values.crossBorderReason} />
-            <Row
-              label="Supporting document"
-              value={doc(values.supportingDocument)}
-            />
-          </>
-        ) : (
-          <Row label="Hosting abroad" value="No, only in my own country" />
-        )}
-      </Group>
+      {!isFree && (
+        <Group
+          step="crossBorder"
+          status={stepStatuses.crossBorder}
+          onEdit={onEdit}
+        >
+          {values.hostsAbroad ? (
+            <>
+              <Row
+                label="Countries"
+                value={(values.crossBorderCountries ?? [])
+                  .map(countryLabel)
+                  .join(", ")}
+              />
+              <Row label="Why" value={values.crossBorderReason} />
+              <Row
+                label="Supporting document"
+                value={doc(values.supportingDocument)}
+              />
+            </>
+          ) : (
+            <Row label="Hosting abroad" value="No, only in my own country" />
+          )}
+        </Group>
+      )}
 
       {withConfirmation && (
         <Controller
@@ -219,9 +238,9 @@ const ReviewSummary: React.FC<{
                   aria-invalid={!!fieldState.error}
                 />
                 <span className="text-sm leading-6 text-secondary-700">
-                  I confirm these details are accurate and belong to me or my
-                  business. I agree that Turnupz may check my identity, bank
-                  account and events before enabling paid tickets and payouts.
+                  {isFree
+                    ? "I confirm these details are accurate and belong to me. I'll only run free events, and I agree that Turnupz may check my events and remove ones that break the rules."
+                    : "I confirm these details are accurate and belong to me or my business. I agree that Turnupz may check my identity, bank account and events before enabling paid tickets and payouts."}
                 </span>
               </label>
               {fieldState.error?.message && (

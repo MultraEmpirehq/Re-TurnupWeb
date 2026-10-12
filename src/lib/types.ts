@@ -360,6 +360,27 @@ export interface IOrderDetailsType {
   createdAt: Date;
   ticket: IOrderTicketType;
   userTickets: IUserTicketType[];
+  /** How much Turnupz Credit paid, or null. */
+  paidWithCredit?: IMoney | null;
+  /** Money given back, oldest first. */
+  refunds?: IOrderRefund[];
+  refundedTickets?: number;
+}
+
+export interface IMoney {
+  amount: number;
+  formatted: { withCurrency: string };
+}
+
+export interface IOrderRefund {
+  status: "processing" | "completed" | "failed";
+  tickets: number;
+  /** Back to the card it was paid with. */
+  toCard: IMoney;
+  /** Back as Turnupz Credit. */
+  asCredit: IMoney;
+  requestedAt: string;
+  completedAt: string | null;
 }
 
 export interface ICategoryDetailsType {
@@ -408,6 +429,8 @@ export interface IAdminUserListItem {
 export interface IVendorVerificationSummary {
   reference: string | null;
   status: TVerificationStatus;
+  /** free: free events only, no ID or bank; paid: the full verification. */
+  plan?: "free" | "paid" | null;
   approvalLevel: TApprovalLevel | null;
   vendorType: "individual" | "business" | null;
   submittedAt: string | null;
@@ -441,6 +464,12 @@ export interface IVendorVerification {
   vendorId: string;
   vendor?: IAdminUserListItem;
   status: TVerificationStatus;
+  /** free: free events only, no ID or bank; paid: the full verification. */
+  plan?: "free" | "paid" | null;
+  /** What's still needed before it can be approved to sell tickets. */
+  missingForSelling?: string[];
+  /** What's still needed before it can be approved to sell abroad. */
+  missingForCrossBorder?: string[];
   approvalLevel: TApprovalLevel | null;
   vendorType: "individual" | "business" | null;
   legalFirstName: string | null;

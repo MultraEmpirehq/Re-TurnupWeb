@@ -44,11 +44,11 @@ const accountStatus = (user: IAdminUserListItem) =>
   user.isAccountDisabled
     ? { label: "Suspended", tone: "bg-red-50 text-red-700" }
     : user.isEmailVerified === false && user.role !== EUserRoles.ADMIN
-      ? { label: "Unverified", tone: "bg-amber-50 text-amber-800" }
+      ? { label: "Unverified", tone: "bg-secondary-50 text-secondary-800" }
       : { label: "Active", tone: "bg-emerald-50 text-emerald-700" };
 
 const ROLE_TONE: Record<string, string> = {
-  [EUserRoles.ADMIN]: "bg-purple-50 text-purple-700",
+  [EUserRoles.ADMIN]: "bg-primary-50 text-primary-700",
   [EUserRoles.VENDOR]: "bg-blue-50 text-blue-700",
   [EUserRoles.USER]: "bg-muted text-muted-foreground",
 };

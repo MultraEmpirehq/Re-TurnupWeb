@@ -184,7 +184,7 @@ const TicketsPage = () => {
       {waiting > 0 && (
         <Link
           href={`${ROUTES.PROFILE_TICKETS.href}?tab=sent`}
-          className="block rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900 hover:bg-amber-100/70"
+          className="block rounded-2xl border border-secondary-100 bg-secondary-50 px-4 py-3 text-sm text-secondary-900 hover:bg-secondary-100/70"
         >
           {waiting === 1
             ? "1 ticket you sent is waiting to be claimed."
@@ -194,7 +194,7 @@ const TicketsPage = () => {
       )}
 
       {passInviteToken && (
-        <div className="rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
+        <div className="rounded-2xl border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-900">
           <p className="font-semibold">Access pass invite detected</p>
           <p className="mt-1">
             If this pass has already been claimed by your account, it will
@@ -213,7 +213,7 @@ const TicketsPage = () => {
           </p>
           <Link
             href={ROUTES.EXPLORE.href}
-            className="inline-block mt-4 text-sm font-medium text-cyan-600 dark:text-cyan-400 hover:underline"
+            className="inline-block mt-4 text-sm font-medium text-primary-600 dark:text-primary-400 hover:underline"
           >
             Explore events
           </Link>

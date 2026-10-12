@@ -47,7 +47,7 @@ const FindScreen = () => (
       },
       {
         name: "Laugh Out Loud",
-        tone: "from-amber-200 to-orange-400",
+        tone: "from-secondary-200 to-secondary-400",
         when: "Sat · 7pm",
       },
     ].map((event, index) => (
@@ -150,7 +150,7 @@ const ChatScreen = () => (
           from: "Tolu",
           text: "Who's getting there early? 👀",
           mine: false,
-          tone: "bg-amber-300",
+          tone: "bg-secondary-300",
         },
         { from: "You", text: "Me! Getting there at 8:30", mine: true },
         {
@@ -163,7 +163,7 @@ const ChatScreen = () => (
           from: "Dayo",
           text: "This speaker line-up is 🔥",
           mine: false,
-          tone: "bg-pink-300",
+          tone: "bg-primary-300",
         },
       ].map((message, index) => (
         <div
@@ -256,7 +256,7 @@ const CONFETTI = Array.from({ length: 16 }, (_, index) => {
   return {
     dx: `${Math.round(Math.cos(angle) * reach)}px`,
     dy: `${Math.round(Math.sin(angle) * reach)}px`,
-    color: ["#f472b6", "#7dd3fc", "#fcd34d", "#a78bfa", "#34d399"][index % 5],
+    color: ["#00b2ff", "#7dd3fc", "#ffffff", "#0577fa", "#99e0ff"][index % 5],
     round: index % 2 === 0,
   };
 });
@@ -300,7 +300,7 @@ const AuthStory = () => {
         <defs>
           <linearGradient id="journey-route" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stopColor="#7dd3fc" />
-            <stop offset="100%" stopColor="#f472b6" />
+            <stop offset="100%" stopColor="#0577fa" />
           </linearGradient>
         </defs>
         <path
@@ -373,7 +373,7 @@ const AuthStory = () => {
               {isActive && index === 1 && (
                 <div
                   key={`ticket-${chapter}`}
-                  className="animate-landing-ticket-out absolute top-[40%] right-0 z-20 flex w-[110px] overflow-hidden rounded-xl bg-linear-to-br from-secondary to-primary text-white shadow-[0_18px_30px_-12px_rgba(236,72,153,0.6)] [--out-x:80px]"
+                  className="animate-landing-ticket-out absolute top-[40%] right-0 z-20 flex w-[110px] overflow-hidden rounded-xl bg-linear-to-br from-secondary to-primary text-white shadow-[0_18px_30px_-12px_rgba(5,119,250,0.6)] [--out-x:80px]"
                   style={enter(1700)}
                 >
                   <div className="flex-1 p-2.5">

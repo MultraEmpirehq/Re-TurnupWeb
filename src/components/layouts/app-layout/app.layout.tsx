@@ -27,7 +27,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <NextTopLoader color="#06b6d4" height={3} showSpinner={false} />
+        <NextTopLoader color="#00b2ff" height={3} showSpinner={false} />
         {!shouldHideNav && <GeneralNavComponent />}
         <div className="min-h-[calc(100vh-70px)]">{children}</div>
         {!shouldHideFooter && <GeneralFooterComponent />}

@@ -3,7 +3,7 @@
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import { Search, X } from "lucide-react";
 import React, { memo, useEffect, useRef, useState } from "react";
-import Spotlight from "./spotlight";
+import PassDeck from "./pass-deck";
 import useExploreFilters from "./use-explore-filters";
 import ExplorePlacePicker from "./explore-place-picker";
 
@@ -39,7 +39,7 @@ const ExploreBannerComponent = () => {
 
   return (
     // The app's light Explore: the same page colour and brand wash as sign-in.
-    <section className="relative isolate overflow-hidden bg-[#fbf9ff]">
+    <section className="relative isolate overflow-hidden bg-[#f7fbff]">
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-56 -left-40 size-[36rem] rounded-full bg-secondary/20 blur-[140px]" />
         <div className="absolute -right-32 -bottom-56 size-[34rem] rounded-full bg-primary/15 blur-[140px]" />
@@ -103,8 +103,9 @@ const ExploreBannerComponent = () => {
           </form>
         </div>
 
+        {/* Drawn in code, not from event photos, so it looks right whatever is on. */}
         <div className="mx-auto w-full max-w-[380px] lg:mx-0 lg:ml-auto">
-          <Spotlight />
+          <PassDeck />
         </div>
       </SectionContainer>
     </section>

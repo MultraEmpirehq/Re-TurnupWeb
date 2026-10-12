@@ -42,7 +42,7 @@ const tone = (decision: string) =>
     : decision === "rejected"
       ? "bg-red-500"
       : decision === "needs_more_info"
-        ? "bg-amber-500"
+        ? "bg-secondary-500"
         : "bg-secondary-300";
 
 /** The application's life, newest first: who decided what, and what they said. */
