@@ -36,14 +36,14 @@ const SettingsPage = () => {
       {isVendor && (
         <Link
           href={ROUTES.VENDOR_VERIFICATION.href}
-          className="flex flex-col gap-4 rounded-[1.5rem] border border-cyan-100 bg-cyan-50/70 p-6 transition hover:border-cyan-200 hover:bg-cyan-50 sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-col gap-4 rounded-[1.5rem] border border-primary-100 bg-primary-50/70 p-6 transition hover:border-primary-200 hover:bg-primary-50 sm:flex-row sm:items-center sm:justify-between"
         >
           <span className="flex items-start gap-4">
-            <span className="rounded-2xl bg-white p-3 text-cyan-700">
+            <span className="rounded-2xl bg-white p-3 text-primary-700">
               <ShieldCheck className="size-5" />
             </span>
             <span>
-              <span className="block text-sm font-bold tracking-[0.18em] text-cyan-700 uppercase">
+              <span className="block text-sm font-bold tracking-[0.18em] text-primary-700 uppercase">
                 Vendor verification
               </span>
               <span className="mt-1 block text-sm leading-6 text-secondary-600">

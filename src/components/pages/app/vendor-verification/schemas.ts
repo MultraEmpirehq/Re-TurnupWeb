@@ -44,8 +44,39 @@ const document = (label: string, required: boolean) =>
       "document.size": "The file must be 10 MB or smaller",
     });
 
-const vendorTypeSchema = Joi.object({
-  vendorType: Joi.string().valid("individual", "business").required(),
+const vendorTypeSchema = (values: VerificationFormValues) =>
+  Joi.object({
+    plan: Joi.string().valid("free", "paid").required().messages({
+      "any.only": "Choose what you'll host",
+      "any.required": "Choose what you'll host",
+      "string.empty": "Choose what you'll host",
+    }),
+    vendorType:
+      values.plan === "paid"
+        ? Joi.string().valid("individual", "business").required()
+        : Joi.any(),
+  }).unknown(true);
+
+const phoneNumber = Joi.string()
+  .trim()
+  .required()
+  .custom((value: string, helpers) =>
+    isValidPhoneNumberStandard(value) && value.startsWith("+")
+      ? value
+      : helpers.error("phone.invalid"),
+  )
+  .messages({
+    "string.empty": "Phone number is required",
+    "any.required": "Phone number is required",
+    "phone.invalid": "Enter it with the country code, e.g. +234 801 234 5678",
+  });
+
+/** Free hosting: who they are and how to reach them, no ID. */
+const freeHostSchema = Joi.object({
+  legalFirstName: text("First name"),
+  legalLastName: text("Last name"),
+  countryOfResidence: text("Country of residence"),
+  phoneNumber,
 }).unknown(true);
 
 const identitySchema = Joi.object({
@@ -63,19 +94,7 @@ const identitySchema = Joi.object({
     }),
   countryOfResidence: text("Country of residence"),
   address: text("Residential address", 5),
-  phoneNumber: Joi.string()
-    .trim()
-    .required()
-    .custom((value: string, helpers) =>
-      isValidPhoneNumberStandard(value) && value.startsWith("+")
-        ? value
-        : helpers.error("phone.invalid"),
-    )
-    .messages({
-      "string.empty": "Phone number is required",
-      "any.required": "Phone number is required",
-      "phone.invalid": "Enter it with the country code, e.g. +234 801 234 5678",
-    }),
+  phoneNumber,
   idDocument: document("government ID", true),
 }).unknown(true);
 
@@ -244,9 +263,9 @@ export const schemaFor = (
 ) => {
   switch (step) {
     case "vendorType":
-      return vendorTypeSchema;
+      return vendorTypeSchema(values);
     case "identity":
-      return identitySchema;
+      return values.plan === "free" ? freeHostSchema : identitySchema;
     case "business":
       return businessSchema;
     case "payout":

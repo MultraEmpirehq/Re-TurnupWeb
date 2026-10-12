@@ -59,9 +59,9 @@ export const useVendorVerificationSnapshot = () => {
 
 const TONES: Record<VerificationStatus, string> = {
   approved: "bg-emerald-50 text-emerald-700",
-  submitted: "bg-cyan-50 text-cyan-700",
+  submitted: "bg-primary-50 text-primary-700",
   rejected: "bg-red-50 text-red-600",
-  needs_more_info: "bg-amber-50 text-amber-700",
+  needs_more_info: "bg-secondary-50 text-secondary-700",
   in_progress: "bg-secondary-50 text-secondary-600",
   not_started: "bg-secondary-50 text-secondary-600",
 };
@@ -117,10 +117,10 @@ export const VendorVerificationNotice: React.FC<{
             : "Complete vendor verification to publish paid events and be paid.";
 
   return (
-    <section className="rounded-[1.5rem] border border-cyan-100 bg-cyan-50/70 p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
+    <section className="rounded-[1.5rem] border border-primary-100 bg-primary-50/70 p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-start gap-3">
-          <span className="rounded-2xl bg-white p-3 text-cyan-700">
+          <span className="rounded-2xl bg-white p-3 text-primary-700">
             <ShieldCheck className="size-5" />
           </span>
           <div>

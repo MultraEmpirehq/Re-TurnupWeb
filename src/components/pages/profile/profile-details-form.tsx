@@ -1,5 +1,7 @@
 "use client";
 
+import InviteFriendsCard from "./invite-friends-card";
+import CreditCard from "./credit-card";
 import { patchData, postData } from "@/api";
 import { uploadAttachment } from "@/api/attachments";
 import { constructErrorMessage } from "@/api/functions";
@@ -418,6 +420,8 @@ const ProfileDetailsForm = () => {
 
         {/* How they sign in, and where to change the rest. */}
         <aside className="space-y-6">
+          <CreditCard className={cardClassName} />
+          <InviteFriendsCard className={cardClassName} />
           <section className={cardClassName}>
             <h2 className="text-base font-bold text-secondary-950">
               Sign-in &amp; security
@@ -431,7 +435,7 @@ const ProfileDetailsForm = () => {
                     {userDetails?.email ?? "Not set"}
                   </p>
                   {userDetails?.isEmailVerified === false ? (
-                    <p className="mt-1 inline-flex items-center gap-1 text-xs text-amber-700">
+                    <p className="mt-1 inline-flex items-center gap-1 text-xs text-secondary-700">
                       <CircleAlert className="size-3.5" />
                       Not verified yet
                     </p>

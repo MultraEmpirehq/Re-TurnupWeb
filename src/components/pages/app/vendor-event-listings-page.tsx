@@ -145,15 +145,15 @@ const EventListingCard: React.FC<{
         </div>
 
         {isSuspended && (
-          <div className="mb-4 rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <div className="mb-4 rounded-[1rem] border border-secondary-200 bg-secondary-50 px-4 py-3 text-sm text-secondary-800">
             <p className="font-semibold">Suspended by an admin</p>
             {event.suspensionReason && (
-              <p className="mt-1 line-clamp-3 text-amber-700">
+              <p className="mt-1 line-clamp-3 text-secondary-700">
                 {event.suspensionReason}
               </p>
             )}
             {!isAdmin && (
-              <p className="mt-1 text-xs text-amber-700">
+              <p className="mt-1 text-xs text-secondary-700">
                 Hidden from attendees until an admin restores it.
               </p>
             )}
@@ -161,7 +161,7 @@ const EventListingCard: React.FC<{
               <button
                 type="button"
                 onClick={() => actions.onContactRequest(event)}
-                className="mt-2 text-xs font-semibold text-amber-900 underline-offset-2 hover:underline"
+                className="mt-2 text-xs font-semibold text-secondary-900 underline-offset-2 hover:underline"
               >
                 Reach out to the organiser
               </button>
@@ -181,12 +181,12 @@ const EventListingCard: React.FC<{
         )}
 
         {isDraft && event.reviewNote && (
-          <div className="mb-4 rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <div className="mb-4 rounded-[1rem] border border-secondary-200 bg-secondary-50 px-4 py-3 text-sm text-secondary-800">
             <p className="font-semibold">Sent back by an admin</p>
-            <p className="mt-1 line-clamp-4 text-amber-700">
+            <p className="mt-1 line-clamp-4 text-secondary-700">
               {event.reviewNote}
             </p>
-            <p className="mt-1 text-xs text-amber-700">
+            <p className="mt-1 text-xs text-secondary-700">
               Make the change, then submit it again.
             </p>
           </div>
@@ -279,7 +279,7 @@ const EventListingCard: React.FC<{
             <Button
               type="button"
               variant="outline"
-              className="h-10 rounded-xl border-amber-200 bg-amber-50 px-3 text-sm font-semibold text-amber-800 hover:bg-amber-100"
+              className="h-10 rounded-xl border-secondary-200 bg-secondary-50 px-3 text-sm font-semibold text-secondary-800 hover:bg-secondary-100"
               onClick={() => actions.onSuspendRequest(event)}
             >
               Suspend
@@ -817,7 +817,7 @@ const VendorEventListingsPage = () => {
             </Button>
             <Button
               type="button"
-              className="rounded-2xl bg-amber-600 text-white hover:bg-amber-700"
+              className="rounded-2xl bg-secondary-600 text-white hover:bg-secondary-700"
               disabled={isSuspending || suspendReason.trim().length < 3}
               onClick={handleSuspendEvent}
             >

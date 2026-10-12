@@ -621,7 +621,7 @@ export default function TransferTicketPage() {
                         </span>
                       </>
                     ) : (
-                      <span className="text-amber-300">
+                      <span className="text-secondary-300">
                         No one on Turnupz has that username. Check it, or use
                         their email.
                       </span>
@@ -639,7 +639,7 @@ export default function TransferTicketPage() {
                 </Button>
               </form>
             ) : !transferAllowed ? (
-              <div className="mt-8 rounded-[24px] border border-amber-400/20 bg-white/5 p-5">
+              <div className="mt-8 rounded-[24px] border border-secondary-400/20 bg-white/5 p-5">
                 <p className="text-sm font-semibold text-white">
                   Transfer disabled
                 </p>

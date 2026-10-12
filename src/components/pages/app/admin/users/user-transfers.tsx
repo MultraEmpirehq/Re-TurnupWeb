@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { NoteDialog } from "../moderation/moderation-ui";
 
 const STATUS_TONE: Record<IAdminUserTransfer["status"], string> = {
-  PENDING: "bg-amber-50 text-amber-800",
+  PENDING: "bg-secondary-50 text-secondary-800",
   CLAIMED: "bg-emerald-50 text-emerald-700",
   CANCELLED: "bg-muted text-muted-foreground",
 };

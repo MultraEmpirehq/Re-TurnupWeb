@@ -14,11 +14,11 @@ const VendorVerificationPage = () => {
             Vendor Verification
           </span>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-secondary-950 md:text-5xl">
-            Complete your vendor approval
+            Host events on Turnupz
           </h1>
           <p className="mt-3 max-w-2xl text-secondary-500">
-            Submit identity, payout, and hosting details so Turnupz can review
-            your account for publishing, paid tickets, and payouts.
+            Host free events with a few details and start straight away, or
+            verify your ID and bank to sell tickets and get paid.
           </p>
         </div>
 

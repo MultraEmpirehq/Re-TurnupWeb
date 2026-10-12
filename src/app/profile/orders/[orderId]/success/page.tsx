@@ -90,7 +90,7 @@ const OrderSuccessPage = () => {
       case EOrderStatus.NEEDS_REVIEW:
         return {
           Icon: ShieldAlert,
-          tone: "bg-amber-100 text-amber-600 dark:bg-amber-950/40",
+          tone: "bg-secondary-100 text-secondary-600 dark:bg-secondary-950/40",
           title: "We're checking your payment",
           message:
             "Something about this payment needs a person to look at it. No tickets were issued yet, and our team will get back to you.",
@@ -107,7 +107,7 @@ const OrderSuccessPage = () => {
       default:
         return {
           Icon: Loader2,
-          tone: "bg-yellow-100 text-yellow-600 dark:bg-yellow-950/40 [&_svg]:animate-spin",
+          tone: "bg-secondary-100 text-secondary-600 dark:bg-secondary-950/40 [&_svg]:animate-spin",
           title: "Confirming payment...",
           message:
             "We're waiting for your payment to be confirmed. This page will update automatically.",
@@ -355,7 +355,7 @@ const OrderSuccessPage = () => {
           onClick={handleDownloadTickets}
           disabled={isDownloading || !order?.userTickets?.length}
           loading={isDownloading}
-          className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white border-0"
+          className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white border-0"
         >
           {!isDownloading && <Download className="size-5" />}
           {isDownloading && "Preparing Download..."}

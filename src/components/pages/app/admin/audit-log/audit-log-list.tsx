@@ -53,12 +53,12 @@ const ACTIONS: Record<string, { label: string; tone: string }> = {
   },
   "vendor_verification.payout_revealed": {
     label: "Viewed bank details",
-    tone: "bg-violet-50 text-violet-700",
+    tone: "bg-primary-50 text-primary-700",
   },
   "event.deleted": { label: "Deleted event", tone: "bg-red-50 text-red-700" },
   "event.suspended": {
     label: "Suspended event",
-    tone: "bg-amber-50 text-amber-800",
+    tone: "bg-secondary-50 text-secondary-800",
   },
   "event.restored": {
     label: "Restored event",
@@ -101,7 +101,7 @@ const ACTIONS: Record<string, { label: string; tone: string }> = {
   },
   "admin.suspended": {
     label: "Suspended admin",
-    tone: "bg-amber-50 text-amber-800",
+    tone: "bg-secondary-50 text-secondary-800",
   },
   "admin.reactivated": {
     label: "Reactivated admin",
@@ -110,7 +110,7 @@ const ACTIONS: Record<string, { label: string; tone: string }> = {
   "admin.removed": { label: "Removed admin", tone: "bg-red-50 text-red-700" },
   "user.suspended": {
     label: "Suspended user",
-    tone: "bg-amber-50 text-amber-800",
+    tone: "bg-secondary-50 text-secondary-800",
   },
   "user.reactivated": {
     label: "Reactivated user",
@@ -122,7 +122,7 @@ const ACTIONS: Record<string, { label: string; tone: string }> = {
   },
   "event.rejected": {
     label: "Sent event back",
-    tone: "bg-amber-50 text-amber-800",
+    tone: "bg-secondary-50 text-secondary-800",
   },
   "event_report.resolved": {
     label: "Resolved report",

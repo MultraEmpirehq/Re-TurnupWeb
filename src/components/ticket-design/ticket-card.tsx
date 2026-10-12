@@ -23,8 +23,8 @@ const getTicketColors = (type: string) => {
   const t = (type ?? "").toLowerCase();
   if (t.includes("vip") || t.includes("gold"))
     return {
-      main: "linear-gradient(135deg, #92400e 0%, #b45309 30%, #d97706 70%, #92400e 100%)",
-      stub: "linear-gradient(135deg, #d97706 0%, #92400e 100%)",
+      main: "linear-gradient(135deg, #00121a 0%, #0b1d2a 30%, #023064 70%, #00121a 100%)",
+      stub: "linear-gradient(135deg, #023064 0%, #00121a 100%)",
     };
   if (t.includes("silver"))
     return {
@@ -33,17 +33,17 @@ const getTicketColors = (type: string) => {
     };
   if (t.includes("bronze"))
     return {
-      main: "linear-gradient(135deg, #78350f 0%, #92400e 30%, #b45309 70%, #78350f 100%)",
-      stub: "linear-gradient(135deg, #b45309 0%, #78350f 100%)",
+      main: "linear-gradient(135deg, #27272a 0%, #3f3f46 30%, #52525b 70%, #27272a 100%)",
+      stub: "linear-gradient(135deg, #52525b 0%, #27272a 100%)",
     };
   if (t.includes("premium") || t.includes("platinum"))
     return {
-      main: "linear-gradient(135deg, #4c1d95 0%, #6b21a8 30%, #7c3aed 70%, #4c1d95 100%)",
-      stub: "linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%)",
+      main: "linear-gradient(135deg, #011832 0%, #034896 30%, #0577fa 70%, #011832 100%)",
+      stub: "linear-gradient(135deg, #0577fa 0%, #011832 100%)",
     };
   return {
-    main: "linear-gradient(135deg, #0e7490 0%, #0d9488 30%, #155e75 70%, #1e3a5f 100%)",
-    stub: "linear-gradient(135deg, #0891b2 0%, #164e63 100%)",
+    main: "linear-gradient(135deg, #00b2ff 0%, #008fcc 30%, #0577fa 70%, #034896 100%)",
+    stub: "linear-gradient(135deg, #00b2ff 0%, #0577fa 100%)",
   };
 };
 
@@ -147,7 +147,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
   return (
     <div style={{ marginBottom: 16 }}>
       {isPendingRegistration && (
-        <div className="mb-3 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="mb-3 rounded-2xl border border-secondary-100 bg-secondary-50 px-4 py-3 text-sm text-secondary-800">
           <p className="font-semibold">Registration Pending Approval</p>
           <p className="mt-1">
             This registration is waiting for the organizer to approve it.

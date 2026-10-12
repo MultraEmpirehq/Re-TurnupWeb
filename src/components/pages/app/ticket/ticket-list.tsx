@@ -708,7 +708,7 @@ const TicketList = () => {
 
         <div className="space-y-4 rounded-[1.5rem] border border-secondary-100 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
           <div className="flex items-start gap-3">
-            <span className="rounded-xl bg-cyan-50 p-3 text-cyan-700">
+            <span className="rounded-xl bg-primary-50 p-3 text-primary-700">
               <TicketIcon className="size-5" />
             </span>
             <div>
@@ -736,9 +736,9 @@ const TicketList = () => {
                   setSelectedScannerEventId(event.id);
                   setScanCode("");
                 }}
-                className={`rounded-xl border px-4 py-3 text-left transition hover:border-cyan-200 hover:bg-cyan-50/60 ${
+                className={`rounded-xl border px-4 py-3 text-left transition hover:border-primary-200 hover:bg-primary-50/60 ${
                   selectedScannerEventId === event.id
-                    ? "border-cyan-300 bg-cyan-50/80"
+                    ? "border-primary-300 bg-primary-50/80"
                     : "border-secondary-100 bg-secondary-50"
                 }`}
               >
@@ -780,7 +780,7 @@ const TicketList = () => {
                           key={scanner.id}
                           className={`rounded-full bg-white px-2 py-1 text-[11px] font-medium ${
                             getScannerAccessStatus(scanner) === "Active"
-                              ? "text-cyan-700"
+                              ? "text-primary-700"
                               : "text-secondary-400"
                           }`}
                         >
@@ -859,7 +859,7 @@ const TicketList = () => {
                       and expires after event day.
                     </p>
                   </div>
-                  <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-semibold text-cyan-700">
+                  <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-semibold text-primary-700">
                     <UserCheck className="size-3.5" />
                     {
                       selectedEventScanners.filter(
@@ -906,7 +906,7 @@ const TicketList = () => {
                           <ShieldCheck
                             className={`size-4 ${
                               scanner.status === "Active"
-                                ? "text-cyan-600"
+                                ? "text-primary-600"
                                 : "text-secondary-400"
                             }`}
                           />
@@ -918,7 +918,7 @@ const TicketList = () => {
                               scanner.status === "Active"
                                 ? "bg-emerald-50 text-emerald-700"
                                 : scanner.status === "Expired"
-                                  ? "bg-amber-50 text-amber-700"
+                                  ? "bg-secondary-50 text-secondary-700"
                                   : "bg-red-50 text-red-600"
                             }`}
                           >
@@ -990,7 +990,7 @@ const TicketList = () => {
                       scanResult.status === "approved"
                         ? "border-emerald-200 bg-emerald-50 text-emerald-800"
                         : scanResult.status === "used"
-                          ? "border-amber-200 bg-amber-50 text-amber-800"
+                          ? "border-secondary-200 bg-secondary-50 text-secondary-800"
                           : "border-red-200 bg-red-50 text-red-700"
                     }`}
                   >

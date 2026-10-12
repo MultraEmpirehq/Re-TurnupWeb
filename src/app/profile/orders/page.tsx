@@ -6,6 +6,7 @@ import ErrorContainer from "@/components/ui/error-container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IOrderDetailsType } from "@/lib/types";
 import { orderStatusMeta } from "@/lib/order-status";
+import OrderMoneyBack from "@/components/pages/profile/order-money-back";
 import { ROUTES } from "@/lib/variables";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -69,15 +70,15 @@ const OrdersPage = () => {
           <Link
             key={order.id}
             href={`${ROUTES.PROFILE_ORDERS.href}/${order.id}`}
-            className="block border rounded-xl p-4 hover:border-cyan-400 transition-colors group"
+            className="block border rounded-xl p-4 hover:border-primary-400 transition-colors group"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3 min-w-0">
-                <div className="size-10 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center shrink-0">
-                  <TicketIcon className="size-5 text-cyan-700 dark:text-cyan-400" />
+                <div className="size-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center shrink-0">
+                  <TicketIcon className="size-5 text-primary-700 dark:text-primary-400" />
                 </div>
                 <div className="min-w-0">
-                  <p className="font-semibold truncate group-hover:text-cyan-700 dark:group-hover:text-cyan-400 transition-colors">
+                  <p className="font-semibold truncate group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors">
                     {order.ticket?.event?.data?.name ?? "Event"}
                   </p>
                   <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
@@ -90,6 +91,7 @@ const OrdersPage = () => {
                       {order.quantity} ticket{order.quantity !== 1 && "s"}
                     </span>
                   </div>
+                  <OrderMoneyBack order={order} className="mt-2" />
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">

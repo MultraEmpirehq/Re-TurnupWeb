@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import React, { memo, useCallback } from "react";
 import { toast } from "sonner";
 import { useEvent } from "@/hooks/use-event";
@@ -26,6 +26,8 @@ import EventDetailLineup from "@/components/pages/explore/event-detail/event-det
 import FollowButton from "@/components/discovery/follow-button";
 import Link from "next/link";
 import { ROUTES } from "@/lib/variables";
+import { eventShareUrl, rememberShareRef } from "@/lib/share-ref";
+import useUserStore from "@/stores/user-store";
 
 const EventDetails = () => {
   const params = useParams();
@@ -33,7 +35,16 @@ const EventDetails = () => {
   const { data, error, refetch } = useEvent(id);
   const [copied, setCopied] = React.useState(false);
 
-  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+  // Arrived through someone's link: remember them for this event's checkout.
+  const searchParams = useSearchParams();
+  const arrivedRef = searchParams?.get("ref");
+  React.useEffect(() => {
+    rememberShareRef(id, arrivedRef);
+  }, [id, arrivedRef]);
+  // Shared on, it carries their own username so a purchase earns them credit.
+  const myUsername = useUserStore((state) => state.userDetails?.username);
+  const shareUrl =
+    typeof window !== "undefined" ? eventShareUrl(id, myUsername) : "";
   const handleShare = useCallback(async () => {
     const title = data?.name || "Event";
     const text = data?.name ? `Check out ${data.name} on Turnup` : undefined;

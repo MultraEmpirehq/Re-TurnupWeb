@@ -1,6 +1,6 @@
 "use client";
 import nextDynamic from "next/dynamic";
-import { getData, patchData } from "@/api";
+import { getData, patchData, postData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import DateSelect from "@/components/ui/date-select";
@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 
 import useAuth from "@/hooks/use-auth";
+import { forgetInvite, readInvite } from "@/lib/invite";
 import { ROUTES } from "@/lib/variables";
 import useUserStore, { EUserGenders, TUserDetails } from "@/stores/user-store";
 import { joiResolver } from "@hookform/resolvers/joi";
@@ -43,6 +44,8 @@ interface IFormValues {
   country: string;
   postalCode: string;
   isUserNameValid: boolean;
+  /** Optional: a friend's username or an influencer code. */
+  inviteCode: string;
 }
 
 const schema = Joi.object({
@@ -80,6 +83,7 @@ const schema = Joi.object({
   }),
   // Optional: not every country uses one, and plenty of people don't know theirs.
   postalCode: Joi.string().allow("").optional(),
+  inviteCode: Joi.string().allow("").max(40).optional(),
   isUserNameValid: Joi.boolean().valid(true).required().messages({
     "boolean.valid": "Username is not available",
     "boolean.empty": "Username validation is required",
@@ -98,6 +102,7 @@ const defaultValues: IFormValues = {
   country: "",
   postalCode: "",
   isUserNameValid: false,
+  inviteCode: "",
 };
 
 const CompleteUserForm = () => {
@@ -140,6 +145,8 @@ const CompleteUserForm = () => {
         gender: userDetails.gender ?? defaultValues.gender,
         country: userDetails.country ?? "",
         isUserNameValid: !!userDetails.username,
+        // From an invite link they opened before signing up.
+        inviteCode: readInvite() ?? "",
       },
       { keepDefaultValues: true },
     );
@@ -165,6 +172,32 @@ const CompleteUserForm = () => {
     },
     500,
   );
+  // Who the invite code belongs to, so they can see it's the right one.
+  const [invite, setInvite] = useState<
+    { state: "idle" | "checking" | "bad" } | { state: "ok"; name: string }
+  >({ state: "idle" });
+  const inviteCode = watch("inviteCode");
+  const checkInvite = useDebouncedCallback(async (code: string) => {
+    try {
+      const { data } = await getData<{ name: string }>(
+        `/referrals/code/${encodeURIComponent(code)}`,
+      );
+      setInvite({ state: "ok", name: data?.data?.name ?? "a friend" });
+    } catch {
+      setInvite({ state: "bad" });
+    }
+  }, 500);
+  useEffect(() => {
+    const code = inviteCode?.trim();
+    if (!code) {
+      checkInvite.cancel();
+      setInvite({ state: "idle" });
+      return;
+    }
+    setInvite({ state: "checking" });
+    checkInvite(code);
+  }, [inviteCode, checkInvite]);
+
   const username = watch("username");
   const isUserNameValid = watch("isUserNameValid");
 
@@ -174,11 +207,12 @@ const CompleteUserForm = () => {
         username,
         postalCode,
         isUserNameValid: _isUserNameValid,
+        inviteCode: code,
         ...payload
       } = body;
       try {
         const { data } = await patchData<
-          Omit<IFormValues, "isUserNameValid" | "postalCode"> & {
+          Omit<IFormValues, "isUserNameValid" | "postalCode" | "inviteCode"> & {
             postalCode?: string;
           },
           TUserDetails
@@ -189,6 +223,20 @@ const CompleteUserForm = () => {
           ...(postalCode?.trim() ? { postalCode: postalCode.trim() } : {}),
         });
         await performAuthOperation(data?.data);
+        // The invite is a bonus: if it can't be used, sign-up still finishes.
+        if (code?.trim()) {
+          try {
+            await postData("/referrals/apply", { code: code.trim() });
+          } catch (error) {
+            toast.error(
+              constructErrorMessage(
+                error as TApiErrorResponseType,
+                "We couldn't add that invite code",
+              ),
+            );
+          }
+        }
+        forgetInvite();
         toast.success("Account completed successfully");
         router.push(redirectTo || ROUTES.HOME.href);
       } catch (error) {
@@ -336,10 +384,34 @@ const CompleteUserForm = () => {
             error={errors?.postalCode?.message}
           />
         </div>
+        <InputField
+          label="Invite code (optional)"
+          labelClassName="text-secondary-950"
+          inputClassName="h-12 rounded-xl bg-[#f7f9fc]"
+          placeholder="A friend's username or a promo code"
+          type="text"
+          autoCapitalize="none"
+          rightIcon={
+            invite.state === "checking" ? (
+              <Spinner className="size-4" />
+            ) : invite.state === "ok" ? (
+              <CheckIcon className="size-4 text-emerald-600" />
+            ) : null
+          }
+          {...register("inviteCode")}
+          error={invite.state === "bad" ? "That code isn't valid" : undefined}
+          helperText={
+            invite.state === "ok"
+              ? `${invite.name} invited you. You'll both get Turnupz Credit after your first ticket purchase.`
+              : "Got one from a friend? Add it and you'll both earn credit."
+          }
+        />
         <Button
           className="mt-2 h-12 w-full rounded-full bg-secondary text-base text-white hover:bg-secondary-600"
           type="submit"
-          disabled={!isValid}
+          disabled={
+            !isValid || invite.state === "bad" || invite.state === "checking"
+          }
           loading={isSubmitting}
         >
           Finish and start exploring

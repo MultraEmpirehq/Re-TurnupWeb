@@ -114,7 +114,7 @@ const TicketPreview: React.FC<{
         <button
           type="button"
           onClick={() => setShowRegistrationDetails(true)}
-          className="w-full rounded-[1.2rem] bg-secondary-50 px-4 py-4 text-left transition hover:bg-cyan-50"
+          className="w-full rounded-[1.2rem] bg-secondary-50 px-4 py-4 text-left transition hover:bg-primary-50"
         >
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-secondary-400">
             Registration
@@ -289,7 +289,7 @@ const TicketPreview: React.FC<{
                 {pass.transferable ? "Transfer enabled" : "Transfer disabled"}
               </p>
               <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold">
-                <span className="rounded-full bg-cyan-50 px-2.5 py-1 text-cyan-700">
+                <span className="rounded-full bg-primary-50 px-2.5 py-1 text-primary-700">
                   {pass.assignments?.filter(
                     (assignment) => assignment.passClaimStatus === "invited",
                   ).length ?? pass.emailedAssignees?.length ?? 0}{" "}
@@ -343,7 +343,7 @@ const BookingChip: React.FC<{
   );
   const label = isExternal ? "Book Now" : hasPaidTicket ? "Pay Now" : "Register Now";
   const chipClassName = isExternal
-    ? "bg-rose-500 text-white shadow-rose-200/70"
+    ? "bg-red-500 text-white shadow-red-200/70"
     : "bg-secondary-400 text-white shadow-secondary-200/80";
 
   const href = isExternal && ticketUrl ? ticketUrl : `/explore/event/${eventId}/ticket`;

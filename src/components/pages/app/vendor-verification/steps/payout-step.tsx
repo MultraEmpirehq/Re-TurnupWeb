@@ -235,7 +235,7 @@ const PayoutStep: React.FC<{ saved: SavedPayoutDigits }> = ({ saved }) => {
                 </p>
               )}
               {accountName.isError && (
-                <p className="mt-1.5 text-xs text-amber-700">
+                <p className="mt-1.5 text-xs text-secondary-700">
                   The bank couldn&apos;t find this account. Check the number and
                   bank.
                 </p>

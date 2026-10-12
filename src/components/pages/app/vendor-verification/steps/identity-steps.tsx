@@ -6,7 +6,7 @@ import InputField from "@/components/ui/input-field";
 import TextareaField from "@/components/ui/textarea-field";
 import { earliestBirthDate, latestAdultBirthDate } from "@/lib/age";
 import { getAllCountryOptions } from "@/lib/vendor-verification-helpers";
-import { Building2, UserRound } from "lucide-react";
+import { BadgeCheck, Building2, Info, Ticket, UserRound } from "lucide-react";
 import React from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { ChoiceCards, DocumentField } from "../fields";
@@ -14,39 +14,108 @@ import { VerificationFormValues } from "../types";
 
 const COUNTRY_OPTIONS = getAllCountryOptions();
 
-export const VendorTypeStep = () => {
-  const { control } = useFormContext<VerificationFormValues>();
+/**
+ * What they'll host. Free events only skips the ID, business and bank steps;
+ * selling tickets is the full verification. A free host can come back and
+ * finish verifying any time, and what they've entered stays.
+ */
+export const VendorTypeStep: React.FC<{ planLocked?: boolean }> = ({
+  planLocked,
+}) => {
+  const { control, watch } = useFormContext<VerificationFormValues>();
+  const plan = watch("plan");
   return (
-    <Controller
-      control={control}
-      name="vendorType"
-      render={({ field }) => (
-        <ChoiceCards
-          value={field.value}
-          onChange={field.onChange}
-          options={[
-            {
-              value: "individual",
-              title: "Individual",
-              description:
-                "You run events yourself and are paid to a personal account.",
-              icon: UserRound,
-            },
-            {
-              value: "business",
-              title: "Registered business",
-              description:
-                "A company runs the events and is paid to a business account. We'll ask for its registration.",
-              icon: Building2,
-            },
-          ]}
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <p className="text-sm font-semibold text-secondary-950">
+          What will you host?
+        </p>
+        <Controller
+          control={control}
+          name="plan"
+          render={({ field, fieldState }) => (
+            <>
+              <ChoiceCards
+                value={field.value}
+                onChange={field.onChange}
+                disabled={planLocked}
+                options={[
+                  {
+                    value: "free",
+                    title: "Free events only",
+                    description:
+                      "Your name, phone and country, and you can start hosting straight away. No ID or bank details.",
+                    icon: Ticket,
+                  },
+                  {
+                    value: "paid",
+                    title: "Sell tickets",
+                    description:
+                      "Full verification with your ID and bank details, checked by our team. You get paid and get the verified tick.",
+                    icon: BadgeCheck,
+                  },
+                ]}
+              />
+              {fieldState.error?.message && (
+                <p className="text-xs text-red-600">
+                  {fieldState.error.message}
+                </p>
+              )}
+            </>
+          )}
         />
+        {plan === "free" && (
+          <div className="flex items-start gap-3 rounded-2xl border border-primary-100 bg-primary-50/70 p-4 text-sm leading-6 text-secondary-800">
+            <Info className="mt-0.5 size-4 shrink-0 text-primary-700" />
+            <p>
+              Host as many free and register-only events as you like, as soon as
+              you send this. When you want to sell tickets, come back here and
+              finish your verification with your ID and bank details; we&apos;ll
+              keep what you&apos;ve already entered.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {plan === "paid" && (
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-secondary-950">
+            Who runs your events?
+          </p>
+          <Controller
+            control={control}
+            name="vendorType"
+            render={({ field }) => (
+              <ChoiceCards
+                value={field.value}
+                onChange={field.onChange}
+                options={[
+                  {
+                    value: "individual",
+                    title: "Individual",
+                    description:
+                      "You run events yourself and are paid to a personal account.",
+                    icon: UserRound,
+                  },
+                  {
+                    value: "business",
+                    title: "Registered business",
+                    description:
+                      "A company runs the events and is paid to a business account. We'll ask for its registration.",
+                    icon: Building2,
+                  },
+                ]}
+              />
+            )}
+          />
+        </div>
       )}
-    />
+    </div>
   );
 };
 
-export const IdentityStep = () => {
+/** Free hosts only give their name, phone and country here. */
+export const IdentityStep: React.FC<{ free?: boolean }> = ({ free }) => {
   const {
     control,
     register,
@@ -56,40 +125,42 @@ export const IdentityStep = () => {
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
       <InputField
-        label="Legal first name"
-        placeholder="As on your ID"
+        label={free ? "First name" : "Legal first name"}
+        placeholder={free ? "Your first name" : "As on your ID"}
         autoComplete="given-name"
         required
         {...register("legalFirstName")}
         error={errors.legalFirstName?.message}
       />
       <InputField
-        label="Legal last name"
-        placeholder="As on your ID"
+        label={free ? "Last name" : "Legal last name"}
+        placeholder={free ? "Your last name" : "As on your ID"}
         autoComplete="family-name"
         required
         {...register("legalLastName")}
         error={errors.legalLastName?.message}
       />
-      <Controller
-        control={control}
-        name="dateOfBirth"
-        render={({ field, fieldState }) => (
-          <DateSelect
-            date={field.value}
-            setDate={field.onChange}
-            label="Date of birth"
-            placeholder="Select your date of birth"
-            required
-            error={fieldState.error?.message}
-            errorClassName="text-xs"
-            helperText="You must be 18 or older."
-            minDate={earliestBirthDate()}
-            maxDate={latestAdultBirthDate()}
-            inputClassName="h-11"
-          />
-        )}
-      />
+      {!free && (
+        <Controller
+          control={control}
+          name="dateOfBirth"
+          render={({ field, fieldState }) => (
+            <DateSelect
+              date={field.value}
+              setDate={field.onChange}
+              label="Date of birth"
+              placeholder="Select your date of birth"
+              required
+              error={fieldState.error?.message}
+              errorClassName="text-xs"
+              helperText="You must be 18 or older."
+              minDate={earliestBirthDate()}
+              maxDate={latestAdultBirthDate()}
+              inputClassName="h-11"
+            />
+          )}
+        />
+      )}
       <Controller
         control={control}
         name="phoneNumber"
@@ -126,31 +197,35 @@ export const IdentityStep = () => {
           />
         )}
       />
-      <TextareaField
-        label="Residential address"
-        placeholder="House number, street, city"
-        autoComplete="street-address"
-        required
-        containerClassName="md:col-span-2"
-        {...register("address")}
-        error={errors.address?.message}
-      />
-      <Controller
-        control={control}
-        name="idDocument"
-        render={({ field, fieldState }) => (
-          <div className="md:col-span-2">
-            <DocumentField
-              label="Government ID"
-              required
-              value={field.value}
-              onChange={field.onChange}
-              error={fieldState.error?.message}
-              helperText="Passport, national ID, driver's licence or voter's card. The name and date of birth must match what you entered above."
-            />
-          </div>
-        )}
-      />
+      {!free && (
+        <>
+          <TextareaField
+            label="Residential address"
+            placeholder="House number, street, city"
+            autoComplete="street-address"
+            required
+            containerClassName="md:col-span-2"
+            {...register("address")}
+            error={errors.address?.message}
+          />
+          <Controller
+            control={control}
+            name="idDocument"
+            render={({ field, fieldState }) => (
+              <div className="md:col-span-2">
+                <DocumentField
+                  label="Government ID"
+                  required
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={fieldState.error?.message}
+                  helperText="Passport, national ID, driver's licence or voter's card. The name and date of birth must match what you entered above."
+                />
+              </div>
+            )}
+          />
+        </>
+      )}
     </div>
   );
 };

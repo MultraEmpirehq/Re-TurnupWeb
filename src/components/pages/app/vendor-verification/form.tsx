@@ -5,6 +5,7 @@ import { uploadAttachment } from "@/api/attachments";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import useUser from "@/hooks/use-user.hook";
 import { cn } from "@/lib/utils";
 import { joiResolver } from "@hookform/resolvers/joi";
 import {
@@ -14,6 +15,7 @@ import {
   CheckCircle2,
   Clock3,
   Save,
+  Ticket,
 } from "lucide-react";
 import React, {
   memo,
@@ -48,10 +50,33 @@ import {
   VerificationFormValues,
   VerificationStatus,
   VerificationStepKey,
+  VendorPlan,
 } from "./types";
 
+/** The steps for a plan; free hosting skips the ID, business and bank ones. */
+const stepsFor = (
+  plan: VendorPlan | "" | null | undefined,
+  vendorType?: string | null,
+): VerificationStepKey[] =>
+  plan === "free"
+    ? ["vendorType", "identity", "review"]
+    : [
+        "vendorType",
+        "identity",
+        ...(vendorType === "business" ? (["business"] as const) : []),
+        "payout",
+        "crossBorder",
+        "review",
+      ];
+
+const FREE_STEP_COPY: Partial<Record<VerificationStepKey, string>> = {
+  identity: "Who you are and how we can reach you about your events.",
+  review: "Check your details. You can start hosting as soon as you send them.",
+};
+
 const STEP_COPY: Record<VerificationStepKey, string> = {
-  vendorType: "Tell us who runs your events, so we ask for the right details.",
+  vendorType:
+    "Free events only, or selling tickets? We'll only ask for what that needs.",
   identity:
     "Your legal details, as they appear on your government ID. We check them against the document.",
   business: "The registered company that runs your events.",
@@ -114,7 +139,7 @@ const Stepper: React.FC<{
                 className={cn(
                   "h-1 rounded-full",
                   flagged
-                    ? "bg-amber-400"
+                    ? "bg-secondary-400"
                     : done || index === current
                       ? "bg-secondary-400"
                       : "bg-secondary-100",
@@ -122,7 +147,7 @@ const Stepper: React.FC<{
               />
               <span className="flex items-center gap-1.5 text-xs font-semibold text-secondary-900">
                 {flagged ? (
-                  <AlertTriangle className="size-3.5 text-amber-600" />
+                  <AlertTriangle className="size-3.5 text-secondary-600" />
                 ) : done && index !== current ? (
                   <CheckCircle2 className="size-3.5 text-secondary-500" />
                 ) : (
@@ -155,6 +180,14 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
   const [current, setCurrent] = useState(0);
   const [furthest, setFurthest] = useState(0);
   const [busy, setBusy] = useState<"" | "next" | "draft" | "submit">("");
+  // Approved to host free events only, and whether they've chosen to finish
+  // verifying to sell tickets.
+  const [isFreeHost, setIsFreeHost] = useState(false);
+  const [canSell, setCanSell] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
+  const [confirmWithdraw, setConfirmWithdraw] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
+  const { getUserDetails } = useUser();
 
   // The resolver reads these at validation time, so it always checks the step
   // on screen with what's already on file.
@@ -174,27 +207,27 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
   });
 
   const vendorType = form.watch("vendorType");
+  const plan = form.watch("plan");
+  const isFree = plan === "free";
   const steps = useMemo<VerificationStepKey[]>(
-    () => [
-      "vendorType",
-      "identity",
-      ...(vendorType === "business" ? (["business"] as const) : []),
-      "payout",
-      "crossBorder",
-      "review",
-    ],
-    [vendorType],
+    () => stepsFor(plan, vendorType),
+    [plan, vendorType],
   );
   const step = steps[Math.min(current, steps.length - 1)];
   stepRef.current = step;
   savedRef.current = saved;
 
-  const readOnly = status === "submitted" || status === "approved";
+  const readOnly =
+    status === "submitted" || (status === "approved" && !upgrading);
 
   const apply = useCallback(
     (data?: VendorVerificationApiResponse | null, resetForm = false) => {
       if (!data) return;
       setStatus(data.status ?? "in_progress");
+      setCanSell(!!data.canSellTickets);
+      setIsFreeHost(
+        !data.canSellTickets && data.approvalLevel === "basic_verified",
+      );
       setStepStatuses(data.stepStatuses ?? {});
       setSaved(savedDigitsOf(data));
       setAdminMessage(
@@ -218,16 +251,7 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
         apply(verification, true);
         // Start where there's something to do: a step the admin flagged, or
         // the first one not yet sent.
-        const order: VerificationStepKey[] = [
-          "vendorType",
-          "identity",
-          ...(verification.vendorType === "business"
-            ? (["business"] as const)
-            : []),
-          "payout",
-          "crossBorder",
-          "review",
-        ];
+        const order = stepsFor(verification.plan, verification.vendorType);
         const statuses = verification.stepStatuses ?? {};
         const flagged = order.findIndex((key) =>
           ["needs_more_info", "rejected"].includes(statuses[key] ?? ""),
@@ -293,6 +317,16 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
 
   const saveStep = async (values: VerificationFormValues) => {
     const payload = toApiPayload(values, await uploadDocuments(values));
+    // Free hosting's details are checked together when it's sent, not as a
+    // full identity step, so they're saved as a draft.
+    if (values.plan === "free" && step === "identity") {
+      const { data } = await putData<ApiPayload, VendorVerificationApiResponse>(
+        "/vendor/verification",
+        pick(payload, step),
+      );
+      afterSave(data?.data);
+      return;
+    }
     // Not hosting abroad: just clear anything saved for it before; there's
     // nothing for an admin to review.
     if (step === "crossBorder" && !values.hostsAbroad) {
@@ -351,7 +385,14 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
           VendorVerificationApiResponse
         >("/vendor/verification/submit");
         apply(data?.data);
-        toast.success("Sent for review. We'll let you know the outcome.");
+        setUpgrading(false);
+        // Approved free hosts are vendors now: bring in the host tools.
+        if (data?.data?.status === "approved") void getUserDetails();
+        toast.success(
+          data?.data?.status === "approved"
+            ? "You're all set to host free events."
+            : "Sent for review. We'll let you know the outcome.",
+        );
         window.scrollTo({ top: 0, behavior: "smooth" });
       } catch (error) {
         toast.error(
@@ -366,6 +407,29 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
     },
     () => toast.error("Confirm your details are accurate to submit"),
   );
+
+  /** Takes a sent application back to edit, before it's been decided. */
+  const onWithdraw = async () => {
+    setWithdrawing(true);
+    try {
+      const { data } = await postData<undefined, VendorVerificationApiResponse>(
+        "/vendor/verification/withdraw",
+      );
+      apply(data?.data);
+      setConfirmWithdraw(false);
+      goTo(0);
+      toast.success("Taken back. Make your changes and send it again.");
+    } catch (error) {
+      toast.error(
+        constructErrorMessage(
+          error as TApiErrorResponseType,
+          "Couldn't take your application back",
+        ),
+      );
+    } finally {
+      setWithdrawing(false);
+    }
+  };
 
   const onSaveDraft = async () => {
     setBusy("draft");
@@ -422,14 +486,52 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
             <div>
               <p className="text-sm font-bold">With our team for review</p>
               <p className="mt-1 text-sm leading-6 text-white/80">
-                You can keep building event drafts. Paid tickets and payouts
-                unlock once you&apos;re approved, and we&apos;ll tell you if we
-                need anything else.
+                {isFreeHost
+                  ? "Your free events carry on as normal. Paid tickets and payouts unlock once you're approved, and we'll tell you if we need anything else."
+                  : "You can keep building event drafts. Paid tickets and payouts unlock once you're approved, and we'll tell you if we need anything else."}
               </p>
+              {confirmWithdraw ? (
+                <div className="mt-3 space-y-2 rounded-xl bg-white/10 p-3">
+                  <p className="text-sm text-white/90">
+                    This takes your application out of the review queue.
+                    You&apos;ll need to send it again when you&apos;re done.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={onWithdraw}
+                      loading={withdrawing}
+                      disabled={withdrawing}
+                      className="rounded-xl bg-white text-[#004766] hover:bg-white/90"
+                    >
+                      Yes, take it back
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setConfirmWithdraw(false)}
+                      disabled={withdrawing}
+                      className="rounded-xl text-white hover:bg-white/10 hover:text-white"
+                    >
+                      Keep it with the team
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmWithdraw(true)}
+                  className="mt-3 text-sm font-semibold text-white underline underline-offset-4 hover:text-white/80"
+                >
+                  Need to change something? Take it back to edit
+                </button>
+              )}
             </div>
           </div>
         )}
-        {status === "approved" && (
+        {status === "approved" && canSell && (
           <div className="flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-5 text-emerald-900">
             <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
             <p className="text-sm leading-6">
@@ -438,8 +540,38 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
             </p>
           </div>
         )}
+        {isFreeHost && !canSell && status !== "submitted" && (
+          <div className="flex flex-col gap-4 rounded-2xl border border-primary-100 bg-primary-50/70 p-5 text-secondary-900 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <Ticket className="mt-0.5 size-5 shrink-0 text-primary-700" />
+              <div className="text-sm leading-6">
+                <p className="font-semibold">
+                  You&apos;re verified to host free events
+                </p>
+                <p className="text-secondary-700">
+                  As many as you like. To sell tickets and get paid, finish your
+                  verification with your ID and bank details.
+                </p>
+              </div>
+            </div>
+            {readOnly && (
+              <Button
+                type="button"
+                onClick={() => {
+                  form.setValue("plan", "paid");
+                  setUpgrading(true);
+                  goTo(0);
+                }}
+                className="h-11 shrink-0 rounded-2xl bg-secondary-400 px-5 text-white hover:bg-secondary-500"
+              >
+                Finish verification
+                <ArrowRight className="size-4" />
+              </Button>
+            )}
+          </div>
+        )}
         {(status === "needs_more_info" || status === "rejected") && (
-          <div className="flex items-start gap-3 rounded-2xl border border-amber-100 bg-amber-50 p-5 text-amber-900">
+          <div className="flex items-start gap-3 rounded-2xl border border-secondary-100 bg-secondary-50 p-5 text-secondary-900">
             <AlertTriangle className="mt-0.5 size-5 shrink-0" />
             <div className="text-sm leading-6">
               <p className="font-semibold">
@@ -450,7 +582,7 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
               {adminMessage && (
                 <p className="mt-1 whitespace-pre-line">{adminMessage}</p>
               )}
-              <p className="mt-1 text-amber-800">
+              <p className="mt-1 text-secondary-800">
                 Update the highlighted steps and send it again.
               </p>
             </div>
@@ -475,12 +607,14 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
 
             <StepHeader
               title={STEP_LABELS[step]}
-              description={STEP_COPY[step]}
+              description={
+                (isFree ? FREE_STEP_COPY[step] : undefined) ?? STEP_COPY[step]
+              }
               status={stepStatuses[step]}
             />
 
             {step === "vendorType" && <VendorTypeStep />}
-            {step === "identity" && <IdentityStep />}
+            {step === "identity" && <IdentityStep free={isFree} />}
             {step === "business" && <BusinessStep />}
             {step === "payout" && <PayoutStep saved={saved} />}
             {step === "crossBorder" && <CrossBorderStep />}
@@ -528,7 +662,7 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
                 {isLast ? (
                   <>
                     <CheckCircle2 className="size-4" />
-                    Submit for review
+                    {isFree ? "Start hosting" : "Submit for review"}
                   </>
                 ) : (
                   <>

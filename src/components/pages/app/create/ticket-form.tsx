@@ -10,6 +10,9 @@ import TicketInput, { ITicketType } from "./ticket-input";
 import { TrashIcon } from "lucide-react";
 import { getCurrencyForCountry } from "@/lib/currency";
 import useUserStore from "@/stores/user-store";
+import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status";
+import { ROUTES } from "@/lib/variables";
+import Link from "next/link";
 
 export enum ESaleMethods {
   SELL_ON_TURNUP = "on_turnup",
@@ -260,6 +263,23 @@ const TicketForm: React.FC<{
     formState: { errors, isSubmitting },
   } = useFormContext<ITicketFormValues>();
 
+  // Hosts approved for free events only run free and register-only events.
+  const { canSellTickets, isChecking } = useVendorVerificationStatus();
+  const isFreeHost = !isChecking && !canSellTickets;
+  const saleMethodOptions = useMemo(
+    () =>
+      isFreeHost
+        ? ticketSaleMethodOptions
+            .filter((option) => option.value !== ESaleMethods.EXTERNAL_LINK)
+            .map((option) =>
+              option.value === ESaleMethods.SELL_ON_TURNUP
+                ? { ...option, label: "Free tickets on Turnupz" }
+                : option,
+            )
+        : ticketSaleMethodOptions,
+    [isFreeHost],
+  );
+
   const saleMethod = watch("saleMethod");
   const eventCountry = watch("eventCountry");
   const eventCountryCode = watch("eventCountryCode");
@@ -330,6 +350,19 @@ const TicketForm: React.FC<{
     }
 
     if (
+      isFreeHost &&
+      (saleMethod === ESaleMethods.EXTERNAL_LINK ||
+        eventTickets.some((ticket) => Number(ticket.ticketPrice) > 0))
+    ) {
+      setError("eventTickets", {
+        type: "manual",
+        message:
+          "Free hosting is for free events. Set every ticket to 0, or finish your verification to sell tickets.",
+      });
+      return;
+    }
+
+    if (
       (saleMethod === ESaleMethods.SELL_ON_TURNUP ||
         saleMethod === ESaleMethods.REGISTER) &&
       eventTickets.length === 0
@@ -347,8 +380,9 @@ const TicketForm: React.FC<{
     await handleNextStep();
   }, [
     clearErrors,
-    eventTickets.length,
+    eventTickets,
     handleNextStep,
+    isFreeHost,
     saleMethod,
     setError,
     watch,
@@ -368,7 +402,7 @@ const TicketForm: React.FC<{
           name="saleMethod"
           render={({ field, fieldState }) => (
             <SelectField
-              options={ticketSaleMethodOptions}
+              options={saleMethodOptions}
               label="Ticket Option"
               required
               value={field.value}
@@ -382,6 +416,19 @@ const TicketForm: React.FC<{
             />
           )}
         />
+
+        {isFreeHost && (
+          <div className="rounded-2xl border border-primary-100 bg-primary-50/70 p-4 text-sm leading-6 text-secondary-800">
+            You&apos;re verified to host free events, so tickets here are free.{" "}
+            <Link
+              href={ROUTES.VENDOR_VERIFICATION.href}
+              className="font-semibold text-primary-700 underline-offset-2 hover:underline"
+            >
+              Finish your verification
+            </Link>{" "}
+            to sell tickets.
+          </div>
+        )}
 
         {saleMethod && saleMethod !== ESaleMethods.EXTERNAL_LINK && (
           <div className="grid gap-4 rounded-2xl border border-secondary-100 bg-secondary-50 p-5">

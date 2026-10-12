@@ -1,23 +1,16 @@
 import type { Metadata } from "next";
-import { Geist_Mono } from "next/font/google";
-import localFont from "next/font/local";
+import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import AppLayout from "@/components/layouts/app-layout/app.layout";
 
-// The platform font. The files on hand are Light, 45 Book, 55 Roman and 95 Black,
-// with no Medium or Semibold, so they're spread over the weights the app uses:
-// Book reads as regular body text, Roman as medium, and Black covers semibold and
-// bold. Adding Avenir 65 Medium and 85 Heavy later would give those their own cuts.
-const brandSans = localFont({
+// The brand typeface, Plus Jakarta Sans, in every weight the app uses (the
+// mobile app uses the same family).
+const brandSans = Plus_Jakarta_Sans({
   variable: "--font-brand-sans",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
-  src: [
-    { path: "../assets/fonts/avenir/Avenir-Light.ttf", weight: "300" },
-    { path: "../assets/fonts/avenir/Avenir-Normal.otf", weight: "400" },
-    { path: "../assets/fonts/avenir/Avenir-Regular.otf", weight: "500" },
-    { path: "../assets/fonts/avenir/Avenir-Bold.otf", weight: "700" },
-  ],
-  fallback: ["Avenir Next", "Avenir", "Helvetica Neue", "Arial", "sans-serif"],
+  fallback: ["Helvetica Neue", "Arial", "sans-serif"],
 });
 
 const geistMono = Geist_Mono({

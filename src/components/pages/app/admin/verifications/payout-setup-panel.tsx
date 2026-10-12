@@ -49,7 +49,9 @@ const PayoutSetupPanel: React.FC<{ verification: IVendorVerification }> = ({
   const queryClient = useQueryClient();
   const account = verification.payoutAccount;
   const country =
-    DIRECT_PAYOUT_COUNTRIES[verification.payoutCountry?.trim().toLowerCase() ?? ""];
+    DIRECT_PAYOUT_COUNTRIES[
+      verification.payoutCountry?.trim().toLowerCase() ?? ""
+    ];
   const [bankCode, setBankCode] = useState(verification.bankCode ?? "");
   const [attempt, setAttempt] = useState<PayoutSetupAttempt>();
 
@@ -119,8 +121,8 @@ const PayoutSetupPanel: React.FC<{ verification: IVendorVerification }> = ({
 
   const message = adminAttemptMessage(attempt);
   return (
-    <div className="space-y-3 rounded-xl border border-amber-100 bg-amber-50/60 p-4 text-sm">
-      <p className="font-medium text-amber-900">
+    <div className="space-y-3 rounded-xl border border-secondary-100 bg-secondary-50/60 p-4 text-sm">
+      <p className="font-medium text-secondary-900">
         Not set up to be paid directly yet.
       </p>
       {!verification.bankCode && (
@@ -138,7 +140,7 @@ const PayoutSetupPanel: React.FC<{ verification: IVendorVerification }> = ({
           emptyText="No bank found."
         />
       )}
-      {message && <p className="text-amber-800">{message}</p>}
+      {message && <p className="text-secondary-800">{message}</p>}
       <Button
         size="sm"
         onClick={() => setUp.mutate()}
