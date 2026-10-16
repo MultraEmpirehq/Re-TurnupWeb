@@ -1,3 +1,4 @@
+import { visitorId } from "@/lib/visitor-id";
 import { apiBaseUrl } from "@/lib/env";
 import useUserStore from "@/stores/user-store";
 import axios, { AxiosRequestConfig } from "axios";
@@ -26,6 +27,9 @@ api.interceptors.response.use(
 
 api.interceptors.request.use(
   (config) => {
+    // Counts visits for the team's dashboard, signed in or not.
+    const visitor = visitorId();
+    if (visitor) config.headers["X-Visitor-Id"] = visitor;
     const authToken = useUserStore.getState().userToken;
     if (authToken) {
       config.headers.Authorization = authToken.startsWith("Bearer ")

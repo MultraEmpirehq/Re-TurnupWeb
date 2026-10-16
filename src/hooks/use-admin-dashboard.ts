@@ -40,6 +40,8 @@ export interface IAdminDashboard {
       active7: { count: number; share: number };
       referredSignUps: number;
     } | null;
+    /** Super admins only. */
+    growth: IDashboardGrowth | null;
   };
   activity: {
     kind: "signup" | "order" | "event";
@@ -47,6 +49,37 @@ export interface IAdminDashboard {
     title: string;
     detail: string;
   }[];
+}
+
+export interface IDashboardGrowth {
+  totals: {
+    attendees: number;
+    vendors: number;
+    verifiedSellers: number;
+    freeHosts: number;
+  };
+  /** Seen in the last 5 minutes. */
+  online: { attendees: number; vendors: number; anonymous: number };
+  visited: {
+    key: "today" | "week" | "month" | "quarter" | "year" | "all";
+    label: string;
+    attendees: number;
+    vendors: number;
+    anonymous: number;
+  }[];
+  series: TPoint[];
+  installs: {
+    android: number;
+    ios: number;
+    total: number;
+    newThisPeriod: number;
+  };
+  /** null until each store's figures are connected. */
+  stores: {
+    googlePlay: number | null;
+    appStore: number | null;
+    total: number | null;
+  };
 }
 
 /** The admin overview; sections the admin can't see come back as null. */

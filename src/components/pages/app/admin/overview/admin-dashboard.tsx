@@ -20,7 +20,11 @@ import {
   ShoppingBag,
   UserPlus,
 } from "lucide-react";
+import { useAdminPermissions } from "@/hooks/use-admin-permissions";
+import { ROUTES } from "@/lib/variables";
+import Link from "next/link";
 import React, { memo, useMemo, useState } from "react";
+import QuickLinks from "./quick-links";
 import {
   Area,
   AreaChart,
@@ -94,12 +98,43 @@ const Card: React.FC<{ className?: string; children: React.ReactNode }> = ({
   children,
 }) => (
   <section
-    className={cn("rounded-2xl border p-5", className)}
+    className={cn("rounded-xl border p-4", className)}
     style={{ background: CARD, borderColor: LINE }}
   >
     {children}
   </section>
 );
+
+const ADMIN = ROUTES.ADMIN_OVERVIEW.href;
+
+/**
+ * A tile that opens the page you'd go to next from it, or a plain tile. The
+ * small arrow shows it's a way through.
+ */
+const Tile: React.FC<{
+  href?: string;
+  label?: string;
+  className?: string;
+  children: React.ReactNode;
+}> = ({ href, label, className, children }) =>
+  href ? (
+    <Link
+      href={href}
+      aria-label={label}
+      className={cn(
+        "group relative block p-4 transition-colors hover:bg-white/[0.04]",
+        className,
+      )}
+    >
+      <ArrowUpRight
+        className="absolute top-3 right-3 size-4 text-white/30 transition-colors group-hover:text-white/80"
+        aria-hidden
+      />
+      {children}
+    </Link>
+  ) : (
+    <div className={cn("p-4", className)}>{children}</div>
+  );
 
 const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <p className="text-xs font-semibold tracking-wide text-white/60 uppercase">
@@ -141,7 +176,7 @@ const MainChart: React.FC<{
   data: TPoint[];
   unit: (value: number) => string;
 }> = ({ data, unit }) => (
-  <ResponsiveContainer width="100%" height={260}>
+  <ResponsiveContainer width="100%" height={220}>
     <AreaChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
       <defs>
         <linearGradient id="dash-area" x1="0" y1="0" x2="0" y2="1">
@@ -279,6 +314,20 @@ const AdminDashboard = () => {
         unit: (value) => `${value} joined`,
       });
     }
+    if (sections?.growth) {
+      const visitors = sections.growth.series.reduce(
+        (sum, point) => sum + point.value,
+        0,
+      );
+      list.push({
+        key: "visitors",
+        label: "Visitors per day",
+        total: compact(visitors),
+        change: null,
+        data: sections.growth.series,
+        unit: (value) => `${value} visitor${value === 1 ? "" : "s"}`,
+      });
+    }
     return list;
   }, [money, sections]);
   const measure =
@@ -287,12 +336,12 @@ const AdminDashboard = () => {
 
   return (
     <div
-      className="-mx-4 -mt-6 -mb-10 min-h-[calc(100vh-4rem)] space-y-5 px-4 pt-6 pb-10 text-white sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
+      className="-mx-4 -mt-6 -mb-10 min-h-[calc(100vh-4rem)] space-y-4 px-4 pt-6 pb-10 text-white sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
       style={{ background: INK }}
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-sm text-white/60">
             {firstName ? `Welcome back, ${firstName}. ` : ""}
             The last {days} days, against the {days} before.
@@ -355,6 +404,9 @@ const AdminDashboard = () => {
 
       {data && (
         <>
+          <QuickLinks />
+          {sections?.growth && <Audience growth={sections.growth} />}
+
           <KpiRow data={data} money={money} days={days} />
 
           {measure && (
@@ -412,11 +464,13 @@ const AdminDashboard = () => {
           {sections?.engagement && (
             <Engagement engagement={sections.engagement} days={days} />
           )}
+          {sections?.growth && <Downloads growth={sections.growth} />}
           <Activity activity={data.activity} />
 
           {!sections?.people &&
             !sections?.events &&
             !sections?.money &&
+            !sections?.growth &&
             !sections?.engagement && (
               <Card>
                 <p className="text-sm text-white/70">
@@ -441,14 +495,17 @@ const KpiRow: React.FC<{
   days: number;
 }> = ({ data, money, days }) => {
   const { people, events } = data.sections;
+  const { has } = useAdminPermissions();
   const tiles: {
     label: string;
     value: string;
     change?: number | null;
     note?: string;
+    href?: string;
   }[] = [];
   if (people) {
     tiles.push({
+      href: ROUTES.ADMIN_USERS.href,
       label: "People on Turnupz",
       value: people.total.toLocaleString(),
       change: people.newPeople.change,
@@ -457,6 +514,7 @@ const KpiRow: React.FC<{
   }
   if (money) {
     tiles.push({
+      href: has("REFUNDS_MANAGE") ? `${ADMIN}/finance/refunds` : undefined,
       label: "Ticket sales",
       value: money.sales.value.formatted.withCurrency,
       change: money.sales.change,
@@ -465,11 +523,13 @@ const KpiRow: React.FC<{
   }
   if (events) {
     tiles.push({
+      href: `${ADMIN}/events`,
       label: "Tickets issued",
       value: events.ticketsIssued.value.toLocaleString(),
       change: events.ticketsIssued.change,
     });
     tiles.push({
+      href: `${ADMIN}/events`,
       label: "Upcoming events",
       value: events.upcoming.toLocaleString(),
       change: events.newEvents.change,
@@ -481,9 +541,9 @@ const KpiRow: React.FC<{
     <Card className="p-0">
       <div className="grid grid-cols-1 divide-y divide-white/[0.08] sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4 lg:divide-x">
         {tiles.map((tile) => (
-          <div key={tile.label} className="p-5">
+          <Tile key={tile.label} href={tile.href} label={`${tile.label}: open`}>
             <Label>{tile.label}</Label>
-            <p className="mt-2 text-3xl font-bold tracking-tight">
+            <p className="mt-1.5 text-2xl font-bold tracking-tight">
               {tile.value}
             </p>
             <div className="mt-1 flex items-center gap-2">
@@ -494,7 +554,7 @@ const KpiRow: React.FC<{
                 <span className="text-xs text-white/50">{tile.note}</span>
               )}
             </div>
-          </div>
+          </Tile>
         ))}
       </div>
     </Card>
@@ -510,7 +570,7 @@ const SecondRow: React.FC<{
   const cards: React.ReactNode[] = [];
   if (money) {
     cards.push(
-      <div key="fees" className="p-5">
+      <div key="fees" className="p-4">
         <Label>Turnupz fees</Label>
         <div className="mt-2 flex items-baseline gap-2">
           <p className="text-2xl font-bold">
@@ -527,7 +587,7 @@ const SecondRow: React.FC<{
   }
   if (events) {
     cards.push(
-      <div key="tickets" className="p-5">
+      <div key="tickets" className="p-4">
         <Label>Tickets per day</Label>
         <Sparkline
           data={events.series}
@@ -543,7 +603,7 @@ const SecondRow: React.FC<{
     ];
     const most = Math.max(1, ...mix.map((row) => row.value));
     cards.push(
-      <div key="mix" className="p-5">
+      <div key="mix" className="p-4">
         <Label>Upcoming events by type</Label>
         <ul className="mt-3 space-y-2.5">
           {mix.map((row) => (
@@ -568,7 +628,7 @@ const SecondRow: React.FC<{
     );
   } else if (people) {
     cards.push(
-      <div key="people" className="p-5">
+      <div key="people" className="p-4">
         <Label>Sign-ups per day</Label>
         <Sparkline data={people.series} unit={(value) => `${value} joined`} />
       </div>,
@@ -596,37 +656,224 @@ const SecondRow: React.FC<{
 const Engagement: React.FC<{
   engagement: NonNullable<IAdminDashboard["sections"]["engagement"]>;
   days: number;
-}> = ({ engagement, days }) => (
-  <Card className="p-0">
-    <div className="px-5 pt-5">
-      <Label>Engagement</Label>
-    </div>
-    <div className="grid grid-cols-1 divide-y divide-white/[0.08] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-      <div className="p-5">
-        <p className="text-3xl font-bold">{engagement.active30.share}%</p>
-        <p className="text-xs text-white/60">
-          Got a ticket in the last <b className="text-white">30 days</b> (
-          {engagement.active30.count.toLocaleString()})
-        </p>
+}> = ({ engagement, days }) => {
+  const { has } = useAdminPermissions();
+  return (
+    <Card className="p-0">
+      <div className="px-4 pt-4">
+        <Label>Engagement</Label>
       </div>
-      <div className="p-5">
-        <p className="text-3xl font-bold">{engagement.active7.share}%</p>
-        <p className="text-xs text-white/60">
-          Got a ticket in the last <b className="text-white">7 days</b> (
-          {engagement.active7.count.toLocaleString()})
-        </p>
+      <div className="grid grid-cols-1 divide-y divide-white/[0.08] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <div className="p-4">
+          <p className="text-2xl font-bold">{engagement.active30.share}%</p>
+          <p className="text-xs text-white/60">
+            Got a ticket in the last <b className="text-white">30 days</b> (
+            {engagement.active30.count.toLocaleString()})
+          </p>
+        </div>
+        <div className="p-4">
+          <p className="text-2xl font-bold">{engagement.active7.share}%</p>
+          <p className="text-xs text-white/60">
+            Got a ticket in the last <b className="text-white">7 days</b> (
+            {engagement.active7.count.toLocaleString()})
+          </p>
+        </div>
+        <Tile
+          href={
+            has("MARKETING_MANAGE") ? `${ADMIN}/marketing/referrals` : undefined
+          }
+          label="Invite sign-ups: open referrals"
+        >
+          <p className="text-2xl font-bold">
+            {engagement.referredSignUps.toLocaleString()}
+          </p>
+          <p className="text-xs text-white/60">
+            Joined with an invite code in {days} days
+          </p>
+        </Tile>
       </div>
-      <div className="p-5">
-        <p className="text-3xl font-bold">
-          {engagement.referredSignUps.toLocaleString()}
-        </p>
-        <p className="text-xs text-white/60">
-          Joined with an invite code in {days} days
-        </p>
-      </div>
-    </div>
-  </Card>
+    </Card>
+  );
+};
+
+/* --------------------------------------------- super admins: audience */
+
+type TGrowth = NonNullable<IAdminDashboard["sections"]["growth"]>;
+
+/** A number that's live right now, with a pulsing blue dot. */
+const LiveTile: React.FC<{ label: string; value: number; hint: string }> = ({
+  label,
+  value,
+  hint,
+}) => (
+  <div className="p-4">
+    <p className="flex items-center gap-2 text-xs font-semibold tracking-wide text-white/60 uppercase">
+      <span className="relative flex size-2">
+        <span
+          className="absolute inline-flex size-full animate-ping rounded-full opacity-60 motion-reduce:hidden"
+          style={{ background: BLUE }}
+        />
+        <span
+          className="relative inline-flex size-2 rounded-full"
+          style={{ background: BLUE }}
+        />
+      </span>
+      {label}
+    </p>
+    <p className="mt-1.5 text-2xl font-bold tracking-tight">
+      {value.toLocaleString()}
+    </p>
+    <p className="mt-1 text-xs text-white/50">{hint}</p>
+  </div>
 );
+
+/**
+ * Who's on Turnupz: attendees and vendors in total, who's online now (seen in
+ * the last 5 minutes) and how many visited over each period, signed in or not.
+ */
+const Audience: React.FC<{ growth: TGrowth }> = ({ growth }) => {
+  const { totals, online, visited } = growth;
+  const { has } = useAdminPermissions();
+  const usersHref = has("USERS_VIEW") ? ROUTES.ADMIN_USERS.href : undefined;
+  return (
+    <div className="space-y-4">
+      <Card className="p-0">
+        <div className="grid grid-cols-1 divide-y divide-white/[0.08] sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-5 lg:divide-x">
+          <Tile href={usersHref} label="Attendees: open users">
+            <Label>Attendees</Label>
+            <p className="mt-1.5 text-2xl font-bold tracking-tight">
+              {totals.attendees.toLocaleString()}
+            </p>
+            <p className="mt-1 text-xs text-white/50">On Turnupz</p>
+          </Tile>
+          <Tile href={usersHref} label="Vendors: open users">
+            <Label>Vendors & businesses</Label>
+            <p className="mt-1.5 text-2xl font-bold tracking-tight">
+              {totals.vendors.toLocaleString()}
+            </p>
+            <p className="mt-1 text-xs text-white/50">
+              {totals.verifiedSellers} selling · {totals.freeHosts} free hosts
+            </p>
+          </Tile>
+          <LiveTile
+            label="Attendees online"
+            value={online.attendees}
+            hint="Active in the last 5 minutes"
+          />
+          <LiveTile
+            label="Vendors online"
+            value={online.vendors}
+            hint="Active in the last 5 minutes"
+          />
+          <LiveTile
+            label="Visitors online"
+            value={online.anonymous}
+            hint="Not signed in, last 5 minutes"
+          />
+        </div>
+      </Card>
+
+      <Card className="p-0">
+        <div className="flex flex-wrap items-baseline justify-between gap-2 px-4 pt-4">
+          <Label>Visited</Label>
+          <p className="text-xs text-white/50">
+            Each person counted once per period · all time starts when tracking
+            began
+          </p>
+        </div>
+        <div className="overflow-x-auto px-4 pb-3">
+          <table className="mt-3 w-full min-w-[560px] text-sm">
+            <thead className="text-left text-xs text-white/50">
+              <tr className="border-b" style={{ borderColor: LINE }}>
+                <th className="py-2 font-medium">Period</th>
+                <th className="py-2 text-right font-medium">Attendees</th>
+                <th className="py-2 text-right font-medium">Vendors</th>
+                <th className="py-2 text-right font-medium">Not signed in</th>
+                <th className="py-2 text-right font-medium">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visited.map((row) => (
+                <tr
+                  key={row.key}
+                  className="border-b last:border-0"
+                  style={{ borderColor: LINE }}
+                >
+                  <td className="py-1.5 text-white/80">{row.label}</td>
+                  <td className="py-1.5 text-right font-semibold tabular-nums">
+                    {row.attendees.toLocaleString()}
+                  </td>
+                  <td className="py-1.5 text-right font-semibold tabular-nums">
+                    {row.vendors.toLocaleString()}
+                  </td>
+                  <td className="py-1.5 text-right font-semibold tabular-nums">
+                    {row.anonymous.toLocaleString()}
+                  </td>
+                  <td className="py-1.5 text-right font-bold tabular-nums">
+                    {(
+                      row.attendees +
+                      row.vendors +
+                      row.anonymous
+                    ).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+/** Our own install count now; the stores' figures once they're connected. */
+const Downloads: React.FC<{ growth: TGrowth }> = ({ growth }) => {
+  const { installs, stores } = growth;
+  const store = (value: number | null) =>
+    value === null ? (
+      <span className="text-base font-semibold text-white/40">
+        Not connected yet
+      </span>
+    ) : (
+      value.toLocaleString()
+    );
+  return (
+    <Card className="p-0">
+      <div className="px-4 pt-4">
+        <Label>Downloads</Label>
+      </div>
+      <div className="grid grid-cols-1 divide-y divide-white/[0.08] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <div className="p-4">
+          <p className="text-xs text-white/60">Google Play Store</p>
+          <p className="mt-1 text-2xl font-bold">{store(stores.googlePlay)}</p>
+          <p className="mt-1 text-xs text-white/50">
+            {installs.android.toLocaleString()} Android installs opened the app
+          </p>
+        </div>
+        <div className="p-4">
+          <p className="text-xs text-white/60">Apple App Store</p>
+          <p className="mt-1 text-2xl font-bold">{store(stores.appStore)}</p>
+          <p className="mt-1 text-xs text-white/50">
+            {installs.ios.toLocaleString()} iPhone installs opened the app
+          </p>
+        </div>
+        <div className="p-4">
+          <p className="text-xs text-white/60">Total downloads</p>
+          <p className="mt-1 text-2xl font-bold">
+            {stores.total === null
+              ? installs.total.toLocaleString()
+              : stores.total.toLocaleString()}
+          </p>
+          <p className="mt-1 text-xs text-white/50">
+            {stores.total === null
+              ? `App installs so far · ${installs.newThisPeriod} new this period`
+              : `From the stores · ${installs.total.toLocaleString()} installs opened the app`}
+          </p>
+        </div>
+      </div>
+    </Card>
+  );
+};
 
 const ActivityIcon: React.FC<{ kind: "signup" | "order" | "event" }> = ({
   kind,
@@ -706,7 +953,7 @@ const Activity: React.FC<{ activity: IAdminDashboard["activity"] }> = ({
 };
 
 const DashboardSkeleton = () => (
-  <div className="space-y-5">
+  <div className="space-y-4">
     <Skeleton className="h-32 w-full rounded-2xl bg-white/[0.06]" />
     <Skeleton className="h-80 w-full rounded-2xl bg-white/[0.06]" />
     <Skeleton className="h-32 w-full rounded-2xl bg-white/[0.06]" />
