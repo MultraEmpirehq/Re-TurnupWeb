@@ -5,7 +5,11 @@ import { performerNameKey } from "@/lib/performer-name";
 import VerifiedTick from "@/components/discovery/verified-tick";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PERFORMER_TYPE_LABELS, usePerformers } from "@/hooks/use-discovery";
+import {
+  PERFORMER_TYPE_LABELS,
+  usePerformerNameCheck,
+  usePerformers,
+} from "@/hooks/use-discovery";
 import { IPerformerSummary } from "@/lib/types";
 import { ArrowDown, ArrowUp, Plus, Search, X } from "lucide-react";
 import React, { memo, useEffect, useMemo, useState } from "react";
@@ -55,9 +59,22 @@ const LineupPicker: React.FC<{
         .slice(0, 6),
     [chosen, chosenKeys, data],
   );
-  // Only offer a new performer when nobody by that name exists yet.
+  // Asked of the database, not just these results: is anyone by this name
+  // (any spelling, verified or not) already on Turnupz?
+  const nameCheck = usePerformerNameCheck(
+    search,
+    !!searchKey && !alreadyBilled,
+  );
+  const existingElsewhere =
+    nameCheck.existing &&
+    !chosen.has(nameCheck.existing.id) &&
+    !results.some((performer) => performer.id === nameCheck.existing?.id)
+      ? nameCheck.existing
+      : null;
+  // Only offer a new performer once the database says the name is free.
   const nameTaken =
     !!alreadyBilled ||
+    nameCheck.taken ||
     results.some((performer) => performerNameKey(performer.name) === searchKey);
 
   const add = (performer: IPerformerSummary) => {
@@ -216,7 +233,29 @@ const LineupPicker: React.FC<{
               </p>
             )
           )}
-          {!nameTaken && !isFetching && searchKey && (
+          {existingElsewhere && (
+            <button
+              type="button"
+              onClick={() => add(existingElsewhere)}
+              className="flex w-full items-center gap-3 border-t border-secondary-100 px-3 py-2 text-left hover:bg-secondary-50"
+            >
+              <PerformerAvatar
+                name={existingElsewhere.name}
+                image={existingElsewhere.image}
+                className="size-8 text-xs"
+              />
+              <span className="min-w-0 flex-1 text-sm">
+                <span className="font-medium text-secondary-950">
+                  {existingElsewhere.name}
+                </span>{" "}
+                <span className="text-secondary-500">
+                  is already on Turnupz. Add them.
+                </span>
+              </span>
+              <Plus className="size-4 text-secondary" aria-hidden />
+            </button>
+          )}
+          {!nameTaken && !nameCheck.checking && !isFetching && searchKey && (
             <button
               type="button"
               onClick={() => setAdding(true)}

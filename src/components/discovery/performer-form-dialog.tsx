@@ -19,6 +19,7 @@ import {
   TPerformerInput,
   useCreatePerformer,
   useUpdatePerformer,
+  usePerformerNameCheck,
 } from "@/hooks/use-discovery";
 import { IPerformer, TPerformerType } from "@/lib/types";
 import { Country } from "country-state-city";
@@ -76,6 +77,12 @@ const PerformerFormDialog: React.FC<{
   const [saving, setSaving] = useState(false);
   const create = useCreatePerformer();
   const update = useUpdatePerformer();
+  // Checked against the database as they type: there's one of each performer.
+  const nameCheck = usePerformerNameCheck(form.name, open);
+  const clash =
+    nameCheck.existing && nameCheck.existing.id !== performer?.id
+      ? nameCheck.existing
+      : null;
 
   useEffect(() => {
     if (!open) return;
@@ -192,14 +199,36 @@ const PerformerFormDialog: React.FC<{
               />
             </label>
           </div>
-          <InputField
-            label="Name"
-            required
-            value={form.name}
-            maxLength={120}
-            placeholder="e.g. Tems"
-            onChange={set("name")}
-          />
+          <div className="space-y-2">
+            <InputField
+              label="Name"
+              required
+              value={form.name}
+              maxLength={120}
+              placeholder="e.g. Tems"
+              onChange={set("name")}
+              error={clash ? `${clash.name} is already on Turnupz.` : undefined}
+              helperText={
+                nameCheck.checking && form.name.trim()
+                  ? "Checking Turnupz for this name…"
+                  : undefined
+              }
+            />
+            {clash && !isEditing && onSaved && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+                onClick={() => {
+                  onSaved(clash);
+                  onClose();
+                }}
+              >
+                Add {clash.name} instead
+              </Button>
+            )}
+          </div>
           <SelectField
             label="What they do"
             value={form.type}
@@ -263,7 +292,7 @@ const PerformerFormDialog: React.FC<{
           <Button
             type="button"
             loading={saving}
-            disabled={saving}
+            disabled={saving || !!clash || nameCheck.checking}
             onClick={() => void handleSave()}
             className="rounded-2xl bg-secondary text-white hover:bg-secondary-600"
           >
