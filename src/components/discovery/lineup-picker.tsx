@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "sonner";
+import { performerNameKey } from "@/lib/performer-name";
 import VerifiedTick from "@/components/discovery/verified-tick";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,17 +34,42 @@ const LineupPicker: React.FC<{
     search.length > 0,
   );
   const chosen = useMemo(() => new Set(value.map((item) => item.id)), [value]);
+  // The same performer can't be billed twice, under any spelling.
+  const chosenKeys = useMemo(
+    () => new Set(value.map((item) => performerNameKey(item.name))),
+    [value],
+  );
+  const searchKey = performerNameKey(search);
+  const alreadyBilled = value.find(
+    (item) => searchKey && performerNameKey(item.name) === searchKey,
+  );
   const results = useMemo(
     () =>
       (data?.pages ?? [])
         .flatMap((page) => page.performers)
-        .filter((performer) => !chosen.has(performer.id))
+        .filter(
+          (performer) =>
+            !chosen.has(performer.id) &&
+            !chosenKeys.has(performerNameKey(performer.name)),
+        )
         .slice(0, 6),
-    [chosen, data],
+    [chosen, chosenKeys, data],
   );
+  // Only offer a new performer when nobody by that name exists yet.
+  const nameTaken =
+    !!alreadyBilled ||
+    results.some((performer) => performerNameKey(performer.name) === searchKey);
 
   const add = (performer: IPerformerSummary) => {
-    if (chosen.has(performer.id)) return;
+    if (
+      chosen.has(performer.id) ||
+      chosenKeys.has(performerNameKey(performer.name))
+    ) {
+      toast.info(`${performer.name} is already on the line-up.`);
+      setSearchInput("");
+      setSearch("");
+      return;
+    }
     onChange([
       ...value,
       {
@@ -177,19 +204,28 @@ const LineupPicker: React.FC<{
               <Plus className="size-4 text-secondary" aria-hidden />
             </button>
           ))}
-          {!isFetching && results.length === 0 && (
+          {alreadyBilled ? (
             <p className="px-3 py-2 text-sm text-secondary-500">
-              No performer called “{search}” yet.
+              {alreadyBilled.name} is already on the line-up.
             </p>
+          ) : (
+            !isFetching &&
+            results.length === 0 && (
+              <p className="px-3 py-2 text-sm text-secondary-500">
+                No performer called “{search}” yet.
+              </p>
+            )
           )}
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="flex w-full items-center gap-2 border-t border-secondary-100 px-3 py-2.5 text-sm font-semibold text-secondary hover:bg-secondary-50"
-          >
-            <Plus className="size-4" aria-hidden />
-            Add “{search}” as a new performer
-          </button>
+          {!nameTaken && !isFetching && searchKey && (
+            <button
+              type="button"
+              onClick={() => setAdding(true)}
+              className="flex w-full items-center gap-2 border-t border-secondary-100 px-3 py-2.5 text-sm font-semibold text-secondary hover:bg-secondary-50"
+            >
+              <Plus className="size-4" aria-hidden />
+              Add “{search}” as a new performer
+            </button>
+          )}
         </div>
       )}
 
