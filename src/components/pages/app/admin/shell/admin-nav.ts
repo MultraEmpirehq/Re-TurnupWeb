@@ -170,11 +170,13 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         permission: "VENDORS_VERIFY",
         showsPendingVerifications: true,
       },
+      // Events go live without review; what organisers add to the shared
+      // directory (venues typed in, performers) is what's reviewed.
       {
-        label: "Event Reviews",
-        href: `${ADMIN_BASE}/events/reviews`,
+        label: "Venue & Performer Reviews",
+        href: `${ADMIN_BASE}/events/catalogue`,
         icon: ClipboardCheck,
-        permission: "EVENTS_MODERATE",
+        permission: "CATALOGUE_MANAGE",
       },
       {
         label: "Reports",

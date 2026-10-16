@@ -72,6 +72,7 @@ const defaultValues: TFormValues = {
   eventCity: "",
   venueId: "",
   venueName: "",
+  venueAddress: "",
   categoryId: "",
   categoryName: "",
   guestIds: [],
@@ -162,10 +163,14 @@ const buildEventFormData = async (
   formData.append("currency", eventCurrency.code);
   formData.append("ticketCurrency", eventCurrency.code);
   formData.append("eventCurrency", eventCurrency.code);
-  if (isLocallyCreatedOption(body.venueId) && body.venueName) {
-    formData.append("customVenueName", body.venueName);
-  } else if (body.venueId) {
+  // A directory venue goes by id; one typed in goes by name and address.
+  if (body.venueId && !isLocallyCreatedOption(body.venueId)) {
     formData.append("venueId", body.venueId);
+  } else if (body.venueName?.trim()) {
+    formData.append("customVenueName", body.venueName.trim());
+    if (body.venueAddress?.trim()) {
+      formData.append("customVenueAddress", body.venueAddress.trim());
+    }
   }
   if (isLocallyCreatedOption(body.categoryId) && body.categoryName) {
     formData.append("customCategoryName", body.categoryName);
@@ -372,7 +377,9 @@ const CreateEvent = () => {
               draftEvent.eventStateCode ?? draftEvent.stateCode ?? "",
             eventCity: draftEvent.eventCity ?? draftEvent.city ?? "",
             venueId: draftEvent.venue?.id ?? "",
-            venueName: draftEvent.venue?.name ?? "",
+            venueName: draftEvent.venue?.name ?? draftEvent.venueName ?? "",
+            venueAddress:
+              draftEvent.venue?.address ?? draftEvent.venueAddress ?? "",
             categoryId: draftEvent.category?.id ?? "",
             categoryName:
               draftEvent.category?.name ?? draftEvent.customCategoryName ?? "",

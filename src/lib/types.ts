@@ -546,6 +546,10 @@ export interface IPerformer extends IPerformerSummary {
   upcomingEventsCount: number;
   /** The viewer added it, so they can edit or remove it (admins always can). */
   isOwner?: boolean;
+  /** One a vendor added waits for an admin before it's listed publicly. */
+  reviewStatus?: "pending" | "approved" | "rejected";
+  /** Why it was sent back; only its owner sees it. */
+  reviewNote?: string | null;
   /** Position on a chart, when it came from one. */
   rank?: number;
 }

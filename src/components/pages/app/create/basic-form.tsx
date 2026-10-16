@@ -1,4 +1,5 @@
 "use client";
+import VenueField from "./venue-field";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Joi from "joi";
@@ -21,10 +22,6 @@ const ComboboxSelect = dynamic(
     loading: () => <Skeleton className="h-10 w-full rounded-md" />,
   },
 );
-const VenueSelect = dynamic(() => import("@/components/ui/venue-select"), {
-  ssr: false,
-  loading: () => <Skeleton className="h-10 w-full rounded-md" />,
-});
 import GuestNamesInput from "./guest-names-input";
 import LineupPicker from "@/components/discovery/lineup-picker";
 import { IPerformerSummary } from "@/lib/types";
@@ -33,10 +30,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import useCategory from "@/hooks/use-category";
 import { TComboboxItem } from "@/components/ui/combobox-select";
 import { constructErrorMessage } from "@/api/functions";
-import {
-  saveCustomCategory,
-  saveCustomVenue,
-} from "@/lib/custom-event-options";
+import { saveCustomCategory } from "@/lib/custom-event-options";
 import { toast } from "sonner";
 
 export interface IBasicFormValues {
@@ -50,8 +44,11 @@ export interface IBasicFormValues {
   eventState: string;
   eventStateCode: string;
   eventCity: string;
+  /** A directory venue's id, or empty when the venue is typed in. */
   venueId: string;
   venueName?: string;
+  /** Typed with a venue that isn't in the directory. */
+  venueAddress?: string;
   categoryId: string;
   categoryName?: string;
   guestIds: string[];
@@ -126,10 +123,17 @@ export const basicInformationSchema = Joi.object({
     "string.empty": "Event city is required",
     "any.required": "Event city is required",
   }),
-  venueId: Joi.string().required().messages({
-    "string.empty": "Venue is required",
-    "any.required": "Venue is required",
+  // A directory venue, or a name typed in.
+  venueId: Joi.string().allow("").optional(),
+  venueName: Joi.when("venueId", {
+    is: Joi.string().min(1),
+    then: Joi.any(),
+    otherwise: Joi.string().trim().required().messages({
+      "string.empty": "Venue is required",
+      "any.required": "Venue is required",
+    }),
   }),
+  venueAddress: Joi.string().allow("").optional(),
   categoryId: Joi.string().required().messages({
     "string.empty": "Category is required",
     "any.required": "Category is required",
@@ -197,9 +201,11 @@ const BasicForm: React.FC<{
   // one no longer applies. A venue the user typed in themselves isn't tied to a
   // location and stays.
   const clearVenueForNewLocation = useCallback(() => {
-    if (getValues("venueId")?.startsWith("custom-venue-")) return;
+    const venueId = getValues("venueId");
+    if (!venueId || venueId.startsWith("custom-venue-")) return;
     setValue("venueId", "", { shouldValidate: true, shouldDirty: true });
     setValue("venueName", "", { shouldDirty: true });
+    setValue("venueAddress", "", { shouldDirty: true });
   }, [getValues, setValue]);
   const {
     data: categories,
@@ -510,38 +516,35 @@ const BasicForm: React.FC<{
 
         <Controller
           control={control}
-          name="venueId"
-          render={({ field, fieldState }) => (
-            <VenueSelect
-              label="Venue"
-              required={true}
-              value={field.value}
-              onChange={(text) => {
-                field.onChange(text);
-              }}
-              allowCreateOption={true}
-              onCreateOption={(venueName) => {
-                const nextVenue = saveCustomVenue(venueName);
-                if (nextVenue) {
-                  field.onChange(nextVenue.id);
-                  setValue("venueName", nextVenue.name, {
-                    shouldValidate: false,
-                  });
-                }
-                return nextVenue ?? undefined;
-              }}
-              error={fieldState?.error?.message}
+          name="venueName"
+          render={({ fieldState }) => (
+            <VenueField
+              venueId={watch("venueId") ?? ""}
+              venueName={watch("venueName") ?? ""}
+              venueAddress={watch("venueAddress") ?? ""}
               country={eventCountry}
               state={eventState}
-              placeholder={
-                eventState
-                  ? `Search venues in ${eventState} or type a new one`
-                  : "Search or type a new venue"
-              }
-              emptyText={
-                eventState
-                  ? `No venue found in ${eventState}. Type a name to add it.`
-                  : "No venue found."
+              error={fieldState?.error?.message}
+              onPick={(venue) => {
+                setValue("venueId", venue.id, { shouldDirty: true });
+                setValue("venueName", venue.name, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+                setValue("venueAddress", venue.address ?? "", {
+                  shouldDirty: true,
+                });
+              }}
+              onTypeName={(name) => {
+                // Typing makes it their own venue, not a directory one.
+                setValue("venueId", "", { shouldDirty: true });
+                setValue("venueName", name, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
+              onTypeAddress={(address) =>
+                setValue("venueAddress", address, { shouldDirty: true })
               }
             />
           )}

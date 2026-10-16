@@ -165,6 +165,19 @@ const PerformersManager = () => {
                   {` · ${performer.upcomingEventsCount} upcoming`}
                   {performer.isOwner && " · added by you"}
                 </p>
+                {performer.reviewStatus === "pending" && (
+                  <p className="text-xs text-secondary-600">
+                    Waiting for review. You can use them on your events; they
+                    show in search once approved.
+                  </p>
+                )}
+                {performer.reviewStatus === "rejected" && (
+                  <p className="text-xs text-red-700">
+                    Needs changes
+                    {performer.reviewNote ? `: ${performer.reviewNote}` : ""}.
+                    Edit to send it again.
+                  </p>
+                )}
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 <Button
