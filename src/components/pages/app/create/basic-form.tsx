@@ -22,7 +22,6 @@ const ComboboxSelect = dynamic(
     loading: () => <Skeleton className="h-10 w-full rounded-md" />,
   },
 );
-import GuestNamesInput from "./guest-names-input";
 import LineupPicker from "@/components/discovery/lineup-picker";
 import { IPerformerSummary } from "@/lib/types";
 import EventActivitiesInput, { IEventActivity } from "./event-activities-input";
@@ -138,15 +137,10 @@ export const basicInformationSchema = Joi.object({
     "string.empty": "Category is required",
     "any.required": "Category is required",
   }),
-  guestIds: Joi.array().items(Joi.string()).required().messages({
-    "array.empty": "Guests are required",
-    "any.required": "Guests are required",
-  }),
+  // Guests of honour were replaced by the line-up; kept only for old drafts.
+  guestIds: Joi.array().items(Joi.string()).optional(),
   lineup: Joi.array().items(Joi.object().unknown(true)).optional(),
-  unRegisteredGuestNames: Joi.array().items(Joi.string()).required().messages({
-    "array.empty": "Unregistered guest names are required",
-    "any.required": "Unregistered guest names are required",
-  }),
+  unRegisteredGuestNames: Joi.array().items(Joi.string()).optional(),
   description: Joi.string().required().messages({
     "string.empty": "Description is required",
     "any.required": "Description is required",
@@ -598,18 +592,6 @@ const BasicForm: React.FC<{
               eventActivities={field.value}
               setEventActivities={field.onChange}
               error={fieldState?.error?.message}
-            />
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="unRegisteredGuestNames"
-          render={({ field, fieldState }) => (
-            <GuestNamesInput
-              error={fieldState?.error?.message}
-              guestNames={field.value}
-              setGuestNames={field.onChange}
             />
           )}
         />

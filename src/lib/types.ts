@@ -534,6 +534,8 @@ export interface IPerformerSummary {
   name: string;
   type: TPerformerType;
   image?: string | null;
+  /** Approved by the team: shown with the verified tick. */
+  isVerified?: boolean;
 }
 
 export interface IPerformer extends IPerformerSummary {

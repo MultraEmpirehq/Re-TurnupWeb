@@ -159,8 +159,8 @@ const PerformerFormDialog: React.FC<{
             {isEditing ? `Edit ${performer.name}` : "Add a performer"}
           </DialogTitle>
           <DialogDescription className="text-sm text-secondary-500">
-            Performers can be added to any event&apos;s line-up and get a page of
-            their own that people can follow.
+            Performers can be added to any event&apos;s line-up and get a page
+            of their own that people can follow.
           </DialogDescription>
         </DialogHeader>
 

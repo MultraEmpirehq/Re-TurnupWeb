@@ -1,5 +1,6 @@
 "use client";
 
+import VerifiedTick from "@/components/discovery/verified-tick";
 import { constructErrorMessage } from "@/api/functions";
 import PerformerAvatar from "@/components/discovery/performer-avatar";
 import { performerHref } from "@/components/discovery/performer-card";
@@ -156,8 +157,9 @@ const PerformersManager = () => {
                 className="size-11 text-sm"
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-foreground">
-                  {performer.name}
+                <p className="flex items-center gap-1 font-semibold text-foreground">
+                  <span className="truncate">{performer.name}</span>
+                  {performer.isVerified && <VerifiedTick />}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
                   {PERFORMER_TYPE_LABELS[performer.type] ?? "Performer"}

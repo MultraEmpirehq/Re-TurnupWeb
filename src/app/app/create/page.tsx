@@ -184,20 +184,11 @@ const buildEventFormData = async (
   }
   formData.append("acceptedTerms", String(!!body.acceptedTerms));
 
-  if (body.guestIds?.length) {
-    formData.append("guestIds", JSON.stringify(body.guestIds));
-  }
   // Always sent, in billing order, so taking everyone off a draft clears it.
   formData.append(
     "performerIds",
     JSON.stringify((body.lineup ?? []).map((performer) => performer.id)),
   );
-  if (body.unRegisteredGuestNames?.length) {
-    formData.append(
-      "unRegisteredGuestNames",
-      JSON.stringify(body.unRegisteredGuestNames),
-    );
-  }
   if (body.eventActivities?.length) {
     // Activity times are picked on the same clock as the event date.
     const activities = body.eventActivities.map((activity) => ({

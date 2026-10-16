@@ -1,5 +1,6 @@
 "use client";
 
+import VerifiedTick from "@/components/discovery/verified-tick";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PERFORMER_TYPE_LABELS, usePerformers } from "@/hooks/use-discovery";
@@ -89,8 +90,11 @@ const LineupPicker: React.FC<{
                 className="size-9 text-xs"
               />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold text-secondary-950">
-                  {performer.name}
+                <span className="flex items-center gap-1 text-sm font-semibold text-secondary-950">
+                  <span className="truncate">{performer.name}</span>
+                  {performer.isVerified && (
+                    <VerifiedTick className="size-3.5" />
+                  )}
                 </span>
                 <span className="block text-xs text-secondary-500">
                   {index === 0 ? "Headliner · " : ""}

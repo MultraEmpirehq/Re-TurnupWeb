@@ -1,3 +1,4 @@
+import VerifiedTick from "@/components/discovery/verified-tick";
 import { PERFORMER_TYPE_LABELS } from "@/hooks/use-discovery";
 import { IPerformer, IPerformerSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -36,8 +37,9 @@ const PerformerCard: React.FC<{
         className="size-14"
       />
       <span className="min-w-0">
-        <span className="block truncate font-semibold text-secondary-950 group-hover:text-secondary">
-          {performer.name}
+        <span className="flex items-center gap-1 font-semibold text-secondary-950 group-hover:text-secondary">
+          <span className="truncate">{performer.name}</span>
+          {performer.isVerified && <VerifiedTick />}
         </span>
         <span className="block truncate text-xs text-secondary-500">
           {PERFORMER_TYPE_LABELS[performer.type] ?? "Performer"}
