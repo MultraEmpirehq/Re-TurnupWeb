@@ -10,7 +10,10 @@ import PerformerAvatar from "./performer-avatar";
 export const performerHref = (id: string) =>
   `${ROUTES.EXPLORE.href}/performer/${id}`;
 
-/** A performer as a tile that opens their page; `rank` adds a chart position. */
+/**
+ * A performer as a tile that opens their page; `rank` adds a chart position.
+ * Performers not verified yet have no page, so their tile isn't a link.
+ */
 const PerformerCard: React.FC<{
   performer: IPerformerSummary | IPerformer;
   rank?: number;
@@ -18,14 +21,13 @@ const PerformerCard: React.FC<{
 }> = ({ performer, rank, className }) => {
   const upcoming =
     "upcomingEventsCount" in performer ? performer.upcomingEventsCount : null;
-  return (
-    <Link
-      href={performerHref(performer.id)}
-      className={cn(
-        "group flex items-center gap-3 rounded-2xl bg-white p-3 ring-1 ring-black/5 transition-shadow hover:shadow-md",
-        className,
-      )}
-    >
+  const hasPage = performer.isVerified !== false;
+  const tileClass = cn(
+    "group flex items-center gap-3 rounded-2xl bg-white p-3 ring-1 ring-black/5 transition-shadow hover:shadow-md",
+    className,
+  );
+  const content = (
+    <>
       {rank !== undefined && (
         <span className="w-6 shrink-0 text-center text-lg font-bold text-secondary-400 tabular-nums">
           {rank}
@@ -47,7 +49,14 @@ const PerformerCard: React.FC<{
             ` · ${upcoming} upcoming ${upcoming === 1 ? "event" : "events"}`}
         </span>
       </span>
+    </>
+  );
+  return hasPage ? (
+    <Link href={performerHref(performer.id)} className={tileClass}>
+      {content}
     </Link>
+  ) : (
+    <div className={tileClass}>{content}</div>
   );
 };
 

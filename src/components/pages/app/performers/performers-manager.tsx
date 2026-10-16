@@ -182,16 +182,19 @@ const PerformersManager = () => {
                 )}
               </div>
               <div className="flex shrink-0 items-center gap-1">
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="icon"
-                  aria-label="View page"
-                >
-                  <Link href={performerHref(performer.id)} target="_blank">
-                    <ExternalLink className="size-4" />
-                  </Link>
-                </Button>
+                {/* Only verified performers have a page. */}
+                {performer.isVerified !== false && (
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="icon"
+                    aria-label="View page"
+                  >
+                    <Link href={performerHref(performer.id)} target="_blank">
+                      <ExternalLink className="size-4" />
+                    </Link>
+                  </Button>
+                )}
                 {canManage(performer) && (
                   <>
                     <Button

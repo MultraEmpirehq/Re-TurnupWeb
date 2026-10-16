@@ -47,11 +47,20 @@ const PAGE_SIZE = 20;
 // Performers ------------------------------------------------------------------
 
 export const usePerformers = (
-  { q = "", type }: { q?: string; type?: TPerformerType } = {},
+  {
+    q = "",
+    type,
+    forLineup,
+  }: {
+    q?: string;
+    type?: TPerformerType;
+    /** Also find performers not verified yet, so nobody adds them twice. */
+    forLineup?: boolean;
+  } = {},
   enabled = true,
 ) =>
   useInfiniteQuery({
-    queryKey: ["performers", q, type ?? "all"],
+    queryKey: ["performers", q, type ?? "all", forLineup ? "lineup" : "public"],
     initialPageParam: 1,
     queryFn: async ({ pageParam }) => {
       const params = new URLSearchParams({
@@ -60,6 +69,7 @@ export const usePerformers = (
       });
       if (q.trim()) params.set("q", q.trim());
       if (type) params.set("type", type);
+      if (forLineup) params.set("forLineup", "true");
       const { data } = await getData<IPerformer[]>(`/performers?${params}`);
       return { performers: data?.data ?? [], pagination: data?.pagination };
     },

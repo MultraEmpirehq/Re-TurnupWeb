@@ -140,6 +140,17 @@ const PerformerFormDialog: React.FC<{
       if (saved) onSaved?.(saved);
       onClose();
     } catch (error) {
+      // Already on Turnupz: there's only ever one of each performer, so use
+      // that one (straight onto the bill when adding from a line-up).
+      const existing = (
+        error as { response?: { data?: { performer?: IPerformer } } }
+      )?.response?.data?.performer;
+      if (existing && !isEditing && onSaved) {
+        toast.info(`${existing.name} is already on Turnupz, so we added them.`);
+        onSaved(existing);
+        onClose();
+        return;
+      }
       toast.error(
         constructErrorMessage(
           error as TApiErrorResponseType,

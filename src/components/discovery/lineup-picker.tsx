@@ -27,7 +27,10 @@ const LineupPicker: React.FC<{
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const { data, isFetching } = usePerformers({ q: search }, search.length > 0);
+  const { data, isFetching } = usePerformers(
+    { q: search, forLineup: true },
+    search.length > 0,
+  );
   const chosen = useMemo(() => new Set(value.map((item) => item.id)), [value]);
   const results = useMemo(
     () =>
