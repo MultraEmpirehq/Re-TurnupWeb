@@ -7,6 +7,7 @@ import {
   IAdminDashboard,
   TDashboardDays,
   useAdminDashboard,
+  useImportPlayDownloads,
 } from "@/hooks/use-admin-dashboard";
 import { cn } from "@/lib/utils";
 import useUserStore from "@/stores/user-store";
@@ -25,6 +26,7 @@ import { ROUTES } from "@/lib/variables";
 import Link from "next/link";
 import React, { memo, useMemo, useState } from "react";
 import QuickLinks from "./quick-links";
+import { toast } from "sonner";
 import {
   Area,
   AreaChart,
@@ -829,23 +831,56 @@ const Audience: React.FC<{ growth: TGrowth }> = ({ growth }) => {
 /** Our own install count now; the stores' figures once they're connected. */
 const Downloads: React.FC<{ growth: TGrowth }> = ({ growth }) => {
   const { installs, stores } = growth;
-  const store = (value: number | null) =>
+  const importPlay = useImportPlayDownloads();
+  const store = (value: number | null, connected?: boolean) =>
     value === null ? (
       <span className="text-base font-semibold text-white/40">
         Not connected yet
+      </span>
+    ) : connected && value === 0 ? (
+      <span className="text-base font-semibold text-white/60">
+        Connected, figures on the way
       </span>
     ) : (
       value.toLocaleString()
     );
   return (
     <Card className="p-0">
-      <div className="px-4 pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4">
         <Label>Downloads</Label>
+        {stores.googlePlayConnected && (
+          <button
+            type="button"
+            disabled={importPlay.isPending}
+            onClick={() =>
+              importPlay.mutate(undefined, {
+                onSuccess: (result) =>
+                  toast.success(
+                    result?.imported
+                      ? `Play Store: ${result.imported} days imported`
+                      : "Play Store has no report yet. Try again tomorrow.",
+                  ),
+                onError: (error) =>
+                  toast.error(
+                    constructErrorMessage(
+                      error as TApiErrorResponseType,
+                      "Couldn't read the Play Console reports",
+                    ),
+                  ),
+              })
+            }
+            className="rounded-md px-2 py-1 text-xs font-semibold text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50"
+          >
+            {importPlay.isPending ? "Importing…" : "Import Play Store now"}
+          </button>
+        )}
       </div>
       <div className="grid grid-cols-1 divide-y divide-white/[0.08] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <div className="p-4">
           <p className="text-xs text-white/60">Google Play Store</p>
-          <p className="mt-1 text-2xl font-bold">{store(stores.googlePlay)}</p>
+          <p className="mt-1 text-2xl font-bold">
+            {store(stores.googlePlay, stores.googlePlayConnected)}
+          </p>
           <p className="mt-1 text-xs text-white/50">
             {installs.android.toLocaleString()} Android installs opened the app
           </p>

@@ -1,5 +1,5 @@
-import { getData } from "@/api";
-import { useQuery } from "@tanstack/react-query";
+import { getData, postData } from "@/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export type TDashboardDays = 7 | 30 | 90;
 
@@ -76,6 +76,8 @@ export interface IDashboardGrowth {
   };
   /** null until each store's figures are connected. */
   stores: {
+    /** The Play Console reports are set up (figures may still be on the way). */
+    googlePlayConnected?: boolean;
     googlePlay: number | null;
     appStore: number | null;
     total: number | null;
@@ -92,3 +94,19 @@ export const useAdminDashboard = (days: TDashboardDays) =>
     refetchInterval: 60_000,
     retry: 0,
   });
+
+/** Reads the latest Play Console installs reports now (super admins). */
+export const useImportPlayDownloads = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () =>
+      (
+        await postData<
+          undefined,
+          { connected: boolean; imported: number; months: string[] }
+        >("/admin/store-downloads/google-play/import")
+      ).data?.data,
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] }),
+  });
+};
