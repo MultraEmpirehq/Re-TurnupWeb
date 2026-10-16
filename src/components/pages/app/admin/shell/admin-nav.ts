@@ -97,30 +97,33 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         label: "Referrals",
         href: `${ADMIN_BASE}/marketing/referrals`,
         icon: Gift,
-        permission: "USERS_VIEW",
+        permission: "MARKETING_MANAGE",
       },
       {
         label: "Influencer Codes",
         href: `${ADMIN_BASE}/marketing/influencer-codes`,
         icon: Sparkles,
-        permission: "USERS_VIEW",
+        permission: "MARKETING_MANAGE",
       },
       {
         label: "Campaigns",
         href: `${ADMIN_BASE}/marketing/campaigns`,
         icon: Megaphone,
+        permission: "MARKETING_MANAGE",
         comingSoon: "Plan, run and measure marketing campaigns.",
       },
       {
         label: "Content",
         href: `${ADMIN_BASE}/marketing/content`,
         icon: Newspaper,
+        permission: "MARKETING_MANAGE",
         comingSoon: "Manage the content shown across the platform.",
       },
       {
         label: "Newsletters",
         href: `${ADMIN_BASE}/marketing/newsletters`,
         icon: Mail,
+        permission: "MARKETING_MANAGE",
         comingSoon: "Write and send newsletters to subscribers.",
       },
     ],
@@ -135,31 +138,31 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
     items: [
       {
         label: ROUTES.CREATE_EVENT.label,
-        href: ROUTES.CREATE_EVENT.href,
+        href: `${ADMIN_BASE}/events/create`,
         icon: CalendarPlus,
+        permission: "EVENTS_MODERATE",
       },
       {
         label: "Manage Events",
-        href: ROUTES.EVENTS.href,
+        href: `${ADMIN_BASE}/events`,
         icon: CalendarDays,
+        permission: "EVENTS_MODERATE",
       },
       {
         label: ROUTES.VENUES.label,
-        href: ROUTES.VENUES.href,
+        href: `${ADMIN_BASE}/venues`,
         icon: MapPin,
-        alsoActiveOn: [ROUTES.CREATE_VENUE.href],
         permission: "CATALOGUE_MANAGE",
       },
       {
         label: ROUTES.CATEGORIES.label,
-        href: ROUTES.CATEGORIES.href,
+        href: `${ADMIN_BASE}/categories`,
         icon: Tags,
-        alsoActiveOn: [ROUTES.CREATE_CATEGORY.href],
         permission: "CATALOGUE_MANAGE",
       },
       {
         label: ROUTES.PERFORMERS.label,
-        href: ROUTES.PERFORMERS.href,
+        href: `${ADMIN_BASE}/performers`,
         icon: Mic,
         permission: "CATALOGUE_MANAGE",
       },
@@ -198,6 +201,7 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         label: "Support Tickets",
         href: `${ADMIN_BASE}/support/tickets`,
         icon: Ticket,
+        permission: "SUPPORT_MANAGE",
         comingSoon: "Track and respond to support tickets from users.",
       },
       {
@@ -210,12 +214,14 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         label: "Help Centre",
         href: `${ADMIN_BASE}/support/help-centre`,
         icon: LifeBuoy,
+        permission: "SUPPORT_MANAGE",
         comingSoon: "Manage the help centre articles and FAQs.",
       },
       {
         label: "User Feedback",
         href: `${ADMIN_BASE}/support/feedback`,
         icon: MessageSquareText,
+        permission: "SUPPORT_MANAGE",
         comingSoon: "Feedback and ratings left by users.",
       },
     ],
@@ -238,24 +244,28 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         label: "Transactions",
         href: `${ADMIN_BASE}/finance/transactions`,
         icon: ArrowLeftRight,
+        permission: "FINANCE_VIEW",
         comingSoon: "Every payment made on the platform.",
       },
       {
         label: "Payouts",
         href: `${ADMIN_BASE}/finance/payouts`,
         icon: Banknote,
+        permission: "FINANCE_VIEW",
         comingSoon: "Review and manage vendor payouts.",
       },
       {
         label: "Invoices",
         href: `${ADMIN_BASE}/finance/invoices`,
         icon: Receipt,
+        permission: "FINANCE_VIEW",
         comingSoon: "Create and track invoices.",
       },
       {
         label: "Financial Reports",
         href: `${ADMIN_BASE}/finance/reports`,
         icon: FileChartColumn,
+        permission: "FINANCE_VIEW",
         comingSoon: "Revenue, fees and financial analytics.",
       },
     ],
@@ -286,18 +296,21 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         label: "System Settings",
         href: `${ADMIN_BASE}/operations/settings`,
         icon: SlidersHorizontal,
+        permission: "ADMINS_MANAGE",
         comingSoon: "Platform-wide settings and configuration.",
       },
       {
         label: "System Logs",
         href: `${ADMIN_BASE}/operations/logs`,
         icon: Logs,
+        permission: "ADMINS_MANAGE",
         comingSoon: "Application and system logs.",
       },
       {
         label: "Integrations",
         href: `${ADMIN_BASE}/operations/integrations`,
         icon: Plug,
+        permission: "ADMINS_MANAGE",
         comingSoon: "Connect and configure third-party services.",
       },
     ],
@@ -324,6 +337,15 @@ export const adminPermissionFor = (pathname: string) =>
       isAdminNavItemActive(pathname, item),
   )?.permission;
 
+/** How closely an item's routes match `pathname` (longest wins), or -1. */
+const matchLength = (pathname: string, item: TAdminNavItem) =>
+  Math.max(
+    -1,
+    ...[item.href, ...(item.alsoActiveOn ?? [])]
+      .filter((href) => isWithin(pathname, href))
+      .map((href) => href.length),
+  );
+
 const isWithin = (pathname: string, href: string) =>
   pathname === href || pathname.startsWith(`${href}/`);
 
@@ -335,8 +357,15 @@ export const isAdminNavItemActive = (pathname: string, item: TAdminNavItem) => {
   if (item.href === ROUTES.ADMIN_OVERVIEW.href) {
     return pathname === item.href;
   }
-  return [item.href, ...(item.alsoActiveOn ?? [])].some((href) =>
-    isWithin(pathname, href),
+  // Only the closest match: on /events/reports, "Reports" is active, not
+  // "Manage Events" too.
+  const mine = matchLength(pathname, item);
+  if (mine < 0) return false;
+  return !ADMIN_NAV_ITEMS.some(
+    (other) =>
+      other !== item &&
+      other.href !== ROUTES.ADMIN_OVERVIEW.href &&
+      matchLength(pathname, other) > mine,
   );
 };
 
