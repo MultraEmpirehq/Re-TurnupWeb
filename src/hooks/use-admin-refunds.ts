@@ -59,6 +59,8 @@ export interface ILookupOrder {
     status: string;
     attendeeName: string | null;
     refundedAt: string | null;
+    /** The ticket type, e.g. "VIP" (an order can mix types). */
+    ticketName?: string | null;
   }[];
   refunds: {
     id: string;

@@ -13,7 +13,9 @@ export type TAdminPermission =
   | "FILES_MANAGE"
   | "USERS_MANAGE"
   | "SUPPORT_MANAGE"
-  | "REFUNDS_MANAGE";
+  | "REFUNDS_MANAGE"
+  | "FINANCE_VIEW"
+  | "MARKETING_MANAGE";
 
 /** Every permission, in the order the admin screens list them. */
 export const ADMIN_PERMISSIONS: {
@@ -60,6 +62,18 @@ export const ADMIN_PERMISSIONS: {
     value: "SUPPORT_MANAGE",
     label: "Handle inquiries",
     description: "Read and resolve messages sent through the Contact Us form.",
+  },
+  {
+    value: "FINANCE_VIEW",
+    label: "View finance",
+    description:
+      "See sales, Turnupz fees, credit spent and refunds on the dashboard and the finance pages. Read-only: it can't move money.",
+  },
+  {
+    value: "MARKETING_MANAGE",
+    label: "Manage marketing",
+    description:
+      "See who referred whom, and create and switch off influencer codes.",
   },
   {
     value: "REFUNDS_MANAGE",

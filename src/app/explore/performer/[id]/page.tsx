@@ -1,5 +1,6 @@
 "use client";
 
+import VerifiedTick from "@/components/discovery/verified-tick";
 import { constructErrorMessage } from "@/api/functions";
 import FollowButton from "@/components/discovery/follow-button";
 import EventsGrid from "@/components/discovery/events-grid";
@@ -94,8 +95,9 @@ const PerformerPage = () => {
             <p className="text-xs font-semibold tracking-[0.2em] text-secondary uppercase">
               {PERFORMER_TYPE_LABELS[performer.type] ?? "Performer"}
             </p>
-            <h1 className="text-3xl font-bold tracking-tight text-secondary-950">
+            <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight text-secondary-950">
               {performer.name}
+              {performer.isVerified && <VerifiedTick className="size-6" />}
             </h1>
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-secondary-500">
               {performer.country && (

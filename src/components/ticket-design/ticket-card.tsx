@@ -48,6 +48,11 @@ const getTicketColors = (type: string) => {
 };
 
 function isTicketTransferAllowed(userTicket: IUserTicketType) {
+  // Free tickets can't be passed on: your friend can get their own.
+  const price = Number(userTicket.ticket.price?.amount ?? 0);
+  if (userTicket.ticket.type?.toUpperCase() === "FREE" || !(price > 0)) {
+    return false;
+  }
   if (userTicket.ticket.isTransferable !== undefined) {
     return userTicket.ticket.isTransferable;
   }
@@ -467,7 +472,9 @@ const TicketCard: React.FC<TicketCardProps> = ({
                 padding: 6,
                 display: "inline-block",
                 lineHeight: 0,
-                filter: isRegistrationBlocked ? "grayscale(1) blur(1px)" : "none",
+                filter: isRegistrationBlocked
+                  ? "grayscale(1) blur(1px)"
+                  : "none",
                 opacity: isRegistrationBlocked ? 0.45 : 1,
               }}
             >

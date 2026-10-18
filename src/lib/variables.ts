@@ -12,6 +12,11 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Explore",
     href: "/explore",
   },
+  BLOGS: {
+    shouldShowIn: [ROUTE_TYPE.NAV_ROUTE],
+    label: "Blogs",
+    href: "/blogs",
+  },
   // A sales page, so it drops out of the header once someone has signed in.
   PRICING: {
     shouldShowIn: [ROUTE_TYPE.NAV_ROUTE, ROUTE_TYPE.SIGNED_OUT_ONLY],

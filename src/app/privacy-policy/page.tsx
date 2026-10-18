@@ -120,7 +120,7 @@ const sections: TSection[] = [
   {
     title: "Cookies and local storage",
     intro:
-      "We use a cookie and your browser's local storage only to keep you signed in and remember your settings. We don't use advertising or analytics cookies, so there is nothing to opt out of.",
+      "We use a cookie and your browser's local storage to keep you signed in and remember your settings, and to hold a random visitor id that lets us count how many people visit Turnupz (not who they are). The app keeps a similar random id for the same purpose. We don't use advertising or third-party analytics cookies.",
   },
   {
     title: "Security",

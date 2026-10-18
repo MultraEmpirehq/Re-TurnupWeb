@@ -13,7 +13,6 @@ import {
   EventDetailTitleRow,
   EventDetailDateTime,
   EventDetailLocation,
-  EventDetailGuests,
   EventDetailDescription,
   EventDetailActivities,
   EventDetailMedia,
@@ -161,10 +160,6 @@ const EventDetails = () => {
             name={data.organizerName || "this planner"}
           />
         </section>
-      )}
-
-      {data?.eventGuestsOfHonour && data.eventGuestsOfHonour.length > 0 && (
-        <EventDetailGuests guests={data.eventGuestsOfHonour} />
       )}
 
       {hasDescription && (

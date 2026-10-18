@@ -548,7 +548,11 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
         ticketQuantity: Math.max(Number(ticket.ticketQuantity) || 0, 0),
         visibility: ticket.visibility ?? "public",
         actionType: ticket.actionType ?? "paid",
-        transferable: !!ticket.transferable,
+        // Free tickets can't be passed on.
+        transferable:
+          (ticket.actionType ?? "paid") !== "register" &&
+          getTicketPriceAmount(ticket.ticketPrice) > 0 &&
+          !!ticket.transferable,
         privateAccessCode:
           ticket.visibility === "private"
             ? ticket.privateAccessCode ||
@@ -1251,22 +1255,30 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                           <option value="register">Register</option>
                         </select>
                       </div>
-                      <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-white px-3 text-sm text-secondary-700 md:col-span-2 xl:col-span-5">
-                        <input
-                          type="checkbox"
-                          checked={!!ticket.transferable}
-                          onChange={(event) =>
-                            handleTicketChange(
-                              index,
-                              "transferable",
-                              event.target.checked,
-                            )
-                          }
-                        />
-                        <span>
-                          Allow attendees to transfer this ticket category
-                        </span>
-                      </label>
+                      {ticket.actionType === "register" ||
+                      !(getTicketPriceAmount(ticket.ticketPrice) > 0) ? (
+                        <p className="flex min-h-11 items-center rounded-xl border border-secondary-200 bg-secondary-50 px-3 text-sm text-secondary-500 md:col-span-2 xl:col-span-5">
+                          Free tickets can&apos;t be passed on. Guests get their
+                          own from the event page.
+                        </p>
+                      ) : (
+                        <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-white px-3 text-sm text-secondary-700 md:col-span-2 xl:col-span-5">
+                          <input
+                            type="checkbox"
+                            checked={!!ticket.transferable}
+                            onChange={(event) =>
+                              handleTicketChange(
+                                index,
+                                "transferable",
+                                event.target.checked,
+                              )
+                            }
+                          />
+                          <span>
+                            Allow attendees to transfer this ticket category
+                          </span>
+                        </label>
+                      )}
                       <TicketSaleRulesFields
                         className="rounded-xl border border-secondary-200 bg-white p-3 md:col-span-2 xl:col-span-5"
                         value={ticket}
