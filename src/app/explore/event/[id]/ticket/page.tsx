@@ -53,6 +53,15 @@ const getTicketPriceLabel = (ticket: ITicketDetailsType) => {
   return "Free";
 };
 
+/** The most of one ticket type a buyer can take: stock, then the organiser's cap. */
+const maxFor = (ticket: ITicketDetailsType) => {
+  const byStock = ticket.available ?? ticket.quantity ?? 10;
+  return Math.max(
+    0,
+    ticket.maxPerOrder ? Math.min(byStock, ticket.maxPerOrder) : byStock,
+  );
+};
+
 const TicketSelectionCard: React.FC<{
   ticket: ITicketDetailsType;
   event?: IEventDetailsType;
@@ -232,7 +241,10 @@ const TicketPage = () => {
     [accessibleTickets, selectedTicketId],
   );
 
-  const isExternalTicket = selectedTicket?.type === EXTERNAL_LINK_TYPE;
+  // Outside tickets aren't listed; their link shows only when nothing else is sold here.
+  const isExternalTicket =
+    selectedTicket?.type === EXTERNAL_LINK_TYPE &&
+    accessibleTickets.every((ticket) => ticket.type === EXTERNAL_LINK_TYPE);
   const isRegistrationOnly = event?.saleMethod === "register";
   const registrationTickets = useMemo(
     () =>
@@ -271,16 +283,43 @@ const TicketPage = () => {
     window.open(selectedTicket.link, "_blank", "noopener,noreferrer");
   }, [event, externalLinkHost, selectedTicket, userDetails]);
 
+  // Tickets (not registration): any mix of ticket types, each with its own count.
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const buyableTickets = useMemo(
+    () => accessibleTickets.filter((ticket) => ticket.type !== EXTERNAL_LINK_TYPE),
+    [accessibleTickets],
+  );
+  const lines = useMemo(
+    () =>
+      buyableTickets
+        .filter((ticket) => (counts[ticket.id] ?? 0) > 0)
+        .map((ticket) => ({ ticket, quantity: counts[ticket.id] })),
+    [buyableTickets, counts],
+  );
+  /** The ticket whose currency prices the order. */
+  const pricingTicket = isRegistrationOnly
+    ? selectedTicket
+    : (lines[0]?.ticket ?? null);
+  const linesOnSale =
+    lines.length > 0 &&
+    lines.every((line) => ticketSaleState(line.ticket).status === "open");
+
   const totalPrice = useMemo(
-    () => (selectedTicket?.price?.amount ?? 0) * quantity,
-    [selectedTicket, quantity],
+    () =>
+      isRegistrationOnly
+        ? (selectedTicket?.price?.amount ?? 0) * quantity
+        : lines.reduce(
+            (sum, line) => sum + (line.ticket.price?.amount ?? 0) * line.quantity,
+            0,
+          ),
+    [isRegistrationOnly, selectedTicket, quantity, lines],
   );
 
   const formattedTotalPrice = useMemo(() => {
-    if (!selectedTicket) return null;
-    const { locale, code } = selectedTicket.price.currency;
+    if (!pricingTicket) return null;
+    const { locale, code } = pricingTicket.price.currency;
     return formatCurrency(totalPrice, code, locale);
-  }, [selectedTicket, totalPrice]);
+  }, [pricingTicket, totalPrice]);
 
   // Turnupz Credit in the ticket's currency, spent first when switched on.
   const { data: creditRows } = useQuery({
@@ -298,21 +337,21 @@ const TicketPage = () => {
     creditRows?.find(
       (row) =>
         row.currency.toUpperCase() ===
-        selectedTicket?.price?.currency?.code?.toUpperCase(),
+        pricingTicket?.price?.currency?.code?.toUpperCase(),
     )?.available?.amount ?? 0;
   const creditApplied =
     useCredit && totalPrice > 0 ? Math.min(creditAvailable, totalPrice) : 0;
   const toPay = Math.max(totalPrice - creditApplied, 0);
   const money = useCallback(
     (amount: number) =>
-      selectedTicket
+      pricingTicket
         ? formatCurrency(
             amount,
-            selectedTicket.price.currency.code,
-            selectedTicket.price.currency.locale,
+            pricingTicket.price.currency.code,
+            pricingTicket.price.currency.locale,
           )
         : "",
-    [selectedTicket],
+    [pricingTicket],
   );
 
   // Whose link they came through, for share-link credit.
@@ -330,6 +369,39 @@ const TicketPage = () => {
       setSelectedTicketId(accessibleTickets[0].id);
     }
   }, [accessibleTickets, selectedTicketId]);
+
+  // Start with one of the first ticket on sale, so the summary isn't empty.
+  const [startedWithOne, setStartedWithOne] = useState(false);
+  useEffect(() => {
+    if (startedWithOne || isRegistrationOnly) return;
+    const first = buyableTickets.find(
+      (ticket) => ticketSaleState(ticket).status === "open" && maxFor(ticket) > 0,
+    );
+    if (first) {
+      setCounts({ [first.id]: 1 });
+      setStartedWithOne(true);
+    }
+  }, [startedWithOne, isRegistrationOnly, buyableTickets]);
+
+  /** Sets how many of one ticket type; another currency starts the order afresh. */
+  const setCount = useCallback(
+    (ticket: ITicketDetailsType, count: number) => {
+      const next = Math.max(0, Math.min(count, maxFor(ticket)));
+      setCounts((current) => {
+        const currency = buyableTickets
+          .find((t) => (current[t.id] ?? 0) > 0)
+          ?.price?.currency?.code?.toUpperCase();
+        const base =
+          currency && ticket.price?.currency?.code?.toUpperCase() !== currency
+            ? {}
+            : { ...current };
+        if (next > 0) base[ticket.id] = next;
+        else delete base[ticket.id];
+        return base;
+      });
+    },
+    [buyableTickets],
+  );
 
   const handleSelectTicket = useCallback((ticketId: string) => {
     setSelectedTicketId(ticketId);
@@ -472,22 +544,21 @@ const TicketPage = () => {
       return;
     }
 
-    if (!selectedTicket) {
-      toast.error("Please select a ticket type");
-      return;
-    }
-
-    if (quantity < 1) {
-      toast.error("Please select at least one seat");
+    if (!lines.length) {
+      toast.error("Pick at least one ticket");
       return;
     }
 
     setIsPurchasing(true);
     try {
+      const isPrivate = lines.some(
+        (line) => getTicketVisibility(line.ticket) === "private",
+      );
       const { data } = await postData<
         {
-          ticketId: string;
-          quantity: number;
+          ticketId?: string;
+          quantity?: number;
+          items?: { ticketId: string; quantity: number }[];
           callbackUrl: string;
           privateAccessCode?: string;
           useCredit?: boolean;
@@ -495,12 +566,16 @@ const TicketPage = () => {
         },
         { orderId: string; status: EOrderStatus; redirectUrl?: string }
       >("/order", {
-        ticketId: selectedTicket.id,
-        quantity,
-        privateAccessCode:
-          getTicketVisibility(selectedTicket) === "private"
-            ? privateAccessCode
-            : undefined,
+        // One ticket type keeps the original request; several go as items.
+        ...(lines.length === 1
+          ? { ticketId: lines[0].ticket.id, quantity: lines[0].quantity }
+          : {
+              items: lines.map((line) => ({
+                ticketId: line.ticket.id,
+                quantity: line.quantity,
+              })),
+            }),
+        privateAccessCode: isPrivate ? privateAccessCode : undefined,
         callbackUrl: `${window.location.origin}${ROUTES.PROFILE_ORDERS.href}/{{orderId}}/success`,
         ...(creditApplied > 0 ? { useCredit: true } : {}),
         ref: readShareRef(eventId),
@@ -510,7 +585,11 @@ const TicketPage = () => {
         window.location.href = redirectUrl;
         return;
       }
-      toast.success("Ticket purchased successfully!");
+      toast.success(
+        lines.reduce((sum, line) => sum + line.quantity, 0) > 1
+          ? "Your tickets are ready"
+          : "Your ticket is ready",
+      );
       router.push(
         `${ROUTES.PROFILE_ORDERS.href}/${data?.data?.orderId}/success`,
       );
@@ -530,6 +609,7 @@ const TicketPage = () => {
     eventId,
     selectedTicket,
     quantity,
+    lines,
     router,
     event,
     getTicketVisibility,
@@ -775,92 +855,165 @@ const TicketPage = () => {
               {accessibleTickets
                 ?.filter((ticket) => ticket?.type !== EXTERNAL_LINK_TYPE)
                 .map((ticket) => {
-                  const isSelected = selectedTicketId === ticket.id;
-                  const isExternal = ticket.type === EXTERNAL_LINK_TYPE;
+                  const count = counts[ticket.id] ?? 0;
+                  const isSelected = count > 0;
+                  const max = maxFor(ticket);
+                  const saleNote = describeTicketSaleState(
+                    ticketSaleState(ticket),
+                    event?.timezone,
+                  );
+                  const unavailable = !!saleNote || max === 0;
                   const borderColor = isSelected
                     ? "border-primary-800 dark:border-primary-600"
                     : "border-border group-hover:border-primary-400";
                   return (
-                    <button
+                    <div
                       key={ticket.id}
-                      type="button"
-                      onClick={() => handleSelectTicket(ticket.id)}
-                      className="text-left cursor-pointer flex flex-col group transition-all"
+                      role="button"
+                      tabIndex={unavailable ? -1 : 0}
+                      aria-disabled={unavailable}
+                      onClick={() => !unavailable && !isSelected && setCount(ticket, 1)}
+                      onKeyDown={(e) => {
+                        if ((e.key === "Enter" || e.key === " ") && !unavailable && !isSelected) {
+                          e.preventDefault();
+                          setCount(ticket, 1);
+                        }
+                      }}
+                      className={cn(
+                        "text-left flex flex-col group transition-all",
+                        unavailable ? "cursor-not-allowed opacity-55" : "cursor-pointer",
+                      )}
                     >
                       <div
                         className={cn(
-                          "border-2 border-dashed px-5 pt-5 pb-6 flex-1 flex flex-col gap-4",
-                          isExternal ? "rounded-xl" : "border-b-0 rounded-t-xl",
+                          "border-2 border-dashed border-b-0 rounded-t-xl px-5 pt-5 pb-6 flex-1 flex flex-col gap-3",
                           borderColor,
                           isSelected &&
                             "bg-primary-50/30 dark:bg-primary-950/20",
                         )}
                       >
-                        <div className="size-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
-                          <TicketIcon className="size-6 text-primary-700 dark:text-primary-400" />
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="size-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+                            <TicketIcon className="size-6 text-primary-700 dark:text-primary-400" />
+                          </div>
+                          {max === 0 && !saleNote ? (
+                            <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-600">
+                              Sold out
+                            </span>
+                          ) : (
+                            ticket.available != null &&
+                            !saleNote && (
+                              <span
+                                className={cn(
+                                  "rounded-full px-2.5 py-1 text-xs font-bold",
+                                  ticket.available <= 20
+                                    ? "bg-orange-50 text-orange-700"
+                                    : "bg-secondary-100 text-secondary-600",
+                                )}
+                              >
+                                {ticket.available.toLocaleString()} left
+                              </span>
+                            )
+                          )}
                         </div>
                         <p className="font-bold text-lg">{ticket.name}</p>
-                        {describeTicketSaleState(
-                          ticketSaleState(ticket),
-                          event?.timezone,
-                        ) && (
+                        {saleNote && (
                           <p className="-mt-2 text-xs font-medium text-secondary-700">
-                            {describeTicketSaleState(
-                              ticketSaleState(ticket),
-                              event?.timezone,
-                            )}
+                            {saleNote}
                           </p>
                         )}
                       </div>
 
-                      {!isExternal && (
-                        <>
-                          <div className="flex items-center">
-                            <div
-                              className={cn(
-                                "w-3 h-6 rounded-r-full border-2 border-l-0 border-dashed shrink-0 bg-background",
-                                borderColor,
-                              )}
-                            />
-                            <div
-                              className={cn(
-                                "flex-1 border-t-2 border-dashed",
-                                borderColor,
-                              )}
-                            />
-                            <div
-                              className={cn(
-                                "w-3 h-6 rounded-l-full border-2 border-r-0 border-dashed shrink-0 bg-background",
-                                borderColor,
-                              )}
-                            />
-                          </div>
+                      <div className="flex items-center">
+                        <div
+                          className={cn(
+                            "w-3 h-6 rounded-r-full border-2 border-l-0 border-dashed shrink-0 bg-background",
+                            borderColor,
+                          )}
+                        />
+                        <div
+                          className={cn(
+                            "flex-1 border-t-2 border-dashed",
+                            borderColor,
+                          )}
+                        />
+                        <div
+                          className={cn(
+                            "w-3 h-6 rounded-l-full border-2 border-r-0 border-dashed shrink-0 bg-background",
+                            borderColor,
+                          )}
+                        />
+                      </div>
 
-                          <div
-                            className={cn(
-                              "border-2 border-t-0 border-dashed rounded-b-xl px-5 pt-4 pb-5",
-                              borderColor,
-                              isSelected &&
-                                "bg-primary-50/30 dark:bg-primary-950/20",
-                            )}
-                          >
-                            <p className="font-semibold">
-                              <span className="text-primary-700 dark:text-primary-400 font-bold text-base">
-                                {ticket?.price?.amount > 0 &&
-                                  ticket?.price?.formatted?.withCurrency}
-                                {!ticket?.price?.amount && "Free"}
+                      <div
+                        className={cn(
+                          "border-2 border-t-0 border-dashed rounded-b-xl px-5 pt-4 pb-5",
+                          borderColor,
+                          isSelected &&
+                            "bg-primary-50/30 dark:bg-primary-950/20",
+                        )}
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                          <p className="font-semibold">
+                            <span className="text-primary-700 dark:text-primary-400 font-bold text-base">
+                              {ticket?.price?.amount > 0 &&
+                                ticket?.price?.formatted?.withCurrency}
+                              {!ticket?.price?.amount && "Free"}
+                            </span>
+                            {ticket?.price?.amount > 0 && (
+                              <span className="text-muted-foreground font-normal text-sm">
+                                {" "}
+                                / person
                               </span>
-                              {ticket?.price?.amount > 0 && (
-                                <span className="text-muted-foreground font-normal text-sm">
-                                  {" "}
-                                  / person
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                        </>
-                      )}
-                    </button>
+                            )}
+                          </p>
+                          {isSelected ? (
+                            <div
+                              className="flex items-center gap-2"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setCount(ticket, count - 1)}
+                                aria-label={
+                                  count === 1
+                                    ? `Remove ${ticket.name}`
+                                    : `One less ${ticket.name}`
+                                }
+                                className="size-8 rounded-full border border-border flex items-center justify-center transition-colors hover:bg-accent cursor-pointer"
+                              >
+                                <Minus className="size-4" />
+                              </button>
+                              <span className="w-6 text-center font-semibold tabular-nums">
+                                {count}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setCount(ticket, count + 1)}
+                                disabled={count >= max}
+                                aria-label={`One more ${ticket.name}`}
+                                className="size-8 rounded-full bg-primary-500 text-white flex items-center justify-center transition-colors hover:bg-primary-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                              >
+                                <Plus className="size-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            !unavailable && (
+                              <span className="text-sm font-bold text-primary-700">
+                                Add
+                              </span>
+                            )
+                          )}
+                        </div>
+                        {isSelected && count >= max && max > 0 && (
+                          <p className="mt-3 rounded-lg bg-primary-50 px-3 py-2 text-xs text-secondary-700">
+                            {max === ticket.available
+                              ? `That's all that's left. You've got the last ${max === 1 ? "one" : max}.`
+                              : `You can get up to ${max} in one order, so others get a chance too.`}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   );
                 })}
             </div>
@@ -883,56 +1036,51 @@ const TicketPage = () => {
               </div>
             ) : (
               <div className="space-y-4 border rounded-xl p-6">
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold text-lg">Number of Seats</p>
-                  <div className="flex items-center gap-4">
-                    <button
-                      type="button"
-                      onClick={handleDecrement}
-                      disabled={quantity <= 1}
-                      aria-label="Decrease quantity"
-                      className="size-9 rounded-full border border-border flex items-center justify-center transition-colors hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                      <Minus className="size-4" />
-                    </button>
-                    <span className="text-lg font-semibold w-8 text-center tabular-nums">
-                      {quantity}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleIncrement}
-                      disabled={quantity >= maxQuantity}
-                      aria-label="Increase quantity"
-                      className="size-9 rounded-full bg-primary-500 text-white flex items-center justify-center transition-colors hover:bg-primary-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                      <Plus className="size-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {selectedTicket?.available != null && (
-                  <p className="text-sm text-muted-foreground text-right">
-                    {selectedTicket.available} ticket
-                    {selectedTicket.available !== 1 && "s"} available
+                {lines.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Pick the tickets you want above. You can mix ticket types.
                   </p>
+                ) : (
+                  <div className="space-y-2">
+                    {lines.map((line) => (
+                      <div
+                        key={line.ticket.id}
+                        className="flex items-center justify-between gap-3 text-sm"
+                      >
+                        <p className="text-muted-foreground">
+                          {line.quantity} × {line.ticket.name}
+                        </p>
+                        <p className="font-semibold">
+                          {line.ticket.price?.amount
+                            ? formatCurrency(
+                                line.ticket.price.amount * line.quantity,
+                                line.ticket.price.currency.code,
+                                line.ticket.price.currency.locale,
+                              )
+                            : "Free"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 )}
-
-                {saleNoticeBlock}
 
                 <div className="border-t" />
 
-                {creditAvailable > 0 && totalPrice > 0 && (
+                {totalPrice > 0 && !!userDetails && (
                   <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/50 p-3">
                     <div>
                       <p className="text-sm font-semibold">
                         Use Turnupz Credit
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {money(creditAvailable)} available
+                        {creditAvailable > 0
+                          ? `${money(creditAvailable)} available`
+                          : `${money(0)} available`}
                       </p>
                     </div>
                     <Switch
-                      checked={useCredit}
+                      disabled={creditAvailable <= 0}
+                      checked={useCredit && creditAvailable > 0}
                       onCheckedChange={setUseCredit}
                       aria-label="Use Turnupz Credit"
                     />
@@ -950,14 +1098,13 @@ const TicketPage = () => {
                     {creditApplied > 0 ? "To pay:" : "Total Price:"}
                   </p>
                   <p className="text-xl font-bold text-primary-600">
-                    {(selectedTicket?.price?.amount ?? 0) > 0 &&
+                    {totalPrice > 0 &&
                       (creditApplied > 0
                         ? toPay > 0
                           ? money(toPay)
                           : "Covered by credit"
                         : formattedTotalPrice)}
-                    {selectedTicket && !selectedTicket?.price?.amount && "Free"}
-                    {!selectedTicket && formattedTotalPrice}
+                    {lines.length > 0 && totalPrice <= 0 && "Free"}
                   </p>
                 </div>
               </div>
@@ -977,12 +1124,12 @@ const TicketPage = () => {
             ) : (
               <button
                 onClick={handlePurchase}
-                disabled={!selectedTicket || isPurchasing || !isSelectedOnSale}
+                disabled={!lines.length || isPurchasing || !linesOnSale}
                 className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
               >
                 {isPurchasing && "Processing..."}
                 {!isPurchasing &&
-                  (isSelectedOnSale ? "Continue" : "Not on sale")}
+                  (lines.length === 0 || linesOnSale ? "Continue" : "Not on sale")}
               </button>
             )}
           </>

@@ -8,7 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { EOrderStatus, IOrderDetailsType } from "@/lib/types";
-import { orderStatusMeta } from "@/lib/order-status";
+import {
+  orderStatusMeta,
+  orderTicketsLabel,
+  orderTotalLabel,
+} from "@/lib/order-status";
 import { ROUTES } from "@/lib/variables";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -171,7 +175,7 @@ const OrderDetailPage = () => {
 
   if (!order) return null;
 
-  const totalFormatted = order.ticket?.price?.formatted?.withCurrency ?? "Free";
+  const totalFormatted = orderTotalLabel(order);
 
   return (
     <div className="space-y-6">
@@ -279,7 +283,9 @@ const OrderDetailPage = () => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground">
-              {order.quantity} ticket{order.quantity !== 1 && "s"}
+              {(order.items?.length ?? 0) > 1
+                ? orderTicketsLabel(order)
+                : `${order.quantity} ticket${order.quantity !== 1 ? "s" : ""}`}
             </p>
             {order.createdAt && (
               <p className="text-xs text-muted-foreground mt-0.5">

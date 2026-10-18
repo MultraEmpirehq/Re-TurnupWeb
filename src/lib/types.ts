@@ -359,6 +359,8 @@ export interface IOrderDetailsType {
   quantity: number;
   createdAt: Date;
   ticket: IOrderTicketType;
+  /** Every ticket type in the order; `ticket` is the first of them. */
+  items?: { ticket: IOrderTicketType; quantity: number }[];
   userTickets: IUserTicketType[];
   /** How much Turnupz Credit paid, or null. */
   paidWithCredit?: IMoney | null;
