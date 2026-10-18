@@ -13,6 +13,7 @@ const COLUMNS = [
     links: [
       { label: "Explore events", href: ROUTES.EXPLORE.href },
       { label: "Venues", href: `${ROUTES.EXPLORE.href}?tab=venues` },
+      { label: "Blogs", href: ROUTES.BLOGS.href },
       { label: "Pricing", href: ROUTES.PRICING.href },
     ],
   },

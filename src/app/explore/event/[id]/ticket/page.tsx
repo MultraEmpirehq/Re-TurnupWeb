@@ -12,6 +12,7 @@ import { formatCurrency } from "@/lib/functions";
 import { formatEventTime } from "@/lib/event-time";
 import { describeTicketSaleState, ticketSaleState } from "@/lib/ticket-sales";
 import { joinEventChatGroup } from "@/lib/event-chat";
+import LeavingTurnupzDialog from "@/components/pages/explore/leaving-turnupz-dialog";
 import { ROUTES } from "@/lib/variables";
 import { readShareRef, rememberShareRef } from "@/lib/share-ref";
 import { getData } from "@/api";
@@ -242,14 +243,21 @@ const TicketPage = () => {
   const externalLinkHost = useMemo(() => {
     if (!isExternalTicket || !selectedTicket?.link) return null;
     try {
-      return new URL(selectedTicket.link).hostname.replace(/^www\./, "");
+      const url = new URL(selectedTicket.link);
+      // Only proper web links; anything else is treated as broken.
+      if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+      return url.hostname.replace(/^www\./, "");
     } catch {
       return null;
     }
   }, [isExternalTicket, selectedTicket]);
 
+  // Tell them they're leaving Turnupz before the seller's site opens.
+  const [confirmLeaving, setConfirmLeaving] = useState(false);
+
   const handleOpenExternalLink = useCallback(() => {
-    if (!selectedTicket?.link) {
+    setConfirmLeaving(false);
+    if (!selectedTicket?.link || !externalLinkHost) {
       toast.error("No purchase link is available for this ticket");
       return;
     }
@@ -261,7 +269,7 @@ const TicketPage = () => {
       });
     }
     window.open(selectedTicket.link, "_blank", "noopener,noreferrer");
-  }, [event, selectedTicket, userDetails]);
+  }, [event, externalLinkHost, selectedTicket, userDetails]);
 
   const totalPrice = useMemo(
     () => (selectedTicket?.price?.amount ?? 0) * quantity,
@@ -957,7 +965,7 @@ const TicketPage = () => {
 
             {isExternalTicket ? (
               <button
-                onClick={handleOpenExternalLink}
+                onClick={() => setConfirmLeaving(true)}
                 disabled={!selectedTicket?.link}
                 className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center justify-center gap-2"
               >
@@ -980,6 +988,13 @@ const TicketPage = () => {
           </>
         )}
       </div>
+      <LeavingTurnupzDialog
+        open={confirmLeaving}
+        host={externalLinkHost}
+        eventName={event?.name}
+        onContinue={handleOpenExternalLink}
+        onClose={() => setConfirmLeaving(false)}
+      />
     </SectionContainer>
   );
 };
