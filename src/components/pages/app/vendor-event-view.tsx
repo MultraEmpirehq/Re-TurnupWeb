@@ -13,13 +13,7 @@ import {
   IEventPassAssignmentDetails,
   IEventTicketOptionDetails,
 } from "@/lib/types";
-import {
-  CalendarDays,
-  Clock3,
-  MapPin,
-  PencilLine,
-  Ticket,
-} from "lucide-react";
+import { CalendarDays, Clock3, MapPin, PencilLine, Ticket } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -68,11 +62,6 @@ const formatTicketPrice = (price: IEventTicketOptionDetails["ticketPrice"]) => {
   return amount.toLocaleString();
 };
 
-const getGuestLabel = (guest: { name?: string; firstName?: string; lastName?: string }) => {
-  const fullName = [guest.firstName, guest.lastName].filter(Boolean).join(" ").trim();
-  return fullName || guest.name || "Special Guest";
-};
-
 interface PendingRegistration {
   registrationId: string;
   ticketId?: string;
@@ -106,7 +95,9 @@ const TicketPreview: React.FC<{
   const hasTicketSections = (eventTickets?.length ?? 0) > 0;
   const hasPassSections = (passAssignments?.length ?? 0) > 0;
   const isRegisterOnly = saleMethod === "register";
-  const previewLabel = isRegisterOnly ? "Register on Turnupz" : "Sell on Turnupz";
+  const previewLabel = isRegisterOnly
+    ? "Register on Turnupz"
+    : "Sell on Turnupz";
   const [showRegistrationDetails, setShowRegistrationDetails] = useState(false);
   if (isRegisterOnly) {
     return (
@@ -124,13 +115,20 @@ const TicketPreview: React.FC<{
           </p>
           <div className="mt-3 grid gap-2 text-xs text-secondary-500">
             <p>
-              {(event?.remainingRegistrationSpots ?? 0).toLocaleString()} spots left
+              {(event?.remainingRegistrationSpots ?? 0).toLocaleString()} spots
+              left
             </p>
             <p>
               Limit:{" "}
-              {(event?.registrationLimit ?? event?.totalTickets ?? 0).toLocaleString()}
+              {(
+                event?.registrationLimit ??
+                event?.totalTickets ??
+                0
+              ).toLocaleString()}
             </p>
-            <p className="capitalize">Status: {event?.registrationStatus ?? "open"}</p>
+            <p className="capitalize">
+              Status: {event?.registrationStatus ?? "open"}
+            </p>
             {event?.requiresApproval && <p>Registration requires approval</p>}
           </div>
         </button>
@@ -147,8 +145,8 @@ const TicketPreview: React.FC<{
                     {event?.name || "Event registration"}
                   </h2>
                   <p className="mt-1 text-sm text-secondary-500">
-                    Public types are shown to customers. Private types require an
-                    invite link.
+                    Public types are shown to customers. Private types require
+                    an invite link.
                   </p>
                 </div>
                 <button
@@ -168,35 +166,36 @@ const TicketPreview: React.FC<{
                       : "";
 
                   return (
-                  <div
-                    key={`${ticket.id ?? ticket.ticketName}-${ticket.privateAccessCode}`}
-                    className="rounded-xl bg-secondary-50 p-3 text-sm"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-secondary-950">
-                          {ticket.ticketName}
-                        </p>
-                        <p className="mt-1 text-xs text-secondary-500">
-                          {ticket.ticketQuantity} registration spots
-                        </p>
-                        <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-secondary-400">
-                          {ticket.visibility || "public"} - {ticket.soldCount ?? 0} registered
-                        </p>
+                    <div
+                      key={`${ticket.id ?? ticket.ticketName}-${ticket.privateAccessCode}`}
+                      className="rounded-xl bg-secondary-50 p-3 text-sm"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-secondary-950">
+                            {ticket.ticketName}
+                          </p>
+                          <p className="mt-1 text-xs text-secondary-500">
+                            {ticket.ticketQuantity} registration spots
+                          </p>
+                          <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-secondary-400">
+                            {ticket.visibility || "public"} -{" "}
+                            {ticket.soldCount ?? 0} registered
+                          </p>
+                        </div>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-secondary-500">
+                          {ticket.visibility || "public"}
+                        </span>
                       </div>
-                      <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-secondary-500">
-                        {ticket.visibility || "public"}
-                      </span>
+                      {privateHref && (
+                        <Link
+                          href={privateHref}
+                          className="mt-3 block break-all rounded-xl bg-white px-3 py-2 text-xs font-medium text-secondary-500 underline"
+                        >
+                          {privateHref}
+                        </Link>
+                      )}
                     </div>
-                    {privateHref && (
-                      <Link
-                        href={privateHref}
-                        className="mt-3 block break-all rounded-xl bg-white px-3 py-2 text-xs font-medium text-secondary-500 underline"
-                      >
-                        {privateHref}
-                      </Link>
-                    )}
-                  </div>
                   );
                 })}
                 {!eventTickets?.length && (
@@ -233,7 +232,9 @@ const TicketPreview: React.FC<{
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-secondary-400">
           {previewLabel}
         </p>
-        <p className="mt-2 text-sm font-semibold text-secondary-950">{ticketSummary}</p>
+        <p className="mt-2 text-sm font-semibold text-secondary-950">
+          {ticketSummary}
+        </p>
         <div className="mt-3 flex items-center gap-2 text-xs text-secondary-500">
           <Ticket className="size-3.5 text-secondary-400" />
           <span>
@@ -252,10 +253,16 @@ const TicketPreview: React.FC<{
               className="flex items-center justify-between gap-3 rounded-[1rem] border border-secondary-100 bg-white px-4 py-3"
             >
               <div>
-                <p className="text-sm font-semibold text-secondary-950">{ticket.ticketName}</p>
-                <p className="text-xs text-secondary-500">{ticket.ticketQuantity} tickets</p>
+                <p className="text-sm font-semibold text-secondary-950">
+                  {ticket.ticketName}
+                </p>
+                <p className="text-xs text-secondary-500">
+                  {ticket.ticketQuantity} tickets
+                </p>
                 <p className="text-[10px] uppercase tracking-[0.18em] text-secondary-400">
-                  {ticket.transferable ? "Transfer enabled" : "Transfer disabled"}
+                  {ticket.transferable
+                    ? "Transfer enabled"
+                    : "Transfer disabled"}
                 </p>
                 <p className="text-[10px] uppercase tracking-[0.18em] text-secondary-400">
                   {ticket.visibility || "public"} · {ticket.soldCount ?? 0}{" "}
@@ -284,7 +291,9 @@ const TicketPreview: React.FC<{
               key={`${pass.passName}-${index}`}
               className="rounded-[1rem] bg-white px-4 py-3 text-sm text-secondary-600"
             >
-              <p className="font-semibold text-secondary-950">{pass.passName}</p>
+              <p className="font-semibold text-secondary-950">
+                {pass.passName}
+              </p>
               <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-secondary-400">
                 {pass.transferable ? "Transfer enabled" : "Transfer disabled"}
               </p>
@@ -292,7 +301,9 @@ const TicketPreview: React.FC<{
                 <span className="rounded-full bg-primary-50 px-2.5 py-1 text-primary-700">
                   {pass.assignments?.filter(
                     (assignment) => assignment.passClaimStatus === "invited",
-                  ).length ?? pass.emailedAssignees?.length ?? 0}{" "}
+                  ).length ??
+                    pass.emailedAssignees?.length ??
+                    0}{" "}
                   invites sent
                 </span>
                 <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">
@@ -341,12 +352,17 @@ const BookingChip: React.FC<{
   const hasPaidTicket = (eventTickets ?? []).some(
     (ticket) => getTicketPriceAmount(ticket.ticketPrice) > 0,
   );
-  const label = isExternal ? "Book Now" : hasPaidTicket ? "Pay Now" : "Register Now";
+  const label = isExternal
+    ? "Book Now"
+    : hasPaidTicket
+      ? "Pay Now"
+      : "Register Now";
   const chipClassName = isExternal
     ? "bg-red-500 text-white shadow-red-200/70"
     : "bg-secondary-400 text-white shadow-secondary-200/80";
 
-  const href = isExternal && ticketUrl ? ticketUrl : `/explore/event/${eventId}/ticket`;
+  const href =
+    isExternal && ticketUrl ? ticketUrl : `/explore/event/${eventId}/ticket`;
 
   return (
     <Link
@@ -376,8 +392,8 @@ const PrivateTicketLinks: React.FC<{
           Vendor Private Links
         </p>
         <p className="mt-1 text-sm text-secondary-500">
-          Share these links only with invited customers. They are hidden from the
-          public customer preview.
+          Share these links only with invited customers. They are hidden from
+          the public customer preview.
         </p>
       </div>
       <div className="space-y-2">
@@ -438,15 +454,19 @@ const PendingRegistrationReview: React.FC<{
   ) => {
     setReviewingId(registrationId);
     try {
-      await patchData<{ status: "confirmed" | "rejected" }, PendingRegistration>(
-        `/event/${eventId}/registrations/${registrationId}/review`,
-        { status },
-      );
+      await patchData<
+        { status: "confirmed" | "rejected" },
+        PendingRegistration
+      >(`/event/${eventId}/registrations/${registrationId}/review`, { status });
       setRegistrations((current) =>
-        current.filter((registration) => registration.registrationId !== registrationId),
+        current.filter(
+          (registration) => registration.registrationId !== registrationId,
+        ),
       );
       toast.success(
-        status === "confirmed" ? "Registration approved." : "Registration rejected.",
+        status === "confirmed"
+          ? "Registration approved."
+          : "Registration rejected.",
       );
     } catch (error) {
       toast.error(
@@ -492,7 +512,8 @@ const PendingRegistrationReview: React.FC<{
               {registration.attendeeName}
             </p>
             <p className="text-xs text-secondary-500">
-              {registration.attendeeEmail} - {registration.quantity} registration
+              {registration.attendeeEmail} - {registration.quantity}{" "}
+              registration
               {registration.quantity === 1 ? "" : "s"}
             </p>
           </div>
@@ -500,7 +521,9 @@ const PendingRegistrationReview: React.FC<{
             <Button
               type="button"
               size="sm"
-              onClick={() => reviewRegistration(registration.registrationId, "confirmed")}
+              onClick={() =>
+                reviewRegistration(registration.registrationId, "confirmed")
+              }
               disabled={reviewingId === registration.registrationId}
               className="rounded-xl bg-secondary-400 text-white hover:bg-secondary-500"
             >
@@ -510,7 +533,9 @@ const PendingRegistrationReview: React.FC<{
               type="button"
               size="sm"
               variant="outline"
-              onClick={() => reviewRegistration(registration.registrationId, "rejected")}
+              onClick={() =>
+                reviewRegistration(registration.registrationId, "rejected")
+              }
               disabled={reviewingId === registration.registrationId}
               className="rounded-xl border-red-100 text-red-600 hover:bg-red-50"
             >
@@ -548,51 +573,19 @@ const ActivityTimeline: React.FC<{ activities?: IEventActivityDetails[] }> = ({
               </p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-secondary-700">{activity.name}</p>
-              <p className="text-[11px] text-secondary-300">{formatEventTime(activity.date)}</p>
+              <p className="text-sm font-medium text-secondary-700">
+                {activity.name}
+              </p>
+              <p className="text-[11px] text-secondary-300">
+                {formatEventTime(activity.date)}
+              </p>
               {activity.description && (
-                <p className="text-xs leading-5 text-secondary-300">{activity.description}</p>
+                <p className="text-xs leading-5 text-secondary-300">
+                  {activity.description}
+                </p>
               )}
             </div>
           </article>
-        ))}
-      </div>
-    </section>
-  );
-};
-
-const GuestRoster: React.FC<{
-  guests?: ({ name?: string; firstName?: string; lastName?: string })[];
-}> = ({ guests }) => {
-  if (!guests?.length) {
-    return null;
-  }
-
-  return (
-    <section className="space-y-4">
-      <h2 className="text-lg font-semibold text-secondary-950">Featured Guests</h2>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {guests.map((guest, index) => (
-          <div
-            key={`${getGuestLabel(guest)}-${index}`}
-            className="relative flex items-center rounded-full border border-secondary-200 bg-slate-50 px-4 py-3 shadow-[0_8px_20px_rgba(15,23,42,0.04)]"
-          >
-            <span className="absolute -left-1 -top-1 flex size-6 items-center justify-center rounded-full bg-secondary-800 text-[11px] font-semibold text-white">
-              {index + 1}
-            </span>
-            <div className="flex size-11 items-center justify-center rounded-full bg-white text-sm font-semibold text-secondary-700 shadow-sm">
-              {getGuestLabel(guest)
-                .split(" ")
-                .slice(0, 2)
-                .map((part) => part.charAt(0))
-                .join("")
-                .toUpperCase()}
-            </div>
-            <div className="mx-3 h-8 w-px bg-secondary-200" />
-            <p className="truncate text-base font-medium text-secondary-500">
-              {getGuestLabel(guest)}
-            </p>
-          </div>
         ))}
       </div>
     </section>
@@ -867,7 +860,9 @@ const VendorEventView: React.FC<{ id: string }> = ({ id }) => {
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_280px]">
             <div className="space-y-7">
               <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-secondary-950">Date and Time</h2>
+                <h2 className="text-lg font-semibold text-secondary-950">
+                  Date and Time
+                </h2>
                 <div className="space-y-3 text-[13px] text-secondary-700">
                   <div className="flex items-center gap-3">
                     <CalendarDays className="size-4 text-secondary-500" />
@@ -941,8 +936,6 @@ const VendorEventView: React.FC<{ id: string }> = ({ id }) => {
             </div>
 
             <BlogPostsBoard eventId={data.id} posts={blogPosts} />
-
-            <GuestRoster guests={data.eventGuestsOfHonour} />
 
             <ActivityTimeline activities={data.activities} />
 

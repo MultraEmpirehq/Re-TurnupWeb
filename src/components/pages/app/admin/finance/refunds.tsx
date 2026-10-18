@@ -278,6 +278,11 @@ const OrderRefundPanel: React.FC<{
                     onCheckedChange={() => toggle(ticket.id)}
                   />
                   <span className="font-mono text-xs">{ticket.code}</span>
+                  {!!ticket.ticketName && (
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-semibold">
+                      {ticket.ticketName}
+                    </span>
+                  )}
                   <span className="truncate text-muted-foreground">
                     {ticket.attendeeName ?? ""}
                   </span>

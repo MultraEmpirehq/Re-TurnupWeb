@@ -121,7 +121,7 @@ const CompleteUserForm = () => {
     reset,
     setValue,
     setError,
-    formState: { errors, isValid, isSubmitting },
+    formState: { errors, isSubmitting },
   } = useForm<IFormValues>({
     resolver: joiResolver(schema),
     defaultValues,
@@ -224,7 +224,11 @@ const CompleteUserForm = () => {
         });
         await performAuthOperation(data?.data);
         // The invite is a bonus: if it can't be used, sign-up still finishes.
-        if (code?.trim()) {
+        // An optional extra: a code that didn't check out is left off, not a
+        // reason to stop them finishing.
+        if (code?.trim() && invite.state === "bad") {
+          toast.info("We left the invite code off: it isn't valid.");
+        } else if (code?.trim()) {
           try {
             await postData("/referrals/apply", { code: code.trim() });
           } catch (error) {
@@ -248,7 +252,7 @@ const CompleteUserForm = () => {
         );
       }
     },
-    [router, performAuthOperation, redirectTo],
+    [router, performAuthOperation, redirectTo, invite.state],
   );
   useEffect(() => {
     const trimmedUsername = username?.trim();
@@ -281,7 +285,19 @@ const CompleteUserForm = () => {
           A few details so we can show you events that fit. Takes a minute.
         </p>
       </div>
-      <form className="w-full space-y-5" onSubmit={handleSubmit(onSubmit)}>
+      {/* Always clickable: a disabled button never says what's missing, so
+          clicking checks the form and points at what to fix. */}
+      <form
+        className="w-full space-y-5"
+        onSubmit={handleSubmit(onSubmit, (fieldErrors) => {
+          const first = Object.keys(fieldErrors)[0];
+          toast.error(
+            first === "isUserNameValid"
+              ? "Pick a username that's available"
+              : "Check the highlighted fields",
+          );
+        })}
+      >
         <div className="grid gap-5 sm:grid-cols-2">
           <InputField
             label="First name"
@@ -409,9 +425,7 @@ const CompleteUserForm = () => {
         <Button
           className="mt-2 h-12 w-full rounded-full bg-secondary text-base text-white hover:bg-secondary-600"
           type="submit"
-          disabled={
-            !isValid || invite.state === "bad" || invite.state === "checking"
-          }
+          disabled={isSubmitting || isValidatingUserName}
           loading={isSubmitting}
         >
           Finish and start exploring

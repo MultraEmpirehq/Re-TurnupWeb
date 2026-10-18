@@ -359,6 +359,8 @@ export interface IOrderDetailsType {
   quantity: number;
   createdAt: Date;
   ticket: IOrderTicketType;
+  /** Every ticket type in the order; `ticket` is the first of them. */
+  items?: { ticket: IOrderTicketType; quantity: number }[];
   userTickets: IUserTicketType[];
   /** How much Turnupz Credit paid, or null. */
   paidWithCredit?: IMoney | null;
@@ -534,6 +536,8 @@ export interface IPerformerSummary {
   name: string;
   type: TPerformerType;
   image?: string | null;
+  /** Approved by the team: shown with the verified tick. */
+  isVerified?: boolean;
 }
 
 export interface IPerformer extends IPerformerSummary {
@@ -546,6 +550,10 @@ export interface IPerformer extends IPerformerSummary {
   upcomingEventsCount: number;
   /** The viewer added it, so they can edit or remove it (admins always can). */
   isOwner?: boolean;
+  /** One a vendor added waits for an admin before it's listed publicly. */
+  reviewStatus?: "pending" | "approved" | "rejected";
+  /** Why it was sent back; only its owner sees it. */
+  reviewNote?: string | null;
   /** Position on a chart, when it came from one. */
   rank?: number;
 }

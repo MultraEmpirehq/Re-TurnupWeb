@@ -1,8 +1,15 @@
 "use client";
 
+import { toast } from "sonner";
+import { performerNameKey } from "@/lib/performer-name";
+import VerifiedTick from "@/components/discovery/verified-tick";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PERFORMER_TYPE_LABELS, usePerformers } from "@/hooks/use-discovery";
+import {
+  PERFORMER_TYPE_LABELS,
+  usePerformerNameCheck,
+  usePerformers,
+} from "@/hooks/use-discovery";
 import { IPerformerSummary } from "@/lib/types";
 import { ArrowDown, ArrowUp, Plus, Search, X } from "lucide-react";
 import React, { memo, useEffect, useMemo, useState } from "react";
@@ -26,19 +33,60 @@ const LineupPicker: React.FC<{
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const { data, isFetching } = usePerformers({ q: search }, search.length > 0);
+  const { data, isFetching } = usePerformers(
+    { q: search, forLineup: true },
+    search.length > 0,
+  );
   const chosen = useMemo(() => new Set(value.map((item) => item.id)), [value]);
+  // The same performer can't be billed twice, under any spelling.
+  const chosenKeys = useMemo(
+    () => new Set(value.map((item) => performerNameKey(item.name))),
+    [value],
+  );
+  const searchKey = performerNameKey(search);
+  const alreadyBilled = value.find(
+    (item) => searchKey && performerNameKey(item.name) === searchKey,
+  );
   const results = useMemo(
     () =>
       (data?.pages ?? [])
         .flatMap((page) => page.performers)
-        .filter((performer) => !chosen.has(performer.id))
+        .filter(
+          (performer) =>
+            !chosen.has(performer.id) &&
+            !chosenKeys.has(performerNameKey(performer.name)),
+        )
         .slice(0, 6),
-    [chosen, data],
+    [chosen, chosenKeys, data],
   );
+  // Asked of the database, not just these results: is anyone by this name
+  // (any spelling, verified or not) already on Turnupz?
+  const nameCheck = usePerformerNameCheck(
+    search,
+    !!searchKey && !alreadyBilled,
+  );
+  const existingElsewhere =
+    nameCheck.existing &&
+    !chosen.has(nameCheck.existing.id) &&
+    !results.some((performer) => performer.id === nameCheck.existing?.id)
+      ? nameCheck.existing
+      : null;
+  // Only offer a new performer once the database says the name is free.
+  const nameTaken =
+    !!alreadyBilled ||
+    nameCheck.taken ||
+    results.some((performer) => performerNameKey(performer.name) === searchKey);
 
   const add = (performer: IPerformerSummary) => {
-    if (chosen.has(performer.id)) return;
+    if (
+      chosen.has(performer.id) ||
+      chosenKeys.has(performerNameKey(performer.name))
+    ) {
+      toast.info(`${performer.name} is already on the line-up.`);
+      setSearchInput("");
+      setSearch("");
+      return;
+    }
     onChange([
       ...value,
       {
@@ -89,8 +137,11 @@ const LineupPicker: React.FC<{
                 className="size-9 text-xs"
               />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold text-secondary-950">
-                  {performer.name}
+                <span className="flex items-center gap-1 text-sm font-semibold text-secondary-950">
+                  <span className="truncate">{performer.name}</span>
+                  {performer.isVerified && (
+                    <VerifiedTick className="size-3.5" />
+                  )}
                 </span>
                 <span className="block text-xs text-secondary-500">
                   {index === 0 ? "Headliner · " : ""}
@@ -170,19 +221,50 @@ const LineupPicker: React.FC<{
               <Plus className="size-4 text-secondary" aria-hidden />
             </button>
           ))}
-          {!isFetching && results.length === 0 && (
+          {alreadyBilled ? (
             <p className="px-3 py-2 text-sm text-secondary-500">
-              No performer called “{search}” yet.
+              {alreadyBilled.name} is already on the line-up.
             </p>
+          ) : (
+            !isFetching &&
+            results.length === 0 && (
+              <p className="px-3 py-2 text-sm text-secondary-500">
+                No performer called “{search}” yet.
+              </p>
+            )
           )}
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="flex w-full items-center gap-2 border-t border-secondary-100 px-3 py-2.5 text-sm font-semibold text-secondary hover:bg-secondary-50"
-          >
-            <Plus className="size-4" aria-hidden />
-            Add “{search}” as a new performer
-          </button>
+          {existingElsewhere && (
+            <button
+              type="button"
+              onClick={() => add(existingElsewhere)}
+              className="flex w-full items-center gap-3 border-t border-secondary-100 px-3 py-2 text-left hover:bg-secondary-50"
+            >
+              <PerformerAvatar
+                name={existingElsewhere.name}
+                image={existingElsewhere.image}
+                className="size-8 text-xs"
+              />
+              <span className="min-w-0 flex-1 text-sm">
+                <span className="font-medium text-secondary-950">
+                  {existingElsewhere.name}
+                </span>{" "}
+                <span className="text-secondary-500">
+                  is already on Turnupz. Add them.
+                </span>
+              </span>
+              <Plus className="size-4 text-secondary" aria-hidden />
+            </button>
+          )}
+          {!nameTaken && !nameCheck.checking && !isFetching && searchKey && (
+            <button
+              type="button"
+              onClick={() => setAdding(true)}
+              className="flex w-full items-center gap-2 border-t border-secondary-100 px-3 py-2.5 text-sm font-semibold text-secondary hover:bg-secondary-50"
+            >
+              <Plus className="size-4" aria-hidden />
+              Add “{search}” as a new performer
+            </button>
+          )}
         </div>
       )}
 

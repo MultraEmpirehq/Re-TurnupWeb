@@ -1,8 +1,8 @@
-import AdminOverview from "@/components/pages/app/admin/overview/admin-overview";
+import AdminDashboard from "@/components/pages/app/admin/overview/admin-dashboard";
 import React, { memo } from "react";
 
 export const dynamic = "force-dynamic";
 
-const AdminOverviewPage = () => <AdminOverview />;
+const AdminOverviewPage = () => <AdminDashboard />;
 
 export default memo(AdminOverviewPage);

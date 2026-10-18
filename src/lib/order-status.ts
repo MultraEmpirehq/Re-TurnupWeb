@@ -1,4 +1,5 @@
-import { EOrderStatus } from "@/lib/types";
+import { EOrderStatus, IOrderDetailsType } from "@/lib/types";
+import { formatCurrency } from "@/lib/functions";
 
 /** How each order status reads on a badge, and its colour. */
 export const ORDER_STATUS_META: Record<
@@ -33,3 +34,30 @@ export const ORDER_STATUS_META: Record<
 export const orderStatusMeta = (status?: EOrderStatus | null) =>
   (status && ORDER_STATUS_META[status]) ||
   ORDER_STATUS_META[EOrderStatus.PENDING];
+
+/** Each ticket type in an order with how many; older orders have just `ticket`. */
+const orderLines = (order: IOrderDetailsType) =>
+  order.items?.length
+    ? order.items
+    : order.ticket
+      ? [{ ticket: order.ticket, quantity: order.quantity }]
+      : [];
+
+/** "2 × Regular, 1 × VIP", or just the ticket name for one type. */
+export const orderTicketsLabel = (order: IOrderDetailsType) => {
+  const lines = orderLines(order);
+  if (lines.length <= 1) return lines[0]?.ticket?.name ?? "Ticket";
+  return lines.map((line) => `${line.quantity} × ${line.ticket.name}`).join(", ");
+};
+
+/** What the whole order cost, at the ticket prices. "Free" when nothing. */
+export const orderTotalLabel = (order: IOrderDetailsType) => {
+  const lines = orderLines(order);
+  const total = lines.reduce(
+    (sum, line) => sum + (line.ticket?.price?.amount ?? 0) * line.quantity,
+    0,
+  );
+  if (total <= 0) return "Free";
+  const currency = lines[0].ticket.price.currency;
+  return formatCurrency(total, currency?.code, currency?.locale);
+};

@@ -1,5 +1,6 @@
 "use client";
 
+import VerifiedTick from "@/components/discovery/verified-tick";
 import { constructErrorMessage } from "@/api/functions";
 import PerformerAvatar from "@/components/discovery/performer-avatar";
 import { performerHref } from "@/components/discovery/performer-card";
@@ -156,8 +157,9 @@ const PerformersManager = () => {
                 className="size-11 text-sm"
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-foreground">
-                  {performer.name}
+                <p className="flex items-center gap-1 font-semibold text-foreground">
+                  <span className="truncate">{performer.name}</span>
+                  {performer.isVerified && <VerifiedTick />}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
                   {PERFORMER_TYPE_LABELS[performer.type] ?? "Performer"}
@@ -165,18 +167,34 @@ const PerformersManager = () => {
                   {` · ${performer.upcomingEventsCount} upcoming`}
                   {performer.isOwner && " · added by you"}
                 </p>
+                {performer.reviewStatus === "pending" && (
+                  <p className="text-xs text-secondary-600">
+                    Waiting for review. You can use them on your events; they
+                    show in search once approved.
+                  </p>
+                )}
+                {performer.reviewStatus === "rejected" && (
+                  <p className="text-xs text-red-700">
+                    Needs changes
+                    {performer.reviewNote ? `: ${performer.reviewNote}` : ""}.
+                    Edit to send it again.
+                  </p>
+                )}
               </div>
               <div className="flex shrink-0 items-center gap-1">
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="icon"
-                  aria-label="View page"
-                >
-                  <Link href={performerHref(performer.id)} target="_blank">
-                    <ExternalLink className="size-4" />
-                  </Link>
-                </Button>
+                {/* Only verified performers have a page. */}
+                {performer.isVerified !== false && (
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="icon"
+                    aria-label="View page"
+                  >
+                    <Link href={performerHref(performer.id)} target="_blank">
+                      <ExternalLink className="size-4" />
+                    </Link>
+                  </Button>
+                )}
                 {canManage(performer) && (
                   <>
                     <Button

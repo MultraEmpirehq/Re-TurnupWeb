@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { deleteData, getData, patchData, postData } from "@/api";
 import {
   IEventLocation,
@@ -47,11 +48,20 @@ const PAGE_SIZE = 20;
 // Performers ------------------------------------------------------------------
 
 export const usePerformers = (
-  { q = "", type }: { q?: string; type?: TPerformerType } = {},
+  {
+    q = "",
+    type,
+    forLineup,
+  }: {
+    q?: string;
+    type?: TPerformerType;
+    /** Also find performers not verified yet, so nobody adds them twice. */
+    forLineup?: boolean;
+  } = {},
   enabled = true,
 ) =>
   useInfiniteQuery({
-    queryKey: ["performers", q, type ?? "all"],
+    queryKey: ["performers", q, type ?? "all", forLineup ? "lineup" : "public"],
     initialPageParam: 1,
     queryFn: async ({ pageParam }) => {
       const params = new URLSearchParams({
@@ -60,6 +70,7 @@ export const usePerformers = (
       });
       if (q.trim()) params.set("q", q.trim());
       if (type) params.set("type", type);
+      if (forLineup) params.set("forLineup", "true");
       const { data } = await getData<IPerformer[]>(`/performers?${params}`);
       return { performers: data?.data ?? [], pagination: data?.pagination };
     },
@@ -297,3 +308,35 @@ export const usePerformerChartFor = (
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
+
+/**
+ * Asks the database whether a performer name is taken, matching the way adding
+ * does (capitals, spaces, punctuation and accents ignored; verified or not).
+ * `null` while it can't tell, so nothing is blocked on an older api.
+ */
+export const usePerformerNameCheck = (name: string, enabled = true) => {
+  const [debounced, setDebounced] = useState(name);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(name.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [name]);
+  const query = useQuery({
+    queryKey: ["performer-name-check", debounced],
+    enabled: enabled && debounced.length > 0,
+    retry: false,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data } = await getData<{
+        available: boolean;
+        performer: IPerformer | null;
+      }>(`/performers/name-check?name=${encodeURIComponent(debounced)}`);
+      return data?.data ?? null;
+    },
+  });
+  const settled = debounced === name.trim() && !query.isFetching;
+  return {
+    checking: enabled && !!name.trim() && !settled,
+    taken: settled && query.data ? !query.data.available : false,
+    existing: settled ? (query.data?.performer ?? null) : null,
+  };
+};

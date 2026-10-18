@@ -130,6 +130,10 @@ const TicketInput: React.FC<ITicketInputProps> = ({
     [parsedTickets],
   );
 
+  // Free tickets and sign-ups can't be passed on, so there's nothing to switch.
+  const isFreeTicket =
+    mode === "register" || !(Number(watch("ticketPrice")) > 0);
+
   const saleRules: TTicketSaleRules = {
     salesStartAt: watch("salesStartAt"),
     salesEndAt: watch("salesEndAt"),
@@ -145,6 +149,8 @@ const TicketInput: React.FC<ITicketInputProps> = ({
           ...data,
           actionType: mode,
           ticketPrice: mode === "register" ? 0 : data.ticketPrice,
+          transferable:
+            mode !== "register" && data.ticketPrice > 0 && !!data.transferable,
           soldCount: 0,
           privateAccessCode:
             data.visibility === "private"
@@ -212,7 +218,9 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                   </p>
                   <p className="text-[11px] uppercase tracking-[0.18em] text-secondary-400">
                     {ticket.visibility} -{" "}
-                    {ticket.transferable ? "transferable" : "non-transferable"}
+                    {ticket.transferable && ticket.ticketPrice > 0
+                      ? "transferable"
+                      : "non-transferable"}
                   </p>
                   {describeSaleRules(ticket, timezone) && (
                     <p className="text-[11px] text-secondary-500">
@@ -322,20 +330,27 @@ const TicketInput: React.FC<ITicketInputProps> = ({
               )}
             />
 
-            <Controller
-              control={control}
-              name="transferable"
-              render={({ field }) => (
-                <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-white px-3 text-sm text-secondary-700">
-                  <input
-                    type="checkbox"
-                    checked={!!field.value}
-                    onChange={(event) => field.onChange(event.target.checked)}
-                  />
-                  <span>Allow attendees to transfer this category</span>
-                </label>
-              )}
-            />
+            {isFreeTicket ? (
+              <p className="flex min-h-11 items-center rounded-xl border border-secondary-200 bg-secondary-50 px-3 text-sm text-secondary-500">
+                Free tickets can&apos;t be passed on. Guests get their own from
+                the event page.
+              </p>
+            ) : (
+              <Controller
+                control={control}
+                name="transferable"
+                render={({ field }) => (
+                  <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-white px-3 text-sm text-secondary-700">
+                    <input
+                      type="checkbox"
+                      checked={!!field.value}
+                      onChange={(event) => field.onChange(event.target.checked)}
+                    />
+                    <span>Allow attendees to transfer this category</span>
+                  </label>
+                )}
+              />
+            )}
 
             <TicketSaleRulesFields
               className="col-span-full"

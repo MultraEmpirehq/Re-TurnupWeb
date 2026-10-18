@@ -5,7 +5,11 @@ import { constructErrorMessage } from "@/api/functions";
 import ErrorContainer from "@/components/ui/error-container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IOrderDetailsType } from "@/lib/types";
-import { orderStatusMeta } from "@/lib/order-status";
+import {
+  orderStatusMeta,
+  orderTicketsLabel,
+  orderTotalLabel,
+} from "@/lib/order-status";
 import OrderMoneyBack from "@/components/pages/profile/order-money-back";
 import { ROUTES } from "@/lib/variables";
 import { cn } from "@/lib/utils";
@@ -87,8 +91,10 @@ const OrdersPage = () => {
                       {order.createdAt &&
                         format(new Date(order.createdAt), "MMM dd, yyyy")}
                     </span>
-                    <span>
-                      {order.quantity} ticket{order.quantity !== 1 && "s"}
+                    <span className="truncate">
+                      {(order.items?.length ?? 0) > 1
+                        ? orderTicketsLabel(order)
+                        : `${order.quantity} ticket${order.quantity !== 1 ? "s" : ""}`}
                     </span>
                   </div>
                   <OrderMoneyBack order={order} className="mt-2" />
@@ -104,7 +110,7 @@ const OrdersPage = () => {
                   {orderStatusMeta(order.status).label}
                 </span>
                 <p className="font-semibold text-sm">
-                  {order.ticket?.price?.formatted?.withCurrency ?? "Free"}
+                  {orderTotalLabel(order)}
                 </p>
               </div>
             </div>
