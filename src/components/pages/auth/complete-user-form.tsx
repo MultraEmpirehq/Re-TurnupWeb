@@ -242,7 +242,7 @@ const CompleteUserForm = () => {
         }
         forgetInvite();
         toast.success("Account completed successfully");
-        router.push(redirectTo || ROUTES.HOME.href);
+        router.push(redirectTo || ROUTES.EXPLORE.href);
       } catch (error) {
         toast.error(
           constructErrorMessage(

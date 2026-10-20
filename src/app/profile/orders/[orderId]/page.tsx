@@ -1,6 +1,7 @@
 "use client";
 
 import OrderMoneyBack from "@/components/pages/profile/order-money-back";
+import OrderHelp from "@/components/pages/profile/order-help";
 import { getData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import ErrorContainer from "@/components/ui/error-container";
@@ -322,6 +323,21 @@ const OrderDetailPage = () => {
             </Button>
           </div>
         )}
+
+      <div className="space-y-2">
+        {order.reference && (
+          <p className="text-sm text-muted-foreground">
+            Order number{" "}
+            <span className="font-semibold tracking-wide text-foreground">
+              {order.reference}
+            </span>
+          </p>
+        )}
+        <OrderHelp
+          reference={order.reference ?? order.id}
+          eventName={order.ticket?.event?.data?.name}
+        />
+      </div>
 
       {/* Off-screen ticket cards for "Download all" capture (painted but not visible) */}
       {order?.userTickets?.length ? (

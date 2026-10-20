@@ -10,7 +10,7 @@ import { EUserRoles, TUserDetails } from "@/stores/user-store";
  * Where someone goes after signing in. An explicit redirect always wins, so a link
  * that sent them to log in brings them back. Otherwise admins land on the admin
  * console, approved vendors on their dashboard, and everyone else (unverified
- * vendors included) on the site.
+ * vendors included) on Explore, to find something to go to.
  *
  * Login doesn't return the verification status, so it's asked for here, the same
  * way the create-event guard asks. Needs the session token to be stored already.
@@ -37,5 +37,5 @@ export const resolveLandingRoute = async (
     }
   }
 
-  return ROUTES.HOME.href;
+  return ROUTES.EXPLORE.href;
 };
