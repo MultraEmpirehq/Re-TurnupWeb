@@ -8,8 +8,9 @@ import NextTopLoader from "nextjs-toploader";
 import { usePathname } from "next/navigation";
 import React, { memo, useMemo, useState } from "react";
 
-const authsToRemoveNav = ["/auth", "/app", "/admin"];
-const authsToRemoveFooter = ["/auth", "/app", "/admin"];
+// The Coming soon page stands on its own, with no site header or footer.
+const authsToRemoveNav = ["/auth", "/app", "/admin", "/coming-soon"];
+const authsToRemoveFooter = ["/auth", "/app", "/admin", "/coming-soon"];
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
