@@ -351,6 +351,8 @@ export type UserTicketDetailsResponseType = {
 
 export interface IOrderDetailsType {
   id: string;
+  /** The order number to quote to support, e.g. ORD-D7YS-YYKJ. */
+  reference?: string | null;
   status: EOrderStatus;
   /** Why a refunded, failed or held order ended up that way. */
   statusReason?: string | null;

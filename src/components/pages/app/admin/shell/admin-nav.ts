@@ -2,6 +2,8 @@ import { TAdminPermission } from "@/hooks/use-admin-permissions";
 import { ROUTES } from "@/lib/variables";
 import {
   ArrowLeftRight,
+  ListChecks,
+  MessagesSquare,
   BadgeCheck,
   Banknote,
   CalendarDays,
@@ -93,6 +95,12 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
       description: "Handles campaigns, content and growth.",
     },
     items: [
+      {
+        label: "Waitlist",
+        href: `${ADMIN_BASE}/marketing/waitlist`,
+        icon: ListChecks,
+        permission: "MARKETING_MANAGE",
+      },
       {
         label: "Referrals",
         href: `${ADMIN_BASE}/marketing/referrals`,
@@ -203,6 +211,12 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         icon: Ticket,
         permission: "SUPPORT_MANAGE",
         comingSoon: "Track and respond to support tickets from users.",
+      },
+      {
+        label: "Support chats",
+        href: `${ADMIN_BASE}/support/chats`,
+        icon: MessagesSquare,
+        permission: "SUPPORT_MANAGE",
       },
       {
         label: "Inquiries",
