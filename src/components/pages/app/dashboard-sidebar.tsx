@@ -1,6 +1,5 @@
 "use client";
-import { LogoWhiteSVG } from "@/assets/svg";
-import CustomImageComponent from "@/components/ui/custom-image.component";
+import BrandWordmark from "@/components/ui/brand-wordmark";
 import {
   Sidebar,
   SidebarContent,
@@ -38,11 +37,7 @@ const DashboardSideBar = () => {
     <Sidebar className="gap-10">
       <SidebarContent className="px-3 py-4 space-y-10">
         <SidebarHeader>
-          <CustomImageComponent
-            className="size-10"
-            src={LogoWhiteSVG}
-            alt="logo"
-          />
+          <BrandWordmark className="h-10 w-auto" />
         </SidebarHeader>
         <SidebarMenu className="space-y-6">
           {visibleRoutes.map((route) => {

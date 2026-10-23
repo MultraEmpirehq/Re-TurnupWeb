@@ -91,6 +91,15 @@ const GeneralNavComponent = () => {
       ),
     [routes],
   );
+  const mobilePageLinks = useMemo(
+    () =>
+      routes.filter(
+        (route) =>
+          route.href !== ROUTES.LOGIN.href &&
+          route.href !== ROUTES.SIGNUP.href,
+      ),
+    [routes],
+  );
 
   const initials = accountInitials(userDetails);
   const displayName = accountDisplayName(userDetails);
@@ -130,7 +139,7 @@ const GeneralNavComponent = () => {
           <Image src={LogoWhiteSVG} alt="Turnupz home" className="h-8 w-auto" />
         </Link>
 
-        <NavigationMenu className="hidden md:flex" viewport={false}>
+        <NavigationMenu className="hidden lg:flex" viewport={false}>
           <NavigationMenuList className="gap-1">
             {pageLinks.map((link) => (
               <NavigationMenuItem key={link.href}>
@@ -159,21 +168,18 @@ const GeneralNavComponent = () => {
         </NavigationMenu>
 
         {!userDetails && (
-          <div className="hidden md:flex flex-row items-center gap-1">
-            <Link href={ROUTES.LOGIN.href} className={linkClassName}>
-              {ROUTES.LOGIN.label}
-            </Link>
+          <div className="hidden lg:flex flex-row items-center gap-1">
             <Button
               asChild
               className="h-10 rounded-full bg-white px-5 text-secondary-950 shadow-[0_6px_18px_-8px_rgba(255,255,255,0.6)] hover:bg-white/90"
             >
-              <Link href={ROUTES.SIGNUP.href}>Sign up</Link>
+              <Link href={ROUTES.LOGIN.href}>Login / Sign up</Link>
             </Button>
           </div>
         )}
 
         {userDetails && (
-          <div className="hidden md:flex flex-row items-center gap-3">
+          <div className="hidden lg:flex flex-row items-center gap-3">
             <Button
               className="h-10 rounded-full bg-white/15 px-5 text-white ring-1 ring-white/25 hover:bg-white/25"
               onClick={() => router.push(accountNav.cta.href)}
@@ -190,7 +196,7 @@ const GeneralNavComponent = () => {
             <button
               type="button"
               aria-label="Open menu"
-              className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-white hover:bg-white/10 transition-colors outline-none cursor-pointer"
+              className="lg:hidden inline-flex items-center justify-center rounded-md p-2 text-white hover:bg-white/10 transition-colors outline-none cursor-pointer"
             >
               <Menu className="size-6" />
             </button>
@@ -224,7 +230,7 @@ const GeneralNavComponent = () => {
             </SheetHeader>
 
             <nav className="flex flex-col flex-1 overflow-y-auto py-2">
-              {routes.map((link) => (
+              {mobilePageLinks.map((link) => (
                 <SheetClose asChild key={link.href}>
                   <Link
                     href={link.href}
@@ -282,14 +288,7 @@ const GeneralNavComponent = () => {
                     className="w-full"
                     onClick={() => handleMobileNavigate(ROUTES.LOGIN.href)}
                   >
-                    Login
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => handleMobileNavigate(ROUTES.SIGNUP.href)}
-                  >
-                    Sign up
+                    Login / Sign up
                   </Button>
                 </>
               )}

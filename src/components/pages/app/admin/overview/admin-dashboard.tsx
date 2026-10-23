@@ -18,7 +18,9 @@ import {
   CalendarCheck,
   ChevronDown,
   Minus,
+  Moon,
   ShoppingBag,
+  Sun,
   UserPlus,
 } from "lucide-react";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
@@ -26,6 +28,7 @@ import { ROUTES } from "@/lib/variables";
 import Link from "next/link";
 import React, { memo, useMemo, useState } from "react";
 import QuickLinks from "./quick-links";
+import styles from "./admin-dashboard.module.css";
 import { toast } from "sonner";
 import {
   Area,
@@ -39,19 +42,11 @@ import {
   YAxis,
 } from "recharts";
 
-/*
- * The admin overview, dark like a control room: headline numbers with their
- * change on the period before, one large chart you can switch between
- * measures, smaller cards beneath, and what just happened. Every chart is a
- * single series in brand blue on one axis; a section the admin's permissions
- * don't cover is never fetched or drawn.
- */
-
-const INK = "#07141D";
-const CARD = "#0B1D2A";
-const LINE = "rgba(255,255,255,0.08)";
-const BLUE = "#00B2FF";
-const MUTED = "#A1A1AA";
+const INK = "var(--popover)";
+const CARD = "var(--card)";
+const LINE = "var(--border)";
+const BLUE = "var(--primary)";
+const MUTED = "var(--muted-foreground)";
 
 type TPoint = { date: string; value: number };
 
@@ -73,7 +68,9 @@ const Change: React.FC<{ value: number | null; days: number }> = ({
   days,
 }) => {
   if (value === null) {
-    return <span className="text-xs text-white/50">new this period</span>;
+    return (
+      <span className="text-xs text-muted-foreground">new this period</span>
+    );
   }
   const Icon = value > 0 ? ArrowUpRight : value < 0 ? ArrowDownRight : Minus;
   return (
@@ -81,10 +78,10 @@ const Change: React.FC<{ value: number | null; days: number }> = ({
       className={cn(
         "inline-flex items-center gap-0.5 text-xs font-semibold",
         value > 0
-          ? "text-emerald-400"
+          ? "text-emerald-700"
           : value < 0
-            ? "text-red-400"
-            : "text-white/50",
+            ? "text-red-700"
+            : "text-muted-foreground",
       )}
       title={`Compared with the ${days} days before`}
     >
@@ -124,12 +121,12 @@ const Tile: React.FC<{
       href={href}
       aria-label={label}
       className={cn(
-        "group relative block p-4 transition-colors hover:bg-white/[0.04]",
+        "group relative block p-4 transition-colors hover:bg-muted",
         className,
       )}
     >
       <ArrowUpRight
-        className="absolute top-3 right-3 size-4 text-white/30 transition-colors group-hover:text-white/80"
+        className="absolute top-3 right-3 size-4 text-muted-foreground transition-colors group-hover:text-foreground"
         aria-hidden
       />
       {children}
@@ -139,7 +136,7 @@ const Tile: React.FC<{
   );
 
 const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <p className="text-xs font-semibold tracking-wide text-white/60 uppercase">
+  <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
     {children}
   </p>
 );
@@ -158,10 +155,10 @@ const ChartTooltip: React.FC<{
       className="rounded-lg border px-3 py-2 text-xs shadow-lg"
       style={{ background: INK, borderColor: LINE }}
     >
-      <p className="text-white/60">
+      <p className="text-muted-foreground">
         {format(new Date(point.payload.date), "d MMM yyyy")}
       </p>
-      <p className="mt-0.5 flex items-center gap-1.5 font-semibold text-white">
+      <p className="mt-0.5 flex items-center gap-1.5 font-semibold text-foreground">
         <span
           className="inline-block size-2 rounded-full"
           style={{ background: BLUE }}
@@ -204,7 +201,7 @@ const MainChart: React.FC<{
         allowDecimals={false}
       />
       <Tooltip
-        cursor={{ stroke: "rgba(255,255,255,0.35)", strokeWidth: 1 }}
+        cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
         content={<ChartTooltip unit={unit} />}
       />
       <Area
@@ -235,7 +232,7 @@ const Sparkline: React.FC<{
     ) : (
       <AreaChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
         <Tooltip
-          cursor={{ stroke: "rgba(255,255,255,0.3)" }}
+          cursor={{ stroke: "var(--border)" }}
           content={<ChartTooltip unit={unit} />}
         />
         <Area
@@ -270,6 +267,7 @@ const AdminDashboard = () => {
   const { data, error, isLoading, refetch } = useAdminDashboard(days);
   const [currency, setCurrency] = useState<string | null>(null);
   const [measureKey, setMeasureKey] = useState<string | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const sections = data?.sections;
   const money =
@@ -338,18 +336,34 @@ const AdminDashboard = () => {
 
   return (
     <div
-      className="-mx-4 -mt-6 -mb-10 min-h-[calc(100vh-4rem)] space-y-4 px-4 pt-6 pb-10 text-white sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
-      style={{ background: INK }}
+      className={cn(
+        styles.dashboard,
+        isDarkMode && styles.darkTheme,
+        "-mx-4 -mt-6 -mb-10 min-h-[calc(100vh-4rem)] space-y-4 px-4 pt-6 pb-10 text-foreground sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
+      )}
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-white/60">
+          <p className="text-sm text-muted-foreground">
             {firstName ? `Welcome back, ${firstName}. ` : ""}
             The last {days} days, against the {days} before.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            aria-pressed={isDarkMode}
+            onClick={() => setIsDarkMode((current) => !current)}
+            className="inline-flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
+          >
+            {isDarkMode ? (
+              <Sun className="size-4" aria-hidden />
+            ) : (
+              <Moon className="size-4" aria-hidden />
+            )}
+            {isDarkMode ? "Light mode" : "Dark mode"}
+          </button>
           {latest && (
             <div
               className="flex items-center gap-3 rounded-xl border px-3 py-2"
@@ -358,7 +372,7 @@ const AdminDashboard = () => {
               <ActivityIcon kind={latest.kind} />
               <div className="text-xs">
                 <p className="font-semibold">{latest.title}</p>
-                <p className="text-white/50">
+                <p className="text-muted-foreground">
                   {formatDistanceToNow(new Date(latest.at), {
                     addSuffix: true,
                   })}
@@ -382,8 +396,8 @@ const AdminDashboard = () => {
                 className={cn(
                   "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
                   days === range.value
-                    ? "bg-white text-[#07141D]"
-                    : "text-white/70 hover:text-white",
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {range.label}
@@ -420,19 +434,19 @@ const AdminDashboard = () => {
                     <select
                       value={measure.key}
                       onChange={(event) => setMeasureKey(event.target.value)}
-                      className="appearance-none rounded-lg bg-transparent py-1 pr-7 text-sm font-semibold text-white focus:outline-none"
+                      className="appearance-none rounded-lg bg-transparent py-1 pr-7 text-sm font-semibold text-foreground focus:outline-none"
                     >
                       {measures.map((item) => (
                         <option
                           key={item.key}
                           value={item.key}
-                          className="text-black"
+                          className="text-foreground"
                         >
                           {item.label}
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="pointer-events-none absolute right-1 size-4 text-white/60" />
+                    <ChevronDown className="pointer-events-none absolute right-1 size-4 text-muted-foreground" />
                   </label>
                   <span className="text-sm font-semibold">{measure.total}</span>
                   <Change value={measure.change} days={days} />
@@ -448,8 +462,8 @@ const AdminDashboard = () => {
                           className={cn(
                             "rounded-md px-2 py-1 text-xs font-semibold",
                             row.currency === money?.currency
-                              ? "bg-white/15 text-white"
-                              : "text-white/60 hover:text-white",
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:text-foreground",
                           )}
                         >
                           {row.currency}
@@ -475,7 +489,7 @@ const AdminDashboard = () => {
             !sections?.growth &&
             !sections?.engagement && (
               <Card>
-                <p className="text-sm text-white/70">
+                <p className="text-sm text-muted-foreground">
                   Your permissions don&apos;t include any dashboard figures.
                   Your sections are in the menu on the left.
                 </p>
@@ -541,7 +555,7 @@ const KpiRow: React.FC<{
   if (!tiles.length) return null;
   return (
     <Card className="p-0">
-      <div className="grid grid-cols-1 divide-y divide-white/[0.08] sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4 lg:divide-x">
+      <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4 lg:divide-x">
         {tiles.map((tile) => (
           <Tile key={tile.label} href={tile.href} label={`${tile.label}: open`}>
             <Label>{tile.label}</Label>
@@ -553,7 +567,7 @@ const KpiRow: React.FC<{
                 <Change value={tile.change} days={days} />
               )}
               {tile.note && (
-                <span className="text-xs text-white/50">{tile.note}</span>
+                <span className="text-xs text-muted-foreground">{tile.note}</span>
               )}
             </div>
           </Tile>
@@ -580,7 +594,7 @@ const SecondRow: React.FC<{
           </p>
           <Change value={money.fees.change} days={days} />
         </div>
-        <p className="mt-1 text-xs text-white/50">
+        <p className="mt-1 text-xs text-muted-foreground">
           Credit spent {money.creditSpent.value.formatted.withCurrency} ·
           refunds {money.refunds.value.formatted.withCurrency}
         </p>
@@ -610,11 +624,11 @@ const SecondRow: React.FC<{
         <ul className="mt-3 space-y-2.5">
           {mix.map((row) => (
             <li key={row.label} className="text-xs">
-              <div className="mb-1 flex justify-between text-white/70">
+              <div className="mb-1 flex justify-between text-muted-foreground">
                 <span>{row.label}</span>
-                <span className="font-semibold text-white">{row.value}</span>
+                <span className="font-semibold text-foreground">{row.value}</span>
               </div>
-              <div className="h-1.5 rounded-full bg-white/[0.06]">
+              <div className="h-1.5 rounded-full bg-muted">
                 <div
                   className="h-1.5 rounded-full"
                   style={{
@@ -641,7 +655,7 @@ const SecondRow: React.FC<{
     <Card className="p-0">
       <div
         className={cn(
-          "grid grid-cols-1 divide-y divide-white/[0.08] md:divide-y-0 md:divide-x",
+          "grid grid-cols-1 divide-y divide-border md:divide-y-0 md:divide-x",
           cards.length >= 3
             ? "md:grid-cols-3"
             : cards.length === 2
@@ -665,18 +679,18 @@ const Engagement: React.FC<{
       <div className="px-4 pt-4">
         <Label>Engagement</Label>
       </div>
-      <div className="grid grid-cols-1 divide-y divide-white/[0.08] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <div className="p-4">
           <p className="text-2xl font-bold">{engagement.active30.share}%</p>
-          <p className="text-xs text-white/60">
-            Got a ticket in the last <b className="text-white">30 days</b> (
+          <p className="text-xs text-muted-foreground">
+            Got a ticket in the last <b className="text-foreground">30 days</b> (
             {engagement.active30.count.toLocaleString()})
           </p>
         </div>
         <div className="p-4">
           <p className="text-2xl font-bold">{engagement.active7.share}%</p>
-          <p className="text-xs text-white/60">
-            Got a ticket in the last <b className="text-white">7 days</b> (
+          <p className="text-xs text-muted-foreground">
+            Got a ticket in the last <b className="text-foreground">7 days</b> (
             {engagement.active7.count.toLocaleString()})
           </p>
         </div>
@@ -689,7 +703,7 @@ const Engagement: React.FC<{
           <p className="text-2xl font-bold">
             {engagement.referredSignUps.toLocaleString()}
           </p>
-          <p className="text-xs text-white/60">
+          <p className="text-xs text-muted-foreground">
             Joined with an invite code in {days} days
           </p>
         </Tile>
@@ -709,7 +723,7 @@ const LiveTile: React.FC<{ label: string; value: number; hint: string }> = ({
   hint,
 }) => (
   <div className="p-4">
-    <p className="flex items-center gap-2 text-xs font-semibold tracking-wide text-white/60 uppercase">
+    <p className="flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
       <span className="relative flex size-2">
         <span
           className="absolute inline-flex size-full animate-ping rounded-full opacity-60 motion-reduce:hidden"
@@ -725,7 +739,7 @@ const LiveTile: React.FC<{ label: string; value: number; hint: string }> = ({
     <p className="mt-1.5 text-2xl font-bold tracking-tight">
       {value.toLocaleString()}
     </p>
-    <p className="mt-1 text-xs text-white/50">{hint}</p>
+    <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
   </div>
 );
 
@@ -740,20 +754,20 @@ const Audience: React.FC<{ growth: TGrowth }> = ({ growth }) => {
   return (
     <div className="space-y-4">
       <Card className="p-0">
-        <div className="grid grid-cols-1 divide-y divide-white/[0.08] sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-5 lg:divide-x">
+        <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-5 lg:divide-x">
           <Tile href={usersHref} label="Attendees: open users">
             <Label>Attendees</Label>
             <p className="mt-1.5 text-2xl font-bold tracking-tight">
               {totals.attendees.toLocaleString()}
             </p>
-            <p className="mt-1 text-xs text-white/50">On Turnupz</p>
+            <p className="mt-1 text-xs text-muted-foreground">On Turnupz</p>
           </Tile>
           <Tile href={usersHref} label="Vendors: open users">
             <Label>Vendors & businesses</Label>
             <p className="mt-1.5 text-2xl font-bold tracking-tight">
               {totals.vendors.toLocaleString()}
             </p>
-            <p className="mt-1 text-xs text-white/50">
+            <p className="mt-1 text-xs text-muted-foreground">
               {totals.verifiedSellers} selling · {totals.freeHosts} free hosts
             </p>
           </Tile>
@@ -778,14 +792,14 @@ const Audience: React.FC<{ growth: TGrowth }> = ({ growth }) => {
       <Card className="p-0">
         <div className="flex flex-wrap items-baseline justify-between gap-2 px-4 pt-4">
           <Label>Visited</Label>
-          <p className="text-xs text-white/50">
+          <p className="text-xs text-muted-foreground">
             Each person counted once per period · all time starts when tracking
             began
           </p>
         </div>
         <div className="overflow-x-auto px-4 pb-3">
           <table className="mt-3 w-full min-w-[560px] text-sm">
-            <thead className="text-left text-xs text-white/50">
+            <thead className="text-left text-xs text-muted-foreground">
               <tr className="border-b" style={{ borderColor: LINE }}>
                 <th className="py-2 font-medium">Period</th>
                 <th className="py-2 text-right font-medium">Attendees</th>
@@ -801,7 +815,7 @@ const Audience: React.FC<{ growth: TGrowth }> = ({ growth }) => {
                   className="border-b last:border-0"
                   style={{ borderColor: LINE }}
                 >
-                  <td className="py-1.5 text-white/80">{row.label}</td>
+                  <td className="py-1.5 text-foreground">{row.label}</td>
                   <td className="py-1.5 text-right font-semibold tabular-nums">
                     {row.attendees.toLocaleString()}
                   </td>
@@ -834,11 +848,11 @@ const Downloads: React.FC<{ growth: TGrowth }> = ({ growth }) => {
   const importPlay = useImportPlayDownloads();
   const store = (value: number | null, connected?: boolean) =>
     value === null ? (
-      <span className="text-base font-semibold text-white/40">
+      <span className="text-base font-semibold text-muted-foreground">
         Not connected yet
       </span>
     ) : connected && value === 0 ? (
-      <span className="text-base font-semibold text-white/60">
+      <span className="text-base font-semibold text-muted-foreground">
         Connected, figures on the way
       </span>
     ) : (
@@ -869,37 +883,37 @@ const Downloads: React.FC<{ growth: TGrowth }> = ({ growth }) => {
                   ),
               })
             }
-            className="rounded-md px-2 py-1 text-xs font-semibold text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50"
+            className="rounded-md px-2 py-1 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
           >
             {importPlay.isPending ? "Importing…" : "Import Play Store now"}
           </button>
         )}
       </div>
-      <div className="grid grid-cols-1 divide-y divide-white/[0.08] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <div className="p-4">
-          <p className="text-xs text-white/60">Google Play Store</p>
+          <p className="text-xs text-muted-foreground">Google Play Store</p>
           <p className="mt-1 text-2xl font-bold">
             {store(stores.googlePlay, stores.googlePlayConnected)}
           </p>
-          <p className="mt-1 text-xs text-white/50">
+          <p className="mt-1 text-xs text-muted-foreground">
             {installs.android.toLocaleString()} Android installs opened the app
           </p>
         </div>
         <div className="p-4">
-          <p className="text-xs text-white/60">Apple App Store</p>
+          <p className="text-xs text-muted-foreground">Apple App Store</p>
           <p className="mt-1 text-2xl font-bold">{store(stores.appStore)}</p>
-          <p className="mt-1 text-xs text-white/50">
+          <p className="mt-1 text-xs text-muted-foreground">
             {installs.ios.toLocaleString()} iPhone installs opened the app
           </p>
         </div>
         <div className="p-4">
-          <p className="text-xs text-white/60">Total downloads</p>
+          <p className="text-xs text-muted-foreground">Total downloads</p>
           <p className="mt-1 text-2xl font-bold">
             {stores.total === null
               ? installs.total.toLocaleString()
               : stores.total.toLocaleString()}
           </p>
-          <p className="mt-1 text-xs text-white/50">
+          <p className="mt-1 text-xs text-muted-foreground">
             {stores.total === null
               ? `App installs so far · ${installs.newThisPeriod} new this period`
               : `From the stores · ${installs.total.toLocaleString()} installs opened the app`}
@@ -920,7 +934,7 @@ const ActivityIcon: React.FC<{ kind: "signup" | "order" | "event" }> = ({
         ? ShoppingBag
         : CalendarCheck;
   return (
-    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.08]">
+    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted">
       <Icon className="size-4" style={{ color: BLUE }} aria-hidden />
     </span>
   );
@@ -957,8 +971,8 @@ const Activity: React.FC<{ activity: IAdminDashboard["activity"] }> = ({
               className={cn(
                 "rounded-md px-2.5 py-1 text-xs font-semibold",
                 tab === item.value
-                  ? "bg-white/15 text-white"
-                  : "text-white/60 hover:text-white",
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {item.label}
@@ -966,7 +980,7 @@ const Activity: React.FC<{ activity: IAdminDashboard["activity"] }> = ({
           ))}
         </div>
       </div>
-      <ul className="divide-y divide-white/[0.06]">
+      <ul className="divide-y divide-border">
         {items.map((item, index) => (
           <li
             key={`${item.kind}-${index}`}
@@ -975,9 +989,9 @@ const Activity: React.FC<{ activity: IAdminDashboard["activity"] }> = ({
             <ActivityIcon kind={item.kind} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{item.title}</p>
-              <p className="truncate text-xs text-white/50">{item.detail}</p>
+              <p className="truncate text-xs text-muted-foreground">{item.detail}</p>
             </div>
-            <span className="shrink-0 text-xs text-white/50">
+            <span className="shrink-0 text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(item.at), { addSuffix: true })}
             </span>
           </li>
@@ -989,9 +1003,9 @@ const Activity: React.FC<{ activity: IAdminDashboard["activity"] }> = ({
 
 const DashboardSkeleton = () => (
   <div className="space-y-4">
-    <Skeleton className="h-32 w-full rounded-2xl bg-white/[0.06]" />
-    <Skeleton className="h-80 w-full rounded-2xl bg-white/[0.06]" />
-    <Skeleton className="h-32 w-full rounded-2xl bg-white/[0.06]" />
+    <Skeleton className="h-32 w-full rounded-2xl bg-muted" />
+    <Skeleton className="h-80 w-full rounded-2xl bg-muted" />
+    <Skeleton className="h-32 w-full rounded-2xl bg-muted" />
   </div>
 );
 
