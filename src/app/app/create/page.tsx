@@ -35,6 +35,11 @@ import { uploadAttachment } from "@/api/attachments";
 import { TAttachment, TAttachmentPurpose } from "@/lib/types";
 import { saleRulesPayload } from "@/components/pages/app/create/ticket-sale-rules";
 import {
+  eventDaysFromEvent,
+  eventDaysPayload,
+  ticketDayIndexes,
+} from "@/components/pages/app/create/event-days-payload";
+import {
   DEFAULT_EVENT_TIMEZONE,
   defaultEventTimezone,
   instantToWallTimeInZone,
@@ -78,6 +83,8 @@ const defaultValues: TFormValues = {
   guestIds: [],
   unRegisteredGuestNames: [],
   lineup: [],
+  isMultiDay: false,
+  eventDays: [],
   description: "",
   eventActivities: [],
   coverImage: null,
@@ -184,10 +191,21 @@ const buildEventFormData = async (
   }
   formData.append("acceptedTerms", String(!!body.acceptedTerms));
 
-  // Always sent, in billing order, so taking everyone off a draft clears it.
+  const multiDay = body.isMultiDay && (body.eventDays?.length ?? 0) >= 2;
+  // Always sent, in billing order, so taking everyone off a draft clears it. A
+  // multi-day event's bill is its days' line-ups, which the api puts together.
   formData.append(
     "performerIds",
-    JSON.stringify((body.lineup ?? []).map((performer) => performer.id)),
+    JSON.stringify(
+      multiDay ? [] : (body.lineup ?? []).map((performer) => performer.id),
+    ),
+  );
+  // Sent either way, so turning multi-day off makes it a one-day event again.
+  formData.append(
+    "days",
+    JSON.stringify(
+      multiDay ? eventDaysPayload(body.eventDays, body.eventTimezone) : [],
+    ),
   );
   if (body.eventActivities?.length) {
     // Activity times are picked on the same clock as the event date.
@@ -216,6 +234,13 @@ const buildEventFormData = async (
       ...saleRulesPayload(ticket),
       ...(ticket.visibility === "private" && ticket.privateAccessCode
         ? { privateAccessCode: ticket.privateAccessCode }
+        : {}),
+      ...(multiDay
+        ? {
+            dayIndexes: (ticket.dayIndexes ?? []).filter(
+              (index) => index < body.eventDays.length,
+            ),
+          }
         : {}),
     }));
     formData.append("eventTickets", JSON.stringify(tickets));
@@ -376,6 +401,8 @@ const CreateEvent = () => {
               draftEvent.category?.name ?? draftEvent.customCategoryName ?? "",
             description: draftEvent.description ?? "",
             lineup: draftEvent.performers ?? [],
+            isMultiDay: (draftEvent.days?.length ?? 0) > 1,
+            eventDays: eventDaysFromEvent(draftEvent),
             eventActivities: (draftEvent.activities ?? []).map((activity) => ({
               activityName: activity.name,
               activityDescription: activity.description ?? "",
@@ -398,6 +425,7 @@ const CreateEvent = () => {
             eventTickets: (draftEvent.eventTickets ?? []).map((ticket) => ({
               ...ticket,
               ticketPrice: getTicketPriceValue(ticket.ticketPrice),
+              dayIndexes: ticketDayIndexes(ticket.dayIds, draftEvent),
             })),
             ticketUrl: draftEvent.ticketUrl ?? "",
             passAssignments: draftEvent.passAssignments ?? [],

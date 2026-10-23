@@ -9,10 +9,11 @@ import ErrorContainer from "@/components/ui/error-container";
 import { useEvent } from "@/hooks/use-event";
 import { useEventTickets } from "@/hooks/use-ticket.hook";
 import { formatCurrency } from "@/lib/functions";
-import { formatEventTime } from "@/lib/event-time";
+import { eventDayName, formatEventTime } from "@/lib/event-time";
 import { describeTicketSaleState, ticketSaleState } from "@/lib/ticket-sales";
 import { joinEventChatGroup } from "@/lib/event-chat";
 import LeavingTurnupzDialog from "@/components/pages/explore/leaving-turnupz-dialog";
+import ExploreBackLink from "@/components/pages/explore/explore-back-link";
 import { ROUTES } from "@/lib/variables";
 import { readShareRef, rememberShareRef } from "@/lib/share-ref";
 import { getData } from "@/api";
@@ -24,8 +25,8 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-  ArrowLeft,
   CalendarDays,
+  CalendarRange,
   ExternalLink,
   LockKeyhole,
   MapPin,
@@ -189,6 +190,23 @@ const TicketPage = () => {
       });
     },
     [event?.eventTickets],
+  );
+
+  // A multi-day event's tickets say which days they get in on.
+  const ticketDaysNote = useCallback(
+    (ticket: ITicketDetailsType) => {
+      const days = event?.days ?? [];
+      if (days.length < 2) return null;
+      const dayIds =
+        event?.eventTickets?.find((option) => option.id === ticket.id)?.dayIds ??
+        [];
+      const covered = dayIds.length
+        ? days.filter((day) => dayIds.includes(day.id))
+        : days;
+      if (covered.length === days.length) return `Every day · ${days.length} days`;
+      return covered.map((day) => eventDayName(day, event?.timezone)).join(", ");
+    },
+    [event?.days, event?.eventTickets, event?.timezone],
   );
 
   const getTicketVisibility = useCallback(
@@ -640,13 +658,10 @@ const TicketPage = () => {
 
   return (
     <SectionContainer className="py-10 space-y-10 max-w-3xl">
-      <button
-        onClick={() => router.back()}
-        className="p-2 -ml-2 hover:bg-accent rounded-full transition-colors cursor-pointer"
-        aria-label="Go back"
-      >
-        <ArrowLeft className="size-5" />
-      </button>
+      <ExploreBackLink
+        href={`${ROUTES.EXPLORE.href}/event/${eventId}`}
+        label="Back to event"
+      />
 
       <div className="w-full aspect-video relative bg-black/5 rounded-2xl overflow-hidden max-h-[300px] border">
         <CustomImageComponent
@@ -917,6 +932,12 @@ const TicketPage = () => {
                           )}
                         </div>
                         <p className="font-bold text-lg">{ticket.name}</p>
+                        {ticketDaysNote(ticket) && (
+                          <p className="-mt-2 flex items-center gap-1.5 text-xs font-semibold text-primary-700">
+                            <CalendarRange className="size-3.5 shrink-0" aria-hidden />
+                            {ticketDaysNote(ticket)}
+                          </p>
+                        )}
                         {saleNote && (
                           <p className="-mt-2 text-xs font-medium text-secondary-700">
                             {saleNote}

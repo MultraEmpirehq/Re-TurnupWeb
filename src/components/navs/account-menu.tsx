@@ -13,7 +13,10 @@ import useSignOut from "@/hooks/use-sign-out";
 import { ROUTES } from "@/lib/variables";
 import { cn } from "@/lib/utils";
 import useUserStore, { TUserDetails } from "@/stores/user-store";
-import { ChevronDown, Compass, LogOut } from "lucide-react";
+import { ChevronDown, Compass, LogOut, UsersRound } from "lucide-react";
+import { useMyWorkspaces } from "@/hooks/use-vendor-team";
+import useWorkspaceStore from "@/stores/workspace-store";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import React, { Fragment, memo, useMemo } from "react";
 import { getAccountNav } from "./general-nav/account-nav";
@@ -46,6 +49,10 @@ const AccountMenu: React.FC<{ variant: "site" | "workspace" }> = ({
   const router = useRouter();
   const userDetails = useUserStore((state) => state.userDetails);
   const signOut = useSignOut();
+  const queryClient = useQueryClient();
+  const setWorkspace = useWorkspaceStore((state) => state.setWorkspace);
+  // On the site, the way in to the organisers' teams this person is on.
+  const { data: workspaces = [] } = useMyWorkspaces();
   const accountNav = useMemo(
     () => getAccountNav(userDetails?.role),
     [userDetails?.role],
@@ -126,6 +133,33 @@ const AccountMenu: React.FC<{ variant: "site" | "workspace" }> = ({
               <Compass className="size-4" />
               Back to the site
             </DropdownMenuItem>
+          </>
+        )}
+        {isSite && workspaces.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+              Team workspaces
+            </DropdownMenuLabel>
+            {workspaces.map((item) => (
+              <DropdownMenuItem
+                key={item.vendorId}
+                onClick={() => {
+                  setWorkspace(userDetails.id, {
+                    vendorId: item.vendorId,
+                    name: item.name,
+                    image: item.image,
+                    permissions: item.permissions,
+                  });
+                  queryClient.removeQueries();
+                  router.push(ROUTES.DASHBOARD.href);
+                }}
+                className="cursor-pointer"
+              >
+                <UsersRound className="size-4" />
+                <span className="truncate">{item.name}</span>
+              </DropdownMenuItem>
+            ))}
           </>
         )}
         {accountNav.menuGroups.map((group, index) => (

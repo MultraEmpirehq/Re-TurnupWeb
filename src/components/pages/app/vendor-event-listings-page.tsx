@@ -20,6 +20,7 @@ import OrganiserContactDialog, {
 } from "./organiser-contact-dialog";
 import { IEventDetailsType } from "@/lib/types";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
+import { useActingVendor } from "@/stores/workspace-store";
 import TextareaField from "@/components/ui/textarea-field";
 import { CalendarDays, MapPin, Ticket } from "lucide-react";
 import Link from "next/link";
@@ -395,7 +396,8 @@ const VendorEventListingsPage = () => {
 
   const pageSearchQuery = searchParams.get("q")?.trim() ?? "";
 
-  const userId = useUserStore((state) => state?.userDetails?.id);
+  // The organiser's events, also when a team member is working for them.
+  const userId = useActingVendor().vendorId;
   const isAdmin = useUserStore(
     (state) => state?.userDetails?.role === EUserRoles.ADMIN,
   );

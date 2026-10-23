@@ -15,7 +15,8 @@ export type TAdminPermission =
   | "SUPPORT_MANAGE"
   | "REFUNDS_MANAGE"
   | "FINANCE_VIEW"
-  | "MARKETING_MANAGE";
+  | "MARKETING_MANAGE"
+  | "TICKETS_SCAN";
 
 /** Every permission, in the order the admin screens list them. */
 export const ADMIN_PERMISSIONS: {
@@ -74,6 +75,12 @@ export const ADMIN_PERMISSIONS: {
     label: "Manage marketing",
     description:
       "See who referred whom, and create and switch off influencer codes.",
+  },
+  {
+    value: "TICKETS_SCAN",
+    label: "Scan tickets",
+    description:
+      "Check tickets in at the door for any event, to help organisers out. Every check-in is in the audit log.",
   },
   {
     value: "REFUNDS_MANAGE",

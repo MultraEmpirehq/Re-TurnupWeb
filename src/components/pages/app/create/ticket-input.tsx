@@ -24,7 +24,22 @@ export interface ITicketType extends TTicketSaleRules {
   actionType: "paid" | "register";
   transferable?: boolean;
   privateAccessCode?: string;
+  /** For a multi-day event: positions of the days it admits on. Empty is every day. */
+  dayIndexes?: number[];
 }
+
+/** "Every day", or the days a ticket is for, by name. */
+export const describeTicketDays = (
+  dayIndexes: number[] | undefined,
+  dayNames: string[],
+) =>
+  !dayIndexes?.length || dayIndexes.length >= dayNames.length
+    ? "Every day"
+    : dayIndexes
+        .filter((index) => index < dayNames.length)
+        .sort((a, b) => a - b)
+        .map((index) => dayNames[index])
+        .join(", ");
 
 const createPrivateAccessCode = (ticketName: string) => {
   const slug = ticketName
@@ -65,6 +80,7 @@ const schema = Joi.object({
   salesStartAt: Joi.string().allow(null, "").optional(),
   salesEndAt: Joi.string().allow(null, "").optional(),
   maxPerOrder: Joi.number().integer().min(1).allow(null).optional(),
+  dayIndexes: Joi.array().items(Joi.number().integer().min(0)).optional(),
 });
 
 const defaultValues: ITicketType = {
@@ -78,6 +94,7 @@ const defaultValues: ITicketType = {
   salesStartAt: null,
   salesEndAt: null,
   maxPerOrder: null,
+  dayIndexes: [],
 };
 
 interface ITicketInputProps {
@@ -89,6 +106,8 @@ interface ITicketInputProps {
   currency: AppCurrency;
   /** The event's zone; sales times are entered and shown on its clock. */
   timezone?: string;
+  /** A multi-day event's days by name, to choose which ones a ticket is for. */
+  dayNames?: string[];
 }
 
 const TicketInput: React.FC<ITicketInputProps> = ({
@@ -99,6 +118,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
   mode,
   currency,
   timezone,
+  dayNames = [],
 }) => {
   const [showTicketInput, setShowTicketInput] = useState(false);
   const {
@@ -222,6 +242,11 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                       ? "transferable"
                       : "non-transferable"}
                   </p>
+                  {dayNames.length > 1 && (
+                    <p className="text-[11px] font-semibold text-secondary-600">
+                      Valid on: {describeTicketDays(ticket.dayIndexes, dayNames)}
+                    </p>
+                  )}
                   {describeSaleRules(ticket, timezone) && (
                     <p className="text-[11px] text-secondary-500">
                       {describeSaleRules(ticket, timezone)}
@@ -349,6 +374,59 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                     <span>Allow attendees to transfer this category</span>
                   </label>
                 )}
+              />
+            )}
+
+            {dayNames.length > 1 && (
+              <Controller
+                control={control}
+                name="dayIndexes"
+                render={({ field }) => {
+                  const chosen = field.value ?? [];
+                  const toggle = (index: number) =>
+                    field.onChange(
+                      chosen.includes(index)
+                        ? chosen.filter((item) => item !== index)
+                        : [...chosen, index].sort((a, b) => a - b),
+                    );
+                  const chip = (active: boolean) =>
+                    cn(
+                      "rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+                      active
+                        ? "border-secondary-800 bg-secondary-800 text-white"
+                        : "border-secondary-200 bg-white text-secondary-600 hover:border-secondary-400",
+                    );
+                  return (
+                    <fieldset className="col-span-full space-y-2">
+                      <legend className="text-sm font-medium">Valid on</legend>
+                      <p className="text-xs text-secondary-500">
+                        A pass for every day, or a day ticket. Each ticket gets
+                        in once on each day it covers.
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          aria-pressed={!chosen.length}
+                          onClick={() => field.onChange([])}
+                          className={chip(!chosen.length)}
+                        >
+                          Every day
+                        </button>
+                        {dayNames.map((name, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            aria-pressed={chosen.includes(index)}
+                            onClick={() => toggle(index)}
+                            className={chip(chosen.includes(index))}
+                          >
+                            {name}
+                          </button>
+                        ))}
+                      </div>
+                    </fieldset>
+                  );
+                }}
               />
             )}
 

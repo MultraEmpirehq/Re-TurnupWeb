@@ -1,5 +1,8 @@
 import { ROUTES } from "@/lib/variables";
+import { TVendorPermission } from "@/stores/workspace-store";
 import {
+  ScanLine,
+  UsersRound,
   Mic,
   CalendarDays,
   CalendarPlus,
@@ -17,6 +20,11 @@ export type TVendorNavItem = {
   icon: LucideIcon;
   /** Locked until the vendor's verification is approved. */
   requiresVerification?: boolean;
+  /**
+   * For a team member: any one of these shows the item. Left out, every member
+   * sees it; an empty list means the account owner only.
+   */
+  permissions?: TVendorPermission[];
 };
 
 export const VENDOR_NAV_ITEMS: TVendorNavItem[] = [
@@ -26,6 +34,7 @@ export const VENDOR_NAV_ITEMS: TVendorNavItem[] = [
     href: ROUTES.CREATE_EVENT.href,
     icon: CalendarPlus,
     requiresVerification: true,
+    permissions: ["EVENTS_MANAGE"],
   },
   {
     label: "Listings",
@@ -38,12 +47,21 @@ export const VENDOR_NAV_ITEMS: TVendorNavItem[] = [
     href: ROUTES.PERFORMERS.href,
     icon: Mic,
     requiresVerification: true,
+    permissions: ["EVENTS_MANAGE"],
+  },
+  {
+    label: ROUTES.SCAN_TICKETS.label,
+    href: ROUTES.SCAN_TICKETS.href,
+    icon: ScanLine,
+    requiresVerification: true,
+    permissions: ["TICKETS_SCAN"],
   },
   {
     label: "Tickets",
     href: ROUTES.TICKETS.href,
     icon: Ticket,
     requiresVerification: true,
+    permissions: ["SALES_VIEW", "SCANNERS_MANAGE", "REGISTRATIONS_REVIEW"],
   },
   // Open to everyone: attendees and unverified vendors chat in the groups of events
   // they're going to.
@@ -53,14 +71,42 @@ export const VENDOR_NAV_ITEMS: TVendorNavItem[] = [
     href: ROUTES.ANALYSIS.href,
     icon: ChartNoAxesCombined,
     requiresVerification: true,
+    permissions: ["SALES_VIEW"],
   },
   {
     label: "Wallet",
     href: ROUTES.WALLET.href,
     icon: Wallet,
     requiresVerification: true,
+    permissions: ["FINANCE_VIEW"],
+  },
+  {
+    label: ROUTES.TEAM.label,
+    href: ROUTES.TEAM.href,
+    icon: UsersRound,
+    requiresVerification: true,
+    permissions: [],
   },
 ];
+
+/** The items a team member with `permissions` gets; an owner (null) gets all. */
+export const navItemsFor = (permissions: TVendorPermission[] | null) =>
+  permissions
+    ? VENDOR_NAV_ITEMS.filter(
+        (item) =>
+          !item.permissions ||
+          item.permissions.some((permission) =>
+            permissions.includes(permission),
+          ),
+      )
+    : VENDOR_NAV_ITEMS;
+
+/** The nav item a path belongs to, for keeping a team member out of the rest. */
+export const vendorNavItemFor = (pathname: string) =>
+  VENDOR_NAV_ITEMS.find(
+    (item) =>
+      item.href !== ROUTES.DASHBOARD.href && isWithin(pathname, item.href),
+  );
 
 export const verificationMessageFor = (item: TVendorNavItem) =>
   `Verify your vendor account to use ${item.label}.`;

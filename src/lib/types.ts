@@ -139,6 +139,22 @@ export interface IEventTicketOptionDetails {
   maxPerOrder?: number | null;
   /** Inside its sales window right now. */
   isOnSale?: boolean;
+  /** For a multi-day event: the days it admits on. Empty means every day. */
+  dayIds?: string[];
+  /** The same as positions in the event's days, while a form edits them. */
+  dayIndexes?: number[];
+}
+
+/** One day of a multi-day event. */
+export interface IEventDayDetails {
+  id: string;
+  startsAt: string;
+  endsAt?: string | null;
+  /** Shown instead of the date when set, e.g. "Opening night". */
+  label?: string | null;
+  position: number;
+  /** Who performs that day, headliner first. */
+  performers?: IPerformerSummary[];
 }
 
 export interface IEventPassAssignmentDetails {
@@ -218,6 +234,10 @@ export interface IEventDetailsType {
   organizerId?: string;
   /** Who's on the bill, headliner first. */
   performers?: IPerformerSummary[];
+  /** A multi-day event's days in order; empty for a one-day event. */
+  days?: IEventDayDetails[];
+  /** When a multi-day event ends; null for a one-day event. */
+  endDate?: string | null;
   isFavorite?: boolean;
   customCategoryName?: string;
   country?: string;

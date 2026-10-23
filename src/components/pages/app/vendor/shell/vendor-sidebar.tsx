@@ -15,11 +15,13 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { memo, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status";
+import { useActiveWorkspace } from "@/stores/workspace-store";
 import {
   isVendorNavItemActive,
-  VENDOR_NAV_ITEMS,
+  navItemsFor,
   verificationMessageFor,
 } from "./vendor-nav";
+import WorkspaceSwitcher from "./workspace-switcher";
 
 const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
   const pathname = usePathname();
@@ -31,6 +33,11 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
   const { isApproved, isChecking } = useVendorVerificationStatus();
   // While the check runs the links behave normally; the page guard still catches them.
   const isLocked = !isApproved && !isChecking;
+  const workspace = useActiveWorkspace();
+  const navItems = useMemo(
+    () => navItemsFor(workspace?.permissions ?? null),
+    [workspace],
+  );
 
   const displayName = useMemo(() => {
     const fromParts = [userDetails?.firstName, userDetails?.lastName]
@@ -70,9 +77,11 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
           />
         </Link>
         <span className="rounded-full bg-secondary-50 px-2 py-1 text-[11px] font-bold tracking-wide text-secondary-700">
-          VENDOR
+          {workspace ? "TEAM" : "VENDOR"}
         </span>
       </div>
+
+      <WorkspaceSwitcher className="mb-2" />
 
       <div className="relative flex min-h-0 flex-1 flex-col">
         <nav
@@ -82,7 +91,7 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
           <p className="px-[11px] pt-2.5 pb-0.5 text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
             Workspace
           </p>
-          {VENDOR_NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const isActive = isVendorNavItemActive(pathname, item);
             const Icon = item.icon;
             const itemClassName = cn(

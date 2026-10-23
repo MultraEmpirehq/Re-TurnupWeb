@@ -15,7 +15,7 @@ import {
   VendorTicketAnalyticsApiRecord,
   VendorTicketLedgerApiRecord,
 } from "@/hooks/use-vendor-tickets";
-import useUserStore from "@/stores/user-store";
+import { useActingVendor } from "@/stores/workspace-store";
 import {
   CalendarDays,
   CheckCircle2,
@@ -290,7 +290,8 @@ const VendorTicketPreview: React.FC<{ ticket: VendorTicketLedgerRecord }> = ({
 
 const TicketList = () => {
   const searchParams = useSearchParams();
-  const userId = useUserStore((state) => state?.userDetails?.id);
+  // The organiser's events, also when a team member is working for them.
+  const userId = useActingVendor().vendorId;
   const [activeStatus, setActiveStatus] = useState<TicketStatusFilter>("All");
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("q")?.trim() ?? "",
