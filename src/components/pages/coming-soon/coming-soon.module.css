@@ -350,99 +350,102 @@
   transform: scale(0.98);
 }
 
-/* Cookie notice: a card on small screens, a slim bar on desktop. */
+/* Cookie notice: a compact prompt floating at the foot of the page. It's
+   answered with a choice, so there's no close button. */
 .cookieNotice {
   position: fixed;
   z-index: 30;
+  right: 12px;
   bottom: 12px;
-  left: 20px;
+  left: 12px;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
   grid-template-areas:
-    "icon text close"
-    ". actions actions";
-  width: calc(100vw - 40px);
-  gap: 12px;
-  border-radius: 16px;
-  padding: 14px 12px 14px 14px;
-  font-size: 0.84rem;
+    "icon text"
+    "actions actions";
+  gap: 12px 14px;
+  border: 1px solid rgba(102, 209, 255, 0.22);
+  border-radius: 20px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(0, 178, 255, 0.18), transparent 55%),
+    rgba(5, 22, 46, 0.94);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  padding: 16px;
+  font-size: 0.86rem;
   line-height: 1.45;
 }
 
 .cookieIcon {
   grid-area: icon;
   display: inline-flex;
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
-  background: rgba(0, 178, 255, 0.15);
-  color: #66d1ff;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #33c2ff, #005cff);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(0, 120, 255, 0.35);
 }
 
 .cookieText {
   grid-area: text;
+  align-self: center;
+}
+
+.cookieTitle {
+  color: #fff;
+  font-weight: 700;
+}
+
+.cookieBody {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .cookieActions {
   grid-area: actions;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   gap: 8px;
 }
 
 .cookieButton,
 .cookieGhostButton {
-  min-height: 38px;
-  border-radius: 10px;
-  padding: 0 16px;
+  min-height: 42px;
+  border-radius: 999px;
+  padding: 0 18px;
   color: #fff;
-  font-size: 0.85rem;
+  font-size: 0.86rem;
   font-weight: 700;
-  transition: background-color 150ms ease, border-color 150ms ease;
+  white-space: nowrap;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
 }
 
 .cookieButton {
-  background: #00aaff;
+  background: linear-gradient(90deg, #00b2ff, #005cff);
 }
 
 .cookieButton:hover {
-  background: #008fe0;
+  transform: translateY(-1px);
 }
 
 .cookieGhostButton {
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .cookieGhostButton:hover {
-  border-color: rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .cookieButton:focus-visible,
-.cookieGhostButton:focus-visible,
-.cookieClose:focus-visible {
+.cookieGhostButton:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 3px;
-}
-
-.cookieClose {
-  grid-area: close;
-  display: inline-flex;
-  width: 32px;
-  height: 32px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.7);
-  transition: background-color 150ms ease, color 150ms ease;
-}
-
-.cookieClose:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
 }
 
 .cookiePreference {
@@ -471,25 +474,19 @@
   }
 
   .cookieNotice {
+    right: auto;
     bottom: 24px;
-    left: max(32px, calc((100vw - 1280px) / 2 + 32px));
-    width: min(460px, calc(100vw - 64px));
-  }
-}
-
-@media (min-width: 1024px) {
-  .cookieNotice {
-    right: max(32px, calc((100vw - 1280px) / 2 + 32px));
-    width: auto;
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
-    grid-template-areas: "icon text actions close";
+    left: 50%;
+    width: min(620px, calc(100vw - 64px));
+    transform: translateX(-50%);
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "icon text actions";
     align-items: center;
-    gap: 16px;
-    padding: 12px 12px 12px 16px;
+    padding: 14px 14px 14px 16px;
   }
 
   .cookieActions {
-    flex-wrap: nowrap;
+    display: flex;
   }
 }
 

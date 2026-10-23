@@ -12,14 +12,14 @@ import {
 import {
   ArrowRight,
   BadgeCheck,
-  Compass,
+  Bell,
   Cookie,
+  Eye,
   Loader2,
+  Lock,
   Megaphone,
   Sparkles,
   Ticket,
-  Users,
-  X,
 } from "lucide-react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
@@ -38,10 +38,11 @@ const COUNTRIES = Country.getAllCountries().sort((a, b) => {
   return a.name.localeCompare(b.name);
 });
 
-const FEATURES = [
-  { icon: Compass, label: "Find events worth turning up for" },
-  { icon: Users, label: "Plan it with your people" },
-  { icon: Ticket, label: "Host and sell tickets" },
+// Teasers, not features: the page keeps what's coming under wraps.
+const TEASERS = [
+  { icon: Eye, label: "First look, before anyone else" },
+  { icon: Lock, label: "Waitlist-only perks" },
+  { icon: Bell, label: "One email when the doors open" },
 ];
 
 const ROLES = [
@@ -68,7 +69,8 @@ const ComingSoon = () => {
   const [role, setRole] = useState<"attendee" | "organiser" | "both">("attendee");
   const [country, setCountry] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [launchEmails, setLaunchEmails] = useState(false);
+  // Hearing when it opens is the point of joining, so it starts ticked.
+  const [launchEmails, setLaunchEmails] = useState(true);
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [newsletterConsent, setNewsletterConsent] = useState(false);
   const [researchConsent, setResearchConsent] = useState(false);
@@ -172,19 +174,21 @@ const ComingSoon = () => {
               className={cn(styles.rise, "mt-6 max-w-3xl text-[3.25rem] font-extrabold leading-[0.98] tracking-tight sm:text-7xl xl:text-[5.75rem]")}
               style={{ "--delay": "120ms" } as CSSProperties}
             >
-              Your next great experience <span className={styles.gradientText}>starts here.</span>
+              Something big is about to{" "}
+              <span className={cn(styles.gradientText, "whitespace-nowrap")}>turn up.</span>
             </h1>
             <p
               className={cn(styles.rise, "mt-6 max-w-xl text-lg leading-8 text-white/80 sm:text-xl")}
               style={{ "--delay": "220ms" } as CSSProperties}
             >
-              Discover events, make plans with your people, and find your next reason to turn up.
+              We&apos;re keeping it under wraps for now. Get on the list and
+              you&apos;ll be the first to know when the doors open.
             </p>
             <ul
               className={cn(styles.rise, styles.features)}
               style={{ "--delay": "320ms" } as CSSProperties}
             >
-              {FEATURES.map(({ icon: Icon, label }) => (
+              {TEASERS.map(({ icon: Icon, label }) => (
                 <li key={label}>
                   <Icon size={16} aria-hidden="true" />
                   {label}
@@ -224,7 +228,7 @@ const ComingSoon = () => {
                 <form onSubmit={join} className={styles.form} aria-describedby="collection-notice">
                   <div>
                     <h2 id="waitlist-heading" className="text-2xl font-extrabold sm:text-3xl">Save your spot</h2>
-                    <p className="mt-1 text-sm leading-6 text-white/70">Be first in when TurnUpz opens its doors.</p>
+                    <p className="mt-1 text-sm leading-6 text-white/70">Spots on the first night are limited.</p>
                   </div>
 
                   <div className={cn(styles.formFields, "grid gap-4 sm:grid-cols-2")}>
@@ -316,7 +320,7 @@ const ComingSoon = () => {
                         checked={launchEmails}
                         onChange={(event) => setLaunchEmails(event.target.checked)}
                       />
-                      <span>Email me when TurnUpz launches and about early access. Unsubscribe anytime.</span>
+                      <span>Email me when TurnUpz turns up, plus early access. Unsubscribe anytime.</span>
                     </label>
                   </fieldset>
 
@@ -399,14 +403,22 @@ const ComingSoon = () => {
       </div>
 
       {showCookieNotice && (
-        <aside className={cn(styles.cookieNotice, styles.glass)} aria-labelledby="cookie-notice-title">
+        // Answered with a choice, not dismissed: until then nothing optional runs.
+        <aside
+          className={styles.cookieNotice}
+          aria-labelledby="cookie-notice-title"
+          aria-describedby="cookie-notice-body"
+        >
           <span className={styles.cookieIcon} aria-hidden="true">
-            <Cookie size={20} />
+            <Cookie size={22} />
           </span>
           <div className={styles.cookieText}>
-            <p id="cookie-notice-title" className="font-bold text-white">Cookies, kept simple</p>
-            <p className="mt-0.5 text-white/75">
-              Essential cookies keep this page working. With your OK, a random ID also counts visits, never who you are. No ads, no third-party trackers.
+            <p id="cookie-notice-title" className={styles.cookieTitle}>
+              {showCookieSettings ? "Your cookie choice" : "A quick one about cookies"}
+            </p>
+            <p id="cookie-notice-body" className={styles.cookieBody}>
+              Essential cookies keep this page running. May we also count visits
+              with a random ID? Never who you are, and no ads.
             </p>
             {showCookieSettings && (
               <label className={styles.cookiePreference}>
@@ -415,38 +427,26 @@ const ComingSoon = () => {
                   checked={allowVisitorCounting}
                   onChange={(event) => setAllowVisitorCounting(event.target.checked)}
                 />
-                <span>Allow the random visit counter</span>
+                <span>Count my visits anonymously</span>
               </label>
             )}
           </div>
           <div className={styles.cookieActions}>
             {showCookieSettings ? (
               <button className={styles.cookieButton} type="button" onClick={() => saveCookieChoice(allowVisitorCounting)}>
-                Save
+                Save choice
               </button>
             ) : (
               <>
-                <button className={styles.cookieButton} type="button" onClick={() => saveCookieChoice(true)}>
-                  Allow
-                </button>
                 <button className={styles.cookieGhostButton} type="button" onClick={() => saveCookieChoice(false)}>
-                  Essential only
+                  No thanks
+                </button>
+                <button className={styles.cookieButton} type="button" onClick={() => saveCookieChoice(true)}>
+                  Sounds good
                 </button>
               </>
             )}
           </div>
-          {/* Closing without choosing saves nothing, so visitor counting stays off and we ask again next visit. */}
-          <button
-            type="button"
-            className={styles.cookieClose}
-            aria-label="Close cookie notice"
-            onClick={() => {
-              setShowCookieNotice(false);
-              setShowCookieSettings(false);
-            }}
-          >
-            <X size={18} aria-hidden="true" />
-          </button>
         </aside>
       )}
     </main>
