@@ -110,3 +110,32 @@ export const useImportPlayDownloads = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] }),
   });
 };
+
+/** The admin queues the sidebar badges, keyed as GET /admin/dashboard/pending returns them. */
+export type TAdminPendingKey =
+  | "verifications"
+  | "reports"
+  | "eventReviews"
+  | "catalogue"
+  | "inquiries"
+  | "supportChats"
+  | "refunds";
+
+/**
+ * How much is waiting in each queue the admin may work on. Polled, and the
+ * sidebar refetches it on every page change, so a badge clears soon after the
+ * work is done.
+ */
+export const useAdminPendingCounts = (enabled = true) =>
+  useQuery({
+    queryKey: ["admin-pending-counts"],
+    queryFn: async () => {
+      const { data } = await getData<Partial<Record<TAdminPendingKey, number>>>(
+        "/admin/dashboard/pending",
+      );
+      return data?.data ?? {};
+    },
+    enabled,
+    refetchInterval: 60_000,
+    staleTime: 15_000,
+  });

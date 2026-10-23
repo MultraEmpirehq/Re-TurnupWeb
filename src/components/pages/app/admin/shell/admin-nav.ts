@@ -1,4 +1,5 @@
 import { TAdminPermission } from "@/hooks/use-admin-permissions";
+import { TAdminPendingKey } from "@/hooks/use-admin-dashboard";
 import { ROUTES } from "@/lib/variables";
 import {
   ArrowLeftRight,
@@ -47,8 +48,8 @@ export type TAdminNavItem = {
   alsoActiveOn?: string[];
   /** Hidden from admins who don't hold it, since the page would refuse them. */
   permission?: TAdminPermission;
-  /** Shows the count of applications waiting for a decision. */
-  showsPendingVerifications?: boolean;
+    /** Badged with how much is waiting in this queue (see useAdminPendingCounts). */
+  pendingKey?: TAdminPendingKey;
   /**
    * Not built yet. The link opens the shared "coming soon" page, which shows this
    * text as what the section will do.
@@ -186,18 +187,20 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         href: ROUTES.ADMIN_VERIFICATIONS.href,
         icon: BadgeCheck,
         permission: "VENDORS_VERIFY",
-        showsPendingVerifications: true,
+        pendingKey: "verifications",
       },
       // Events go live without review; what organisers add to the shared
       // directory (venues typed in, performers) is what's reviewed.
       {
         label: "Venue & Performer Reviews",
+        pendingKey: "catalogue",
         href: `${ADMIN_BASE}/events/catalogue`,
         icon: ClipboardCheck,
         permission: "CATALOGUE_MANAGE",
       },
       {
         label: "Reports",
+        pendingKey: "reports",
         href: `${ADMIN_BASE}/events/reports`,
         icon: Flag,
         permission: "EVENTS_MODERATE",
@@ -221,12 +224,14 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
       },
       {
         label: "Support chats",
+        pendingKey: "supportChats",
         href: `${ADMIN_BASE}/support/chats`,
         icon: MessagesSquare,
         permission: "SUPPORT_MANAGE",
       },
       {
         label: "Inquiries",
+        pendingKey: "inquiries",
         href: `${ADMIN_BASE}/support/inquiries`,
         icon: Inbox,
         permission: "SUPPORT_MANAGE",
@@ -257,6 +262,7 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
     items: [
       {
         label: "Refunds",
+        pendingKey: "refunds",
         href: `${ADMIN_BASE}/finance/refunds`,
         icon: Undo2,
         permission: "REFUNDS_MANAGE",
