@@ -171,7 +171,7 @@ const ComingSoon = () => {
             </span>
             <h1
               id="hero-heading"
-              className={cn(styles.rise, "mt-6 max-w-3xl text-[3.25rem] font-extrabold leading-[0.98] tracking-tight sm:text-7xl xl:text-[5.75rem]")}
+              className={cn(styles.rise, "mt-6 max-w-3xl text-[2.5rem] font-extrabold leading-[1.02] tracking-tight sm:text-6xl xl:text-[4.25rem]")}
               style={{ "--delay": "120ms" } as CSSProperties}
             >
               Something big is about to{" "}

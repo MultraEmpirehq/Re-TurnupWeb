@@ -518,7 +518,7 @@
 
   .hero h1 {
     margin-top: 22px;
-    font-size: clamp(3.5rem, 5.6vw, 6rem);
+    font-size: clamp(2.75rem, 4.2vw, 4.5rem);
   }
 
   .hero p {
