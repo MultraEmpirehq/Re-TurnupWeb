@@ -34,7 +34,13 @@ const DashboardTicketChart: React.FC<{ data?: IMonthlyTicketsSold[] }> = ({
           data={chartData}
           margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
         >
-          <Bar dataKey="sales" fill="#024C6B" radius={4} />
+          {/* Recharts' grow-in animation stalls under React 19 and leaves bars flat. */}
+          <Bar
+            dataKey="sales"
+            fill="#024C6B"
+            radius={4}
+            isAnimationActive={false}
+          />
           <CartesianGrid vertical={false} />
           <XAxis
             dataKey="month"

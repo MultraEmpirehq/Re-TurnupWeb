@@ -254,3 +254,64 @@ export const useScanEventTicket = (eventId?: string) => {
     },
   });
 };
+
+export type TInsightsDays = 7 | 30 | 90 | 365 | 0;
+
+export interface IVendorInsights {
+  period: { days: number; from: string; to: string; bucket: "day" | "week" | "month" };
+  /** Every currency the vendor's events are priced in. */
+  currencies: string[];
+  currency: string | null;
+  summary: {
+    ticketsSold: number;
+    ticketsSoldChange: number | null;
+    buyers: number;
+    buyersChange: number | null;
+    /** One entry per currency; money is never added across currencies. */
+    revenue: { code: string; total: PriceDetailsType; change: number | null }[];
+    checkInRate: number | null;
+    checkedIn: number;
+    checkInBase: number;
+    events: number;
+    upcomingEvents: number;
+  };
+  series: { start: string; tickets: number; revenue: Record<string, number> }[];
+  events: {
+    id: string;
+    name: string;
+    date: string;
+    endDate: string | null;
+    status: string;
+    currency: string;
+    isPast: boolean;
+    hasStarted: boolean;
+    capacity: number;
+    sold: number;
+    soldInPeriod: number;
+    sellThrough: number | null;
+    revenue: PriceDetailsType;
+    checkedIn: number;
+  }[];
+  topTicketTypes: {
+    id: string;
+    name: string;
+    eventId: string;
+    eventName: string;
+    sold: number;
+    revenue: PriceDetailsType;
+  }[];
+}
+
+/** The analytics page: a period's sales, compared with the period before, and every event. */
+export const useVendorInsights = (days: TInsightsDays, currency?: string) =>
+  useQuery({
+    queryKey: ["vendor-insights", days, currency ?? "ALL"],
+    queryFn: async () => {
+      const query = buildSearchParams({ days, currency });
+      const { data } = await getData<IVendorInsights>(
+        `/vendor/tickets/insights?${query}`,
+      );
+      return data?.data ?? null;
+    },
+    placeholderData: (previous) => previous,
+  });
