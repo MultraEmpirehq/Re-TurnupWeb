@@ -4,6 +4,7 @@ import EventsGrid from "@/components/discovery/events-grid";
 import FollowButton from "@/components/discovery/follow-button";
 import PerformerAvatar from "@/components/discovery/performer-avatar";
 import SectionContainer from "@/components/layouts/section-container/section-container";
+import ExploreBackLink from "@/components/pages/explore/explore-back-link";
 import { useEvents } from "@/hooks/use-event";
 import { usePlanners } from "@/hooks/use-discovery";
 import { useParams } from "next/navigation";
@@ -26,6 +27,7 @@ const PlannerPage = () => {
 
   return (
     <SectionContainer className="space-y-12 py-16">
+      <ExploreBackLink />
       <header className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-5">
           <PerformerAvatar

@@ -1,5 +1,6 @@
 import { getData } from "@/api";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
+import { useActiveWorkspace } from "@/stores/workspace-store";
 import { useQuery } from "@tanstack/react-query";
 
 type TVerificationStatus =
@@ -46,6 +47,17 @@ const useVendorVerificationStatus = () => {
     enabled: !!userId && !isAdmin,
     retry: 0,
   });
+  // On an organiser's team the organiser's account is what counts, and the api
+  // enforces their verification on everything the member does.
+  const workspace = useActiveWorkspace();
+  if (workspace) {
+    return {
+      status: "approved" as TVerificationStatus,
+      isApproved: true,
+      canSellTickets: true,
+      isChecking: false,
+    };
+  }
 
   return {
     status: query.data?.status,

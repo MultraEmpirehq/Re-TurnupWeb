@@ -11,6 +11,7 @@ import { addEventNotification } from "@/lib/event-notifications";
 import { appendEventChatMessage, ensureEventChatGroup } from "@/lib/event-chat";
 import {
   IEventActivityDetails,
+  IEventDetailsType,
   IPerformerSummary,
   IEventBlogPostDetails,
   IEventPassAssignmentDetails,
@@ -26,6 +27,16 @@ import { toast } from "sonner";
 import { uploadAttachment, uploadAttachments } from "@/api/attachments";
 import TimezoneSelect from "@/components/ui/timezone-select";
 import LineupPicker from "@/components/discovery/lineup-picker";
+import EventDaysInput, {
+  firstEventDays,
+  IEventDayFormValue,
+} from "@/components/pages/app/create/event-days-input";
+import {
+  eventDaysFromEvent,
+  eventDaysPayload,
+  ticketDayIndexes,
+} from "@/components/pages/app/create/event-days-payload";
+import { describeTicketDays } from "@/components/pages/app/create/ticket-input";
 import {
   DEFAULT_EVENT_TIMEZONE,
   instantToWallTimeInZone,
@@ -109,6 +120,58 @@ const getImagePreviewUrl = (image: File | string | null | undefined) => {
   return "";
 };
 
+/** Which days of a multi-day event a ticket admits on; none chosen is every day. */
+const TicketDaysField: React.FC<{
+  dayNames: string[];
+  value: number[];
+  onChange: (dayIndexes: number[]) => void;
+  className?: string;
+}> = ({ dayNames, value, onChange, className }) => {
+  const chip = (active: boolean) =>
+    `rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+      active
+        ? "border-secondary-800 bg-secondary-800 text-white"
+        : "border-secondary-200 bg-white text-secondary-600 hover:border-secondary-400"
+    }`;
+  return (
+    <fieldset
+      className={`space-y-2 rounded-xl border border-secondary-200 bg-white p-3 ${className ?? ""}`}
+    >
+      <legend className="sr-only">Valid on</legend>
+      <p className="text-sm font-medium text-secondary-700">
+        Valid on: {describeTicketDays(value, dayNames)}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          aria-pressed={!value.length}
+          onClick={() => onChange([])}
+          className={chip(!value.length)}
+        >
+          Every day
+        </button>
+        {dayNames.map((name, index) => (
+          <button
+            key={index}
+            type="button"
+            aria-pressed={value.includes(index)}
+            onClick={() =>
+              onChange(
+                value.includes(index)
+                  ? value.filter((item) => item !== index)
+                  : [...value, index].sort((a, b) => a - b),
+              )
+            }
+            className={chip(value.includes(index))}
+          >
+            {name}
+          </button>
+        ))}
+      </div>
+    </fieldset>
+  );
+};
+
 const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
   const { data, isLoading } = useEvent(id);
   const queryClient = useQueryClient();
@@ -124,6 +187,23 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
   // Dates in this form are held on the event's clock and converted on save.
   const [timezone, setTimezone] = useState(DEFAULT_EVENT_TIMEZONE);
   const [lineup, setLineup] = useState<IPerformerSummary[]>([]);
+  const [isMultiDay, setIsMultiDay] = useState(false);
+  const [eventDays, setEventDays] = useState<IEventDayFormValue[]>([]);
+  const dayNames = useMemo(
+    () =>
+      eventDays.map((day, index) =>
+        day.label?.trim()
+          ? day.label.trim()
+          : day.startsAt
+            ? new Date(day.startsAt).toLocaleDateString("en-GB", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+              })
+            : `Day ${index + 1}`,
+      ),
+    [eventDays],
+  );
   const [saleMethod, setSaleMethod] = useState("");
   const [ticketUrl, setTicketUrl] = useState("");
   const [activities, setActivities] = useState<IEventActivityDetails[]>([]);
@@ -163,6 +243,8 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     setTicketUrl(data.ticketUrl ?? "");
     setTimezone(data.timezone || DEFAULT_EVENT_TIMEZONE);
     setLineup(data.performers ?? []);
+    setIsMultiDay((data.days?.length ?? 0) > 1);
+    setEventDays(eventDaysFromEvent(data));
     setActivities(
       (data.activities ?? []).map((activity) => ({
         ...activity,
@@ -176,7 +258,12 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     setSponsors(data.sponsors ?? []);
     setSponsorImages(data.sponsorImages ?? []);
     setSponsorImageFiles({});
-    setEventTickets(data.eventTickets ?? []);
+    setEventTickets(
+      (data.eventTickets ?? []).map((ticket) => ({
+        ...ticket,
+        dayIndexes: ticketDayIndexes(ticket.dayIds, data),
+      })),
+    );
     setPassAssignments(
       data.passAssignments ??
         data.accessPasses ??
@@ -600,18 +687,37 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
           data.status === "draft" ? "draft" : "published",
         );
         formData.append("eventName", formValues.name);
+        const multiDay = isMultiDay && eventDays.length >= 2;
         formData.append(
           "eventDate",
           wallTimeInZoneToInstant(
-            new Date(formValues.date),
+            new Date(multiDay ? eventDays[0].startsAt : formValues.date),
             timezone,
           ).toISOString(),
         );
         formData.append("timezone", timezone);
         // Always sent, in billing order, so taking everyone off clears the line-up.
+        // A multi-day event's bill is its days' line-ups.
         formData.append(
           "performerIds",
-          JSON.stringify(lineup.map((performer) => performer.id)),
+          JSON.stringify(
+            multiDay ? [] : lineup.map((performer) => performer.id),
+          ),
+        );
+        formData.append(
+          "headlinerIds",
+          JSON.stringify(
+            multiDay
+              ? []
+              : lineup
+                  .filter((performer) => performer.isHeadliner)
+                  .map((performer) => performer.id),
+          ),
+        );
+        // Sent either way: turning multi-day off makes it one day again.
+        formData.append(
+          "days",
+          JSON.stringify(multiDay ? eventDaysPayload(eventDays, timezone) : []),
         );
         formData.append("description", formValues.description);
         if (saleMethod) formData.append("saleMethod", saleMethod);
@@ -704,7 +810,12 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
             JSON.stringify(blogImages.map((image) => image.id)),
           );
         }
-        await putData<FormData, unknown>(`/event/${id}`, formData);
+        const saved = await putData<FormData, IEventDetailsType>(
+          `/event/${id}`,
+          formData,
+        );
+        // Tickets point at days by position until the event has saved them.
+        const savedDayIds = (saved.data?.data?.days ?? []).map((day) => day.id);
 
         await Promise.all(
           cleanedBlogPosts
@@ -734,6 +845,13 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
               ? { privateAccessCode: ticket.privateAccessCode }
               : {}),
             ...saleRulesPayload(ticket),
+            ...(savedDayIds.length || data.days?.length
+              ? {
+                  dayIds: (multiDay ? (ticket.dayIndexes ?? []) : [])
+                    .map((index) => savedDayIds[index])
+                    .filter(Boolean),
+                }
+              : {}),
           });
         }
         for (const removed of (data.eventTickets ?? []).filter(
@@ -957,17 +1075,19 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                   className="h-12 rounded-2xl border-secondary-200"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-secondary-700">
-                  Event Date
-                </label>
-                <Input
-                  type="datetime-local"
-                  value={formValues.date}
-                  onChange={handleChange("date")}
-                  className="h-12 rounded-2xl border-secondary-200"
-                />
-              </div>
+              {!isMultiDay && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-secondary-700">
+                    Event Date
+                  </label>
+                  <Input
+                    type="datetime-local"
+                    value={formValues.date}
+                    onChange={handleChange("date")}
+                    className="h-12 rounded-2xl border-secondary-200"
+                  />
+                </div>
+              )}
               <TimezoneSelect
                 value={timezone}
                 onChange={setTimezone}
@@ -1287,6 +1407,20 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                           handleTicketRulesChange(index, patch)
                         }
                       />
+                      {isMultiDay && eventDays.length > 1 && (
+                        <TicketDaysField
+                          className="md:col-span-2 xl:col-span-5"
+                          dayNames={dayNames}
+                          value={ticket.dayIndexes ?? []}
+                          onChange={(dayIndexes) =>
+                            setEventTickets((current) =>
+                              current.map((item, i) =>
+                                i === index ? { ...item, dayIndexes } : item,
+                              ),
+                            )
+                          }
+                        />
+                      )}
                       {ticket.visibility === "private" && (
                         <div className="space-y-2 rounded-xl border border-dashed border-secondary-200 bg-white p-3 md:col-span-2 xl:col-span-5">
                           <p className="text-sm font-medium text-secondary-700">
@@ -1473,9 +1607,25 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
               </div>
             </div>
 
-            <div className="rounded-[1.3rem] bg-secondary-50 p-4">
-              <LineupPicker value={lineup} onChange={setLineup} />
-            </div>
+            <EventDaysInput
+              enabled={isMultiDay}
+              onEnabledChange={(enabled) => {
+                setIsMultiDay(enabled);
+                if (enabled && eventDays.length < 2 && formValues.date) {
+                  const days = firstEventDays(new Date(formValues.date));
+                  days[0].lineup = lineup;
+                  setEventDays(days);
+                }
+              }}
+              days={eventDays}
+              onChange={setEventDays}
+            />
+
+            {!isMultiDay && (
+              <div className="rounded-[1.3rem] bg-secondary-50 p-4">
+                <LineupPicker value={lineup} onChange={setLineup} />
+              </div>
+            )}
 
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-3">

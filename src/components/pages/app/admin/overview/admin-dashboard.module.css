@@ -1,0 +1,15 @@
+.dashboard {
+  background: var(--background);
+  transition: background-color 150ms ease;
+}
+
+.darkTheme {
+  --background: #07141d;
+  --foreground: #f8fafc;
+  --card: #0b1d2a;
+  --popover: #0b1d2a;
+  --muted: rgb(255 255 255 / 6%);
+  --muted-foreground: #a1a1aa;
+  --border: rgb(255 255 255 / 8%);
+  --primary-foreground: #07141d;
+}

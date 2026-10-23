@@ -1,6 +1,7 @@
 import { postData } from "@/api";
 import { ROUTES } from "@/lib/variables";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
+import useWorkspaceStore from "@/stores/workspace-store";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 
@@ -20,6 +21,7 @@ const useSignOut = () => {
     // list. Best effort: signing out here never waits on it.
     void postData("/user/logout").catch(() => undefined);
     clearStore();
+    useWorkspaceStore.getState().clearWorkspace();
     router.push(destination);
   }, [clearStore, role, router]);
 };

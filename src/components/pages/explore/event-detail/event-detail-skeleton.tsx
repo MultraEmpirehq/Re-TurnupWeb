@@ -3,9 +3,11 @@
 import React, { memo } from "react";
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import { Skeleton } from "@/components/ui/skeleton";
+import ExploreBackLink from "../explore-back-link";
 
 const EventDetailSkeleton = () => (
   <SectionContainer className="space-y-14 py-14">
+    <ExploreBackLink />
     <div className="space-y-4 w-full">
       <Skeleton className="w-full aspect-video max-h-[500px] rounded-lg" />
       <div className="flex flex-col gap-4">

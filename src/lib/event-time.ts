@@ -166,3 +166,43 @@ export const eventZoneNote = (
       .find((part) => part.type === "timeZoneName")?.value ?? "";
   return `${offset ? `${offset} · ` : ""}${zone.replace(/_/g, " ")}`;
 };
+
+/** A multi-day event's day as people say it: its label, else e.g. "Fri 18 Dec". */
+export const eventDayName = (
+  day: { startsAt: Date | string; label?: string | null },
+  timezone?: string | null,
+) => {
+  if (day.label) return day.label;
+  const zone = isValidZone(timezone) ? timezone : DEFAULT_EVENT_TIMEZONE;
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: zone,
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).format(new Date(day.startsAt));
+};
+
+/** "18 – 20 Dec 2026" or "30 Dec 2026 – 1 Jan 2027", in the event's zone. */
+export const formatEventDateRange = (
+  start: Date | string,
+  end: Date | string,
+  timezone?: string | null,
+) => {
+  const zone = isValidZone(timezone) ? timezone : DEFAULT_EVENT_TIMEZONE;
+  const formatter = new Intl.DateTimeFormat("en-GB", {
+    timeZone: zone,
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const from = new Date(start);
+  const to = new Date(end);
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return "";
+  return (
+    formatter as Intl.DateTimeFormat & {
+      formatRange?: (a: Date, b: Date) => string;
+    }
+  ).formatRange
+    ? formatter.formatRange(from, to)
+    : `${formatter.format(from)} – ${formatter.format(to)}`;
+};

@@ -6,6 +6,7 @@ import AttendeeShell from "@/components/pages/app/attendee-shell";
 import VendorShell from "@/components/pages/app/vendor/shell/vendor-shell";
 import { adminPathFor } from "@/lib/admin-routes";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
+import { useActiveWorkspace } from "@/stores/workspace-store";
 import { usePathname, useRouter } from "next/navigation";
 import React, { memo, useEffect } from "react";
 
@@ -18,6 +19,8 @@ import React, { memo, useEffect } from "react";
  */
 const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const role = useUserStore((state) => state.userDetails?.role);
+  // Someone working on an organiser's team gets that organiser's dashboard.
+  const workspace = useActiveWorkspace();
   const isLoading = useUserStore((state) => state.isLoading);
   const pathname = usePathname();
   const router = useRouter();
@@ -42,7 +45,7 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return <AdminShell>{children}</AdminShell>;
   }
 
-  if (role === EUserRoles.USER) {
+  if (role === EUserRoles.USER && !workspace) {
     return <AttendeeShell>{children}</AttendeeShell>;
   }
 

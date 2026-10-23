@@ -7,6 +7,7 @@ import InputField from "@/components/ui/input-field";
 import TextareaField from "@/components/ui/textarea-field";
 import { Button } from "@/components/ui/button";
 import TicketInput, { ITicketType } from "./ticket-input";
+import { IEventDayFormValue } from "./event-days-input";
 import { TrashIcon } from "lucide-react";
 import { getCurrencyForCountry } from "@/lib/currency";
 import useUserStore from "@/stores/user-store";
@@ -35,6 +36,9 @@ export interface ITicketFormValues {
   passAssignments?: IAccessPassType[];
   eventCountry?: string;
   eventCountryCode?: string;
+  /** From the first step: tickets then choose which days they're for. */
+  isMultiDay?: boolean;
+  eventDays?: IEventDayFormValue[];
 }
 
 const ticketSaleMethodOptions: ISelectFieldOption[] = [
@@ -54,6 +58,7 @@ const ticketItemSchema = Joi.object({
   salesStartAt: Joi.string().allow(null, "").optional(),
   salesEndAt: Joi.string().allow(null, "").optional(),
   maxPerOrder: Joi.number().integer().min(1).allow(null).optional(),
+  dayIndexes: Joi.array().items(Joi.number().integer().min(0)).optional(),
   // A draft loaded back also carries display-only fields (id, soldCount, isOnSale);
   // the request is built from the fields above, so let those through.
 }).unknown(true);
@@ -284,6 +289,25 @@ const TicketForm: React.FC<{
   const eventCountry = watch("eventCountry");
   const eventCountryCode = watch("eventCountryCode");
   const eventTimezone = watch("eventTimezone");
+  // Set on the first step; a multi-day event's tickets say which days they're for.
+  const isMultiDay = watch("isMultiDay");
+  const eventDays = watch("eventDays");
+  const dayNames = useMemo(
+    () =>
+      isMultiDay
+        ? (eventDays ?? []).map((day, index) =>
+            day.label?.trim() ||
+            (day.startsAt
+              ? new Date(day.startsAt).toLocaleDateString("en-GB", {
+                  weekday: "short",
+                  day: "numeric",
+                  month: "short",
+                })
+              : `Day ${index + 1}`),
+          )
+        : [],
+    [isMultiDay, eventDays],
+  );
   const watchedEventTickets = watch("eventTickets");
   const watchedPassAssignments = watch("passAssignments");
   const eventTickets = useMemo(
@@ -471,6 +495,7 @@ const TicketForm: React.FC<{
                   error={fieldState?.error?.message}
                   mode="paid"
                   currency={ticketCurrency}
+                  dayNames={dayNames}
                 />
               )}
             />
@@ -516,6 +541,7 @@ const TicketForm: React.FC<{
                   error={fieldState?.error?.message}
                   mode="register"
                   currency={ticketCurrency}
+                  dayNames={dayNames}
                 />
               )}
             />

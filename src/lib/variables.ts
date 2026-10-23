@@ -179,6 +179,16 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Tickets",
     href: "/app/tickets",
   },
+  SCAN_TICKETS: {
+    shouldShowIn: [ROUTE_TYPE.APP_ROUTE],
+    label: "Scan tickets",
+    href: "/app/scan",
+  },
+  TEAM: {
+    shouldShowIn: [ROUTE_TYPE.APP_ROUTE],
+    label: "Team",
+    href: "/app/team",
+  },
   SETTINGS: {
     shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV],
     label: "Settings",
