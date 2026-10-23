@@ -90,7 +90,7 @@ const EventDaysInput: React.FC<{
   days: IEventDayFormValue[];
   onChange: (days: IEventDayFormValue[]) => void;
   error?: string;
-  /** Days already checked into can't be removed; the api would refuse it. */
+  /** Days people hold tickets for can't be removed; the api would refuse it. */
   lockedDayIds?: string[];
 }> = ({ enabled, onEnabledChange, days, onChange, error, lockedDayIds = [] }) => {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -148,7 +148,7 @@ const EventDaysInput: React.FC<{
                     disabled={days.length <= 2 || locked}
                     title={
                       locked
-                        ? "People have been checked in on this day"
+                        ? "People have tickets for this day, so it has to stay"
                         : days.length <= 2
                           ? "A multi-day event needs at least two days"
                           : undefined

@@ -20,7 +20,7 @@ import {
 import { updateDevMockEvent } from "@/lib/dev-mock-events";
 import useUserStore from "@/stores/user-store";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2 } from "lucide-react";
+import { BellRing, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -413,6 +413,15 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
       ),
     );
   };
+
+  // Once people hold tickets, what they paid for is fixed; the api enforces it
+  // and these say so up front. Other changes are sent to them on save.
+  const soldTotal = (data?.eventTickets ?? []).reduce(
+    (sum, ticket) => sum + (ticket.soldCount ?? 0),
+    0,
+  );
+  const hasSales = soldTotal > 0;
+  const savedDayIds = (data?.days ?? []).map((day) => day.id);
 
   const handleRemoveTicket = (index: number) => {
     setEventTickets((current) =>
@@ -1034,6 +1043,23 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
           }}
         >
           <div className="space-y-8">
+            {hasSales && (
+              <div className="flex gap-3 rounded-[1.3rem] border border-primary-100 bg-primary-50/70 p-4 text-sm leading-6 text-secondary-800">
+                <BellRing className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
+                <div>
+                  <p className="font-semibold text-secondary-950">
+                    {soldTotal.toLocaleString()} ticket{soldTotal === 1 ? "" : "s"} already
+                    sold
+                  </p>
+                  <p>
+                    Changes to the date, days, venue or line-up are sent to ticket
+                    holders and posted in the event chat when you save. Prices of
+                    sold tickets, the currency, time zone and how tickets are sold
+                    are locked.
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="space-y-4">
               <div>
                 <p className="text-sm font-semibold text-secondary-950">
@@ -1088,11 +1114,17 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                   />
                 </div>
               )}
-              <TimezoneSelect
-                value={timezone}
-                onChange={setTimezone}
-                inputClassName="h-12 rounded-2xl"
-              />
+              <fieldset
+                disabled={hasSales}
+                title={hasSales ? "Locked: tickets are already sold" : undefined}
+                className="disabled:opacity-60"
+              >
+                <TimezoneSelect
+                  value={timezone}
+                  onChange={setTimezone}
+                  inputClassName="h-12 rounded-2xl"
+                />
+              </fieldset>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-secondary-700">
                   Ticket Count
@@ -1229,8 +1261,10 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                     </label>
                     <select
                       value={saleMethod}
+                      disabled={hasSales}
+                      title={hasSales ? "Locked: tickets are already sold" : undefined}
                       onChange={(event) => setSaleMethod(event.target.value)}
-                      className="h-11 w-full rounded-xl border border-secondary-200 bg-white px-3 text-sm"
+                      className="h-11 w-full rounded-xl border border-secondary-200 bg-white px-3 text-sm disabled:opacity-60"
                     >
                       <option value="">Select ticket option</option>
                       <option value="on_turnup">Sell on Turnupz</option>
@@ -1259,7 +1293,9 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                     preview.
                   </div>
                 )}
-                {eventTickets.map((ticket, index) => (
+                {eventTickets.map((ticket, index) => {
+                  const sold = ticket.id ? (ticket.soldCount ?? 0) : 0;
+                  return (
                   <div
                     key={`ticket-${index}`}
                     className="rounded-[1.3rem] bg-secondary-50 p-4"
@@ -1267,11 +1303,22 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                     <div className="mb-4 flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold text-secondary-950">
                         Ticket {index + 1}
+                        {sold > 0 && (
+                          <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-secondary-600 ring-1 ring-secondary-200">
+                            {sold.toLocaleString()} sold · price locked
+                          </span>
+                        )}
                       </p>
                       <Button
                         type="button"
                         variant="outline"
                         className="rounded-xl border-secondary-200 bg-white"
+                        disabled={sold > 0}
+                        title={
+                          sold > 0
+                            ? "People have this ticket. To stop selling it, set its quantity to what's sold or end its sales."
+                            : undefined
+                        }
                         onClick={() => handleRemoveTicket(index)}
                       >
                         <Trash2 className="size-4" />
@@ -1304,6 +1351,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                         <Input
                           type="number"
                           min="0"
+                          disabled={sold > 0}
                           value={
                             typeof ticket.ticketPrice === "number"
                               ? ticket.ticketPrice
@@ -1325,7 +1373,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                         </label>
                         <Input
                           type="number"
-                          min="0"
+                          min={sold}
                           value={ticket.ticketQuantity}
                           onChange={(event) =>
                             handleTicketChange(
@@ -1362,6 +1410,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                         </label>
                         <select
                           value={ticket.actionType ?? "paid"}
+                          disabled={sold > 0}
                           onChange={(event) =>
                             handleTicketChange(
                               index,
@@ -1442,7 +1491,8 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -1609,7 +1659,14 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
 
             <EventDaysInput
               enabled={isMultiDay}
+              lockedDayIds={hasSales ? savedDayIds : []}
               onEnabledChange={(enabled) => {
+                if (!enabled && hasSales && savedDayIds.length) {
+                  toast.error(
+                    "Tickets are sold for these days, so it has to stay a multi-day event.",
+                  );
+                  return;
+                }
                 setIsMultiDay(enabled);
                 if (enabled && eventDays.length < 2 && formValues.date) {
                   const days = firstEventDays(new Date(formValues.date));
