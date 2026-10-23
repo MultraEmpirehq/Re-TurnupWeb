@@ -238,6 +238,8 @@ export interface IEventDetailsType {
   days?: IEventDayDetails[];
   /** When a multi-day event ends; null for a one-day event. */
   endDate?: string | null;
+  /** What its tickets are priced in, e.g. "NGN". */
+  currency?: string;
   isFavorite?: boolean;
   customCategoryName?: string;
   country?: string;

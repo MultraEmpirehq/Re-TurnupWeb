@@ -1,6 +1,12 @@
 "use client";
 
 import DashboardTicketSalesChart from "@/components/pages/app/dashboard-ticket-sales-chart";
+import CurrencyFilter, {
+  currencyTotals,
+  RevenueByCurrencyList,
+  useCurrencyFilter,
+  useCurrencyFiltered,
+} from "@/components/pages/app/currency-filter";
 import { Button } from "@/components/ui/button";
 import { useEvents } from "@/hooks/use-event";
 import {
@@ -9,7 +15,7 @@ import {
   VendorTicketRevenueByCurrency,
 } from "@/hooks/use-vendor-tickets";
 import { AppCurrency, formatAppMoney, getCurrencyForCountry } from "@/lib/currency";
-import { IMonthlyTicketsSold, PriceDetailsType } from "@/lib/types";
+import { IEventDetailsType, IMonthlyTicketsSold, PriceDetailsType } from "@/lib/types";
 import useUserStore from "@/stores/user-store";
 import { useActingVendor } from "@/stores/workspace-store";
 import Link from "next/link";
@@ -153,7 +159,7 @@ const getCategoryName = (row: VendorTicketAnalyticsApiRecord) =>
 
 const MetricCard: React.FC<{
   title: string;
-  value: string;
+  value: React.ReactNode;
   caption: string;
   pill: string;
 }> = ({ title, value, caption, pill }) => (
@@ -161,9 +167,13 @@ const MetricCard: React.FC<{
     <div className="absolute -bottom-8 -right-8 size-24 rounded-full bg-secondary-50/80 sm:-bottom-10 sm:-right-10 sm:size-32" />
     <div className="relative space-y-4">
       <p className="text-sm text-secondary-500">{title}</p>
-      <p className="text-3xl font-bold tracking-tight text-secondary-950 sm:text-4xl">
-        {value}
-      </p>
+      {typeof value === "string" ? (
+        <p className="text-3xl font-bold tracking-tight text-secondary-950 sm:text-4xl">
+          {value}
+        </p>
+      ) : (
+        value
+      )}
       <div className="flex flex-col items-start gap-2 text-sm text-secondary-400 sm:flex-row sm:items-center sm:gap-3">
         <span className="rounded-full bg-secondary-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-secondary-500">
           {pill}
@@ -280,7 +290,7 @@ const AnalysisPage = () => {
     { enabled: !!userId },
   );
   const { data: ticketAnalyticsResponse } = useVendorTicketAnalytics({});
-  const ticketAnalytics = useMemo(
+  const allRows = useMemo(
     () => ticketAnalyticsResponse?.rows ?? [],
     [ticketAnalyticsResponse?.rows],
   );
@@ -289,10 +299,24 @@ const AnalysisPage = () => {
     [ticketAnalyticsResponse?.revenueByCurrency],
   );
 
-  const events = useMemo(
+  const allEvents = useMemo<IEventDetailsType[]>(
     () => eventsData?.pages?.flatMap((page) => page?.data ?? []) ?? [],
     [eventsData],
   );
+
+  // The same filter as the dashboard, and remembered with it: every figure on
+  // the page narrows to one currency's events and tickets.
+  const currencyTotalsList = useMemo(
+    () => currencyTotals(revenueByCurrency, platformCurrency),
+    [platformCurrency, revenueByCurrency],
+  );
+  const filter = useCurrencyFilter(currencyTotalsList.map((total) => total.code));
+  const { events, rows: ticketAnalytics } = useCurrencyFiltered(
+    filter.selected,
+    allEvents,
+    allRows,
+  );
+  const scope = filter.isFiltered ? ` in ${filter.selected}` : "";
 
   const totals = useMemo<AnalyticsTotals>(() => {
     return ticketAnalytics.reduce<AnalyticsTotals>(
@@ -312,29 +336,45 @@ const AnalysisPage = () => {
         title: "Total Events",
         value: formatMetricValue(events.length),
         pill: "Events",
-        caption: "Events currently linked to your vendor profile",
+        caption: filter.isFiltered
+          ? `Priced in ${filter.selected}, of ${allEvents.length} in total`
+          : "Events currently linked to your vendor profile",
       },
       {
         title: "Tickets Purchased",
         value: formatMetricValue(totals.purchased),
         pill: "Purchased",
-        caption: "Paid tickets and confirmed registration records",
+        caption: `Paid tickets and confirmed registration records${scope}`,
       },
       {
         title: "Total Revenue",
-        value: summarizeRevenue(
-          ticketAnalytics,
-          platformCurrency,
-          revenueByCurrency,
-        ),
+        value:
+          currencyTotalsList.length > 1 ? (
+            filter.isFiltered ? (
+              (currencyTotalsList.find((total) => total.code === filter.selected)
+                ?.formatted ?? formatAppMoney(0, platformCurrency))
+            ) : (
+              <RevenueByCurrencyList totals={currencyTotalsList} />
+            )
+          ) : (
+            summarizeRevenue(ticketAnalytics, platformCurrency, revenueByCurrency)
+          ),
         pill: "Revenue",
-        caption: "Revenue from ticket and registration activity",
+        caption:
+          currencyTotalsList.length > 1 && !filter.isFiltered
+            ? `Each currency on its own: you sell in ${currencyTotalsList.length}`
+            : `Revenue from ticket and registration activity${scope}`,
       },
     ],
     [
+      allEvents.length,
+      currencyTotalsList,
       events.length,
+      filter.isFiltered,
+      filter.selected,
       platformCurrency,
       revenueByCurrency,
+      scope,
       ticketAnalytics,
       totals.purchased,
     ],
@@ -403,13 +443,20 @@ const AnalysisPage = () => {
             revenue across your events.
           </p>
         </div>
-        <Button
-          asChild
-          variant="outline"
-          className="h-12 rounded-2xl border-secondary-200 px-5 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
-        >
-          <Link href="/app">Back to Dashboard</Link>
-        </Button>
+        <div className="flex flex-col items-start gap-3 lg:items-end">
+          <CurrencyFilter
+            totals={currencyTotalsList}
+            selected={filter.selected}
+            onSelect={filter.select}
+          />
+          <Button
+            asChild
+            variant="outline"
+            className="h-12 rounded-2xl border-secondary-200 px-5 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
+          >
+            <Link href="/app">Back to Dashboard</Link>
+          </Button>
+        </div>
       </section>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -459,7 +506,7 @@ const AnalysisPage = () => {
               title="Remaining capacity"
               subtitle="Inventory"
               value={formatMetricValue(totals.remaining)}
-              caption="Ticket inventory still available across your events."
+              caption={`Ticket inventory still available across your events${scope}.`}
             />
           </div>
 
