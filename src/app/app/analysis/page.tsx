@@ -11,6 +11,7 @@ import {
 import { AppCurrency, formatAppMoney, getCurrencyForCountry } from "@/lib/currency";
 import { IMonthlyTicketsSold, PriceDetailsType } from "@/lib/types";
 import useUserStore from "@/stores/user-store";
+import { useActingVendor } from "@/stores/workspace-store";
 import Link from "next/link";
 import React, { memo, useMemo } from "react";
 
@@ -263,7 +264,7 @@ export const dynamic = "force-dynamic";
 
 const AnalysisPage = () => {
   const userDetails = useUserStore((state) => state?.userDetails);
-  const userId = userDetails?.id;
+  const userId = useActingVendor().vendorId;
   const platformCurrency = useMemo(
     () =>
       getCurrencyForCountry(

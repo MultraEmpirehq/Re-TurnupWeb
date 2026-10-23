@@ -16,7 +16,7 @@ import ErrorContainer from "@/components/ui/error-container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEvents } from "@/hooks/use-event";
 import { IEventDetailsType } from "@/lib/types";
-import useUserStore from "@/stores/user-store";
+import { useActingVendor } from "@/stores/workspace-store";
 import { CalendarDays, MapPin, Ticket } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -170,7 +170,8 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
   isEventPage = false,
 }) => {
   const router = useRouter();
-  const userId = useUserStore((state) => state?.userDetails?.id);
+  // The organiser's events, also when a team member is working for them.
+  const userId = useActingVendor().vendorId;
   const [eventToDelete, setEventToDelete] = useState<IEventDetailsType | null>(
     null,
   );

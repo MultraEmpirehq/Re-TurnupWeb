@@ -25,6 +25,10 @@ const ComboboxSelect = dynamic(
 import LineupPicker from "@/components/discovery/lineup-picker";
 import { IPerformerSummary } from "@/lib/types";
 import EventActivitiesInput, { IEventActivity } from "./event-activities-input";
+import EventDaysInput, {
+  firstEventDays,
+  IEventDayFormValue,
+} from "./event-days-input";
 import { Controller, useFormContext } from "react-hook-form";
 import useCategory from "@/hooks/use-category";
 import { TComboboxItem } from "@/components/ui/combobox-select";
@@ -54,6 +58,10 @@ export interface IBasicFormValues {
   unRegisteredGuestNames: string[];
   /** Who's on the bill, headliner first; saved as performerIds. */
   lineup: IPerformerSummary[];
+  /** Runs over several days, each with its own times and line-up. */
+  isMultiDay: boolean;
+  /** The days, in order, when `isMultiDay`; the first one is the event date. */
+  eventDays: IEventDayFormValue[];
   description: string;
   eventActivities: IEventActivity[];
 }
@@ -140,6 +148,26 @@ export const basicInformationSchema = Joi.object({
   // Guests of honour were replaced by the line-up; kept only for old drafts.
   guestIds: Joi.array().items(Joi.string()).optional(),
   lineup: Joi.array().items(Joi.object().unknown(true)).optional(),
+  isMultiDay: Joi.boolean().optional(),
+  eventDays: Joi.when("isMultiDay", {
+    is: true,
+    then: Joi.array()
+      .min(2)
+      .items(Joi.object().unknown(true))
+      .custom((days: IEventDayFormValue[], helpers) => {
+        for (let i = 1; i < days.length; i += 1) {
+          if (new Date(days[i].startsAt) <= new Date(days[i - 1].startsAt)) {
+            return helpers.error("days.order");
+          }
+        }
+        return days;
+      })
+      .messages({
+        "array.min": "Add at least two days, or turn off multi-day",
+        "days.order": "Each day has to start after the one before it",
+      }),
+    otherwise: Joi.any(),
+  }),
   unRegisteredGuestNames: Joi.array().items(Joi.string()).optional(),
   description: Joi.string().required().messages({
     "string.empty": "Description is required",
@@ -182,6 +210,7 @@ const BasicForm: React.FC<{
     formState: { errors, isValid, isSubmitting },
   } = useFormContext<IBasicFormValues>();
   const eventDate = watch("eventDate");
+  const isMultiDay = watch("isMultiDay");
   const coverImage = watch("coverImage");
   const coverImagePreviewUrl = useMemo(
     () => getImagePreviewUrl(coverImage),
@@ -375,22 +404,24 @@ const BasicForm: React.FC<{
           {...register("organizerName")}
         />
 
-        <Controller
-          control={control}
-          name="eventDate"
-          render={({ field, fieldState }) => (
-            <DateSelect
-              required={true}
-              dateModifiers={{
-                disabled: (date) => date <= new Date(),
-              }}
-              label="Event Date"
-              date={field.value}
-              error={fieldState?.error?.message}
-              setDate={field.onChange}
-            />
-          )}
-        />
+        {!isMultiDay && (
+          <Controller
+            control={control}
+            name="eventDate"
+            render={({ field, fieldState }) => (
+              <DateSelect
+                required={true}
+                dateModifiers={{
+                  disabled: (date) => date <= new Date(),
+                }}
+                label="Event Date"
+                date={field.value}
+                error={fieldState?.error?.message}
+                setDate={field.onChange}
+              />
+            )}
+          />
+        )}
 
         <Controller
           control={control}
@@ -598,16 +629,54 @@ const BasicForm: React.FC<{
 
         <Controller
           control={control}
-          name="lineup"
-          render={({ field }) => (
+          name="eventDays"
+          render={({ field, fieldState }) => (
             <div className="lg:col-span-2">
-              <LineupPicker
-                value={field.value ?? []}
-                onChange={field.onChange}
+              <EventDaysInput
+                enabled={!!isMultiDay}
+                onEnabledChange={(enabled) => {
+                  setValue("isMultiDay", enabled, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                  if (enabled && (field.value?.length ?? 0) < 2) {
+                    // Starts from the date and line-up already entered.
+                    const days = firstEventDays(getValues("eventDate"));
+                    days[0].lineup = getValues("lineup") ?? [];
+                    field.onChange(days);
+                  }
+                }}
+                days={field.value ?? []}
+                onChange={(days) => {
+                  field.onChange(days);
+                  // The event date is the first day's start.
+                  if (days[0]?.startsAt) {
+                    setValue("eventDate", new Date(days[0].startsAt), {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+                  }
+                }}
+                error={fieldState?.error?.message}
               />
             </div>
           )}
         />
+
+        {!isMultiDay && (
+          <Controller
+            control={control}
+            name="lineup"
+            render={({ field }) => (
+              <div className="lg:col-span-2">
+                <LineupPicker
+                  value={field.value ?? []}
+                  onChange={field.onChange}
+                />
+              </div>
+            )}
+          />
+        )}
       </div>
       <Button
         type="button"

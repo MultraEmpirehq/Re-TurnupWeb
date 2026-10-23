@@ -3,6 +3,7 @@
 import VerifiedTick from "@/components/discovery/verified-tick";
 import { constructErrorMessage } from "@/api/functions";
 import FollowButton from "@/components/discovery/follow-button";
+import ExploreBackLink from "@/components/pages/explore/explore-back-link";
 import EventsGrid from "@/components/discovery/events-grid";
 import PerformerAvatar from "@/components/discovery/performer-avatar";
 import SectionContainer from "@/components/layouts/section-container/section-container";
@@ -36,6 +37,7 @@ const PerformerPage = () => {
   if (isLoading) {
     return (
       <SectionContainer className="space-y-8 py-16">
+        <ExploreBackLink />
         <div className="flex items-center gap-5">
           <Skeleton className="size-28 rounded-full" />
           <div className="space-y-3">
@@ -50,7 +52,8 @@ const PerformerPage = () => {
 
   if (error || !performer) {
     return (
-      <SectionContainer className="flex min-h-[500px] items-center justify-center py-16">
+      <SectionContainer className="min-h-[500px] space-y-8 py-16">
+        <ExploreBackLink />
         <ErrorContainer
           error={constructErrorMessage(
             error as TApiErrorResponseType,
@@ -84,6 +87,7 @@ const PerformerPage = () => {
 
   return (
     <SectionContainer className="space-y-12 py-16">
+      <ExploreBackLink />
       <header className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-5">
           <PerformerAvatar

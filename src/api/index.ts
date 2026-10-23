@@ -1,6 +1,7 @@
 import { visitorId } from "@/lib/visitor-id";
 import { apiBaseUrl } from "@/lib/env";
 import useUserStore from "@/stores/user-store";
+import useWorkspaceStore, { getActiveWorkspace } from "@/stores/workspace-store";
 import axios, { AxiosRequestConfig } from "axios";
 import { toast } from "sonner";
 
@@ -19,6 +20,7 @@ api.interceptors.response.use(
     const userDetails = useUserStore.getState().userDetails;
     if (error?.response?.status === 401 && userDetails) {
       getResetUserDetails()();
+      useWorkspaceStore.getState().clearWorkspace();
       toast.error("Login expired! Please login again.");
     }
     return Promise.reject(error);
@@ -30,6 +32,9 @@ api.interceptors.request.use(
     // Counts visits for the team's dashboard, signed in or not.
     const visitor = visitorId();
     if (visitor) config.headers["X-Visitor-Id"] = visitor;
+    // Working on another organiser's team: the api checks what they allowed.
+    const workspace = getActiveWorkspace();
+    if (workspace) config.headers["X-Vendor-Workspace"] = workspace.vendorId;
     const authToken = useUserStore.getState().userToken;
     if (authToken) {
       config.headers.Authorization = authToken.startsWith("Bearer ")

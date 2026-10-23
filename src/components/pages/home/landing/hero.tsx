@@ -4,7 +4,7 @@ import SectionContainer from "@/components/layouts/section-container/section-con
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/variables";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useEffect, useRef, useState } from "react";
 import HeroStage from "./hero-stage";
@@ -117,9 +117,8 @@ const LandingHero = () => {
 
       <SectionContainer className="grid w-full items-center gap-6 pt-28 pb-16 lg:grid-cols-[1fr_1fr] lg:gap-4 lg:pt-24 lg:pb-12">
         {/* The words lift and fade as the stage takes over on scroll. */}
-        <div className="relative z-10 flex flex-col items-start gap-7 [opacity:calc(1-var(--p,0)*1.6)] [transform:translateY(calc(var(--p,0)*-90px))]">
+        <div className="relative z-10 flex flex-col items-start gap-7 [opacity:calc(1-var(--p,0)*1.6)] [transform:translateY(calc(var(--p,0)*-28px))]">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80 backdrop-blur">
-            <Sparkles className="size-3.5 text-primary-300" aria-hidden />
             Tickets, chats and entry, all in one place
           </span>
 

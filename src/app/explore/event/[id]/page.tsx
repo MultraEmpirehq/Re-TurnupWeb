@@ -22,11 +22,13 @@ import { eventZoneNote, instantToWallTimeInZone } from "@/lib/event-time";
 import ReportEventButton from "@/components/pages/explore/event-detail/report-event-button";
 import HideEventButton from "@/components/pages/explore/event-detail/hide-event-button";
 import EventDetailLineup from "@/components/pages/explore/event-detail/event-detail-lineup";
+import EventDetailSchedule from "@/components/pages/explore/event-detail/event-detail-schedule";
 import FollowButton from "@/components/discovery/follow-button";
 import Link from "next/link";
 import { ROUTES } from "@/lib/variables";
 import { eventShareUrl, rememberShareRef } from "@/lib/share-ref";
 import useUserStore from "@/stores/user-store";
+import ExploreBackLink from "@/components/pages/explore/explore-back-link";
 
 const EventDetails = () => {
   const params = useParams();
@@ -79,7 +81,8 @@ const EventDetails = () => {
 
   if (error)
     return (
-      <SectionContainer className="space-y-14 py-14 min-h-[500px] h-screen flex items-center justify-center">
+      <SectionContainer className="space-y-8 py-14 min-h-[500px]">
+        <ExploreBackLink />
         <ErrorContainer
           error={constructErrorMessage(
             error as TApiErrorResponseType,
@@ -117,6 +120,7 @@ const EventDetails = () => {
 
   return (
     <SectionContainer className="space-y-14 py-20">
+      <ExploreBackLink />
       <EventDetailHero
         image={coverImageUrl}
         name={data?.name}
@@ -127,16 +131,24 @@ const EventDetails = () => {
       <EventDetailTitleRow
         eventId={id}
         name={data?.name}
+        saleMethod={data?.saleMethod}
+        ticketUrl={data?.ticketUrl}
         onShare={handleShare}
         copied={copied}
       />
 
-      {eventDate && (
-        <EventDetailDateTime date={eventDate} zoneNote={zoneNote} />
-      )}
+      {(data?.days?.length ?? 0) > 1 ? (
+        <EventDetailSchedule days={data!.days!} timezone={data?.timezone} />
+      ) : (
+        <>
+          {eventDate && (
+            <EventDetailDateTime date={eventDate} zoneNote={zoneNote} />
+          )}
 
-      {!!data?.performers?.length && (
-        <EventDetailLineup performers={data.performers} />
+          {!!data?.performers?.length && (
+            <EventDetailLineup performers={data.performers} />
+          )}
+        </>
       )}
 
       {data?.venue && <EventDetailLocation venue={data.venue} />}

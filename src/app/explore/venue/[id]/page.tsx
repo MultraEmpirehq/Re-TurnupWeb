@@ -20,6 +20,7 @@ import { MapPinIcon } from "lucide-react";
 import EventsWithVenueIdList from "@/components/pages/explore/events-with-venue-id-list";
 import { resolveAttachmentUrls } from "@/lib/functions";
 import FollowButton from "@/components/discovery/follow-button";
+import ExploreBackLink from "@/components/pages/explore/explore-back-link";
 
 const EventDetails = () => {
   const params = useParams();
@@ -29,6 +30,7 @@ const EventDetails = () => {
   if (!data && !error)
     return (
       <SectionContainer className="space-y-14 py-14">
+        <ExploreBackLink />
         <div className="space-y-4 w-full">
           <Skeleton className="w-full aspect-video max-h-[500px] rounded-lg" />
           <div className="flex flex-col gap-4">
@@ -57,7 +59,8 @@ const EventDetails = () => {
 
   if (error)
     return (
-      <SectionContainer className="space-y-14 py-14 min-h-[500px] h-screen flex items-center justify-center">
+      <SectionContainer className="space-y-8 py-14 min-h-[500px]">
+        <ExploreBackLink />
         <ErrorContainer
           error={constructErrorMessage(
             error as TApiErrorResponseType,
@@ -72,6 +75,7 @@ const EventDetails = () => {
 
   return (
     <SectionContainer className="space-y-14 py-20">
+      <ExploreBackLink />
       <div className="w-full aspect-video relative bg-black/5 rounded-lg overflow-hidden">
         {venueImages.length > 1 && (
           <Carousel className="aspect-video w-full">

@@ -28,6 +28,7 @@ import {
   Newspaper,
   Plug,
   Receipt,
+  ScanLine,
   ScrollText,
   Sparkles,
   Settings,
@@ -155,6 +156,12 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         href: `${ADMIN_BASE}/events`,
         icon: CalendarDays,
         permission: "EVENTS_MODERATE",
+      },
+      {
+        label: "Scan Tickets",
+        href: `${ADMIN_BASE}/events/scan`,
+        icon: ScanLine,
+        permission: "TICKETS_SCAN",
       },
       {
         label: ROUTES.VENUES.label,

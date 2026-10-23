@@ -24,9 +24,9 @@ import Link from "next/link";
 import React, { memo } from "react";
 
 const ADMIN = ROUTES.ADMIN_OVERVIEW.href;
-const CARD = "#0B1D2A";
-const LINE = "rgba(255,255,255,0.08)";
-const BLUE = "#00B2FF";
+const CARD = "var(--card)";
+const LINE = "var(--border)";
+const BLUE = "var(--primary)";
 
 /** How many of something are waiting, from a list endpoint's total. */
 const useWaiting = (
@@ -189,7 +189,7 @@ const QuickLinks = () => {
           <Link
             key={link.href}
             href={link.href}
-            className="group flex items-center gap-2.5 rounded-xl border px-3 py-2.5 transition-colors hover:border-white/20 hover:bg-white/[0.04]"
+            className="group flex items-center gap-2.5 rounded-xl border px-3 py-2.5 transition-colors hover:border-primary/30 hover:bg-muted"
             style={{ background: CARD, borderColor: LINE }}
           >
             <Icon
@@ -197,12 +197,12 @@ const QuickLinks = () => {
               style={{ color: BLUE }}
               aria-hidden
             />
-            <span className="min-w-0 flex-1 truncate text-xs font-semibold text-white/90">
+            <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">
               {link.label}
             </span>
             {busy && (
               <span
-                className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold text-[#07141D]"
+                className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground"
                 style={{ background: BLUE }}
                 aria-label={`${link.waiting} ${link.waitingLabel}`}
               >

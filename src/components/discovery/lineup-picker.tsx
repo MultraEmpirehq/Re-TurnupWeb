@@ -11,15 +11,16 @@ import {
   usePerformers,
 } from "@/hooks/use-discovery";
 import { IPerformerSummary } from "@/lib/types";
-import { ArrowDown, ArrowUp, Plus, Search, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, Search, Star, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import PerformerAvatar from "./performer-avatar";
 import PerformerFormDialog from "./performer-form-dialog";
 
 /**
  * An event's line-up: search the performers already on Turnupz, add a new one
- * on the spot, and order the bill (the first is the headliner). Saved as the
- * event's performerIds, in this order.
+ * on the spot, order the bill, and star its headliners (as many as there are).
+ * Saved as performerIds, in this order, and headlinerIds.
  */
 const LineupPicker: React.FC<{
   value: IPerformerSummary[];
@@ -94,11 +95,20 @@ const LineupPicker: React.FC<{
         name: performer.name,
         type: performer.type,
         image: performer.image,
+        // The first act starts as the headliner; star others to add more.
+        isHeadliner: !value.some((item) => item.isHeadliner),
       },
     ]);
     setSearchInput("");
     setSearch("");
   };
+
+  const toggleHeadliner = (id: string) =>
+    onChange(
+      value.map((item) =>
+        item.id === id ? { ...item, isHeadliner: !item.isHeadliner } : item,
+      ),
+    );
 
   const move = (index: number, by: -1 | 1) => {
     const next = [...value];
@@ -116,8 +126,9 @@ const LineupPicker: React.FC<{
           <span className="font-normal text-secondary-500">(optional)</span>
         </p>
         <p className="text-xs text-secondary-500">
-          Who&apos;s performing, speaking or hosting. The first is billed as the
-          headliner, and each gets a link to their page.
+          Who&apos;s performing, speaking or hosting, in billing order. Star
+          the headliners (you can have more than one); each act gets a link to
+          their page.
         </p>
       </div>
 
@@ -144,10 +155,34 @@ const LineupPicker: React.FC<{
                   )}
                 </span>
                 <span className="block text-xs text-secondary-500">
-                  {index === 0 ? "Headliner · " : ""}
+                  {performer.isHeadliner && (
+                    <span className="font-semibold text-primary">Headliner · </span>
+                  )}
                   {PERFORMER_TYPE_LABELS[performer.type] ?? "Performer"}
                 </span>
               </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-pressed={!!performer.isHeadliner}
+                aria-label={
+                  performer.isHeadliner
+                    ? `${performer.name} is a headliner. Unstar`
+                    : `Make ${performer.name} a headliner`
+                }
+                title={performer.isHeadliner ? "Headliner" : "Make headliner"}
+                onClick={() => toggleHeadliner(performer.id)}
+              >
+                <Star
+                  className={cn(
+                    "size-4",
+                    performer.isHeadliner
+                      ? "fill-amber-400 text-amber-500"
+                      : "text-secondary-400",
+                  )}
+                />
+              </Button>
               <Button
                 type="button"
                 variant="ghost"
