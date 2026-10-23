@@ -18,6 +18,9 @@ export const eventDaysPayload = (
       : null,
     ...(day.label?.trim() ? { label: day.label.trim() } : {}),
     performerIds: day.lineup.map((performer) => performer.id),
+    headlinerIds: day.lineup
+      .filter((performer) => performer.isHeadliner)
+      .map((performer) => performer.id),
   }));
 
 /** A saved event's days back into the form, on the event's clock. */

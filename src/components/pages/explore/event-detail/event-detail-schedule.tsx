@@ -55,9 +55,9 @@ const EventDetailSchedule: React.FC<{
             </div>
             {day.performers?.length ? (
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {day.performers.map((performer, position) => (
+                {day.performers.map((performer) => (
                   <div key={performer.id} className="relative">
-                    {position === 0 && day.performers!.length > 1 && (
+                    {performer.isHeadliner && day.performers!.length > 1 && (
                       <span className="absolute -top-2 right-3 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase">
                         Headliner
                       </span>

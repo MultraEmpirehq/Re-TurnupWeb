@@ -704,6 +704,16 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
             multiDay ? [] : lineup.map((performer) => performer.id),
           ),
         );
+        formData.append(
+          "headlinerIds",
+          JSON.stringify(
+            multiDay
+              ? []
+              : lineup
+                  .filter((performer) => performer.isHeadliner)
+                  .map((performer) => performer.id),
+          ),
+        );
         // Sent either way: turning multi-day off makes it one day again.
         formData.append(
           "days",

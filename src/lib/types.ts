@@ -560,6 +560,8 @@ export interface IPerformerSummary {
   image?: string | null;
   /** Approved by the team: shown with the verified tick. */
   isVerified?: boolean;
+  /** Top of the bill; an event or a day can have several. */
+  isHeadliner?: boolean;
 }
 
 export interface IPerformer extends IPerformerSummary {

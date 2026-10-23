@@ -200,6 +200,16 @@ const buildEventFormData = async (
       multiDay ? [] : (body.lineup ?? []).map((performer) => performer.id),
     ),
   );
+  formData.append(
+    "headlinerIds",
+    JSON.stringify(
+      multiDay
+        ? []
+        : (body.lineup ?? [])
+            .filter((performer) => performer.isHeadliner)
+            .map((performer) => performer.id),
+    ),
+  );
   // Sent either way, so turning multi-day off makes it a one-day event again.
   formData.append(
     "days",
