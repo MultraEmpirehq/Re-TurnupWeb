@@ -34,6 +34,11 @@ export type TUserDetails = {
   dateOfBirth?: Date;
   country?: string;
   countryCode?: string;
+  /** Whether others see their country on their profile; off by default. */
+  showCountry?: boolean;
+  /** A short line about them, up to 160 characters. */
+  bio?: string | null;
+  website?: string | null;
   platformCurrency?: string;
   avatar?: string;
   profileImage?: string;

@@ -24,6 +24,8 @@ interface IEventParams {
   city?: string;
   /** Admins only: include suspended events. */
   includeSuspended?: boolean;
+  /** With userId (your own events): only the ones you've archived. */
+  archived?: boolean;
 }
 
 type NormalizedEventsResponse = {
@@ -100,6 +102,7 @@ const getEvents = async (
   if (params.status) urlParams.set("status", params.status);
   if (params.priceType) urlParams.set("priceType", params.priceType);
   if (params.includeSuspended) urlParams.set("includeSuspended", "true");
+  if (params.archived) urlParams.set("archived", "true");
   if (params.isFavorite) urlParams.set("isFavorite", "true");
   if (params.performerId) urlParams.set("performerId", params.performerId);
   if (params.organizerId) urlParams.set("organizerId", params.organizerId);

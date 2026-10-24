@@ -137,6 +137,8 @@ const useRefreshRefunds = () => {
       "admin-order-lookup",
       "admin-refund-preview",
       "admin-audit-log",
+      "admin-cancellation-requests",
+      "admin-pending-counts",
     ]) {
       void queryClient.invalidateQueries({ queryKey: [key] });
     }
@@ -192,6 +194,54 @@ export const useCancelEventWithRefunds = () => {
       eventId: string;
       reason: string;
     }) => postData(`/admin/events/${eventId}/cancel`, { reason }),
+    onSuccess: refresh,
+  });
+};
+
+export interface ICancellationRequest {
+  id: string;
+  status: "pending" | "approved" | "declined" | "withdrawn";
+  reason: string;
+  reviewNote: string | null;
+  createdAt: string;
+  reviewedAt: string | null;
+  requestedBy: { name: string; email: string };
+  event: { id: string; name: string; date: string; status: string; currency: string | null };
+  organiser: { id: string; name: string; email: string };
+  /** People still holding a ticket. */
+  holders: number;
+  /** Paid orders that would be refunded. */
+  ordersToRefund: number;
+}
+
+/** Organisers asking to cancel an event people hold tickets for. */
+export const useCancellationRequests = () =>
+  useQuery({
+    queryKey: ["admin-cancellation-requests"],
+    queryFn: async () => {
+      const { data } = await getData<ICancellationRequest[]>(
+        "/admin/cancellation-requests?limit=50",
+      );
+      return data?.data ?? [];
+    },
+  });
+
+export const useReviewCancellationRequest = () => {
+  const refresh = useRefreshRefunds();
+  return useMutation({
+    mutationFn: ({
+      id,
+      decision,
+      reason,
+    }: {
+      id: string;
+      decision: "approve" | "decline";
+      reason?: string;
+    }) =>
+      postData(
+        `/admin/cancellation-requests/${id}/${decision}`,
+        decision === "decline" ? { reason } : {},
+      ),
     onSuccess: refresh,
   });
 };

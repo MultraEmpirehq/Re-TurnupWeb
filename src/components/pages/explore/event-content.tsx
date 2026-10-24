@@ -4,6 +4,7 @@ import React, { memo } from "react";
 import CategoryTiles from "./category-tiles";
 import EventList from "./event-list";
 import ExploreBrowse from "./explore-browse";
+import { SponsoredRow } from "./sponsored";
 import useExploreFilters from "./use-explore-filters";
 
 /**
@@ -11,10 +12,17 @@ import useExploreFilters from "./use-explore-filters";
  * coming up there after; any search or filter goes straight to results.
  */
 const EventContent = () => {
-  const { isFiltering } = useExploreFilters();
+  const { isFiltering, q, countryCode, city } = useExploreFilters();
   return (
     <div className="space-y-16">
       <CategoryTiles />
+      {/* Boosted events: in search when searching, otherwise at the top of Explore. */}
+      <SponsoredRow
+        placement={q ? "SEARCH" : "EXPLORE"}
+        q={q || undefined}
+        countryCode={countryCode}
+        city={city}
+      />
       {!isFiltering && <ExploreBrowse />}
       <EventList />
     </div>

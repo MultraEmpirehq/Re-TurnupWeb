@@ -15,7 +15,12 @@ import { joinEventChatGroup } from "@/lib/event-chat";
 import LeavingTurnupzDialog from "@/components/pages/explore/leaving-turnupz-dialog";
 import ExploreBackLink from "@/components/pages/explore/explore-back-link";
 import { ROUTES } from "@/lib/variables";
-import { readShareRef, rememberShareRef } from "@/lib/share-ref";
+import {
+  readArrival,
+  readShareRef,
+  rememberArrival,
+  rememberShareRef,
+} from "@/lib/share-ref";
 import { getData } from "@/api";
 import { useQuery } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
@@ -198,13 +203,16 @@ const TicketPage = () => {
       const days = event?.days ?? [];
       if (days.length < 2) return null;
       const dayIds =
-        event?.eventTickets?.find((option) => option.id === ticket.id)?.dayIds ??
-        [];
+        event?.eventTickets?.find((option) => option.id === ticket.id)
+          ?.dayIds ?? [];
       const covered = dayIds.length
         ? days.filter((day) => dayIds.includes(day.id))
         : days;
-      if (covered.length === days.length) return `Every day · ${days.length} days`;
-      return covered.map((day) => eventDayName(day, event?.timezone)).join(", ");
+      if (covered.length === days.length)
+        return `Every day · ${days.length} days`;
+      return covered
+        .map((day) => eventDayName(day, event?.timezone))
+        .join(", ");
     },
     [event?.days, event?.eventTickets, event?.timezone],
   );
@@ -304,7 +312,8 @@ const TicketPage = () => {
   // Tickets (not registration): any mix of ticket types, each with its own count.
   const [counts, setCounts] = useState<Record<string, number>>({});
   const buyableTickets = useMemo(
-    () => accessibleTickets.filter((ticket) => ticket.type !== EXTERNAL_LINK_TYPE),
+    () =>
+      accessibleTickets.filter((ticket) => ticket.type !== EXTERNAL_LINK_TYPE),
     [accessibleTickets],
   );
   const lines = useMemo(
@@ -327,7 +336,8 @@ const TicketPage = () => {
       isRegistrationOnly
         ? (selectedTicket?.price?.amount ?? 0) * quantity
         : lines.reduce(
-            (sum, line) => sum + (line.ticket.price?.amount ?? 0) * line.quantity,
+            (sum, line) =>
+              sum + (line.ticket.price?.amount ?? 0) * line.quantity,
             0,
           ),
     [isRegistrationOnly, selectedTicket, quantity, lines],
@@ -351,6 +361,77 @@ const TicketPage = () => {
       ).data?.data ?? [],
   });
   const [useCredit, setUseCredit] = useState(true);
+
+  // The organiser's promo code: checked with the api, taken off each paid ticket
+  // (never more than 90%). The api works out the exact amount when you pay.
+  const [promoInput, setPromoInput] = useState("");
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoChecking, setPromoChecking] = useState(false);
+  const [promo, setPromo] = useState<{
+    code: string;
+    label: string;
+    discountPercent: number | null;
+    discountAmount: { amount: number } | null;
+  } | null>(null);
+  const applyPromo = useCallback(
+    async (raw: string, quiet = false) => {
+      const code = raw.trim().toUpperCase();
+      if (!code) return;
+      setPromoChecking(true);
+      try {
+        const { data } = await getData<{
+          code: string;
+          label: string;
+          discountPercent: number | null;
+          discountAmount: { amount: number } | null;
+        }>(
+          `/promo-codes/check?eventId=${eventId}&code=${encodeURIComponent(code)}`,
+        );
+        if (data?.data) {
+          setPromo(data.data);
+          setPromoInput(data.data.code);
+          setPromoOpen(true);
+          if (!quiet) toast.success(`${data.data.code} applied`);
+        }
+      } catch (error) {
+        if (!quiet) {
+          toast.error(
+            constructErrorMessage(
+              error as TApiErrorResponseType,
+              "That code doesn't work for this event.",
+            ),
+          );
+        }
+      } finally {
+        setPromoChecking(false);
+      }
+    },
+    [eventId],
+  );
+  // A promoter's link (?code=…) fills the code in for them.
+  const codeFromLink = searchParams?.get("code");
+  useEffect(() => {
+    rememberArrival(eventId, {
+      src: searchParams?.get("src"),
+      code: codeFromLink,
+    });
+    const code = codeFromLink ?? readArrival(eventId).code;
+    if (code && userDetails) void applyPromo(code, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, codeFromLink, !!userDetails]);
+  const promoDiscount = useMemo(() => {
+    if (!promo || isRegistrationOnly) return 0;
+    return lines.reduce((sum, line) => {
+      const price = line.ticket.price?.amount ?? 0;
+      if (price <= 0) return sum;
+      const most = Math.floor(price * 0.9);
+      const off = promo.discountPercent
+        ? Math.min(Math.round((price * promo.discountPercent) / 100), most)
+        : Math.min(promo.discountAmount?.amount ?? 0, most);
+      return sum + off * line.quantity;
+    }, 0);
+  }, [isRegistrationOnly, lines, promo]);
+  const afterPromo = Math.max(totalPrice - promoDiscount, 0);
   const creditAvailable =
     creditRows?.find(
       (row) =>
@@ -358,8 +439,8 @@ const TicketPage = () => {
         pricingTicket?.price?.currency?.code?.toUpperCase(),
     )?.available?.amount ?? 0;
   const creditApplied =
-    useCredit && totalPrice > 0 ? Math.min(creditAvailable, totalPrice) : 0;
-  const toPay = Math.max(totalPrice - creditApplied, 0);
+    useCredit && afterPromo > 0 ? Math.min(creditAvailable, afterPromo) : 0;
+  const toPay = Math.max(afterPromo - creditApplied, 0);
   const money = useCallback(
     (amount: number) =>
       pricingTicket
@@ -393,7 +474,8 @@ const TicketPage = () => {
   useEffect(() => {
     if (startedWithOne || isRegistrationOnly) return;
     const first = buyableTickets.find(
-      (ticket) => ticketSaleState(ticket).status === "open" && maxFor(ticket) > 0,
+      (ticket) =>
+        ticketSaleState(ticket).status === "open" && maxFor(ticket) > 0,
     );
     if (first) {
       setCounts({ [first.id]: 1 });
@@ -581,6 +663,8 @@ const TicketPage = () => {
           privateAccessCode?: string;
           useCredit?: boolean;
           ref?: string;
+          promoCode?: string;
+          source?: string;
         },
         { orderId: string; status: EOrderStatus; redirectUrl?: string }
       >("/order", {
@@ -597,6 +681,10 @@ const TicketPage = () => {
         callbackUrl: `${window.location.origin}${ROUTES.PROFILE_ORDERS.href}/{{orderId}}/success`,
         ...(creditApplied > 0 ? { useCredit: true } : {}),
         ref: readShareRef(eventId),
+        ...(promo ? { promoCode: promo.code } : {}),
+        ...(readArrival(eventId).src
+          ? { source: readArrival(eventId).src }
+          : {}),
       });
       const redirectUrl = data?.data?.redirectUrl;
       if (redirectUrl) {
@@ -622,6 +710,7 @@ const TicketPage = () => {
       setIsPurchasing(false);
     }
   }, [
+    promo,
     userDetails,
     isRegistrationOnly,
     eventId,
@@ -887,16 +976,24 @@ const TicketPage = () => {
                       role="button"
                       tabIndex={unavailable ? -1 : 0}
                       aria-disabled={unavailable}
-                      onClick={() => !unavailable && !isSelected && setCount(ticket, 1)}
+                      onClick={() =>
+                        !unavailable && !isSelected && setCount(ticket, 1)
+                      }
                       onKeyDown={(e) => {
-                        if ((e.key === "Enter" || e.key === " ") && !unavailable && !isSelected) {
+                        if (
+                          (e.key === "Enter" || e.key === " ") &&
+                          !unavailable &&
+                          !isSelected
+                        ) {
                           e.preventDefault();
                           setCount(ticket, 1);
                         }
                       }}
                       className={cn(
                         "text-left flex flex-col group transition-all",
-                        unavailable ? "cursor-not-allowed opacity-55" : "cursor-pointer",
+                        unavailable
+                          ? "cursor-not-allowed opacity-55"
+                          : "cursor-pointer",
                       )}
                     >
                       <div
@@ -934,7 +1031,10 @@ const TicketPage = () => {
                         <p className="font-bold text-lg">{ticket.name}</p>
                         {ticketDaysNote(ticket) && (
                           <p className="-mt-2 flex items-center gap-1.5 text-xs font-semibold text-primary-700">
-                            <CalendarRange className="size-3.5 shrink-0" aria-hidden />
+                            <CalendarRange
+                              className="size-3.5 shrink-0"
+                              aria-hidden
+                            />
                             {ticketDaysNote(ticket)}
                           </p>
                         )}
@@ -1087,6 +1187,68 @@ const TicketPage = () => {
 
                 <div className="border-t" />
 
+                {totalPrice > 0 &&
+                  !!userDetails &&
+                  (promo ? (
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <p className="text-muted-foreground">
+                        <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 font-mono text-xs font-bold text-emerald-700">
+                          {promo.code}
+                        </span>{" "}
+                        {promo.label}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPromo(null);
+                            setPromoInput("");
+                          }}
+                          className="ml-2 text-xs font-semibold underline"
+                        >
+                          Remove
+                        </button>
+                      </p>
+                      {promoDiscount > 0 && (
+                        <p className="font-semibold text-emerald-700">
+                          −{money(promoDiscount)}
+                        </p>
+                      )}
+                    </div>
+                  ) : promoOpen ? (
+                    <form
+                      className="flex gap-2"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void applyPromo(promoInput);
+                      }}
+                    >
+                      <input
+                        value={promoInput}
+                        onChange={(event) =>
+                          setPromoInput(event.target.value.toUpperCase())
+                        }
+                        placeholder="Promo code"
+                        aria-label="Promo code"
+                        maxLength={20}
+                        className="h-10 min-w-0 flex-1 rounded-xl border px-3 font-mono text-sm uppercase"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!promoInput.trim() || promoChecking}
+                        className="h-10 rounded-xl bg-secondary-900 px-4 text-sm font-semibold text-white disabled:opacity-50"
+                      >
+                        {promoChecking ? "Checking…" : "Apply"}
+                      </button>
+                    </form>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setPromoOpen(true)}
+                      className="text-left text-sm font-semibold text-secondary-700 underline-offset-4 hover:underline"
+                    >
+                      Have a promo code?
+                    </button>
+                  ))}
+
                 {totalPrice > 0 && !!userDetails && (
                   <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/50 p-3">
                     <div>
@@ -1116,11 +1278,13 @@ const TicketPage = () => {
 
                 <div className="flex items-center justify-between">
                   <p className="font-semibold text-lg">
-                    {creditApplied > 0 ? "To pay:" : "Total Price:"}
+                    {creditApplied > 0 || promoDiscount > 0
+                      ? "To pay:"
+                      : "Total Price:"}
                   </p>
                   <p className="text-xl font-bold text-primary-600">
                     {totalPrice > 0 &&
-                      (creditApplied > 0
+                      (creditApplied > 0 || promoDiscount > 0
                         ? toPay > 0
                           ? money(toPay)
                           : "Covered by credit"
@@ -1150,7 +1314,9 @@ const TicketPage = () => {
               >
                 {isPurchasing && "Processing..."}
                 {!isPurchasing &&
-                  (lines.length === 0 || linesOnSale ? "Continue" : "Not on sale")}
+                  (lines.length === 0 || linesOnSale
+                    ? "Continue"
+                    : "Not on sale")}
               </button>
             )}
           </>

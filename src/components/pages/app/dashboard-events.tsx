@@ -1,5 +1,7 @@
 ﻿"use client";
 
+import PromoteDialog from "@/components/pages/app/promote/promote-dialog";
+import EventRemovalAction from "@/components/pages/app/event-removal";
 import { deleteData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
@@ -17,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useEvents } from "@/hooks/use-event";
 import { IEventDetailsType } from "@/lib/types";
 import { useActingVendor } from "@/stores/workspace-store";
-import { CalendarDays, MapPin, Ticket } from "lucide-react";
+import { CalendarDays, MapPin, Megaphone, Ticket } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { memo, useMemo, useState } from "react";
@@ -38,9 +40,12 @@ const isUpcomingEvent = (date: Date | string) => {
 const EventManagementCard: React.FC<{
   event: IEventDetailsType;
   onDeleteRequest: (event: IEventDetailsType) => void;
-}> = ({ event, onDeleteRequest }) => {
+  onChanged: () => void;
+}> = ({ event, onDeleteRequest, onChanged }) => {
   const badgeLabel = isUpcomingEvent(event.date) ? "Upcoming" : "Past";
   const canManage = event.isOwner === true;
+  const canPromote = canManage && isUpcomingEvent(event.date);
+  const [promoting, setPromoting] = useState(false);
   const eventDescription =
     event.description || "Complete this event listing so attendees know what to expect.";
 
@@ -94,7 +99,11 @@ const EventManagementCard: React.FC<{
 
           <div className="px-4 py-3 font-semibold text-secondary-950">Status</div>
           <div className="px-4 py-3 text-secondary-500">
-            {badgeLabel === "Upcoming" ? "Ready to promote" : "Event has ended"}
+            {badgeLabel === "Upcoming"
+              ? event.manage?.promotion && !event.manage.promotion.ready
+                ? `${event.manage.promotion.done} of ${event.manage.promotion.total} ready to promote`
+                : "✓ Ready to promote"
+              : "Event has ended"}
           </div>
         </div>
       </div>
@@ -116,17 +125,27 @@ const EventManagementCard: React.FC<{
           <Link href={`/app/events/${event.id}`}>View</Link>
         </Button>
         {canManage && (
-          <Button
-            type="button"
-            variant="outline"
-            className="h-10 rounded-xl border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100"
-            onClick={() => onDeleteRequest(event)}
-          >
-            Delete
-          </Button>
+          <EventRemovalAction
+            event={event}
+            onDeleteRequest={onDeleteRequest}
+            onChanged={onChanged}
+          />
         )}
       </div>
+      {canPromote && (
+        <Button
+          type="button"
+          onClick={() => setPromoting(true)}
+          className="mt-2 h-10 w-full rounded-xl bg-linear-to-r from-secondary-500 to-primary text-sm font-bold text-white hover:opacity-90"
+        >
+          <Megaphone className="size-4" aria-hidden />
+          Promote
+        </Button>
+      )}
       </div>
+      {canPromote && (
+        <PromoteDialog event={event} open={promoting} onOpenChange={setPromoting} />
+      )}
     </article>
   );
 };
@@ -269,6 +288,7 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
                 key={event.id}
                 event={event}
                 onDeleteRequest={setEventToDelete}
+                onChanged={() => void refetch()}
               />
             ))}
         </div>

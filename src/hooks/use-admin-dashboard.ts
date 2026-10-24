@@ -119,7 +119,8 @@ export type TAdminPendingKey =
   | "catalogue"
   | "inquiries"
   | "supportChats"
-  | "refunds";
+  | "refunds"
+  | "boosts";
 
 /**
  * How much is waiting in each queue the admin may work on. Polled, and the

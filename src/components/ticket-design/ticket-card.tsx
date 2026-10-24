@@ -1,6 +1,6 @@
 "use client";
 
-import { formatEventTime } from "@/lib/event-time";
+import { formatEventTime, ticketDaysNote } from "@/lib/event-time";
 import { IEventDetailsType, IUserTicketType } from "@/lib/types";
 import { ROUTES } from "@/lib/variables";
 import { Button } from "@/components/ui/button";
@@ -95,9 +95,12 @@ const TicketCard: React.FC<TicketCardProps> = ({
   const scanValue =
     userTicket.qrCodeValue || userTicket.ticketCode || userTicket.code;
   const eventDate = event?.date ? new Date(event.date) : null;
-  const isEventPast = eventDate
-    ? startOfDay(eventDate) < startOfDay(new Date())
+  // A multi-day event is only over after its last day.
+  const eventEnd = event?.endDate ?? event?.date;
+  const isEventPast = eventEnd
+    ? startOfDay(new Date(eventEnd)) < startOfDay(new Date())
     : false;
+  const daysNote = ticketDaysNote(ticket?.dayIds, event);
 
   const handleDownload = useCallback(async () => {
     if (!ticketRef.current) return;
@@ -348,6 +351,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
               }}
             >
               {ticket.name}
+              {daysNote ? ` · ${daysNote}` : ""}
             </span>
             <span
               style={{

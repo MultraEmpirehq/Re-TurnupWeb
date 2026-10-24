@@ -182,6 +182,24 @@ export const eventDayName = (
   }).format(new Date(day.startsAt));
 };
 
+/**
+ * Which days of a multi-day event a ticket gets in on: "Every day · 3 days", or
+ * the days themselves. Null for a one-day event.
+ */
+export const ticketDaysNote = (
+  dayIds: string[] | undefined,
+  event?: {
+    days?: { id: string; startsAt: Date | string; label?: string | null }[];
+    timezone?: string | null;
+  } | null,
+) => {
+  const days = event?.days ?? [];
+  if (days.length < 2) return null;
+  const covered = dayIds?.length ? days.filter((day) => dayIds.includes(day.id)) : days;
+  if (covered.length === days.length) return `Every day · ${days.length} days`;
+  return covered.map((day) => eventDayName(day, event?.timezone)).join(" · ");
+};
+
 /** "18 – 20 Dec 2026" or "30 Dec 2026 – 1 Jan 2027", in the event's zone. */
 export const formatEventDateRange = (
   start: Date | string,
