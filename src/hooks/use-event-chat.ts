@@ -1,5 +1,6 @@
 import { getData, patchData, postData } from "@/api";
 import {
+  IChatSharedEvent,
   IEventChatGroup,
   IEventChatMessage,
   IEventChatParticipant,
@@ -23,7 +24,6 @@ export interface BackendChatConversation {
   eventName?: string;
   name?: string;
   conversationType?: "group" | "private";
-  type?: "EVENT_GROUP" | "DIRECT" | "SUPPORT";
   announcementMode?: boolean;
   memberListVisibility?: "visible" | "private";
   pinnedMessageId?: string;
@@ -31,6 +31,17 @@ export interface BackendChatConversation {
   lastActivityAt?: string;
   createdAt?: string;
   preview?: string;
+  /** Messages from others since this person last opened the chat. */
+  unreadCount?: number;
+  type?: "EVENT_GROUP" | "DIRECT" | "SUPPORT" | "PERSON";
+  status?: "ACTIVE" | "ARCHIVED";
+  title?: string;
+  memberCount?: number;
+  eventImage?: string;
+  eventDate?: string;
+  eventTimezone?: string;
+  otherLastReadAt?: string;
+  person?: { id: string; username: string | null; image: string | null } | null;
   metadata?: {
     eventName?: string;
     vendorName?: string;
@@ -121,6 +132,16 @@ const mapConversation = (chat: BackendChatConversation): IEventChatGroup => {
     isSupport: chat.type === "SUPPORT",
     announcementMode: !!chat.announcementMode,
     muted: !!chat.muted,
+    unreadCount: chat.unreadCount ?? 0,
+    chatKind: chat.type,
+    title: chat.title,
+    isClosed: chat.status === "ARCHIVED",
+    eventImage: chat.eventImage,
+    eventDate: chat.eventDate,
+    eventTimezone: chat.eventTimezone,
+    memberCount: chat.memberCount,
+    otherLastReadAt: chat.otherLastReadAt,
+    person: chat.person ?? null,
     memberListVisibility: chat.memberListVisibility || "visible",
     pinnedMessageId: chat.pinnedMessageId,
     vendor: {
@@ -175,7 +196,16 @@ export const mapBackendMessage = (
     reactedBy: [],
   })),
   hiddenByVendor: !!message.hiddenByVendor,
+  sharedEvent: isSharedEvent(message.metadata?.sharedEvent)
+    ? message.metadata.sharedEvent
+    : undefined,
 });
+
+const isSharedEvent = (value: unknown): value is IChatSharedEvent =>
+  !!value &&
+  typeof value === "object" &&
+  typeof (value as IChatSharedEvent).id === "string" &&
+  typeof (value as IChatSharedEvent).name === "string";
 
 const getBackendMessageHref = (message: BackendChatMessage) =>
   message.href ||
@@ -194,24 +224,52 @@ export const mapBackendMember = (
   avatar: member.profileImageUrl || undefined,
 });
 
+const fetchEventChats = async () => {
+  const response = await getData<BackendChatConversation[]>("/chats");
+  return normalizeListResponse<BackendChatConversation>(response.data.data).map(
+    mapConversation,
+  );
+};
+
 export const useEventChats = () =>
   useQuery({
     queryKey: ["event-chats"],
-    queryFn: async () => {
-      const response = await getData<BackendChatConversation[]>("/chats");
-      return normalizeListResponse<BackendChatConversation>(
-        response.data.data,
-      ).map(mapConversation);
-    },
+    queryFn: fetchEventChats,
     retry: 0,
+    // New chats and unread counts turn up without a reload.
+    refetchInterval: 30_000,
   });
 
-export const useEventChatMessages = (groupId?: string, enabled = true) =>
+/** Unread messages across the chats they haven't muted, for the nav badge. */
+export const useUnreadChatCount = (enabled = true) =>
   useQuery({
+    queryKey: ["event-chats"],
+    queryFn: fetchEventChats,
+    select: (groups) =>
+      groups.reduce(
+        (sum, group) => sum + (group.muted ? 0 : (group.unreadCount ?? 0)),
+        0,
+      ),
+    enabled,
+    retry: 0,
+    refetchInterval: 60_000,
+  }).data ?? 0;
+
+export const useEventChatMessages = (groupId?: string, enabled = true) => {
+  const queryClient = useQueryClient();
+  return useQuery({
     queryKey: ["event-chat-messages", groupId],
     queryFn: async () => {
       const response = await getData<BackendChatMessage[]>(
         `/chats/${groupId}/messages`,
+      );
+      // Opening the chat marks it read on the server; clear its badge here too.
+      queryClient.setQueryData<IEventChatGroup[]>(["event-chats"], (groups) =>
+        groups?.map((group) =>
+          group.id === groupId && group.unreadCount
+            ? { ...group, unreadCount: 0 }
+            : group,
+        ),
       );
       return normalizeListResponse<BackendChatMessage>(response.data.data).map(
         mapBackendMessage,
@@ -219,7 +277,10 @@ export const useEventChatMessages = (groupId?: string, enabled = true) =>
     },
     enabled: !!groupId && enabled,
     retry: 0,
+    // The open chat checks for new messages while it's on screen.
+    refetchInterval: 15_000,
   });
+};
 
 export const useEventChatMembers = (eventId?: string, enabled = true) =>
   useQuery({
@@ -347,6 +408,7 @@ export const useSendEventChatMessage = () => {
       assetName,
       href,
       metadata,
+      sharedEventId,
     }: {
       groupId: string;
       body: string;
@@ -355,6 +417,8 @@ export const useSendEventChatMessage = () => {
       assetName?: string;
       href?: string;
       metadata?: Record<string, unknown>;
+      /** An event to show as a card with the message. */
+      sharedEventId?: string;
     }) => {
       const response = await postData<
         {
@@ -364,6 +428,7 @@ export const useSendEventChatMessage = () => {
           assetName?: string;
           href?: string;
           metadata?: Record<string, unknown>;
+          sharedEventId?: string;
         },
         BackendChatMessage
       >(`/chats/${groupId}/messages`, {
@@ -373,6 +438,7 @@ export const useSendEventChatMessage = () => {
         assetName,
         href,
         metadata,
+        sharedEventId,
       });
       return response.data.data;
     },

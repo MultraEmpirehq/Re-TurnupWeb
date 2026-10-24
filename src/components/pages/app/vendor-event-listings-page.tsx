@@ -1,5 +1,8 @@
 "use client";
 
+import PromoteDialog from "@/components/pages/app/promote/promote-dialog";
+import { fetchBoost } from "@/hooks/use-boosts";
+import EventRemovalAction from "@/components/pages/app/event-removal";
 import { deleteData, patchData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
@@ -22,9 +25,9 @@ import { IEventDetailsType } from "@/lib/types";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
 import { useActingVendor } from "@/stores/workspace-store";
 import TextareaField from "@/components/ui/textarea-field";
-import { CalendarDays, MapPin, Ticket } from "lucide-react";
+import { CalendarDays, MapPin, Megaphone, Ticket } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -70,6 +73,8 @@ type TCardActions = {
   onSuspendRequest: (event: IEventDetailsType) => void;
   onRestore: (event: IEventDetailsType) => void;
   onContactRequest: (event: IEventDetailsType) => void;
+  /** Something about an event changed (archived, cancellation asked): reload. */
+  onChanged: () => void;
   restoringId: string | null;
 };
 
@@ -82,6 +87,7 @@ const EventListingCard: React.FC<{
   const isDraft = event.status === "draft";
   const isSuspended = event.status === "suspended";
   const isPendingReview = event.status === "pending_review";
+  const isCancelled = event.status === "cancelled";
   const isAdmin = useUserStore(
     (state) => state.userDetails?.role === EUserRoles.ADMIN,
   );
@@ -94,12 +100,18 @@ const EventListingCard: React.FC<{
   // Moderators take a published event down or bring a suspended one back.
   const canSuspend = canModerate && event.status === "published";
   const canRestore = canModerate && isSuspended;
+  // Their own live, upcoming events can be promoted.
+  const canPromote =
+    canEdit && event.status === "published" && isUpcomingEvent(eventDate);
+  const [promoting, setPromoting] = useState(false);
   const buttonCount =
     1 + Number(canEdit) + Number(canDelete) + Number(canSuspend || canRestore);
 
   const badgeLabel = isDraft
     ? "Draft"
-    : isPendingReview
+    : isCancelled
+      ? "Cancelled"
+      : isPendingReview
       ? "In review"
       : isUpcomingEvent(eventDate)
         ? "Upcoming"
@@ -243,9 +255,19 @@ const EventListingCard: React.FC<{
                   ? "Waiting for review"
                   : isSuspended
                     ? "Suspended"
-                    : badgeLabel === "Upcoming"
-                      ? "Ready to promote"
-                      : "Archived event"}
+                    : isCancelled
+                      ? "Cancelled, holders refunded"
+                      : event.manage?.archivedAt
+                        ? "Archived"
+                        : event.manage?.removal === "cancellation_pending"
+                          ? "Cancellation requested"
+                        : badgeLabel === "Upcoming"
+                          ? event.manage?.promotion
+                            ? event.manage.promotion.ready
+                              ? "✓ Ready to promote"
+                              : `${event.manage.promotion.done} of ${event.manage.promotion.total} ready to promote`
+                            : "Ready to promote"
+                          : "Ended"}
             </div>
           </div>
         </div>
@@ -300,18 +322,41 @@ const EventListingCard: React.FC<{
             </Button>
           )}
 
-          {canDelete && (
-            <Button
-              type="button"
-              variant="outline"
-              className="h-10 rounded-xl border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100"
-              onClick={() => actions.onDeleteRequest(event)}
-            >
-              Delete
-            </Button>
+          {/* The organiser's own: delete, or whatever stands in for it once
+              people hold tickets. A moderator's is always a plain delete. */}
+          {canEdit ? (
+            <EventRemovalAction
+              event={event}
+              onDeleteRequest={actions.onDeleteRequest}
+              onChanged={actions.onChanged}
+            />
+          ) : (
+            canDelete && (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 rounded-xl border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100"
+                onClick={() => actions.onDeleteRequest(event)}
+              >
+                Delete
+              </Button>
+            )
           )}
         </div>
+        {canPromote && (
+          <Button
+            type="button"
+            onClick={() => setPromoting(true)}
+            className="mt-2 h-10 w-full rounded-xl bg-linear-to-r from-secondary-500 to-primary text-sm font-bold text-white hover:opacity-90"
+          >
+            <Megaphone className="size-4" aria-hidden />
+            Promote
+          </Button>
+        )}
       </div>
+      {canPromote && (
+        <PromoteDialog event={event} open={promoting} onOpenChange={setPromoting} />
+      )}
     </article>
   );
 };
@@ -497,6 +542,25 @@ const VendorEventListingsPage = () => {
     [events],
   );
 
+  const cancelledEvents = useMemo(
+    () => events.filter((event) => event.status === "cancelled"),
+    [events],
+  );
+
+  // Events over and tucked away by the organiser; their own short list.
+  const { data: archivedData, refetch: refetchArchived } = useEvents(
+    { limit: 100, userId: userId ?? undefined, archived: true },
+    { enabled: !!userId && !isAdmin },
+  );
+  const archivedEvents = useMemo(
+    () => getEventsFromPages(archivedData?.pages),
+    [archivedData],
+  );
+  const reloadAll = () => {
+    void refetch();
+    void refetchArchived();
+  };
+
   const closeSuspendDialog = () => {
     setEventToSuspend(null);
     setSuspendReason("");
@@ -554,8 +618,31 @@ const VendorEventListingsPage = () => {
     onSuspendRequest: setEventToSuspend,
     onRestore: handleRestoreEvent,
     onContactRequest: (event: IEventDetailsType) => openContact(event),
+    onChanged: reloadAll,
     restoringId,
   };
+
+  // Back from paying for a boost (?boost=…): confirm it and say where it stands.
+  const boostParam = useSearchParams().get("boost");
+  const router = useRouter();
+  useEffect(() => {
+    if (!boostParam) return;
+    void fetchBoost(boostParam)
+      .then((boost) => {
+        if (!boost) return;
+        if (boost.phase === "live" || boost.phase === "scheduled") {
+          toast.success(`Your boost for ${boost.event.name} is on.`);
+        } else if (boost.phase === "in_review") {
+          toast.success("Boost paid. We're giving it a quick check, usually within an hour.");
+        } else if (boost.phase === "awaiting_payment") {
+          toast("We're still waiting to hear from the payment. It'll start once it's confirmed.");
+        } else if (boost.phase === "payment_failed") {
+          toast.error("The payment didn't go through, so the boost hasn't started.");
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => router.replace("/app/events"));
+  }, [boostParam, router]);
 
   const isLoading = !data && !error;
 
@@ -702,7 +789,7 @@ const VendorEventListingsPage = () => {
       )}
 
       <ListingSection
-        eyebrow="Archive"
+        eyebrow="Past"
         title={`${pastEvents.length} past event${
           pastEvents.length === 1 ? "" : "s"
         }`}
@@ -710,6 +797,30 @@ const VendorEventListingsPage = () => {
         emptyState="No past events yet."
         actions={cardActions}
       />
+
+      {cancelledEvents.length > 0 && (
+        <ListingSection
+          eyebrow="Cancelled"
+          title={`${cancelledEvents.length} cancelled event${
+            cancelledEvents.length === 1 ? "" : "s"
+          }`}
+          events={cancelledEvents}
+          emptyState="No cancelled events."
+          actions={cardActions}
+        />
+      )}
+
+      {archivedEvents.length > 0 && (
+        <ListingSection
+          eyebrow="Archived"
+          title={`${archivedEvents.length} archived event${
+            archivedEvents.length === 1 ? "" : "s"
+          }`}
+          events={archivedEvents}
+          emptyState="Nothing archived."
+          actions={cardActions}
+        />
+      )}
 
       <Dialog
         open={!!eventToDelete}

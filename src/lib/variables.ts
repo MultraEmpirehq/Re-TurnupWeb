@@ -226,6 +226,16 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Following",
     href: "/profile/following",
   },
+  PROFILE_EDIT: {
+    shouldShowIn: [],
+    label: "Edit profile",
+    href: "/profile/edit",
+  },
+  PROFILE_WALLET: {
+    shouldShowIn: [],
+    label: "Wallet",
+    href: "/profile/wallet",
+  },
   PROFILE_SETTINGS: {
     shouldShowIn: [],
     label: "Settings",

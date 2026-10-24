@@ -4,7 +4,7 @@ import { LogoWhiteSVG } from "@/assets/svg";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
-import { useAdminVerifications } from "@/hooks/use-admin-verifications";
+import { useAdminPendingCounts } from "@/hooks/use-admin-dashboard";
 import { cn } from "@/lib/utils";
 import useScrollFade from "@/hooks/use-scroll-fade";
 import { ROUTES } from "@/lib/variables";
@@ -14,7 +14,14 @@ import Image from "next/image";
 import useSignOut from "@/hooks/use-sign-out";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React, { Fragment, memo, useMemo, useRef, useState } from "react";
+import React, {
+  Fragment,
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ADMIN_NAV_GROUPS,
   isAdminNavItemActive,
@@ -45,15 +52,16 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
   );
   const firstDepartment = navGroups.find((group) => group.department);
 
-  // Same query the verifications page opens on, so the badge and the list share a
-  // cache entry and agree with each other.
-  const { data: pending } = useAdminVerifications({
-    status: "submitted",
-    search: "",
-    page: 1,
-    enabled: has("VENDORS_VERIFY") && !isLoadingPermissions,
-  });
-  const pendingCount = pending?.pagination?.total ?? 0;
+  // What's waiting in each queue; the api leaves out the ones they can't work on.
+  const { data: pending, refetch: refetchPending } = useAdminPendingCounts(
+    !isLoadingPermissions,
+  );
+  // Coming back from a queue usually means something in it was dealt with.
+  useEffect(() => {
+    void refetchPending();
+  }, [pathname, refetchPending]);
+  const pendingFor = (item: TAdminNavItem) =>
+    item.pendingKey ? (pending?.[item.pendingKey] ?? 0) : 0;
 
   // Departments start collapsed except the one holding the current page, and
   // opening a page elsewhere expands its department so the active link is visible.
@@ -85,7 +93,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
   const renderItem = (item: TAdminNavItem) => {
     const isActive = isAdminNavItemActive(pathname, item);
     const Icon = item.icon;
-    const badge = item.showsPendingVerifications ? pendingCount : 0;
+    const badge = pendingFor(item);
 
     return (
       <Link
@@ -104,7 +112,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
         {badge > 0 && (
           <span
             className="shrink-0 rounded-full bg-primary px-[7px] py-[3px] text-xs font-semibold text-white"
-            aria-label={`${badge} awaiting review`}
+            aria-label={`${badge} waiting`}
           >
             {badge}
           </span>
@@ -184,8 +192,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
             );
             // A collapsed department still shows what's waiting inside it.
             const groupBadge = group.items.reduce(
-              (sum, item) =>
-                sum + (item.showsPendingVerifications ? pendingCount : 0),
+              (sum, item) => sum + pendingFor(item),
               0,
             );
             const listId = `admin-nav-${group.label.toLowerCase().replace(/\s+/g, "-")}`;

@@ -1,8 +1,11 @@
-import VendorTicketDetailPage from "@/components/pages/app/ticket/vendor-ticket-detail-page";
-import React, { memo } from "react";
+import { redirect } from "next/navigation";
 
-const TicketDetailRoute = () => {
-  return <VendorTicketDetailPage />;
-};
-
-export default memo(TicketDetailRoute);
+/** Old ticket links open the ticket in the ledger's side panel. */
+export default async function TicketDetailRoute({
+  params,
+}: {
+  params: Promise<{ ticketId: string }>;
+}) {
+  const { ticketId } = await params;
+  redirect(`/app/tickets?ticket=${encodeURIComponent(ticketId)}`);
+}
