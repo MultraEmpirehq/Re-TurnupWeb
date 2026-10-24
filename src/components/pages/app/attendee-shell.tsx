@@ -29,10 +29,15 @@ const AttendeeShell: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   if (isVendorDashboard) return null;
 
+  // Chats use the whole width: a list, the chat, and its details side by side.
+  const isWide = pathname?.startsWith(ROUTES.MESSAGES.href);
+
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,rgba(244,248,255,0.92)_0%,rgba(255,255,255,1)_30%)]">
       <GeneralNavComponent />
-      <SectionContainer className="py-8 md:py-10">
+      <SectionContainer
+        className={isWide ? "max-w-[1760px] py-6 md:py-8" : "py-8 md:py-10"}
+      >
         {lockedSection ? (
           <RequireVendorVerification
             key={lockedSection.href}

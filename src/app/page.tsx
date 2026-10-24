@@ -1,3 +1,4 @@
+import { FeaturedBoost } from "@/components/pages/explore/sponsored";
 import AppShowcase from "@/components/pages/home/landing/app-showcase";
 import ClosingCta from "@/components/pages/home/landing/closing-cta";
 import ForOrganisers from "@/components/pages/home/landing/for-organisers";
@@ -9,6 +10,8 @@ export default function Home() {
   return (
     <div>
       <LandingHero />
+      {/* A boosted event, labelled Sponsored; nothing shows when none is live. */}
+      <FeaturedBoost />
       <AppShowcase />
       <ForOrganisers />
       {/* <VibeLinks /> */}

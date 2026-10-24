@@ -15,12 +15,15 @@ import {
   TRefundKind,
   TRefundStatus,
   useAdminRefunds,
+  ICancellationRequest,
   useCancelEventWithRefunds,
+  useCancellationRequests,
   useMarkDisputed,
   useOrderLookup,
   useRefundOrder,
   useRefundPreview,
   useRetryRefund,
+  useReviewCancellationRequest,
 } from "@/hooks/use-admin-refunds";
 import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
@@ -91,6 +94,7 @@ const Refunds = () => (
       for older payments). Refunding one order keeps Turnupz&apos;s fee;
       cancelling an event returns it. Everything here is audited.
     </PageHeading>
+    <CancellationRequests />
     <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
       <RefundAnOrder />
       <CancelEvent />
@@ -494,6 +498,149 @@ const CancelEvent = () => {
           Cancel event and refund all
         </Button>
       )}
+    </Card>
+  );
+};
+
+/* ------------------------------------------------- organisers' requests */
+
+const CancellationRequestRow: React.FC<{ request: ICancellationRequest }> = ({
+  request,
+}) => {
+  const review = useReviewCancellationRequest();
+  const [mode, setMode] = useState<"idle" | "approve" | "decline">("idle");
+  const [note, setNote] = useState("");
+  const decide = (decision: "approve" | "decline") =>
+    review.mutate(
+      { id: request.id, decision, reason: note.trim() || undefined },
+      {
+        onSuccess: () =>
+          toast.success(
+            decision === "approve"
+              ? `${request.event.name} cancelled. Refunds are on their way.`
+              : `Declined. ${request.organiser.name} has been told why.`,
+          ),
+        onError: (error) =>
+          toast.error(
+            constructErrorMessage(
+              error as TApiErrorResponseType,
+              "Couldn't review the request",
+            ),
+          ),
+      },
+    );
+
+  return (
+    <li className="space-y-3 py-4 first:pt-0 last:pb-0">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-1">
+          <a
+            href={`/app/events/${request.event.id}`}
+            className="font-semibold hover:underline"
+          >
+            {request.event.name}
+          </a>
+          <p className="text-xs text-muted-foreground">
+            {format(new Date(request.event.date), "EEE d MMM yyyy, HH:mm")} · by{" "}
+            {request.organiser.name} ({request.organiser.email}) · asked{" "}
+            {formatDistanceToNow(new Date(request.createdAt), { addSuffix: true })}
+          </p>
+          <p className="text-sm">&ldquo;{request.reason}&rdquo;</p>
+        </div>
+        <div className="flex shrink-0 gap-4 text-sm sm:text-right">
+          <span>
+            <b className="block text-lg">{request.holders.toLocaleString()}</b>
+            <span className="text-xs text-muted-foreground">ticket holders</span>
+          </span>
+          <span>
+            <b className="block text-lg">{request.ordersToRefund.toLocaleString()}</b>
+            <span className="text-xs text-muted-foreground">orders to refund</span>
+          </span>
+        </div>
+      </div>
+
+      {mode === "idle" && (
+        <div className="flex gap-2">
+          <Button variant="destructive" size="sm" onClick={() => setMode("approve")}>
+            Approve and refund all
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setMode("decline")}>
+            Decline
+          </Button>
+        </div>
+      )}
+      {mode === "approve" && (
+        <div className="space-y-3 rounded-lg border-2 border-red-200 bg-red-50 p-3 text-sm text-red-900">
+          <p className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            Cancel {request.event.name} and refund all {request.holders.toLocaleString()}{" "}
+            ticket holders in full? Every ticket stops working. This can&apos;t be undone.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => decide("approve")}
+              disabled={review.isPending}
+            >
+              {review.isPending ? "Cancelling…" : "Yes, cancel it"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setMode("idle")}
+              disabled={review.isPending}
+            >
+              Back
+            </Button>
+          </div>
+        </div>
+      )}
+      {mode === "decline" && (
+        <div className="space-y-2">
+          <Textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            rows={2}
+            placeholder="Tell the organiser why, e.g. move the date instead and we'll help tell holders."
+          />
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => decide("decline")}
+              disabled={!note.trim() || review.isPending}
+            >
+              {review.isPending ? "Sending…" : "Decline and tell them"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setMode("idle")}
+              disabled={review.isPending}
+            >
+              Back
+            </Button>
+          </div>
+        </div>
+      )}
+    </li>
+  );
+};
+
+/** Waiting requests only; the section isn't shown when there are none. */
+const CancellationRequests = () => {
+  const { data: requests = [] } = useCancellationRequests();
+  if (!requests.length) return null;
+  return (
+    <Card
+      title={`Cancellation requests (${requests.length})`}
+      description="Organisers asking to call off an event people hold tickets for. Approving cancels it and refunds every buyer in full, Turnupz's fee included."
+    >
+      <ul className="divide-y divide-border">
+        {requests.map((request) => (
+          <CancellationRequestRow key={request.id} request={request} />
+        ))}
+      </ul>
     </Card>
   );
 };

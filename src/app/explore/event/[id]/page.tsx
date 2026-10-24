@@ -24,9 +24,11 @@ import HideEventButton from "@/components/pages/explore/event-detail/hide-event-
 import EventDetailLineup from "@/components/pages/explore/event-detail/event-detail-lineup";
 import EventDetailSchedule from "@/components/pages/explore/event-detail/event-detail-schedule";
 import FollowButton from "@/components/discovery/follow-button";
+import MessageOrganiserButton from "@/components/pages/explore/event-detail/message-organiser-button";
 import Link from "next/link";
 import { ROUTES } from "@/lib/variables";
-import { eventShareUrl, rememberShareRef } from "@/lib/share-ref";
+import { eventShareUrl, rememberArrival, rememberShareRef } from "@/lib/share-ref";
+import { postData } from "@/api";
 import useUserStore from "@/stores/user-store";
 import ExploreBackLink from "@/components/pages/explore/explore-back-link";
 
@@ -42,6 +44,16 @@ const EventDetails = () => {
   React.useEffect(() => {
     rememberShareRef(id, arrivedRef);
   }, [id, arrivedRef]);
+  // From a notification (?src=followers) or a promoter's link (?code=TUNDE10).
+  const arrivedSrc = searchParams?.get("src");
+  const arrivedCode = searchParams?.get("code");
+  React.useEffect(() => {
+    rememberArrival(id, { src: arrivedSrc, code: arrivedCode });
+  }, [id, arrivedSrc, arrivedCode]);
+  // Counts the visit for the organiser's results (once a day per visitor, on the server).
+  React.useEffect(() => {
+    if (id) void postData(`/event/${id}/view`, {}).catch(() => undefined);
+  }, [id]);
   // Shared on, it carries their own username so a purchase earns them credit.
   const myUsername = useUserStore((state) => state.userDetails?.username);
   const shareUrl =
@@ -166,11 +178,14 @@ const EventDetails = () => {
               {data.organizerName || "See this planner's events"}
             </Link>
           </div>
-          <FollowButton
-            type="PLANNER"
-            id={data.organizerId}
-            name={data.organizerName || "this planner"}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <MessageOrganiserButton eventId={id} isOwner={data?.isOwner} />
+            <FollowButton
+              type="PLANNER"
+              id={data.organizerId}
+              name={data.organizerName || "this planner"}
+            />
+          </div>
         </section>
       )}
 

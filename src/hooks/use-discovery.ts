@@ -238,6 +238,8 @@ export const useToggleFollow = () => {
         );
       }
       queryClient.invalidateQueries({ queryKey: ["follows"] });
+      // Follower numbers and lists on profiles.
+      queryClient.invalidateQueries({ queryKey: ["person"] });
     },
   });
 };

@@ -189,11 +189,37 @@ export interface IEventBlogPostDetails {
   updatedAt?: string;
 }
 
+/**
+ * What "remove" means for one of the organiser's events. Nobody holds a ticket:
+ * delete it. People do and it's still to come: ask Turnupz to cancel and refund
+ * them. It's over: archive it out of the way.
+ */
+export interface IEventManageState {
+  holders: number;
+  isOver: boolean;
+  archivedAt: string | null;
+  cancellationRequest: {
+    id: string;
+    status: "pending" | "approved" | "declined" | "withdrawn";
+    reason: string;
+    reviewNote: string | null;
+    createdAt: string;
+  } | null;
+  /** How ready it is to promote: the essentials, plus a line-up and a reason to buy now. */
+  promotion: { ready: boolean; done: number; total: number; missing: string[] };
+  removal:
+    | "delete"
+    | "request_cancellation"
+    | "cancellation_pending"
+    | "archive"
+    | "archived";
+}
+
 export interface IEventDetailsType {
   id: string;
   name: string;
   date: Date;
-  status?: "draft" | "pending_review" | "published" | "suspended";
+  status?: "draft" | "pending_review" | "published" | "suspended" | "cancelled";
   /** Why an admin suspended the event; present only while suspended. */
   suspensionReason?: string | null;
   /** What an admin asked the organiser to change; only the organiser sees it. */
@@ -202,6 +228,10 @@ export interface IEventDetailsType {
   timezone?: string;
   /** True when the signed-in viewer created this event; only they may edit or delete it. */
   isOwner?: boolean;
+  /** How it's selling, from Turnupz: labels shown on its card. */
+  momentum?: { sellingFast: boolean; almostGone: boolean; soldOut: boolean } | null;
+  /** In the organiser's own listings: how this event can be taken down. */
+  manage?: IEventManageState | null;
   draftStep?: number;
   draftSnapshot?: Record<string, unknown>;
   venue?: IVenueDetailsType;
@@ -238,6 +268,8 @@ export interface IEventDetailsType {
   days?: IEventDayDetails[];
   /** When a multi-day event ends; null for a one-day event. */
   endDate?: string | null;
+  /** What its tickets are priced in, e.g. "NGN". */
+  currency?: string;
   isFavorite?: boolean;
   customCategoryName?: string;
   country?: string;
@@ -296,6 +328,8 @@ export enum ETicketStatus {
 }
 
 export interface IOrderTicketType {
+  /** For a multi-day event: the days it admits on. Empty means every day. */
+  dayIds?: string[];
   id: string;
   name: string;
   type: string;
@@ -340,6 +374,7 @@ export type TicketTransferResponseType = {
 
 export type UserTicketDetailsTicketType = {
   id: string;
+  eventId?: string;
   event: IEventDetailsType;
   name: string;
   type: string;
@@ -350,6 +385,8 @@ export type UserTicketDetailsTicketType = {
   available: number;
   transferable?: boolean;
   isTransferable?: boolean;
+  /** For a multi-day event: the days it admits on. Empty means every day. */
+  dayIds?: string[];
 };
 
 export type UserTicketDetailsResponseType = {
@@ -597,7 +634,8 @@ export interface IEventLocation {
   cities: { name: string; count: number }[];
 }
 
-export type TFollowTargetType = "PERFORMER" | "VENUE" | "PLANNER";
+/** PERSON is anyone on Turnupz, by their user id. */
+export type TFollowTargetType = "PERFORMER" | "VENUE" | "PLANNER" | "PERSON";
 
 export interface IFollowedItem {
   targetType: TFollowTargetType;

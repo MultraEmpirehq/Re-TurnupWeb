@@ -15,8 +15,11 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { memo, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status";
-import { useActiveWorkspace } from "@/stores/workspace-store";
+import { useUnreadChatCount } from "@/hooks/use-event-chat";
+import { usePendingApprovalCount } from "@/hooks/use-vendor-tickets";
+import { useActingVendor, useActiveWorkspace } from "@/stores/workspace-store";
 import {
+  TVendorNavItem,
   isVendorNavItemActive,
   navItemsFor,
   verificationMessageFor,
@@ -38,6 +41,18 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
     () => navItemsFor(workspace?.permissions ?? null),
     [workspace],
   );
+  const { can } = useActingVendor();
+  const unreadChats = useUnreadChatCount();
+  // The ledger needs sales access to list them, so only then is the count useful.
+  const pendingApprovals = usePendingApprovalCount(
+    isApproved && can("SALES_VIEW"),
+  );
+  const badgeFor = (item: TVendorNavItem) =>
+    item.badge === "chats"
+      ? unreadChats
+      : item.badge === "approvals" && can("SALES_VIEW")
+        ? pendingApprovals
+        : 0;
 
   const displayName = useMemo(() => {
     const fromParts = [userDetails?.firstName, userDetails?.lastName]
@@ -124,15 +139,33 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
               );
             }
 
+            const badge = badgeFor(item);
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                // Bookings to approve open the ledger on just those.
+                href={
+                  badge && item.badge === "approvals"
+                    ? `${item.href}?status=pending`
+                    : item.href
+                }
                 aria-current={isActive ? "page" : undefined}
                 className={itemClassName}
               >
                 <Icon className="size-[18px] shrink-0" aria-hidden />
                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                {badge > 0 && (
+                  <span
+                    className="shrink-0 rounded-full bg-primary px-[7px] py-[3px] text-xs font-semibold text-white tabular-nums"
+                    aria-label={
+                      item.badge === "chats"
+                        ? `${badge} unread`
+                        : `${badge} waiting for approval`
+                    }
+                  >
+                    {badge > 99 ? "99+" : badge}
+                  </span>
+                )}
               </Link>
             );
           })}

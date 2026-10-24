@@ -76,6 +76,20 @@ const TicketCard: React.FC<{
             {event.category.name}
           </span>
         )}
+        {/* How it's selling, worked out by Turnupz. */}
+        {event.momentum?.soldOut ? (
+          <span className="absolute top-3 right-3 rounded-full bg-amber-300 px-3 py-1 text-xs font-extrabold text-secondary-950">
+            🏆 Sold out
+          </span>
+        ) : event.momentum?.almostGone ? (
+          <span className="absolute top-3 right-3 rounded-full bg-amber-400 px-3 py-1 text-xs font-extrabold text-secondary-950">
+            Almost gone
+          </span>
+        ) : event.momentum?.sellingFast ? (
+          <span className="absolute top-3 right-3 rounded-full bg-orange-500 px-3 py-1 text-xs font-extrabold text-white">
+            🔥 Selling fast
+          </span>
+        ) : null}
       </div>
 
       {/* The perforation: two notches and a dashed tear line. */}

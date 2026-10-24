@@ -25,6 +25,8 @@ export type TVendorNavItem = {
    * sees it; an empty list means the account owner only.
    */
   permissions?: TVendorPermission[];
+  /** A count beside it of what's waiting: unread chats or bookings to approve. */
+  badge?: "chats" | "approvals";
 };
 
 export const VENDOR_NAV_ITEMS: TVendorNavItem[] = [
@@ -62,10 +64,16 @@ export const VENDOR_NAV_ITEMS: TVendorNavItem[] = [
     icon: Ticket,
     requiresVerification: true,
     permissions: ["SALES_VIEW", "SCANNERS_MANAGE", "REGISTRATIONS_REVIEW"],
+    badge: "approvals",
   },
   // Open to everyone: attendees and unverified vendors chat in the groups of events
   // they're going to.
-  { label: "Chats", href: ROUTES.MESSAGES.href, icon: MessagesSquare },
+  {
+    label: "Chats",
+    href: ROUTES.MESSAGES.href,
+    icon: MessagesSquare,
+    badge: "chats",
+  },
   {
     label: "Analysis",
     href: ROUTES.ANALYSIS.href,

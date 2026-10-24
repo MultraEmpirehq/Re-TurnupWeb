@@ -46,6 +46,12 @@ const chats: TAccountLink = {
   href: ROUTES.MESSAGES.href,
   icon: MessagesSquare,
 };
+// Turnupz Credit and saved cards.
+const wallet: TAccountLink = {
+  label: ROUTES.PROFILE_WALLET.label,
+  href: ROUTES.PROFILE_WALLET.href,
+  icon: Wallet,
+};
 const following: TAccountLink = {
   label: ROUTES.PROFILE_FOLLOWING.label,
   href: ROUTES.PROFILE_FOLLOWING.href,
@@ -86,6 +92,7 @@ const ATTENDEE_NAV: TAccountNav = {
       { label: "Profile", href: ROUTES.USER_PROFILE.href, icon: User },
       myTickets,
       myOrders,
+      wallet,
       chats,
       following,
       {

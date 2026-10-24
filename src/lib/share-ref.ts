@@ -38,3 +38,49 @@ export const eventShareUrl = (eventId: string, username?: string | null) => {
   const base = `${typeof window !== "undefined" ? window.location.origin : ""}/explore/event/${encodeURIComponent(eventId)}`;
   return username ? `${base}?ref=${encodeURIComponent(username)}` : base;
 };
+
+// Where a buyer came from (?src=followers from a notification) and a promoter's
+// code in the link (?code=TUNDE10), kept per event the same way as the ref.
+const EXTRA_KEY = "turnupz-event-arrivals";
+type TArrival = { src?: string; code?: string; at: number };
+
+const readArrivals = (): Record<string, TArrival> => {
+  try {
+    return JSON.parse(localStorage.getItem(EXTRA_KEY) ?? "{}") as Record<
+      string,
+      TArrival
+    >;
+  } catch {
+    return {};
+  }
+};
+
+export const rememberArrival = (
+  eventId: string,
+  arrival: { src?: string | null; code?: string | null },
+) => {
+  const src = arrival.src?.trim();
+  const code = arrival.code?.trim().toUpperCase();
+  if (!eventId || (!src && !code)) return;
+  try {
+    const all = readArrivals();
+    const current = all[eventId];
+    all[eventId] = {
+      src: src || current?.src,
+      code: code || current?.code,
+      at: Date.now(),
+    };
+    localStorage.setItem(EXTRA_KEY, JSON.stringify(all));
+  } catch {
+    // Storage blocked: the link still works for this visit via the URL.
+  }
+};
+
+export const readArrival = (
+  eventId: string,
+): { src?: string; code?: string } => {
+  const entry = readArrivals()[eventId];
+  return entry && Date.now() - entry.at < KEEP_MS
+    ? { src: entry.src, code: entry.code }
+    : {};
+};

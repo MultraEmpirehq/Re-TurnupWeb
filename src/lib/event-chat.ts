@@ -38,7 +38,21 @@ export interface IEventChatMessage {
   reactions?: IEventChatReaction[];
   hiddenByVendor?: boolean;
   reportedBy?: string[];
+  /** An event someone shared in the message, shown as a card. */
+  sharedEvent?: IChatSharedEvent;
 }
+
+export interface IChatSharedEvent {
+  id: string;
+  name: string;
+  date: string;
+  timezone?: string;
+  image?: string | null;
+  place?: string | null;
+}
+
+/** What kind of chat: an event's group, a chat with an organiser, the Turnupz team, or two people. */
+export type TChatKind = "EVENT_GROUP" | "DIRECT" | "SUPPORT" | "PERSON";
 
 export interface IEventChatGroup {
   id: string;
@@ -53,6 +67,20 @@ export interface IEventChatGroup {
   isSupport?: boolean;
   announcementMode?: boolean;
   muted?: boolean;
+  unreadCount?: number;
+  chatKind?: TChatKind;
+  /** For a chat with an organiser: the event it's about. */
+  title?: string;
+  /** An event's chat closes a few days after it; it can still be read. */
+  isClosed?: boolean;
+  eventImage?: string;
+  eventDate?: string;
+  eventTimezone?: string;
+  memberCount?: number;
+  /** One-to-one chats: when the other person last read it, for "Seen". */
+  otherLastReadAt?: string;
+  /** Chats between two people: the other person. */
+  person?: { id: string; username: string | null; image: string | null } | null;
   memberListVisibility?: "visible" | "private";
   pinnedMessageId?: string;
   vendor: IEventChatParticipant;
