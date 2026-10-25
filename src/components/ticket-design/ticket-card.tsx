@@ -1,6 +1,7 @@
 "use client";
 
 import { formatEventTime, ticketDaysNote } from "@/lib/event-time";
+import { useLiveCode } from "@/lib/live-code";
 import { IEventDetailsType, IUserTicketType } from "@/lib/types";
 import { ROUTES } from "@/lib/variables";
 import { Button } from "@/components/ui/button";
@@ -101,6 +102,13 @@ const TicketCard: React.FC<TicketCardProps> = ({
     ? startOfDay(new Date(eventEnd)) < startOfDay(new Date())
     : false;
   const daysNote = ticketDaysNote(ticket?.dayIds, event);
+  // Live: the QR changes every 30 seconds, so a screenshot won't get in.
+  const live = useLiveCode(
+    userTicket.liveCode,
+    userTicket.code,
+    scanValue,
+    !isEventPast && !isRegistrationBlocked,
+  );
 
   const handleDownload = useCallback(async () => {
     if (!ticketRef.current) return;
@@ -482,14 +490,83 @@ const TicketCard: React.FC<TicketCardProps> = ({
                 opacity: isRegistrationBlocked ? 0.45 : 1,
               }}
             >
-              <QRCodeSVG
-                value={scanValue}
-                size={80}
-                level="M"
-                bgColor="#ffffff"
-                fgColor="#000000"
-              />
+              {live.live && isDownloading ? (
+                // A saved copy can't change, so it wouldn't scan: say so instead.
+                <div
+                  style={{
+                    width: 80,
+                    height: 80,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center",
+                    fontSize: 8,
+                    fontWeight: 800,
+                    lineHeight: 1.3,
+                    color: "#0b1d2a",
+                  }}
+                >
+                  Open this ticket on turnupz.com or in the Turnupz app at the
+                  door
+                </div>
+              ) : (
+                <QRCodeSVG
+                  value={live.value}
+                  size={80}
+                  level="M"
+                  bgColor="#ffffff"
+                  fgColor="#000000"
+                />
+              )}
             </div>
+
+            {live.live && !isDownloading && (
+              <div style={{ marginTop: 6, width: 92 }} aria-live="polite">
+                <p
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 5,
+                    fontSize: 9,
+                    fontWeight: 800,
+                    color: "#ffffff",
+                    margin: 0,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  <span
+                    className="animate-pulse"
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: 9999,
+                      background: "#34d399",
+                      display: "inline-block",
+                    }}
+                  />
+                  Live · {live.secondsLeft}s
+                </p>
+                <div
+                  style={{
+                    marginTop: 4,
+                    height: 3,
+                    borderRadius: 9999,
+                    background: "rgba(255,255,255,0.25)",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      height: 3,
+                      width: `${(live.secondsLeft / live.windowSeconds) * 100}%`,
+                      background: "#ffffff",
+                      transition: "width 1s linear",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
 
             {isRegistrationBlocked && (
               <p
@@ -516,7 +593,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
                 lineHeight: 1.3,
               }}
             >
-              {scanValue}
+              {live.live ? userTicket.code : scanValue}
             </p>
           </div>
         </div>

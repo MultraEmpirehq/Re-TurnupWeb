@@ -78,7 +78,6 @@ export interface BackendChatMessage {
 export interface BackendChatMember {
   userId: string;
   name: string;
-  email: string;
   username?: string;
   role: "vendor" | "scanner" | "attendee";
   profileImageUrl: string | null;
@@ -217,8 +216,8 @@ export const mapBackendMember = (
   member: BackendChatMember,
 ): IEventChatParticipant => ({
   id: member.userId,
-  name: member.name || member.username || member.email || "Turnupz Member",
-  email: member.email,
+  name: member.name || (member.username ? `@${member.username}` : "Turnupz Member"),
+  username: member.username,
   role: member.role === "vendor" ? "vendor" : "member",
   memberRole: toParticipantRole(member.role),
   avatar: member.profileImageUrl || undefined,
