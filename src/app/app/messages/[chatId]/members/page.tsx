@@ -194,7 +194,7 @@ const GroupMembersPage = () => {
                   {vendorMember.name}
                 </p>
                 <p className="truncate text-xs text-secondary-500">
-                  {vendorMember.email || "No email shown"}
+                  {vendorMember.username ? `@${vendorMember.username}` : "Organiser"}
                 </p>
               </div>
               <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
@@ -249,7 +249,7 @@ const GroupMembersPage = () => {
                       {member.name}
                     </p>
                     <p className="truncate text-xs text-secondary-500">
-                      {member.email || "No email shown"}
+                      {member.username ? `@${member.username}` : "Turnupz member"}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {member.reportedAt ? (

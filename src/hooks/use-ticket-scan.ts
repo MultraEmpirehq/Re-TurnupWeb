@@ -15,6 +15,10 @@ export type TScanResult = {
   scannerEmail?: string | null;
   dayId?: string;
   dayName?: string;
+  /** A typed code: check their ID matches the name. */
+  checkId?: boolean;
+  /** Let in again by the team, with a reason. */
+  readmitted?: boolean;
 };
 
 export type TScanDaySummary = {
@@ -55,23 +59,55 @@ export const useScanSummary = (eventId?: string) =>
   });
 
 /** Checks a ticket in for an event (an organiser, team member or door scanner). */
+/** `typed`: staff typed the code in, so the answer asks them to check ID. */
 export const scanEventTicket = async (
   eventId: string,
   code: string,
   dayId?: string,
+  typed = false,
 ) => {
   const { data } = await postData<
-    { code: string; dayId?: string },
+    { code: string; dayId?: string; typed?: boolean },
     TScanResult
-  >(`/event/${eventId}/scan`, { code, ...(dayId ? { dayId } : {}) });
+  >(`/event/${eventId}/scan`, {
+    code,
+    ...(dayId ? { dayId } : {}),
+    ...(typed ? { typed: true } : {}),
+  });
+  return data?.data as TScanResult;
+};
+
+/** Letting someone in again whose ticket shows as used; the reason is recorded. */
+export const readmitEventTicket = async (
+  eventId: string,
+  code: string,
+  reason: string,
+  dayId?: string,
+) => {
+  const { data } = await postData<
+    { code: string; reason: string; dayId?: string },
+    TScanResult
+  >(`/event/${eventId}/scan/readmit`, {
+    code,
+    reason,
+    ...(dayId ? { dayId } : {}),
+  });
   return data?.data as TScanResult;
 };
 
 /** An admin's check-in for any event, by code alone. */
-export const adminScanTicket = async (code: string, dayId?: string) => {
+export const adminScanTicket = async (
+  code: string,
+  dayId?: string,
+  typed = false,
+) => {
   const { data } = await postData<
-    { code: string; dayId?: string },
+    { code: string; dayId?: string; typed?: boolean },
     TScanResult
-  >("/admin/scan", { code, ...(dayId ? { dayId } : {}) });
+  >("/admin/scan", {
+    code,
+    ...(dayId ? { dayId } : {}),
+    ...(typed ? { typed: true } : {}),
+  });
   return data?.data as TScanResult;
 };

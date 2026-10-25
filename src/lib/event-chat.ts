@@ -10,7 +10,8 @@ export interface IEventChatParticipant {
   role: "vendor" | "member";
   /** "team" is Turnupz staff, in a support chat. */
   memberRole?: "vendor" | "scanner" | "attendee" | "team";
-  email?: string;
+  /** Shown as @username. Chats never show anyone's email. */
+  username?: string;
   avatar?: string;
   isBlocked?: boolean;
   reportedAt?: string;
@@ -126,7 +127,7 @@ const toVendorParticipant = (
   role: "vendor",
   memberRole: "vendor",
   avatar: user?.avatar,
-  email: user?.email,
+  username: user?.username,
 });
 
 const toMemberParticipant = (
@@ -142,7 +143,7 @@ const toMemberParticipant = (
       "Turnupz Member",
     role: "member",
     memberRole: "attendee",
-    email: user.email,
+    username: user.username,
     avatar: user.avatar,
   };
 };

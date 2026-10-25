@@ -31,6 +31,7 @@ function toUserTicketType(ut: UserTicketDetailsResponseType): IUserTicketType {
     code: ut.code,
     ticketCode: ut.ticketCode,
     qrCodeValue: ut.qrCodeValue,
+    liveCode: ut.liveCode,
     barcodeValue: ut.barcodeValue,
     createdAt: ut.createdAt,
     status: (ut.status as ETicketStatus) ?? ETicketStatus.UN_USED,

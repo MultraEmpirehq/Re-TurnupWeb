@@ -4,6 +4,7 @@ import ScanProgress from "@/components/scanning/scan-progress";
 import TicketScanner from "@/components/scanning/ticket-scanner";
 import { useEvents } from "@/hooks/use-event";
 import {
+  readmitEventTicket,
   scanEventTicket,
   scanSummaryKey,
   useScanSummary,
@@ -69,7 +70,11 @@ const VendorScanPage = () => {
     : undefined;
 
   const onScan = useCallback(
-    (code: string) => scanEventTicket(eventId, code, dayId),
+    (code: string, typed: boolean) => scanEventTicket(eventId, code, dayId, typed),
+    [eventId, dayId],
+  );
+  const onReadmit = useCallback(
+    (code: string, reason: string) => readmitEventTicket(eventId, code, reason, dayId),
     [eventId, dayId],
   );
   const onScanned = useCallback(
@@ -94,6 +99,7 @@ const VendorScanPage = () => {
         <div className="order-2 lg:order-1">
           <TicketScanner
             onScan={onScan}
+            onReadmit={onReadmit}
             onScanned={onScanned}
             disabled={!eventId}
             disabledMessage={
