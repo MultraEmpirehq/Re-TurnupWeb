@@ -21,6 +21,12 @@ type TLogEntry = TScanResult & { code: string; at: number };
 /** How long a result stays up before the camera reads again. */
 const RESULT_MS = 2600;
 
+/** Reasons staff usually have for letting someone in again; they can write their own. */
+const READMIT_REASONS = [
+  "Checked ID: the first scan was a screenshot",
+  "Stepped out and came back",
+];
+
 const TONE = {
   approved: {
     icon: CheckCircle2,
@@ -56,26 +62,31 @@ const timeOf = (value?: string | null) =>
  * without looking: one for in, three for a problem.
  */
 const TicketScanner: React.FC<{
-  onScan: (code: string) => Promise<TScanResult>;
+  /** `typed`: the code was typed in, not read from a QR. */
+  onScan: (code: string, typed: boolean) => Promise<TScanResult>;
+  /** Letting the real holder in again (the organiser's team and admins). */
+  onReadmit?: (code: string, reason: string) => Promise<TScanResult>;
   /** Called after every answer, e.g. to refresh the door count. */
   onScanned?: (result: TScanResult) => void;
   disabled?: boolean;
   disabledMessage?: string;
-}> = ({ onScan, onScanned, disabled, disabledMessage }) => {
+}> = ({ onScan, onReadmit, onScanned, disabled, disabledMessage }) => {
   const [mode, setMode] = useState<"camera" | "manual">("camera");
   const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<TLogEntry | null>(null);
   const [log, setLog] = useState<TLogEntry[]>([]);
+  const [readmitting, setReadmitting] = useState(false);
+  const [reason, setReason] = useState("");
 
   const submit = useCallback(
-    async (value: string) => {
+    async (value: string, typed = false) => {
       const trimmed = value.trim();
       if (!trimmed || pending || disabled) return;
       setPending(true);
       let entry: TLogEntry;
       try {
-        const answer = await onScan(trimmed);
+        const answer = await onScan(trimmed, typed);
         entry = { ...answer, code: trimmed, at: Date.now() };
       } catch (error) {
         entry = {
@@ -94,13 +105,46 @@ const TicketScanner: React.FC<{
       navigator.vibrate?.(entry.status === "approved" ? 120 : [80, 60, 80, 60, 80]);
       onScanned?.(entry);
       setCode("");
-      window.setTimeout(
-        () => setResult((current) => (current?.at === entry.at ? null : current)),
-        RESULT_MS,
-      );
+      setReadmitting(false);
+      // "Already checked in" stays up while there's a decision to make.
+      if (!(entry.status === "already_checked_in" && onReadmit)) {
+        window.setTimeout(
+          () => setResult((current) => (current?.at === entry.at ? null : current)),
+          RESULT_MS,
+        );
+      }
     },
-    [disabled, onScan, onScanned, pending],
+    [disabled, onReadmit, onScan, onScanned, pending],
   );
+
+  const letInAgain = async (why: string) => {
+    if (!result || !onReadmit || why.trim().length < 3) return;
+    setPending(true);
+    let entry: TLogEntry;
+    try {
+      entry = { ...(await onReadmit(result.code, why.trim())), code: result.code, at: Date.now() };
+    } catch (error) {
+      entry = {
+        ...result,
+        status: "denied",
+        message: constructErrorMessage(
+          error as TApiErrorResponseType,
+          "Couldn't let them in again. Try once more.",
+        ),
+        at: Date.now(),
+      };
+    }
+    setPending(false);
+    setReadmitting(false);
+    setReason("");
+    setResult(entry);
+    setLog((current) => [entry, ...current].slice(0, 12));
+    onScanned?.(entry);
+    window.setTimeout(
+      () => setResult((current) => (current?.at === entry.at ? null : current)),
+      RESULT_MS,
+    );
+  };
 
   const tone = result ? TONE[result.status] : null;
 
@@ -148,7 +192,7 @@ const TicketScanner: React.FC<{
             <form
               onSubmit={(event) => {
                 event.preventDefault();
-                void submit(code);
+                void submit(code, true);
               }}
               className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-5 sm:flex-row"
             >
@@ -209,6 +253,73 @@ const TicketScanner: React.FC<{
                   <> by {result.scannerEmail}</>
                 )}
               </p>
+              {result.checkId && (
+                <p className="mt-2 inline-block rounded-full bg-white/70 px-3 py-1 text-xs font-bold">
+                  Check their ID says {result.attendeeName}
+                </p>
+              )}
+              {result.status === "already_checked_in" && onReadmit && (
+                <div className="mt-3 space-y-2">
+                  {readmitting ? (
+                    <>
+                      <p className="text-sm font-semibold">
+                        Why are you letting them in again?
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {READMIT_REASONS.map((item) => (
+                          <Button
+                            key={item}
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={pending}
+                            onClick={() => void letInAgain(item)}
+                          >
+                            {item}
+                          </Button>
+                        ))}
+                      </div>
+                      <form
+                        className="flex gap-2"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          void letInAgain(reason);
+                        }}
+                      >
+                        <Input
+                          value={reason}
+                          onChange={(event) => setReason(event.target.value)}
+                          placeholder="Or say why"
+                          maxLength={200}
+                          aria-label="Reason for letting them in again"
+                          className="h-9 bg-white"
+                        />
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={pending || reason.trim().length < 3}
+                        >
+                          Let in
+                        </Button>
+                      </form>
+                    </>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button type="button" size="sm" onClick={() => setReadmitting(true)}>
+                        Let in again
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setResult(null)}
+                      >
+                        Next scan
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

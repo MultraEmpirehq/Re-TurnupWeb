@@ -12,7 +12,10 @@ import React, { memo, useCallback } from "react";
  */
 const AdminScanPage = () => {
   const { has, isLoading } = useAdminPermissions();
-  const onScan = useCallback((code: string) => adminScanTicket(code), []);
+  const onScan = useCallback(
+    (code: string, typed: boolean) => adminScanTicket(code, undefined, typed),
+    [],
+  );
 
   if (isLoading) {
     return (

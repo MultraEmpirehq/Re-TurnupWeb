@@ -322,7 +322,7 @@ const BoostDialog: React.FC<{
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4">
               <div>
                 <p className="text-xs font-extrabold tracking-wide text-secondary-400">
                   WHO SEES IT
@@ -451,8 +451,8 @@ const BoostDialog: React.FC<{
                   ))}
                   {quote.discount.amount > 0 && (
                     <li className="flex justify-between gap-2 text-emerald-700">
-                      <span>Two or more places: 10% off</span>
-                      <b className="tabular-nums">
+                      <span>Bundle: 10% off</span>
+                      <b className="shrink-0 whitespace-nowrap tabular-nums">
                         −{quote.discount.formatted?.withCurrency}
                       </b>
                     </li>

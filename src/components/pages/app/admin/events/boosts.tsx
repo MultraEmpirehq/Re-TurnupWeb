@@ -12,7 +12,6 @@ import {
   useSetBoostPrice,
 } from "@/hooks/use-boosts";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
 import { Rocket } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useMemo, useState } from "react";
@@ -46,6 +45,9 @@ const when = (iso: string) =>
     minute: "2-digit",
     hour12: true,
   });
+
+const count = (value: number, noun: string) =>
+  `${value.toLocaleString()} ${noun}${value === 1 ? "" : "s"}`;
 
 const BoostItem: React.FC<{ boost: IBoost }> = ({ boost }) => {
   const { approve, reject, stop } = useAdminBoostActions();
@@ -103,9 +105,9 @@ const BoostItem: React.FC<{ boost: IBoost }> = ({ boost }) => {
             {boost.amount.formatted?.withCurrency}
           </b>
           <span className="text-xs text-muted-foreground">
-            {boost.stats.impressions.toLocaleString()} views ·{" "}
-            {boost.stats.clicks.toLocaleString()} opens · {boost.stats.tickets}{" "}
-            tickets
+            {count(boost.stats.impressions, "view")} ·{" "}
+            {count(boost.stats.clicks, "open")} ·{" "}
+            {count(boost.stats.tickets, "ticket")}
           </span>
         </div>
       </div>
@@ -302,15 +304,6 @@ const AdminBoosts = () => {
         />
       )}
       <Prices />
-      {boosts.length > 0 && status === undefined && (
-        <p className="text-xs text-muted-foreground">
-          Newest{" "}
-          {formatDistanceToNow(new Date(boosts[0].startsAt), {
-            addSuffix: true,
-          })}
-          .
-        </p>
-      )}
     </div>
   );
 };

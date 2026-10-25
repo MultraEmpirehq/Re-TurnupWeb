@@ -1,14 +1,23 @@
+import { rememberServerTime } from "@/lib/live-code";
 import { getData, postData } from "@/api";
 import { UserTicketDetailsResponseType } from "@/lib/types";
+import useUserStore from "@/stores/user-store";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 /** The tickets you hold. Ones you've sent and are waiting to be claimed aren't here. */
 export const useUserTickets = () => {
+  // Waits for the saved sign-in: asking first gets a 401, which signs them out.
+  const userToken = useUserStore((state) => state.userToken);
   return useQuery({
     queryKey: ["user-tickets"],
+    enabled: !!userToken,
     queryFn: async () => {
       const { data } =
         await getData<UserTicketDetailsResponseType[]>("/tickets/user");
+      // Learn how far this device's clock is out, for the live codes.
+      const serverTime = data?.data?.find((ticket) => ticket.liveCode)
+        ?.liveCode?.serverTime;
+      if (serverTime) rememberServerTime(serverTime);
       return data;
     },
   });

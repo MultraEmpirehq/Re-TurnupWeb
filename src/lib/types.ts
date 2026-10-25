@@ -343,9 +343,17 @@ export interface IOrderTicketType {
   isTransferable?: boolean;
 }
 
+/** What a holder's own ticket carries for its QR that changes every 30 seconds. */
+export type TLiveCodeDetails = {
+  secret: string;
+  windowSeconds: number;
+  serverTime: string;
+};
+
 export interface IUserTicketType {
   id: string;
   code: string;
+  liveCode?: TLiveCodeDetails | null;
   ticketCode?: string;
   qrCodeValue?: string;
   barcodeValue?: string;
@@ -392,6 +400,8 @@ export type UserTicketDetailsTicketType = {
 export type UserTicketDetailsResponseType = {
   id: string;
   code: string;
+  /** Only on your own tickets (GET /tickets/user). */
+  liveCode?: TLiveCodeDetails | null;
   ticketCode?: string;
   qrCodeValue?: string;
   barcodeValue?: string;
