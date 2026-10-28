@@ -3,7 +3,13 @@
 import ScrollRow from "@/components/ui/scroll-row";
 import { constructErrorMessage } from "@/api/functions";
 import ErrorContainer from "@/components/ui/error-container";
-import TicketCard from "@/components/ticket-design/ticket-card";
+import {
+  EventPassCard,
+  PassViewer,
+  TEventTickets,
+  colourOf,
+  groupByEvent,
+} from "@/components/ticket-design/ticket-wallet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useReceivedTransfers,
@@ -13,56 +19,28 @@ import {
 import ReceivedTransfers from "@/components/pages/profile/received-transfers";
 import SentTransfers from "@/components/pages/profile/sent-transfers";
 import { cn } from "@/lib/utils";
-import {
-  ETicketStatus,
-  IUserTicketType,
-  UserTicketDetailsResponseType,
-} from "@/lib/types";
 import { ROUTES } from "@/lib/variables";
 import { TicketIcon } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import React, { memo } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 
-/** Map API user ticket to the shape expected by TicketCard (IUserTicketType) */
-function toUserTicketType(ut: UserTicketDetailsResponseType): IUserTicketType {
-  return {
-    id: ut.id,
-    code: ut.code,
-    ticketCode: ut.ticketCode,
-    qrCodeValue: ut.qrCodeValue,
-    liveCode: ut.liveCode,
-    barcodeValue: ut.barcodeValue,
-    createdAt: ut.createdAt,
-    status: (ut.status as ETicketStatus) ?? ETicketStatus.UN_USED,
-    registrationStatus: ut.registrationStatus,
-    currentHolderName: ut.currentHolderName,
-    currentHolderEmail: ut.currentHolderEmail,
-    checkedInAt: ut.checkedInAt,
-    scannerEmail: ut.scannerEmail,
-    transfer: ut.transfer,
-    ticket: {
-      id: ut.ticket.id,
-      name: ut.ticket.name,
-      type: ut.ticket.type,
-      link: ut.ticket.link ?? null,
-      event: { data: ut.ticket.event },
-      price: ut.ticket.price,
-      quantity: ut.ticket.quantity,
-      sold: ut.ticket.sold,
-      available: ut.ticket.available,
-      transferable: ut.ticket.transferable,
-      isTransferable: ut.ticket.isTransferable,
-    },
-  };
-}
+type TTab = "upcoming" | "past" | "received" | "sent";
 
-/** Mine (what I can use), Received (sent to me, to accept) and Sent (what I've transferred). */
+/** The page colour behind the cards (the tear's notches are cut in it). */
+const PAGE_BACKGROUND = "#ffffff";
+
+/**
+ * Upcoming and Past (your tickets, one card per event, as on the app),
+ * Received (sent to you, to accept) and Sent (what you've transferred).
+ */
 const TicketTabs: React.FC<{
-  active: "mine" | "received" | "sent";
+  active: TTab;
+  upcoming?: number;
+  past?: number;
   waiting: number;
   incoming: number;
-}> = ({ active, waiting, incoming }) => (
+}> = ({ active, upcoming, past, waiting, incoming }) => (
   <ScrollRow>
     <div
       role="tablist"
@@ -72,9 +50,14 @@ const TicketTabs: React.FC<{
       {(
         [
           {
-            value: "mine",
-            label: "My tickets",
+            value: "upcoming",
+            label: upcoming !== undefined ? `Upcoming (${upcoming})` : "Upcoming",
             href: ROUTES.PROFILE_TICKETS.href,
+          },
+          {
+            value: "past",
+            label: past !== undefined ? `Past (${past})` : "Past",
+            href: `${ROUTES.PROFILE_TICKETS.href}?tab=past`,
           },
           {
             value: "received",
@@ -113,22 +96,30 @@ const TicketsPage = () => {
   const searchParams = useSearchParams();
   const passInviteToken = searchParams.get("passInviteToken");
   const tabParam = searchParams.get("tab");
-  const activeTab =
-    tabParam === "sent" || tabParam === "received" ? tabParam : "mine";
+  const activeTab: TTab =
+    tabParam === "sent" || tabParam === "received" || tabParam === "past"
+      ? tabParam
+      : "upcoming";
   const { data: received = [] } = useReceivedTransfers();
   const incoming = received.length;
   const waiting = sent.filter(
     (transfer) => transfer.status === "PENDING",
   ).length;
-  const tickets = data?.data ?? [];
+  const tickets = useMemo(() => data?.data ?? [], [data]);
+  const { upcoming, past } = useMemo(() => groupByEvent(tickets), [tickets]);
+  const list = activeTab === "past" ? past : upcoming;
+  const [open, setOpen] = useState<TEventTickets | null>(null);
+  const close = useCallback(() => setOpen(null), []);
 
-  if (activeTab !== "mine") {
+  if (activeTab === "received" || activeTab === "sent") {
     return (
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">My Tickets</h2>
           <TicketTabs
             active={activeTab}
+            upcoming={isLoading ? undefined : upcoming.length}
+            past={isLoading ? undefined : past.length}
             waiting={waiting}
             incoming={incoming}
           />
@@ -142,9 +133,11 @@ const TicketsPage = () => {
     return (
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">My Tickets</h2>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 rounded-xl" />
-        ))}
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-64 rounded-3xl" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -167,7 +160,13 @@ const TicketsPage = () => {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">My Tickets</h2>
-        <TicketTabs active="mine" waiting={waiting} incoming={incoming} />
+        <TicketTabs
+          active={activeTab}
+          upcoming={upcoming.length}
+          past={past.length}
+          waiting={waiting}
+          incoming={incoming}
+        />
       </div>
 
       {incoming > 0 && (
@@ -205,33 +204,45 @@ const TicketsPage = () => {
         </div>
       )}
 
-      {tickets.length === 0 && (
+      {list.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">
           <TicketIcon className="size-12 mx-auto mb-4 opacity-40" />
-          <p className="text-lg font-medium">No tickets yet</p>
-          <p className="text-sm mt-1">
-            Tickets you buy will appear here, separate from orders.
+          <p className="text-lg font-medium">
+            {activeTab === "past" ? "No past events" : "No upcoming tickets"}
           </p>
-          <Link
-            href={ROUTES.EXPLORE.href}
-            className="inline-block mt-4 text-sm font-medium text-primary-600 dark:text-primary-400 hover:underline"
-          >
-            Explore events
-          </Link>
+          <p className="text-sm mt-1">
+            {activeTab === "past"
+              ? "Events you've been to will show here."
+              : "Tickets you buy or register for show up here."}
+          </p>
+          {activeTab !== "past" && (
+            <Link
+              href={ROUTES.EXPLORE.href}
+              className="inline-block mt-4 text-sm font-medium text-primary-600 dark:text-primary-400 hover:underline"
+            >
+              Explore events
+            </Link>
+          )}
         </div>
       )}
 
-      <div className="space-y-8">
-        {tickets.map((ut, i) => (
-          <TicketCard
-            key={ut.id}
-            userTicket={toUserTicketType(ut)}
-            event={ut.ticket?.event}
-            index={i}
-            showTransfer={true}
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        {list.map((group, index) => (
+          <EventPassCard
+            key={group.event.id}
+            group={group}
+            colour={colourOf(group, index)}
+            background={PAGE_BACKGROUND}
+            onOpen={() => setOpen(group)}
           />
         ))}
       </div>
+
+      <PassViewer
+        group={open}
+        colour={open ? colourOf(open, list.indexOf(open)) : "#0b1d2a"}
+        onClose={close}
+      />
     </div>
   );
 };

@@ -148,9 +148,11 @@ const PayoutStep: React.FC<{ saved: SavedPayoutDigits }> = ({ saved }) => {
                 {country.name} bank account
               </p>
               <p className="text-xs leading-5 text-secondary-500">
-                {country.directPayout
-                  ? "Your share of each ticket is paid straight to this account by our payment partner."
-                  : "The account must be in your name, or your business's."}
+                {country.stripePayout
+                  ? "Our payment partner Stripe pays your share of each ticket straight to your bank. Once you're approved, you'll add your bank details with Stripe in your Wallet, so there's nothing to enter here except the name on the account."
+                  : country.directPayout
+                    ? "Your share of each ticket is paid straight to this account by our payment partner."
+                    : "The account must be in your name, or your business's."}
               </p>
             </div>
           </div>
@@ -313,11 +315,13 @@ const PayoutStep: React.FC<{ saved: SavedPayoutDigits }> = ({ saved }) => {
             helperText="It must match your legal name, or your registered business name."
           />
 
-          <p className="flex items-center gap-1.5 text-xs text-muted-foreground md:col-span-2">
-            <Lock className="size-3.5" />
-            Bank details are encrypted. Only the last four digits are ever shown
-            back.
-          </p>
+          {!country.stripePayout && (
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground md:col-span-2">
+              <Lock className="size-3.5" />
+              Bank details are encrypted. Only the last four digits are ever
+              shown back.
+            </p>
+          )}
         </div>
       )}
     </div>

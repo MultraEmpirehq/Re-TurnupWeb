@@ -1,6 +1,6 @@
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import { Button } from "@/components/ui/button";
-import { FEE_LABEL } from "@/lib/pricing";
+import { PRICING, FEE_LABEL } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/variables";
 import { ArrowRight, Check } from "lucide-react";
@@ -37,7 +37,7 @@ const PLANS = [
     name: "Paid events",
     price: FEE_LABEL,
     unit: "per ticket sold",
-    body: "Only pay when you sell. Keep the fee yourself or pass it on to your buyers.",
+    body: "Only pay when you sell: it comes off each ticket, and your share is paid straight to your bank.",
     cta: { label: "Start selling", href: ROUTES.SIGNUP.href },
     featured: true,
   },
@@ -57,11 +57,11 @@ const FAQS = [
   },
   {
     q: "Who pays the fee on paid tickets?",
-    a: "You choose. Pass it on and it's added to the buyer's price at checkout, so you keep your full ticket price. Or absorb it and buyers see only your price.",
+    a: "You do, from each ticket you sell. Buyers pay your ticket price, our payment partner pays your share straight to your bank, and Turnupz keeps only its fee. We never hold your money.",
   },
   {
     q: `How is ${FEE_LABEL} worked out?`,
-    a: "It's per paid ticket: a percentage of that ticket's price plus a small flat amount. A ₦5,000 ticket carries a ₦500 fee.",
+    a: `It's ${FEE_LABEL} of each paid ticket's price, after any promo code, with no flat fee. A ₦5,000 ticket carries a ₦${(5000 * PRICING.percent).toLocaleString("en-NG")} fee.`,
   },
   {
     q: "Are there setup or monthly fees?",

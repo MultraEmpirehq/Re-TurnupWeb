@@ -166,6 +166,9 @@ const ReviewSummary: React.FC<{
             value={country ? `${country.name} (${country.currency})` : ""}
           />
           <Row label="Account holder" value={values.accountHolderName} />
+          {country?.stripePayout && (
+            <Row label="Bank" value="Added with Stripe in your Wallet, once approved" />
+          )}
           {country?.fields.includes("bankName") && (
             <Row label="Bank" value={values.bankName} />
           )}

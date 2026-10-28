@@ -6,9 +6,12 @@ import {
   useAcceptTransfer,
   useReceivedTransfers,
 } from "@/hooks/use-user-tickets";
+import { useMessageRequests } from "@/hooks/use-event-chat";
+import { answerMessageRequest } from "@/hooks/use-privacy";
+import { useQueryClient } from "@tanstack/react-query";
 import { IEventChatGroup } from "@/lib/event-chat";
 import { cn } from "@/lib/utils";
-import { Loader2, SearchIcon, TicketIcon } from "lucide-react";
+import { Loader2, MessageSquareIcon, SearchIcon, TicketIcon } from "lucide-react";
 import React, { memo, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -139,9 +142,124 @@ const WaitingTicket: React.FC = () => {
 };
 
 /**
+ * Messages from people you don't follow back: listed on their own until you
+ * accept (or reply) or decline. Declining removes the chat; they aren't told.
+ */
+const MessageRequests: React.FC<{
+  selectedId?: string;
+  onSelect: (chat: IEventChatGroup) => void;
+}> = ({ selectedId, onSelect }) => {
+  const { data: requests = [] } = useMessageRequests();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  if (!requests.length) return null;
+
+  const answer = async (chat: IEventChatGroup, accept: boolean) => {
+    setBusy(chat.id);
+    try {
+      await answerMessageRequest(chat.id, accept);
+      await queryClient.invalidateQueries({ queryKey: ["event-chats"] });
+    } catch (error) {
+      toast.error(
+        constructErrorMessage(
+          error as TApiErrorResponseType,
+          "That didn't work. Please try again.",
+        ),
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="mx-3 mb-2 rounded-[18px] border border-secondary-100 bg-white">
+      <button
+        type="button"
+        onClick={() => setOpen((on) => !on)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 p-3 text-left"
+      >
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+          <MessageSquareIcon className="size-5 text-secondary-700" aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[13.5px] font-extrabold text-secondary-950">
+            Message requests
+          </span>
+          <span className="block truncate text-xs text-secondary-500">
+            {requests.length === 1
+              ? `${requests[0].eventName} wants to message you`
+              : `${requests.length} people want to message you`}
+          </span>
+        </span>
+        <span className="text-[12.5px] font-bold text-primary">
+          {open ? "Hide" : "View"}
+        </span>
+      </button>
+      {open && (
+        <ul className="space-y-1 border-t border-secondary-100 p-2">
+          {requests.map((chat) => (
+            <li
+              key={chat.id}
+              className={cn(
+                "rounded-2xl p-2",
+                chat.id === selectedId && "bg-secondary-50",
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => onSelect(chat)}
+                className="flex w-full items-center gap-3 text-left"
+              >
+                <ChatPicture chat={chat} size="md" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14px] font-bold text-secondary-950">
+                    {chat.eventName}
+                  </span>
+                  <span className="block truncate text-[12.5px] text-secondary-500">
+                    {chat.preview || "Wants to message you"}
+                  </span>
+                </span>
+              </button>
+              <span className="mt-2 flex gap-2">
+                {busy === chat.id ? (
+                  <Loader2 className="size-4 animate-spin text-secondary-400" aria-hidden />
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => void answer(chat, true)}
+                      className="h-8 flex-1 rounded-xl bg-primary text-[12.5px] font-bold text-white hover:bg-primary/90"
+                    >
+                      Accept
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void answer(chat, false)}
+                      className="h-8 flex-1 rounded-xl border border-secondary-200 text-[12.5px] font-bold text-secondary-950 hover:bg-secondary-50"
+                    >
+                      Decline
+                    </button>
+                  </>
+                )}
+              </span>
+            </li>
+          ))}
+          <li className="px-2 pt-1 text-[11.5px] text-secondary-400">
+            Replying accepts it. Declining removes it, and they aren&apos;t
+            told.
+          </li>
+        </ul>
+      )}
+    </div>
+  );
+};
+
+/**
  * Every chat you're in: event groups (you join one with a ticket), organisers
  * you've asked something, friends, and the Turnupz team. Search and filter, as
- * on the app.
+ * on the app. Message requests wait at the top.
  */
 const ChatList: React.FC<{
   chats: IEventChatGroup[];
@@ -221,6 +339,7 @@ const ChatList: React.FC<{
 
       <div className="min-h-0 flex-1 overflow-y-auto py-2">
         <WaitingTicket />
+        <MessageRequests selectedId={selectedId} onSelect={onSelect} />
         {isLoading ? (
           <div className="flex justify-center py-16">
             <Loader2
@@ -282,6 +401,8 @@ const ChatList: React.FC<{
                           <Tag label="ORGANISER" muted />
                         ) : kind === "SUPPORT" ? (
                           <Tag label="TURNUPZ" />
+                        ) : chat.request === "outgoing" ? (
+                          <Tag label="REQUEST SENT" muted />
                         ) : null}
                       </span>
                       <span

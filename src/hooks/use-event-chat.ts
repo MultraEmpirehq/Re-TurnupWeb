@@ -42,6 +42,7 @@ export interface BackendChatConversation {
   eventTimezone?: string;
   otherLastReadAt?: string;
   person?: { id: string; username: string | null; image: string | null } | null;
+  request?: "incoming" | "outgoing" | null;
   metadata?: {
     eventName?: string;
     vendorName?: string;
@@ -141,6 +142,7 @@ const mapConversation = (chat: BackendChatConversation): IEventChatGroup => {
     memberCount: chat.memberCount,
     otherLastReadAt: chat.otherLastReadAt,
     person: chat.person ?? null,
+    request: chat.request ?? null,
     memberListVisibility: chat.memberListVisibility || "visible",
     pinnedMessageId: chat.pinnedMessageId,
     vendor: {
@@ -237,6 +239,22 @@ export const useEventChats = () =>
     retry: 0,
     // New chats and unread counts turn up without a reload.
     refetchInterval: 30_000,
+  });
+
+/** Messages from people you don't follow back, waiting for you to accept. */
+export const useMessageRequests = () =>
+  useQuery({
+    queryKey: ["event-chats", "requests"],
+    queryFn: async () => {
+      const response = await getData<BackendChatConversation[]>(
+        "/chats?requests=true",
+      );
+      return normalizeListResponse<BackendChatConversation>(
+        response.data.data,
+      ).map(mapConversation);
+    },
+    retry: 0,
+    refetchInterval: 60_000,
   });
 
 /** Unread messages across the chats they haven't muted, for the nav badge. */
