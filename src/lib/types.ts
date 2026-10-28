@@ -414,6 +414,8 @@ export type UserTicketDetailsResponseType = {
   scannerEmail?: string | null;
   ticket: UserTicketDetailsTicketType;
   transfer?: TicketTransferResponseType;
+  /** The order it came from: only on tickets you bought, not ones sent to you. */
+  orderId?: string;
 };
 
 export interface IOrderDetailsType {

@@ -38,6 +38,11 @@ export interface PayoutCountry {
    * is picked from the provider's list (which gives its code).
    */
   directPayout?: boolean;
+  /**
+   * Paid through Stripe: the bank (and the rest Stripe needs) is added on
+   * Stripe's own screens in the Wallet after approval, so it isn't asked here.
+   */
+  stripePayout?: boolean;
   /** What the account number looks like there, to check it before saving. */
   accountNumber?: { pattern: RegExp; hint: string };
   routingNumber?: { pattern: RegExp; hint: string; label: string };
@@ -88,13 +93,9 @@ export const PAYOUT_COUNTRIES: PayoutCountry[] = [
     code: "CA",
     name: "Canada",
     currency: "CAD",
-    fields: ["bankName", "routingNumber", "accountNumber"],
-    accountNumber: { pattern: /^\d{5,12}$/, hint: "5 to 12 digits." },
-    routingNumber: {
-      pattern: /^\d{8,9}$/,
-      hint: "Transit and institution number, 8 or 9 digits.",
-      label: "Transit / institution number",
-    },
+    // Stripe asks for the bank itself, once approved.
+    fields: [],
+    stripePayout: true,
   },
   {
     code: "AE",

@@ -1,13 +1,14 @@
 /**
- * What Turnupz charges. Provisional: modelled on Tix's public rates until our own
- * are confirmed, so change the numbers here and every page that shows them follows.
+ * What Turnupz charges: the standard 4% of each paid ticket (after any promo
+ * code), with no flat fee. It must match the server's PLATFORM_FEE_PERCENT and
+ * PLATFORM_FEE_FLAT; change both together and every page that shows it follows.
  */
 export const PRICING = {
   currency: "NGN",
   /** Share of each paid ticket's price. */
-  percent: 0.08,
-  /** Flat amount added per paid ticket, in naira. */
-  flatPerTicket: 100,
+  percent: 0.04,
+  /** Flat amount added per paid ticket, in naira (none unless approved). */
+  flatPerTicket: 0,
 } as const;
 
 /** The fee on one paid ticket at `price` naira. Free tickets cost nothing. */
@@ -21,4 +22,6 @@ export const formatNaira = (amount: number) =>
     maximumFractionDigits: 0,
   }).format(amount);
 
-export const FEE_LABEL = `${PRICING.percent * 100}% + ${formatNaira(PRICING.flatPerTicket)}`;
+export const FEE_LABEL = PRICING.flatPerTicket
+  ? `${PRICING.percent * 100}% + ${formatNaira(PRICING.flatPerTicket)}`
+  : `${PRICING.percent * 100}%`;

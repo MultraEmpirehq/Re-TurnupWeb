@@ -7,19 +7,18 @@ import React, { memo, useId, useState } from "react";
 const PRESETS = [2000, 5000, 15000, 50000];
 
 /**
- * Try a ticket price and a crowd size and see who pays what. Passing the fee on
- * adds it to the buyer's price, so the organiser keeps the full ticket price.
+ * Try a ticket price and a crowd size and see who pays what. The fee comes off
+ * each ticket: buyers pay the ticket price and the organiser gets the rest.
  */
 const FeeCalculator = () => {
   const [price, setPrice] = useState(5000);
   const [quantity, setQuantity] = useState(200);
-  const [passOn, setPassOn] = useState(true);
   const priceId = useId();
   const quantityId = useId();
 
   const fee = ticketFee(price);
-  const buyerPays = passOn ? price + fee : price;
-  const youGetEach = passOn ? price : price - fee;
+  const buyerPays = price;
+  const youGetEach = price - fee;
   const youGetTotal = youGetEach * quantity;
 
   return (
@@ -80,32 +79,6 @@ const FeeCalculator = () => {
           />
         </div>
 
-        <div className="flex items-start justify-between gap-4 rounded-2xl bg-[#f7f9fc] p-4">
-          <div>
-            <p className="font-semibold text-secondary-950">Pass the fee to buyers</p>
-            <p className="text-sm text-secondary-950/60">
-              It&apos;s added at checkout, so you keep your full ticket price.
-            </p>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={passOn}
-            aria-label="Pass the fee to buyers"
-            onClick={() => setPassOn((current) => !current)}
-            className={cn(
-              "relative h-7 w-12 shrink-0 rounded-full transition-colors duration-300",
-              passOn ? "bg-primary" : "bg-secondary-200",
-            )}
-          >
-            <span
-              className={cn(
-                "absolute top-1 left-1 size-5 rounded-full bg-white shadow transition-transform duration-300",
-                passOn && "translate-x-5",
-              )}
-            />
-          </button>
-        </div>
       </div>
 
       <div className="relative isolate flex flex-col justify-between gap-8 overflow-hidden bg-secondary-950 p-6 text-white sm:p-10">

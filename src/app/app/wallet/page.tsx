@@ -17,6 +17,7 @@ import {
   payoutAttemptMessage,
   PayoutSetupAttempt,
   useRetryPayoutSetup,
+  useStripeSession,
   useVendorEarnings,
   useVendorSales,
   VendorCurrencyEarnings,
@@ -25,7 +26,14 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Landmark, ReceiptText, RefreshCw, ShieldCheck } from "lucide-react";
-import React, { memo, useState } from "react";
+import ChangeBankDialog from "@/components/pages/app/wallet/change-bank-dialog";
+import PayoutChecklist from "@/components/pages/app/wallet/payout-checklist";
+import PayoutsList from "@/components/pages/app/wallet/payouts-list";
+import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status";
+import { useActiveWorkspace } from "@/stores/workspace-store";
+import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
+import React, { memo, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const cardClassName =
@@ -38,9 +46,20 @@ const PROVIDER_LABELS: Record<VendorPayoutAccount["provider"], string> = {
 };
 
 /** Where the organiser's share of each sale goes, or why it can't yet. */
-const PayoutAccountCard: React.FC<{ account: VendorPayoutAccount | null }> = ({
-  account,
-}) => {
+// Stripe's screens run in the browser only.
+const StripePayouts = dynamic(
+  () => import("@/components/pages/app/wallet/stripe-payouts"),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-64 rounded-[1.5rem]" />,
+  },
+);
+
+const PayoutAccountCard: React.FC<{
+  account: VendorPayoutAccount | null;
+  /** Flutterwave organisers can move their payouts to another bank. */
+  onChangeBank?: () => void;
+}> = ({ account, onChangeBank }) => {
   const retry = useRetryPayoutSetup();
   const [attempt, setAttempt] = useState<PayoutSetupAttempt>();
   const message = payoutAttemptMessage(attempt);
@@ -52,6 +71,10 @@ const PayoutAccountCard: React.FC<{ account: VendorPayoutAccount | null }> = ({
         if (result?.attempt?.status === "active") {
           toast.success("You're set up to be paid directly.");
         }
+        // Stripe (Canada): bank and identity are added on Stripe's own page.
+        if (result?.attempt?.status === "onboarding") {
+          window.location.assign(result.attempt.url);
+        }
       },
       onError: (error) =>
         toast.error(
@@ -61,6 +84,28 @@ const PayoutAccountCard: React.FC<{ account: VendorPayoutAccount | null }> = ({
           ),
         ),
     });
+
+  // Back from Stripe's page: check straight away whether it's all done.
+  const searchParams = useSearchParams();
+  const backFromStripe = searchParams.get("payouts") === "stripe";
+  const checked = useRef(false);
+  useEffect(() => {
+    if (!backFromStripe || checked.current || account?.status === "ACTIVE") return;
+    checked.current = true;
+    retry.mutate(undefined, {
+      onSuccess: (result) => {
+        if (result?.attempt?.status === "onboarding") {
+          // Not finished on Stripe yet: they choose when to go back.
+          toast.info("Stripe still needs a few details. Tap Set up payouts to finish.");
+          return;
+        }
+        setAttempt(result?.attempt);
+        if (result?.attempt?.status === "active") {
+          toast.success("You're set up to be paid directly.");
+        }
+      },
+    });
+  }, [backFromStripe, account?.status, retry]);
 
   if (account?.status === "ACTIVE") {
     return (
@@ -86,6 +131,15 @@ const PayoutAccountCard: React.FC<{ account: VendorPayoutAccount | null }> = ({
               </span>
             )}
           </div>
+          {onChangeBank && account.provider === "FLUTTERWAVE" && (
+            <Button
+              variant="outline"
+              onClick={onChangeBank}
+              className="ml-auto shrink-0 rounded-full border-secondary-100"
+            >
+              Change bank
+            </Button>
+          )}
         </div>
       </section>
     );
@@ -319,6 +373,16 @@ const SalesTable = () => {
  */
 const WalletPage = () => {
   const { data, isLoading, error, refetch } = useVendorEarnings();
+  const verification = useVendorVerificationStatus();
+  // Organisers paid through Stripe (Canada) get Stripe's own screens here.
+  const stripe = useStripeSession();
+  const retry = useRetryPayoutSetup();
+  const [changingBank, setChangingBank] = useState(false);
+  // On an organiser's team: only the organiser decides where they're paid.
+  const workspace = useActiveWorkspace();
+  const account = data?.payoutAccount ?? null;
+  const onStripe = stripe.data?.status === "ready";
+  const payoutsReady = account?.status === "ACTIVE";
 
   return (
     <div className="space-y-5">
@@ -354,10 +418,47 @@ const WalletPage = () => {
         />
       ) : (
         <>
-          <PayoutAccountCard account={data?.payoutAccount ?? null} />
+          <PayoutChecklist
+            verified={verification.canSellTickets}
+            payoutsReady={payoutsReady}
+            payoutsHint={
+              onStripe
+                ? "Add your bank with Stripe below. It only takes a few minutes."
+                : "Tap Set up payouts below once you're approved."
+            }
+            currency={account?.currency}
+          />
+          {stripe.data?.status === "ready" ? (
+            <StripePayouts
+              publishableKey={stripe.data.publishableKey}
+              active={stripe.data.active || payoutsReady}
+              onSetupFinished={() =>
+                // Ask Stripe again whether it's all done, then show the result.
+                retry.mutate(undefined, {
+                  onSettled: () => {
+                    void refetch();
+                    void stripe.refetch();
+                  },
+                })
+              }
+            />
+          ) : (
+            <PayoutAccountCard
+              account={account}
+              onChangeBank={workspace ? undefined : () => setChangingBank(true)}
+            />
+          )}
+          {account?.provider === "FLUTTERWAVE" && <PayoutsList />}
           {(data?.currencies ?? []).map((totals) => (
             <CurrencyEarnings key={totals.currency} totals={totals} />
           ))}
+          {account?.provider === "FLUTTERWAVE" && (
+            <ChangeBankDialog
+              open={changingBank}
+              onOpenChange={setChangingBank}
+              country={account.country}
+            />
+          )}
         </>
       )}
 

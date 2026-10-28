@@ -82,6 +82,8 @@ export interface IEventChatGroup {
   otherLastReadAt?: string;
   /** Chats between two people: the other person. */
   person?: { id: string; username: string | null; image: string | null } | null;
+  /** A message request: incoming waits for you to accept, outgoing for them. */
+  request?: "incoming" | "outgoing" | null;
   memberListVisibility?: "visible" | "private";
   pinnedMessageId?: string;
   vendor: IEventChatParticipant;

@@ -2,6 +2,7 @@
 
 import DevicesCard from "@/components/account/devices-card";
 import NotificationPreferencesCard from "@/components/account/notification-preferences-card";
+import PrivacyCard from "@/components/account/privacy-card";
 import ChangePasswordForm from "@/components/pages/profile/change-password-form";
 import { ROUTES } from "@/lib/variables";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
@@ -28,8 +29,8 @@ const SettingsPage = () => {
           Your account
         </h1>
         <p className="max-w-2xl text-secondary-500">
-          Choose what you&apos;re notified about, check where you&apos;re signed
-          in, and change your password.
+          Choose what you&apos;re notified about and who can reach you, check
+          where you&apos;re signed in, and change your password.
         </p>
       </div>
 
@@ -59,7 +60,10 @@ const SettingsPage = () => {
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <NotificationPreferencesCard />
+        <div className="space-y-6">
+          <NotificationPreferencesCard />
+          <PrivacyCard />
+        </div>
         <div className="space-y-6">
           <DevicesCard />
           <ChangePasswordForm />
