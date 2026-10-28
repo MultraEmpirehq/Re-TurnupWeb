@@ -3,7 +3,7 @@
 import ChatDetails from "@/components/pages/app/messages/chat-details";
 import ChatList from "@/components/pages/app/messages/chat-list";
 import ChatThread from "@/components/pages/app/messages/chat-thread";
-import { useEventChats } from "@/hooks/use-event-chat";
+import { useEventChats, useMessageRequests } from "@/hooks/use-event-chat";
 import { cn } from "@/lib/utils";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
 import { MessagesSquare } from "lucide-react";
@@ -20,6 +20,8 @@ const MessagesPage = () => {
   const myId = userDetails?.id;
   const isAttendee = userDetails?.role === EUserRoles.USER;
   const { data: chats = [], isLoading, refetch } = useEventChats();
+  // A message request opened from the list isn't among the chats until accepted.
+  const { data: requests = [] } = useMessageRequests();
 
   // A link to one chat (e.g. from a notification) opens it.
   const searchParams = useSearchParams();
@@ -45,6 +47,7 @@ const MessagesPage = () => {
   const waitingForLink = !!selectedId && selectedId === linkedChatId;
   const selected =
     chats.find((chat) => chat.id === selectedId) ??
+    requests.find((chat) => chat.id === selectedId) ??
     (waitingForLink ? undefined : chats[0]);
   const aboutEventId = selected?.id === linkedChatId ? aboutParam : undefined;
 
