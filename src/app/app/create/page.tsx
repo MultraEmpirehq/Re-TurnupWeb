@@ -25,11 +25,29 @@ import {
 } from "@/lib/dev-mock-events";
 import { ensureEventChatGroup } from "@/lib/event-chat";
 import React, { memo, useCallback, useEffect, useRef, useState } from "react";
-import { FormProvider, type Resolver, useForm } from "react-hook-form";
+import {
+  FormProvider,
+  type Resolver,
+  useForm,
+  type UseFormReturn,
+} from "react-hook-form";
 import useUserStore from "@/stores/user-store";
 import { toast } from "sonner";
-import { useSearchParams } from "next/navigation";
-import { IEventBlogPostDetails, IEventDetailsType } from "@/lib/types";
+import { useRouter, useSearchParams } from "next/navigation";
+import { formatDistanceToNow } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { ROUTES } from "@/lib/variables";
+import {
+  forgetEventForm,
+  keepEventForm,
+  readKeptEventForm,
+} from "@/lib/event-form-autosave";
+import {
+  IEventBlogPostDetails,
+  IEventDetailsType,
+  sponsorLogo,
+  sponsorName,
+} from "@/lib/types";
 import { getCurrencyForCountry } from "@/lib/currency";
 import { uploadAttachment } from "@/api/attachments";
 import { TAttachment, TAttachmentPurpose } from "@/lib/types";
@@ -78,6 +96,7 @@ const defaultValues: TFormValues = {
   venueId: "",
   venueName: "",
   venueAddress: "",
+  venueCapacity: null,
   categoryId: "",
   categoryName: "",
   guestIds: [],
@@ -89,8 +108,10 @@ const defaultValues: TFormValues = {
   eventActivities: [],
   coverImage: null,
   mediaFiles: [],
+  mediaFileIds: [],
   sponsorNames: [],
   sponsorImages: [],
+  sponsorLogoIds: [],
   saleMethod: "",
   eventTickets: [],
   ticketUrl: "",
@@ -141,9 +162,50 @@ const uploadEachOnce = async (files: File[], purpose: TAttachmentPurpose) => {
   return attachments;
 };
 
+/**
+ * Once saved, each picked file stands in the form as its upload (link and id),
+ * so the copy kept in the browser, which can't hold files, still has it when
+ * they come back to the page.
+ */
+const swapUploadedFiles = (form: UseFormReturn<TFormValues>) => {
+  const uploaded = (value: unknown) =>
+    value instanceof File ? uploadedAttachments.get(value) : undefined;
+
+  const cover = uploaded(form.getValues("coverImage"));
+  if (cover) form.setValue("coverImage", cover.url);
+
+  const media = form.getValues("mediaFiles") ?? [];
+  if (media.some(uploaded)) {
+    const ids = form.getValues("mediaFileIds") ?? [];
+    form.setValue(
+      "mediaFileIds",
+      media.map((file, index) => uploaded(file)?.id ?? ids[index] ?? null),
+    );
+    form.setValue(
+      "mediaFiles",
+      media.map((file) => uploaded(file)?.url ?? file),
+    );
+  }
+
+  const logos = form.getValues("sponsorImages") ?? [];
+  if (logos.some(uploaded)) {
+    const ids = form.getValues("sponsorLogoIds") ?? [];
+    form.setValue(
+      "sponsorLogoIds",
+      logos.map((logo, index) => uploaded(logo)?.id ?? ids[index] ?? null),
+    );
+    form.setValue(
+      "sponsorImages",
+      logos.map((logo) => uploaded(logo)?.url ?? logo),
+    );
+  }
+};
+
 const buildEventFormData = async (
   body: TFormValues,
   status: "draft" | "published",
+  /** Saving over an existing draft: the gallery and sponsors go whole, in order. */
+  editing = false,
 ) => {
   const formData = new FormData();
   const eventCurrency = getCurrencyForCountry(
@@ -221,6 +283,8 @@ const buildEventFormData = async (
     // Activity times are picked on the same clock as the event date.
     const activities = body.eventActivities.map((activity) => ({
       ...activity,
+      // Optional: left out when blank.
+      activityDescription: activity.activityDescription?.trim() || undefined,
       activityDate: activity.activityDate
         ? wallTimeInZoneToInstant(
             new Date(activity.activityDate),
@@ -276,36 +340,56 @@ const buildEventFormData = async (
     const cover = await uploadOnce(body.coverImage, "EVENT_COVER");
     formData.append("coverImageId", cover.id);
   }
+  // The gallery in its order: saved photos by id, new ones uploaded first.
   const mediaFiles = body.mediaFiles.filter(
     (file): file is File => file instanceof File,
   );
-  if (mediaFiles.length > 0) {
-    const medias = await uploadEachOnce(mediaFiles, "EVENT_MEDIA");
-    formData.append(
-      "mediaIds",
-      JSON.stringify(medias.map((media) => media.id)),
-    );
+  const uploadedMedia = mediaFiles.length
+    ? await uploadEachOnce(mediaFiles, "EVENT_MEDIA")
+    : [];
+  let nextMedia = 0;
+  const mediaIds = body.mediaFiles
+    .map((file, index) =>
+      file instanceof File
+        ? uploadedMedia[nextMedia++]?.id
+        : body.mediaFileIds?.[index] || undefined,
+    )
+    .filter((id): id is string => Boolean(id));
+  if (mediaIds.length || editing) {
+    formData.append("mediaIds", JSON.stringify(mediaIds));
   }
-  const sponsorNames = body.sponsorNames?.filter(Boolean) ?? [];
-  if (sponsorNames.length) {
+  if (editing) formData.append("arrangeMedia", "true");
+  // Sponsors in their order, each with its own logo: a new file (uploaded
+  // now) or the one a saved draft already had.
+  const sponsorEntries = (body.sponsorNames ?? [])
+    .map((name, index) => ({
+      name: name?.trim() ?? "",
+      image: body.sponsorImages?.[index],
+      logoId: body.sponsorLogoIds?.[index] || undefined,
+    }))
+    .filter((sponsor) => sponsor.name);
+  const logoFiles = sponsorEntries
+    .map((sponsor) => sponsor.image)
+    .filter((file): file is File => file instanceof File);
+  const uploadedLogos = logoFiles.length
+    ? await uploadEachOnce(logoFiles, "EVENT_SPONSOR")
+    : [];
+  let nextLogo = 0;
+  if (sponsorEntries.length || editing) {
     formData.append(
       "sponsors",
-      JSON.stringify(sponsorNames.map((name) => ({ name }))),
+      JSON.stringify(
+        sponsorEntries.map((sponsor) => ({
+          name: sponsor.name,
+          imageId:
+            sponsor.image instanceof File
+              ? uploadedLogos[nextLogo++]?.id
+              : sponsor.logoId,
+        })),
+      ),
     );
   }
-  const sponsorImageFiles = (body.sponsorImages ?? []).filter(
-    (file): file is File => file instanceof File,
-  );
-  if (sponsorImageFiles.length) {
-    const sponsorImages = await uploadEachOnce(
-      sponsorImageFiles,
-      "EVENT_SPONSOR",
-    );
-    formData.append(
-      "sponsorImageIds",
-      JSON.stringify(sponsorImages.map((image) => image.id)),
-    );
-  }
+  if (editing) formData.append("arrangeSponsors", "true");
   if (body.blogPosts?.length) {
     // The API only accepts these fields; images travel separately as blogImageIds.
     const blogPosts = body.blogPosts.map(
@@ -340,7 +424,18 @@ const CreateEvent = () => {
   const savingRef = useRef(false);
   const activeStepRef = useRef(1);
   const searchParams = useSearchParams();
+  const router = useRouter();
   const userDetails = useUserStore((state) => state.userDetails);
+  // A copy kept in this browser as they type, brought back after a refresh.
+  const [restored, setRestored] = useState<{
+    savedAt: string;
+    droppedFiles: number;
+  } | null>(null);
+  const keepReadyRef = useRef(false);
+  const draftIdRef = useRef<string | null>(null);
+  const stepRef = useRef(1);
+  draftIdRef.current = draftId;
+  stepRef.current = step;
   // Local mock events stand in for the API only when developing signed out; a
   // signed-in user always talks to the backend so draft ids stay real UUIDs.
   const useMockEvents =
@@ -365,12 +460,67 @@ const CreateEvent = () => {
   }, [form, step]);
 
   // A new event starts in the organiser's own zone; the server can't know it.
+  // Once only, so it never overwrites a zone a kept copy brought back.
+  const zoneDefaultedRef = useRef(false);
   useEffect(() => {
-    if (searchParams.get("draftId")) return;
+    if (zoneDefaultedRef.current || searchParams.get("draftId")) return;
+    zoneDefaultedRef.current = true;
     if (form.getValues("eventTimezone") === DEFAULT_EVENT_TIMEZONE) {
       form.setValue("eventTimezone", defaultEventTimezone());
     }
   }, [form, searchParams]);
+
+  // A new event they'd started before a refresh: put it back as it was.
+  const userId = userDetails?.id;
+  useEffect(() => {
+    if (!userId || useMockEvents || searchParams.get("draftId")) return;
+    if (keepReadyRef.current) return;
+    const kept = readKeptEventForm<TFormValues>(userId, null);
+    if (kept) {
+      form.reset({ ...defaultValues, ...kept.values });
+      activeStepRef.current = kept.step;
+      setStep(kept.step);
+      setRestored({ savedAt: kept.savedAt, droppedFiles: kept.droppedFiles });
+    }
+    keepReadyRef.current = true;
+  }, [form, searchParams, useMockEvents, userId]);
+
+  // Keep a copy as they type (a moment after they stop).
+  useEffect(() => {
+    if (!userId || useMockEvents) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const subscription = form.watch(() => {
+      if (!keepReadyRef.current) return;
+      clearTimeout(timer);
+      timer = setTimeout(
+        () =>
+          keepEventForm(
+            userId,
+            draftIdRef.current,
+            form.getValues(),
+            stepRef.current,
+          ),
+        600,
+      );
+    });
+    return () => {
+      clearTimeout(timer);
+      subscription.unsubscribe();
+    };
+  }, [form, useMockEvents, userId]);
+
+  const startOver = useCallback(() => {
+    if (userId) {
+      forgetEventForm(userId, null);
+      if (draftIdRef.current) forgetEventForm(userId, draftIdRef.current);
+    }
+    setRestored(null);
+    setDraftId(null);
+    activeStepRef.current = 1;
+    setStep(1);
+    form.reset({ ...defaultValues, eventTimezone: defaultEventTimezone() });
+    router.replace(ROUTES.CREATE_EVENT.href);
+  }, [form, router, userId]);
 
   useEffect(() => {
     const nextDraftId = searchParams.get("draftId");
@@ -406,6 +556,7 @@ const CreateEvent = () => {
             venueName: draftEvent.venue?.name ?? draftEvent.venueName ?? "",
             venueAddress:
               draftEvent.venue?.address ?? draftEvent.venueAddress ?? "",
+            venueCapacity: draftEvent.venue?.totalAvailableSeat || null,
             categoryId: draftEvent.category?.id ?? "",
             categoryName:
               draftEvent.category?.name ?? draftEvent.customCategoryName ?? "",
@@ -423,14 +574,17 @@ const CreateEvent = () => {
             })),
             coverImage: draftEvent.image || null,
             mediaFiles: draftEvent.medias ?? [],
-            sponsorNames: (
-              (draftEvent.sponsors ?? []) as Array<string | { name?: string }>
-            )
-              .map((sponsor) =>
-                typeof sponsor === "string" ? sponsor : sponsor.name,
-              )
-              .filter(Boolean) as string[],
-            sponsorImages: draftEvent.sponsorImages ?? [],
+            mediaFileIds: (draftEvent.mediaDetails ?? []).map(
+              (media) => media.id ?? null,
+            ),
+            sponsorNames: (draftEvent.sponsors ?? []).map(sponsorName),
+            // Each sponsor's logo, kept with it (shown by url, saved by id).
+            sponsorImages: (draftEvent.sponsors ?? []).map(
+              (sponsor) => sponsorLogo(sponsor) ?? "",
+            ),
+            sponsorLogoIds: (draftEvent.sponsors ?? []).map((sponsor) =>
+              typeof sponsor === "string" ? null : (sponsor.imageDetails?.id ?? null),
+            ),
             saleMethod: draftEvent.saleMethod ?? "",
             eventTickets: (draftEvent.eventTickets ?? []).map((ticket) => ({
               ...ticket,
@@ -443,6 +597,32 @@ const CreateEvent = () => {
           });
           setDraftId(nextDraftId);
           setStep(draftEvent.draftStep ?? 1);
+          // Edits made here after the draft was last saved come back too.
+          const kept = userDetails?.id
+            ? readKeptEventForm<TFormValues>(userDetails.id, nextDraftId)
+            : null;
+          if (
+            kept &&
+            new Date(kept.savedAt).getTime() >
+              new Date(draftEvent.updatedAt ?? 0).getTime()
+          ) {
+            form.reset({
+              ...defaultValues,
+              ...kept.values,
+              // A banner still being a picked file wasn't kept; the draft has it.
+              coverImage:
+                kept.values.coverImage === undefined
+                  ? draftEvent.image || null
+                  : kept.values.coverImage,
+            });
+            activeStepRef.current = kept.step;
+            setStep(kept.step);
+            setRestored({
+              savedAt: kept.savedAt,
+              droppedFiles: kept.droppedFiles,
+            });
+          }
+          keepReadyRef.current = true;
         } catch {
           toast.error("Unable to load this draft event.");
         }
@@ -473,7 +653,7 @@ const CreateEvent = () => {
     });
     setDraftId(nextDraftId);
     setStep(draftStep);
-  }, [draftId, form, searchParams, useMockEvents]);
+  }, [draftId, form, searchParams, useMockEvents, userDetails?.id]);
 
   const saveDraft = useCallback(
     async (currentStep: number) => {
@@ -481,7 +661,7 @@ const CreateEvent = () => {
 
       if (!useMockEvents) {
         try {
-          const formData = await buildEventFormData(body, "draft");
+          const formData = await buildEventFormData(body, "draft", !!draftId);
           const response = draftId
             ? await putData<FormData, IEventDetailsType>(
                 `/event/${draftId}`,
@@ -491,6 +671,24 @@ const CreateEvent = () => {
           const nextDraftId = response.data.data?.id ?? draftId;
           if (nextDraftId) {
             setDraftId(nextDraftId);
+            swapUploadedFiles(form);
+            if (!draftId) {
+              // From now on it's this draft: a refresh reopens it.
+              draftIdRef.current = nextDraftId;
+              if (userDetails?.id) {
+                forgetEventForm(userDetails.id, null);
+                keepEventForm(
+                  userDetails.id,
+                  nextDraftId,
+                  form.getValues(),
+                  currentStep,
+                );
+              }
+              router.replace(
+                `${ROUTES.CREATE_EVENT.href}?draftId=${nextDraftId}`,
+                { scroll: false },
+              );
+            }
           }
           return nextDraftId;
         } catch (error) {
@@ -578,7 +776,7 @@ const CreateEvent = () => {
       setDraftId(nextDraftId);
       return nextDraftId;
     },
-    [draftId, form, useMockEvents],
+    [draftId, form, router, useMockEvents, userDetails?.id],
   );
 
   const advanceStep = useCallback(async () => {
@@ -591,7 +789,11 @@ const CreateEvent = () => {
     try {
       const body = form.getValues();
       console.log("body", body);
-      const formData = await buildEventFormData(body, "published");
+      const formData = await buildEventFormData(
+        body,
+        "published",
+        !!draftId && !useMockEvents,
+      );
 
       if (useMockEvents) {
         const nextEventId = draftId || `mock-event-${Date.now()}`;
@@ -677,19 +879,28 @@ const CreateEvent = () => {
             formData,
           )
         : await postData<FormData, IEventDetailsType>("/event", formData);
+      // It's out: nothing to bring back after a refresh any more.
+      if (userDetails?.id) {
+        forgetEventForm(userDetails.id, null);
+        if (draftId) forgetEventForm(userDetails.id, draftId);
+      }
+      setRestored(null);
       activeStepRef.current = 1;
       setStep(1);
       setDraftId(null);
-      form.reset();
-      // Organisers' events wait for an admin; an admin's go straight out.
+      form.reset({ ...defaultValues, eventTimezone: defaultEventTimezone() });
+      // Waiting for review only if an admin check is ever turned on; otherwise live.
       if (response.data?.data?.status === "pending_review") {
-        toast.success("Submitted for review", {
-          description:
-            "An admin will check it shortly. We'll let you know once it's live.",
+        toast.success("Event created", {
+          description: "It goes live once it's been checked.",
         });
       } else {
-        toast.success("Event published");
+        toast.success("Event created", {
+          description: "It's live: people can find it and get tickets now.",
+        });
       }
+      // Done here: back to the dashboard with a clean form for next time.
+      router.push(ROUTES.DASHBOARD.href);
     } catch (error) {
       const err = error as TApiErrorResponseType;
       console.error("Create event failed", {
@@ -702,7 +913,7 @@ const CreateEvent = () => {
         constructErrorMessage(err, "Something went wrong while creating event"),
       );
     }
-  }, [draftId, form, saveDraft, step, useMockEvents, userDetails]);
+  }, [draftId, form, router, saveDraft, step, useMockEvents, userDetails]);
 
   // Every step saves before it moves on, so the steps share one saving flag for
   // their button loaders and a second click can't send the same save twice.
@@ -728,6 +939,35 @@ const CreateEvent = () => {
   return (
     <div className="space-y-10">
       <Steps currentStep={step} />
+      {restored && (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-primary/30 bg-primary-50/50 px-4 py-3 text-sm">
+          <p className="mr-auto text-secondary-800">
+            We kept what you&apos;d entered (
+            {formatDistanceToNow(new Date(restored.savedAt), {
+              addSuffix: true,
+            })}
+            ).
+            {restored.droppedFiles > 0 &&
+              ` Add the ${restored.droppedFiles === 1 ? "photo" : `${restored.droppedFiles} photos`} you'd picked again: they can't be kept in the browser.`}
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            className="rounded-full"
+            onClick={startOver}
+          >
+            Start over
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-full"
+            onClick={() => setRestored(null)}
+          >
+            Got it
+          </Button>
+        </div>
+      )}
       <FormProvider {...form}>
         {step === 1 && (
           <BasicForm handleNextStep={handleNextStep} isSaving={isSaving} />

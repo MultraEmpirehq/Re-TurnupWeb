@@ -150,21 +150,41 @@ export const listTimezones = (): string[] => {
       ];
 };
 
-/** "GMT+1 · Africa/Lagos" when the event's zone isn't the viewer's, else null. */
+/**
+ * For someone whose clock differs from the venue's: "Lagos time (GMT+1) · 8:00 PM
+ * your time" (with the day when that differs too), so a buyer abroad knows when
+ * it starts for them. Null when their clock shows the same as the venue's.
+ */
 export const eventZoneNote = (
   timezone?: string | null,
   at: Date | string = new Date(),
 ) => {
   const zone = isValidZone(timezone) ? timezone : DEFAULT_EVENT_TIMEZONE;
-  if (zone === viewerZone()) return null;
+  const mine = viewerZone();
+  const when = new Date(at);
+  if (zone === mine || Number.isNaN(when.getTime())) return null;
+  const clock = (timeZone: string | undefined, withDay: boolean) =>
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone,
+      ...(withDay ? { weekday: "short" as const, day: "numeric" as const, month: "short" as const } : {}),
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).format(when);
+  // Same clock under another name (Lagos and Douala): nothing to add.
+  if (clock(zone, true) === clock(mine, true)) return null;
   const offset =
     new Intl.DateTimeFormat("en-GB", {
       timeZone: zone,
       timeZoneName: "shortOffset",
     })
-      .formatToParts(new Date(at))
+      .formatToParts(when)
       .find((part) => part.type === "timeZoneName")?.value ?? "";
-  return `${offset ? `${offset} · ` : ""}${zone.replace(/_/g, " ")}`;
+  const city = zone.split("/").pop()?.replace(/_/g, " ") ?? zone;
+  const otherDay =
+    new Intl.DateTimeFormat("en-GB", { timeZone: zone, day: "numeric" }).format(when) !==
+    new Intl.DateTimeFormat("en-GB", { timeZone: mine, day: "numeric" }).format(when);
+  return `${city} time${offset ? ` (${offset})` : ""} · ${clock(mine, otherDay)} your time`;
 };
 
 /** A multi-day event's day as people say it: its label, else e.g. "Fri 18 Dec". */

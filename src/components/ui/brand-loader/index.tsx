@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import React, { memo, useId } from "react";
-import { LOGO_PATHS, LOGO_VIEWBOX } from "./logo-paths";
+import { LOGO_PATHS, LOGO_VIEWBOX, LOGO_WIDTH } from "./logo-paths";
 
 type TBrandLoaderProps = {
   /** Fill the screen on the brand's night sky, for page-level waits. */
@@ -52,7 +52,7 @@ const BrandLoader: React.FC<TBrandLoaderProps> = ({
               <rect
                 x="0"
                 y="0"
-                width="137"
+                width={LOGO_WIDTH}
                 height="43"
                 className="animate-loader-ink"
                 style={{ transformBox: "fill-box", transformOrigin: "left" }}

@@ -12,25 +12,38 @@ import {
   IEventDetailsType,
   IEventPassAssignmentDetails,
   IEventTicketOptionDetails,
+  TEventSponsor,
+  sponsorLogo,
+  sponsorName,
 } from "@/lib/types";
 import { CalendarDays, Clock3, MapPin, PencilLine, Ticket } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { moneyLocale } from "@/lib/currency";
+import {
+  eventZoneNote,
+  formatEventTime as formatEventTimeIn,
+  instantToWallTimeInZone,
+  ticketDaysNote,
+} from "@/lib/event-time";
+import EventDetailLineup from "@/components/pages/explore/event-detail/event-detail-lineup";
+import EventDetailSchedule from "@/components/pages/explore/event-detail/event-detail-schedule";
 
-const formatEventDate = (date: Date | string) =>
+// On the venue's clock, whatever the viewer's own zone.
+const formatEventDate = (date: Date | string, timezone?: string) =>
   new Intl.DateTimeFormat("en-US", {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
-  }).format(new Date(date));
+  }).format(instantToWallTimeInZone(date, timezone));
 
-const formatEventTime = (date: Date | string) =>
+const formatEventTime = (date: Date | string, timezone?: string) =>
   new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
     minute: "2-digit",
-  }).format(new Date(date));
+  }).format(instantToWallTimeInZone(date, timezone));
 
 const formatActivityDay = (date: Date | string) =>
   new Intl.DateTimeFormat("en-US", {
@@ -53,11 +66,14 @@ const formatTicketPrice = (price: IEventTicketOptionDetails["ticketPrice"]) => {
     return price.formatted.withCurrency;
   }
   if (typeof price !== "number" && price?.currency?.code) {
-    return new Intl.NumberFormat(price.currency.locale || "en-US", {
-      style: "currency",
-      currency: price.currency.code,
-      maximumFractionDigits: 0,
-    }).format(amount);
+    return new Intl.NumberFormat(
+      moneyLocale(price.currency.code, price.currency.locale || "en-US"),
+      {
+        style: "currency",
+        currency: price.currency.code,
+        maximumFractionDigits: 0,
+      },
+    ).format(amount);
   }
   return amount.toLocaleString();
 };
@@ -73,6 +89,28 @@ interface PendingRegistration {
   status: "pending" | "confirmed" | "rejected";
   createdAt: string;
 }
+
+/** A ticket's days, sales window and order limit, as short lines. */
+const ticketRules = (
+  ticket: IEventTicketOptionDetails,
+  event?: IEventDetailsType,
+) => {
+  const short = { withYear: false } as const;
+  const lines: string[] = [];
+  const days = ticketDaysNote(ticket.dayIds, event);
+  if (days) lines.push(days);
+  if (ticket.salesStartAt || ticket.salesEndAt) {
+    const from = ticket.salesStartAt
+      ? formatEventTimeIn(ticket.salesStartAt, event?.timezone, short)
+      : "now";
+    const until = ticket.salesEndAt
+      ? formatEventTimeIn(ticket.salesEndAt, event?.timezone, short)
+      : "the event starts";
+    lines.push(`On sale ${from} → ${until}`);
+  }
+  if (ticket.maxPerOrder) lines.push(`Max ${ticket.maxPerOrder} per order`);
+  return lines;
+};
 
 const TicketPreview: React.FC<{
   eventId: string;
@@ -91,7 +129,18 @@ const TicketPreview: React.FC<{
   totalTickets,
   passAssignments,
 }) => {
-  const primaryTicket = eventTickets?.[0];
+  // The cheapest public ticket: what the event page's "from" price shows.
+  const primaryTicket =
+    [...(eventTickets ?? [])]
+      .filter((ticket) => ticket.visibility !== "private")
+      .sort(
+        (a, b) =>
+          getTicketPriceAmount(a.ticketPrice) -
+          getTicketPriceAmount(b.ticketPrice),
+      )[0] ?? eventTickets?.[0];
+  const pricedCount = (eventTickets ?? []).filter(
+    (ticket) => getTicketPriceAmount(ticket.ticketPrice) > 0,
+  ).length;
   const hasTicketSections = (eventTickets?.length ?? 0) > 0;
   const hasPassSections = (passAssignments?.length ?? 0) > 0;
   const isRegisterOnly = saleMethod === "register";
@@ -211,17 +260,37 @@ const TicketPreview: React.FC<{
     );
   }
 
-  if (
-    saleMethod === "external_link" ||
-    (!ticketUrl && !hasTicketSections && !hasPassSections)
-  ) {
+  if (saleMethod === "external_link") {
+    return ticketUrl ? (
+      <div className="rounded-[1.2rem] bg-secondary-50 px-4 py-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-secondary-400">
+          Your own ticketing
+        </p>
+        <p className="mt-2 text-sm text-secondary-700">
+          The event page sends people to:
+        </p>
+        <a
+          href={ticketUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-1 block text-sm font-semibold break-all text-primary-700 hover:underline"
+        >
+          {ticketUrl}
+        </a>
+      </div>
+    ) : null;
+  }
+
+  if (!ticketUrl && !hasTicketSections && !hasPassSections) {
     return null;
   }
 
   const ticketSummary = primaryTicket
     ? getTicketPriceAmount(primaryTicket.ticketPrice) === 0
       ? "Free Ticket"
-      : `${formatTicketPrice(primaryTicket.ticketPrice)} Tickets`
+      : pricedCount > 1
+        ? `From ${formatTicketPrice(primaryTicket.ticketPrice)}`
+        : `${formatTicketPrice(primaryTicket.ticketPrice)} Tickets`
     : totalTickets
       ? `${totalTickets.toLocaleString()} Regular Tickets`
       : "Ticketing pending";
@@ -247,7 +316,7 @@ const TicketPreview: React.FC<{
 
       {eventTickets?.length ? (
         <div className="space-y-2">
-          {eventTickets.slice(0, 3).map((ticket) => (
+          {eventTickets.map((ticket) => (
             <div
               key={`${ticket.ticketName}-${ticket.ticketPrice}-${ticket.ticketQuantity}`}
               className="flex items-center justify-between gap-3 rounded-[1rem] border border-secondary-100 bg-white px-4 py-3"
@@ -268,6 +337,11 @@ const TicketPreview: React.FC<{
                   {ticket.visibility || "public"} · {ticket.soldCount ?? 0}{" "}
                   {ticket.actionType === "register" ? "registered" : "sold"}
                 </p>
+                {ticketRules(ticket, event).map((line) => (
+                  <p key={line} className="text-[11px] text-secondary-500">
+                    {line}
+                  </p>
+                ))}
               </div>
               <p className="text-sm font-semibold text-secondary-950">
                 {ticket.actionType === "register"
@@ -347,7 +421,9 @@ const BookingChip: React.FC<{
   saleMethod?: string;
   ticketUrl?: string;
   eventTickets?: IEventTicketOptionDetails[];
-}> = ({ eventId, saleMethod, ticketUrl, eventTickets }) => {
+  /** The event's status: only a published event can be bought from. */
+  status?: string;
+}> = ({ eventId, saleMethod, ticketUrl, eventTickets, status }) => {
   const isExternal = saleMethod === "external_link" || !!ticketUrl;
   const hasPaidTicket = (eventTickets ?? []).some(
     (ticket) => getTicketPriceAmount(ticket.ticketPrice) > 0,
@@ -363,6 +439,28 @@ const BookingChip: React.FC<{
 
   const href =
     isExternal && ticketUrl ? ticketUrl : `/explore/event/${eventId}/ticket`;
+
+  // A draft (or one waiting for review) can't be bought from yet: show the
+  // button as people will see it, but inactive, and say why.
+  if (status && status !== "published") {
+    return (
+      <div className="flex flex-col items-start gap-1.5 md:items-end">
+        <span
+          aria-disabled="true"
+          className="inline-flex h-11 cursor-not-allowed items-center justify-center rounded-2xl border-2 border-dashed border-secondary-200 px-5 text-sm font-semibold text-secondary-400"
+        >
+          {label}
+        </span>
+        <p className="text-xs text-secondary-500">
+          {status === "pending_review"
+            ? "Preview only: people can buy once it's approved."
+            : status === "draft"
+              ? "Preview only: people can buy once you publish."
+              : "Not on sale."}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <Link
@@ -559,34 +657,38 @@ const ActivityTimeline: React.FC<{ activities?: IEventActivityDetails[] }> = ({
     <section className="space-y-4">
       <h2 className="text-lg font-semibold text-secondary-950">Activities</h2>
       <div className="grid gap-3 bg-white md:grid-cols-2 xl:grid-cols-3">
-        {activities.map((activity, index) => (
-          <article
-            key={`${activity.name}-${index}`}
-            className="grid grid-cols-[54px_1fr] gap-4 rounded-[1rem] border border-slate-100 bg-white px-3 py-4 transition-shadow duration-200 hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)]"
-          >
-            <div className="border-r border-dashed border-sky-200 pr-3 text-center">
-              <p className="text-base font-bold leading-none text-secondary-950">
-                {formatActivityDay(activity.date)}
-              </p>
-              <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-secondary-400">
-                {formatActivityMonth(activity.date)}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-secondary-700">
-                {activity.name}
-              </p>
-              <p className="text-[11px] text-secondary-300">
-                {formatEventTime(activity.date)}
-              </p>
-              {activity.description && (
-                <p className="text-xs leading-5 text-secondary-300">
-                  {activity.description}
+        {[...activities]
+          .sort(
+            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+          )
+          .map((activity, index) => (
+            <article
+              key={`${activity.name}-${index}`}
+              className="grid grid-cols-[54px_1fr] gap-4 rounded-[1rem] border border-slate-100 bg-white px-3 py-4 transition-shadow duration-200 hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)]"
+            >
+              <div className="border-r border-dashed border-sky-200 pr-3 text-center">
+                <p className="text-base font-bold leading-none text-secondary-950">
+                  {formatActivityDay(activity.date)}
                 </p>
-              )}
-            </div>
-          </article>
-        ))}
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-secondary-400">
+                  {formatActivityMonth(activity.date)}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-secondary-700">
+                  {activity.name}
+                </p>
+                <p className="text-[11px] text-secondary-300">
+                  {formatEventTime(activity.date)}
+                </p>
+                {activity.description && (
+                  <p className="text-xs leading-5 text-secondary-300">
+                    {activity.description}
+                  </p>
+                )}
+              </div>
+            </article>
+          ))}
       </div>
     </section>
   );
@@ -594,18 +696,11 @@ const ActivityTimeline: React.FC<{ activities?: IEventActivityDetails[] }> = ({
 
 const MediaStrip: React.FC<{
   media?: string[];
-  fallbackImage?: string;
-}> = ({ media, fallbackImage }) => {
-  const mediaItems = useMemo(() => {
-    const items = [...(media ?? [])].filter(Boolean);
-    if (items.length === 0 && fallbackImage) {
-      items.push(fallbackImage);
-    }
-    while (items.length < 5) {
-      items.push("");
-    }
-    return items.slice(0, 8);
-  }, [media, fallbackImage]);
+}> = ({ media }) => {
+  const mediaItems = useMemo(
+    () => (media ?? []).filter(Boolean).slice(0, 8),
+    [media],
+  );
 
   return (
     <section className="space-y-4">
@@ -615,29 +710,40 @@ const MediaStrip: React.FC<{
           Event gallery
         </p>
       </div>
-      <div className="-mx-1 overflow-x-auto pb-2">
-        <div className="flex min-w-max gap-3 px-1">
-          {mediaItems.map((item, index) => (
-            <div
-              key={`${item || "placeholder"}-${index}`}
-              className="relative h-32 w-48 flex-none overflow-hidden rounded-[1rem] border border-secondary-100 bg-secondary-50"
-            >
-              {item ? (
-                <div
-                  className="absolute inset-0 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${item})` }}
-                />
-              ) : (
-                <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(226,232,240,0.9),rgba(241,245,249,0.95))]" />
-              )}
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent,rgba(15,23,42,0.08))]" />
-              <div className="absolute bottom-3 left-3 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-500 backdrop-blur">
-                {item ? `Media ${index + 1}` : "Placeholder"}
-              </div>
-            </div>
-          ))}
+      {mediaItems.length === 0 ? (
+        <div className="flex h-32 flex-col items-center justify-center gap-1 rounded-[1rem] border border-dashed border-secondary-200 bg-secondary-50/60 px-4 text-center">
+          <p className="text-sm font-semibold text-secondary-700">
+            No photos yet
+          </p>
+          <p className="text-xs text-secondary-500">
+            Add photos to show people what to expect.
+          </p>
         </div>
-      </div>
+      ) : (
+        <div className="-mx-1 overflow-x-auto pb-2">
+          <div className="flex min-w-max gap-3 px-1">
+            {mediaItems.map((item, index) => (
+              <div
+                key={`${item || "placeholder"}-${index}`}
+                className="relative h-32 w-48 flex-none overflow-hidden rounded-[1rem] border border-secondary-100 bg-secondary-50"
+              >
+                {item ? (
+                  <div
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${item})` }}
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(226,232,240,0.9),rgba(241,245,249,0.95))]" />
+                )}
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent,rgba(15,23,42,0.08))]" />
+                <div className="absolute bottom-3 left-3 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-500 backdrop-blur">
+                  {`Media ${index + 1}`}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 };
@@ -645,23 +751,16 @@ const MediaStrip: React.FC<{
 const SponsorsBoard: React.FC<{
   organizerName?: string;
   eventYear?: string;
-  sponsors?: string[];
+  sponsors?: TEventSponsor[];
   sponsorImages?: string[];
 }> = ({ organizerName, eventYear, sponsors, sponsorImages }) => {
-  const sponsorItems = sponsors?.length
-    ? sponsors
-    : [
-        "Access",
-        "Bolt",
-        "GUO",
-        "IrokoTV",
-        "Hotel.ng",
-        "Terra",
-        "UPS",
-        "Techpoint",
-        "Native",
-        "Paystack",
-      ];
+  // Each with its name and logo (an uploaded one, else an older separate list).
+  const sponsorItems = (sponsors ?? [])
+    .map((sponsor, index) => ({
+      name: sponsorName(sponsor),
+      logo: sponsorLogo(sponsor) ?? sponsorImages?.[index],
+    }))
+    .filter((sponsor) => sponsor.name);
 
   return (
     <section className="space-y-4">
@@ -673,29 +772,40 @@ const SponsorsBoard: React.FC<{
       </div>
 
       <div className="overflow-hidden rounded-[1rem] border border-secondary-100 bg-white shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+        {sponsorItems.length === 0 && (
+          <div className="flex h-24 flex-col items-center justify-center gap-1 px-4 text-center">
+            <p className="text-sm font-semibold text-secondary-700">
+              No sponsors yet
+            </p>
+            <p className="text-xs text-secondary-500">
+              Sponsors you add show here.
+            </p>
+          </div>
+        )}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
           {sponsorItems.map((sponsor, index) => (
             <div
-              key={`${sponsor}-${index}`}
+              key={`${sponsor.name}-${index}`}
               className="flex h-24 items-center justify-center border-b border-r border-secondary-100 px-4 text-center"
             >
-              {sponsorImages?.[index] ? (
+              {sponsor.logo ? (
                 <div
                   className="h-14 w-full rounded-lg bg-contain bg-center bg-no-repeat"
-                  style={{ backgroundImage: `url(${sponsorImages[index]})` }}
-                  aria-label={sponsor}
+                  style={{ backgroundImage: `url(${sponsor.logo})` }}
+                  role="img"
+                  aria-label={sponsor.name}
                 />
               ) : (
                 <span className="text-sm font-semibold tracking-tight text-secondary-500">
-                  {sponsor}
+                  {sponsor.name}
                 </span>
               )}
             </div>
           ))}
         </div>
         <div className="flex items-center justify-between border-t border-secondary-100 bg-secondary-50 px-4 py-3 text-[11px] text-secondary-400">
-          <span>Organized by {organizerName || "Turnupz Nigeria Ltd"}</span>
-          <span>{eventYear || "2024"}</span>
+          <span>{organizerName ? `Organized by ${organizerName}` : ""}</span>
+          <span>{eventYear}</span>
         </div>
       </div>
     </section>
@@ -747,6 +857,189 @@ const BlogPostsBoard: React.FC<{
             </div>
           </Link>
         ))}
+      </div>
+    </section>
+  );
+};
+
+/**
+ * The event as its page will show it, with a placeholder wherever something
+ * hasn't been added yet. Used here and as the last step of creating an event.
+ */
+export const EventPreviewCard: React.FC<{
+  data: IEventDetailsType;
+  blogPosts?: IEventBlogPostDetails[];
+}> = ({ data, blogPosts = [] }) => {
+  const bannerImage = data.image || "";
+  return (
+    <section className="overflow-hidden rounded-[1.8rem] border border-secondary-100 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
+      <div className="px-4 pt-4 sm:px-6 sm:pt-6">
+        <div
+          className="h-52 overflow-hidden rounded-[1.2rem] bg-cover bg-center sm:h-64"
+          style={{
+            backgroundImage: bannerImage
+              ? `url(${bannerImage})`
+              : "linear-gradient(135deg, rgba(56,189,248,0.16), rgba(14,165,233,0.08))",
+          }}
+        />
+      </div>
+
+      <div className="space-y-7 px-4 py-5 sm:px-6 sm:py-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0 flex-1 space-y-2">
+            <h1 className="text-[clamp(1.7rem,3vw,2.2rem)] font-medium tracking-tight break-words text-secondary-950">
+              {data.name}
+            </h1>
+            {(data.organizerName ||
+              data.category?.name ||
+              data.customCategoryName) && (
+              <p className="text-sm text-secondary-500">
+                {[
+                  data.organizerName && `By ${data.organizerName}`,
+                  data.category?.name || data.customCategoryName,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            )}
+          </div>
+
+          <div className="flex shrink-0 justify-start md:justify-end">
+            <BookingChip
+              eventId={data.id}
+              saleMethod={data.saleMethod}
+              ticketUrl={data.ticketUrl}
+              eventTickets={data.eventTickets}
+              status={data.status}
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_280px]">
+          <div className="space-y-7">
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-secondary-950">
+                Date and Time
+              </h2>
+              {(data.days?.length ?? 0) > 1 && (
+                <EventDetailSchedule
+                  days={data.days!}
+                  timezone={data.timezone}
+                />
+              )}
+              <div className="space-y-3 text-[13px] text-secondary-700">
+                {(data.days?.length ?? 0) <= 1 && (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <CalendarDays className="size-4 text-secondary-500" />
+                      <span>{formatEventDate(data.date, data.timezone)}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Clock3 className="size-4 text-secondary-500" />
+                      <span>
+                        {formatEventTime(data.date, data.timezone)}
+                        {eventZoneNote(data.timezone, data.date) && (
+                          <span className="ml-1.5 text-xs text-secondary-400">
+                            ({eventZoneNote(data.timezone, data.date)})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </>
+                )}
+                <div className="flex items-start gap-3 pt-1">
+                  <MapPin className="mt-0.5 size-4 shrink-0 text-secondary-500" />
+                  <div className="min-w-0 text-[12px] leading-5 break-words text-secondary-700">
+                    <p>
+                      {data.venue?.name ||
+                        data.venueName ||
+                        "Venue not added yet"}
+                    </p>
+                    {(data.venue?.address || data.venueAddress) && (
+                      <p>{data.venue?.address || data.venueAddress}</p>
+                    )}
+                    {[data.eventCity, data.eventState, data.eventCountry].some(
+                      Boolean,
+                    ) && (
+                      <p>
+                        {[data.eventCity, data.eventState, data.eventCountry]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <TicketPreview
+              eventId={data.id}
+              event={data}
+              totalTickets={data.totalTickets}
+              saleMethod={data.saleMethod}
+              ticketUrl={data.ticketUrl}
+              eventTickets={data.eventTickets}
+              passAssignments={data.passAssignments}
+            />
+            {data.isOwner && data.saleMethod !== "register" && (
+              <PrivateTicketLinks
+                eventId={data.id}
+                eventTickets={data.eventTickets}
+              />
+            )}
+            {data.isOwner && (
+              <PendingRegistrationReview
+                eventId={data.id}
+                enabled={
+                  data.saleMethod === "register" && data.requiresApproval
+                }
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-7">
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-secondary-950">
+              Event Description
+            </h2>
+            <div className="space-y-4 text-[13px] leading-6 text-secondary-700">
+              <p>
+                {data.description ||
+                  "Add a fuller event story on the edit screen so attendees can quickly understand the experience."}
+              </p>
+
+              {!!data.additionalInformation?.length && (
+                <div>
+                  <ol className="list-decimal space-y-1 pl-4">
+                    {data.additionalInformation.map((item, index) => (
+                      <li key={`${item}-${index}`}>{item}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {!!data.performers?.length && (
+            <EventDetailLineup performers={data.performers} />
+          )}
+
+          <BlogPostsBoard eventId={data.id} posts={blogPosts} />
+
+          <ActivityTimeline activities={data.activities} />
+
+          <MediaStrip media={data.medias} />
+
+          <SponsorsBoard
+            organizerName={data.organizerName}
+            eventYear={data.eventYear}
+            sponsors={data.sponsors}
+            sponsorImages={data.sponsorImages}
+          />
+        </div>
       </div>
     </section>
   );
@@ -827,129 +1120,7 @@ const VendorEventView: React.FC<{ id: string }> = ({ id }) => {
         </div>
       </div>
 
-      <section className="overflow-hidden rounded-[1.8rem] border border-secondary-100 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
-        <div className="px-4 pt-4 sm:px-6 sm:pt-6">
-          <div
-            className="h-52 overflow-hidden rounded-[1.2rem] bg-cover bg-center sm:h-64"
-            style={{
-              backgroundImage: bannerImage
-                ? `url(${bannerImage})`
-                : "linear-gradient(135deg, rgba(56,189,248,0.16), rgba(14,165,233,0.08))",
-            }}
-          />
-        </div>
-
-        <div className="space-y-7 px-4 py-5 sm:px-6 sm:py-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-2">
-              <h1 className="text-[clamp(1.7rem,3vw,2.2rem)] font-medium tracking-tight text-secondary-950">
-                {data.name}
-              </h1>
-            </div>
-
-            <div className="flex w-full max-w-xs justify-start md:justify-end">
-              <BookingChip
-                eventId={data.id}
-                saleMethod={data.saleMethod}
-                ticketUrl={data.ticketUrl}
-                eventTickets={data.eventTickets}
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_280px]">
-            <div className="space-y-7">
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-secondary-950">
-                  Date and Time
-                </h2>
-                <div className="space-y-3 text-[13px] text-secondary-700">
-                  <div className="flex items-center gap-3">
-                    <CalendarDays className="size-4 text-secondary-500" />
-                    <span>{formatEventDate(data.date)}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Clock3 className="size-4 text-secondary-500" />
-                    <span>{formatEventTime(data.date)}</span>
-                  </div>
-                  {(data.venue?.name || data.venue?.address) && (
-                    <div className="flex items-start gap-3 pt-1">
-                      <MapPin className="mt-0.5 size-4 text-secondary-500" />
-                      <div className="text-[12px] leading-5 text-secondary-700">
-                        <p>{data.venue?.name || "Venue pending"}</p>
-                        {data.venue?.address && <p>{data.venue.address}</p>}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <TicketPreview
-                eventId={data.id}
-                event={data}
-                totalTickets={data.totalTickets}
-                saleMethod={data.saleMethod}
-                ticketUrl={data.ticketUrl}
-                eventTickets={data.eventTickets}
-                passAssignments={data.passAssignments}
-              />
-              {data.isOwner && data.saleMethod !== "register" && (
-                <PrivateTicketLinks
-                  eventId={data.id}
-                  eventTickets={data.eventTickets}
-                />
-              )}
-              {data.isOwner && (
-                <PendingRegistrationReview
-                  eventId={data.id}
-                  enabled={
-                    data.saleMethod === "register" && data.requiresApproval
-                  }
-                />
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-7">
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-secondary-950">
-                Event Description
-              </h2>
-              <div className="space-y-4 text-[13px] leading-6 text-secondary-700">
-                <p>
-                  {data.description ||
-                    "Add a fuller event story on the edit screen so attendees can quickly understand the experience."}
-                </p>
-
-                {!!data.additionalInformation?.length && (
-                  <div>
-                    <ol className="list-decimal space-y-1 pl-4">
-                      {data.additionalInformation.map((item, index) => (
-                        <li key={`${item}-${index}`}>{item}</li>
-                      ))}
-                    </ol>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <BlogPostsBoard eventId={data.id} posts={blogPosts} />
-
-            <ActivityTimeline activities={data.activities} />
-
-            <MediaStrip media={data.medias} />
-
-            <SponsorsBoard
-              organizerName={data.organizerName}
-              eventYear={data.eventYear}
-              sponsors={data.sponsors}
-              sponsorImages={data.sponsorImages}
-            />
-          </div>
-        </div>
-      </section>
+      <EventPreviewCard data={data} blogPosts={blogPosts} />
     </div>
   );
 };

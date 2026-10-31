@@ -3,20 +3,20 @@
 import ComboboxSelect from "@/components/ui/combobox-select";
 import { Switch } from "@/components/ui/switch";
 import TextareaField from "@/components/ui/textarea-field";
-import { getAllCountryOptions } from "@/lib/vendor-verification-helpers";
+import { useMarketOptions } from "@/hooks/use-markets";
 import { X } from "lucide-react";
 import React from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { DocumentField, FieldShell } from "../fields";
 import { VerificationFormValues } from "../types";
 
-const COUNTRY_OPTIONS = getAllCountryOptions();
-
 /**
  * Optional: only for organisers who'll sell tickets to events outside their own
  * country, which needs its own approval level.
  */
 const CrossBorderStep = () => {
+  // Events can only be where Turnupz is open (the backend's list).
+  const COUNTRY_OPTIONS = useMarketOptions("name");
   const {
     control,
     register,

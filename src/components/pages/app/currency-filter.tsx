@@ -7,6 +7,7 @@ import {
 import { IEventDetailsType, PriceDetailsType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import React, { memo, useEffect, useMemo, useState } from "react";
+import { moneyLocale } from "@/lib/currency";
 
 /** Everything, or only what's priced in one currency. */
 export const ALL_CURRENCIES = "ALL";
@@ -48,7 +49,7 @@ export const currencyTotals = (
     const formatted =
       (typeof item.revenue !== "number" && item.revenue?.formatted?.withCurrency) ||
       item.formatted?.withCurrency ||
-      new Intl.NumberFormat(item.currency?.locale || fallback.locale || "en-US", {
+      new Intl.NumberFormat(moneyLocale(code, item.currency?.locale || fallback.locale || "en-US"), {
         style: "currency",
         currency: code,
         maximumFractionDigits: 0,

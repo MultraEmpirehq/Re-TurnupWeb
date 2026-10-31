@@ -16,11 +16,21 @@ import {
   IEventBlogPostDetails,
   IEventPassAssignmentDetails,
   IEventTicketOptionDetails,
+  sponsorLogo,
+  sponsorName,
 } from "@/lib/types";
 import { updateDevMockEvent } from "@/lib/dev-mock-events";
 import useUserStore from "@/stores/user-store";
 import { useQueryClient } from "@tanstack/react-query";
-import { BellRing, Plus, Trash2 } from "lucide-react";
+import {
+  BellRing,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -47,6 +57,8 @@ import TicketSaleRulesFields, {
   saleRulesPayload,
   TTicketSaleRules,
 } from "./create/ticket-sale-rules";
+import { moveItem } from "@/lib/move-item";
+
 
 const toDatetimeInputValue = (date: Date | string) => {
   const nextDate = new Date(date);
@@ -211,9 +223,14 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
   const [bannerImage, setBannerImage] = useState("");
   const [bannerImageFile, setBannerImageFile] = useState<File | null>(null);
   const [mediaImages, setMediaImages] = useState<string[]>([]);
-  const [mediaImageFiles, setMediaImageFiles] = useState<File[]>([]);
+  // Parallel to mediaImages: a saved photo's attachment id, or a new file.
+  const [mediaSources, setMediaSources] = useState<(string | File)[]>([]);
   const [sponsors, setSponsors] = useState<string[]>([]);
   const [sponsorImages, setSponsorImages] = useState<string[]>([]);
+  // Parallel to sponsors: the logo it already has (an attachment id).
+  const [sponsorLogoIds, setSponsorLogoIds] = useState<(string | undefined)[]>(
+    [],
+  );
   const [sponsorImageFiles, setSponsorImageFiles] = useState<
     Record<number, File>
   >({});
@@ -254,10 +271,22 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     setBannerImage(data.image ?? "");
     setBannerImageFile(null);
     setMediaImages(data.medias ?? []);
-    setMediaImageFiles([]);
-    setSponsors(data.sponsors ?? []);
-    setSponsorImages(data.sponsorImages ?? []);
+    setMediaSources(
+      (data.mediaDetails ?? []).map((media) => media.id ?? ""),
+    );
+    // Names to edit; logos uploaded with them stay alongside.
+    setSponsors((data.sponsors ?? []).map(sponsorName));
+    setSponsorImages(
+      (data.sponsors ?? []).map(
+        (sponsor, index) => sponsorLogo(sponsor) ?? data.sponsorImages?.[index] ?? "",
+      ),
+    );
     setSponsorImageFiles({});
+    setSponsorLogoIds(
+      (data.sponsors ?? []).map((sponsor) =>
+        typeof sponsor === "string" ? undefined : sponsor.imageDetails?.id,
+      ),
+    );
     setEventTickets(
       (data.eventTickets ?? []).map((ticket) => ({
         ...ticket,
@@ -290,9 +319,10 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     );
   }, [data]);
 
-  const isDevelopmentEdit = useMemo(() => {
-    return process.env.NODE_ENV === "development";
-  }, []);
+  // The local stand-in store is only for working on the page signed out, as
+  // on the create page; a signed-in organiser always saves to the server.
+  const isDevelopmentEdit =
+    process.env.NODE_ENV === "development" && !userDetails?.id;
 
   const availableImageOptions = useMemo(
     () =>
@@ -587,7 +617,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     }
 
     setMediaImages((current) => [...current, ...nextImages]);
-    setMediaImageFiles((current) => [...current, ...nextFiles]);
+    setMediaSources((current) => [...current, ...nextFiles]);
   };
 
   const handleSponsorImageUpload = (index: number, file?: File | null) => {
@@ -604,7 +634,53 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     });
     if (file) {
       setSponsorImageFiles((current) => ({ ...current, [index]: file }));
+      // The new logo replaces the one it had.
+      setSponsorLogoIds((current) =>
+        current.map((id, itemIndex) => (itemIndex === index ? undefined : id)),
+      );
     }
+  };
+
+  /** Moves a photo one place earlier (-1) or later (+1) in the gallery. */
+  const moveMedia = (index: number, by: -1 | 1) => {
+    setMediaImages((current) => moveItem(current, index, by));
+    setMediaSources((current) => moveItem(current, index, by));
+  };
+
+  const removeMedia = (index: number) => {
+    setMediaImages((current) => current.filter((_, at) => at !== index));
+    setMediaSources((current) => current.filter((_, at) => at !== index));
+  };
+
+  /** Moves a sponsor one place up (-1) or down (+1) the board, logo and all. */
+  const moveSponsor = (index: number, by: -1 | 1) => {
+    setSponsors((current) => moveItem(current, index, by));
+    setSponsorImages((current) => moveItem(current, index, by));
+    setSponsorLogoIds((current) => moveItem(current, index, by));
+    setSponsorImageFiles((current) => {
+      const next = { ...current };
+      const other = index + by;
+      [next[index], next[other]] = [current[other], current[index]];
+      if (!next[index]) delete next[index];
+      if (!next[other]) delete next[other];
+      return next;
+    });
+  };
+
+  const removeSponsor = (index: number) => {
+    setSponsors((current) => current.filter((_, at) => at !== index));
+    setSponsorImages((current) => current.filter((_, at) => at !== index));
+    setSponsorLogoIds((current) => current.filter((_, at) => at !== index));
+    // New logo files are kept by position, so the ones after it move up one.
+    setSponsorImageFiles((current) => {
+      const next: Record<number, File> = {};
+      Object.entries(current).forEach(([key, file]) => {
+        const at = Number(key);
+        if (at < index) next[at] = file;
+        else if (at > index) next[at - 1] = file;
+      });
+      return next;
+    });
   };
 
   const handleSave = async () => {
@@ -749,19 +825,8 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
           ),
         );
 
-        // Sponsors and blog posts already on the event stay; only new ones are sent.
-        const existingSponsorCount = data.sponsors?.length ?? 0;
-        const newSponsors = sponsors
-          .map((sponsor, index) => ({ name: sponsor.trim(), index }))
-          .filter(
-            (sponsor) => sponsor.index >= existingSponsorCount && sponsor.name,
-          );
-        if (newSponsors.length) {
-          formData.append(
-            "sponsors",
-            JSON.stringify(newSponsors.map(({ name }) => ({ name }))),
-          );
-        }
+        // Blog posts already on the event stay; only new ones are sent.
+        // Sponsors go as the whole board below, in the order they're arranged.
         const newBlogPosts = cleanedBlogPosts.filter(
           (post) => !existingBlogPostIds.has(post.id),
         );
@@ -783,32 +848,49 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
           const banner = await uploadAttachment(bannerImageFile, "EVENT_COVER");
           formData.append("coverImageId", banner.id);
         }
-        if (mediaImageFiles.length) {
-          const medias = await uploadAttachments(
-            mediaImageFiles,
-            "EVENT_MEDIA",
-          );
-          formData.append(
-            "mediaIds",
-            JSON.stringify(medias.map((media) => media.id)),
-          );
-        }
-        const newSponsorImages = newSponsors
-          .map((sponsor) => sponsorImageFiles[sponsor.index])
+        // The gallery, whole and in order: saved photos by id, new ones
+        // uploaded first. Anything removed is left out.
+        const newMediaFiles = mediaSources.filter(
+          (source): source is File => source instanceof File,
+        );
+        const uploadedMedia = newMediaFiles.length
+          ? await uploadAttachments(newMediaFiles, "EVENT_MEDIA")
+          : [];
+        let nextUpload = 0;
+        const mediaIds = mediaSources.map((source) =>
+          source instanceof File ? uploadedMedia[nextUpload++].id : source,
+        );
+        formData.append("mediaIds", JSON.stringify(mediaIds));
+        formData.append("arrangeMedia", "true");
+
+        // The sponsor board, whole and in order, each with its logo: a newly
+        // picked one (uploaded now) or the one it already had.
+        const board = sponsors
+          .map((name, index) => ({
+            name: name.trim(),
+            file: sponsorImageFiles[index],
+            logoId: sponsorLogoIds[index],
+          }))
+          .filter((sponsor) => sponsor.name);
+        const logoFiles = board
+          .map((sponsor) => sponsor.file)
           .filter((file): file is File => !!file);
-        if (
-          newSponsorImages.length &&
-          newSponsorImages.length === newSponsors.length
-        ) {
-          const uploaded = await uploadAttachments(
-            newSponsorImages,
-            "EVENT_SPONSOR",
-          );
-          formData.append(
-            "sponsorImageIds",
-            JSON.stringify(uploaded.map((image) => image.id)),
-          );
-        }
+        const uploadedLogos = logoFiles.length
+          ? await uploadAttachments(logoFiles, "EVENT_SPONSOR")
+          : [];
+        let nextLogo = 0;
+        formData.append(
+          "sponsors",
+          JSON.stringify(
+            board.map((sponsor) => ({
+              name: sponsor.name,
+              imageId: sponsor.file
+                ? uploadedLogos[nextLogo++].id
+                : sponsor.logoId,
+            })),
+          ),
+        );
+        formData.append("arrangeSponsors", "true");
         if (newBlogPosts.length && blogImageFiles.length) {
           const blogImages = await uploadAttachments(
             blogImageFiles,
@@ -1204,18 +1286,34 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                       className="h-32 w-full bg-cover bg-center"
                       style={{ backgroundImage: `url(${image})` }}
                     />
-                    <div className="p-3">
+                    <div className="flex items-center gap-2 p-3">
                       <Button
                         type="button"
                         variant="outline"
-                        className="w-full rounded-xl border-secondary-200 bg-white"
-                        onClick={() =>
-                          setMediaImages((current) =>
-                            current.filter(
-                              (_, imageIndex) => imageIndex !== index,
-                            ),
-                          )
-                        }
+                        size="icon"
+                        className="shrink-0 rounded-xl border-secondary-200 bg-white"
+                        disabled={index === 0}
+                        onClick={() => moveMedia(index, -1)}
+                        aria-label="Move photo earlier"
+                      >
+                        <ChevronLeft className="size-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="shrink-0 rounded-xl border-secondary-200 bg-white"
+                        disabled={index === mediaImages.length - 1}
+                        onClick={() => moveMedia(index, 1)}
+                        aria-label="Move photo later"
+                      >
+                        <ChevronRight className="size-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1 rounded-xl border-secondary-200 bg-white"
+                        onClick={() => removeMedia(index)}
                       >
                         <Trash2 className="size-4" />
                         Remove
@@ -1989,6 +2087,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                   onClick={() => {
                     setSponsors((current) => [...current, ""]);
                     setSponsorImages((current) => [...current, ""]);
+                    setSponsorLogoIds((current) => [...current, undefined]);
                   }}
                 >
                   <Plus className="size-4" />
@@ -2032,22 +2131,39 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                         }}
                       />
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="rounded-xl border-secondary-200 bg-white"
-                      onClick={() => {
-                        setSponsors((current) =>
-                          current.filter((_, itemIndex) => itemIndex !== index),
-                        );
-                        setSponsorImages((current) =>
-                          current.filter((_, itemIndex) => itemIndex !== index),
-                        );
-                      }}
-                    >
-                      <Trash2 className="size-4" />
-                      Delete
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="rounded-xl border-secondary-200 bg-white"
+                        disabled={index === 0}
+                        onClick={() => moveSponsor(index, -1)}
+                        aria-label="Move sponsor up"
+                      >
+                        <ChevronUp className="size-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="rounded-xl border-secondary-200 bg-white"
+                        disabled={index === sponsors.length - 1}
+                        onClick={() => moveSponsor(index, 1)}
+                        aria-label="Move sponsor down"
+                      >
+                        <ChevronDown className="size-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-xl border-secondary-200 bg-white"
+                        onClick={() => removeSponsor(index)}
+                      >
+                        <Trash2 className="size-4" />
+                        Delete
+                      </Button>
+                    </div>
                     {sponsorImages[index] && (
                       <div
                         className="flex h-24 items-center justify-center rounded-[1rem] border border-secondary-100 bg-white bg-contain bg-center bg-no-repeat md:col-span-2"

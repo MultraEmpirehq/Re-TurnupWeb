@@ -93,6 +93,7 @@ const PerformerFormDialog: React.FC<{
     setPhoto(null);
   }, [open, performer, initialName]);
 
+  // Where the artist is from (any country): it puts them on their region's chart.
   const countries = useMemo(
     () =>
       Country.getAllCountries().map((country) => ({
