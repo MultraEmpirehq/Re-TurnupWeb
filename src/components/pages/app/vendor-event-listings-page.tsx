@@ -30,6 +30,11 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useFeatures } from "@/hooks/use-features";
+
+/** The venue's name: from the directory, else as the organiser typed it. */
+const venueLabel = (event: IEventDetailsType) =>
+  event.venue?.name || event.venueName || "Venue pending";
 
 const getEventDate = (event: IEventDetailsType) => {
   return event.date;
@@ -101,8 +106,10 @@ const EventListingCard: React.FC<{
   const canSuspend = canModerate && event.status === "published";
   const canRestore = canModerate && isSuspended;
   // Their own live, upcoming events can be promoted.
+  // Admins can switch Promote off for everyone.
+  const { promotion } = useFeatures();
   const canPromote =
-    canEdit && event.status === "published" && isUpcomingEvent(eventDate);
+    canEdit && event.status === "published" && isUpcomingEvent(eventDate) && promotion;
   const [promoting, setPromoting] = useState(false);
   const buttonCount =
     1 + Number(canEdit) + Number(canDelete) + Number(canSuspend || canRestore);
@@ -210,7 +217,7 @@ const EventListingCard: React.FC<{
         </p>
 
         <div className="mb-5 overflow-hidden rounded-[1rem] border border-secondary-100 bg-secondary-50/70">
-          <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0 text-sm">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-0 text-sm">
             <div className="border-b border-secondary-100 px-4 py-3 font-semibold text-secondary-950">
               Event Date
             </div>
@@ -224,10 +231,11 @@ const EventListingCard: React.FC<{
               Venue
             </div>
 
-            <div className="flex items-center gap-2 border-b border-secondary-100 px-4 py-3 text-secondary-500">
+            <div className="flex min-w-0 items-center gap-2 border-b border-secondary-100 px-4 py-3 text-secondary-500">
               <MapPin className="size-4 shrink-0 text-secondary-400" />
-              <span className="truncate">
-                {event.venue?.name || "Venue pending"}
+              {/* Long names end in "…"; hovering shows the whole one. */}
+              <span className="truncate" title={venueLabel(event)}>
+                {venueLabel(event)}
               </span>
             </div>
 
@@ -261,6 +269,8 @@ const EventListingCard: React.FC<{
                         ? "Archived"
                         : event.manage?.removal === "cancellation_pending"
                           ? "Cancellation requested"
+                        : badgeLabel === "Upcoming" && !promotion
+                          ? "Upcoming"
                         : badgeLabel === "Upcoming"
                           ? event.manage?.promotion
                             ? event.manage.promotion.ready

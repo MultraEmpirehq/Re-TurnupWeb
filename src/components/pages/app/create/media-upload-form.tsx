@@ -1,20 +1,31 @@
 import { Button } from "@/components/ui/button";
 import CustomImageComponent from "@/components/ui/custom-image.component";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { constructErrorMessage } from "@/api/functions";
 import { cn } from "@/lib/utils";
 import Joi from "joi";
-import { TrashIcon, UploadIcon } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  PlusIcon,
+  UploadIcon,
+  X,
+} from "lucide-react";
 import React, { memo, useCallback, useMemo } from "react";
 import { useFormContext } from "react-hook-form";
 import { toast } from "sonner";
+import { moveItem } from "@/lib/move-item";
 
 export interface IMediaUploadFormValues {
   mediaFiles: (File | string)[];
+  /** Parallel to mediaFiles: a saved photo's attachment id (null for new). */
+  mediaFileIds?: (string | null)[];
   sponsorNames: string[];
   sponsorImages: (File | string)[];
+  /** Parallel to sponsorNames: the logo a saved sponsor has (an attachment id). */
+  sponsorLogoIds?: (string | null)[];
 }
+
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
@@ -62,8 +73,13 @@ export const mediaUploadFormSchema = Joi.object({
       "array.min": "Please add at least one image",
       "any.required": "Please add at least one image",
     }),
+  mediaFileIds: Joi.array().items(Joi.string().allow(null, "")).optional(),
+  sponsorLogoIds: Joi.array().items(Joi.string().allow(null, "")).optional(),
   sponsorNames: Joi.array().items(Joi.string().allow("")).optional(),
-  sponsorImages: Joi.array().items(Joi.any().custom(validateFile)).optional(),
+  // A sponsor without a logo yet holds an empty slot, which is fine.
+  sponsorImages: Joi.array()
+    .items(Joi.any().allow("", null).custom(validateFile))
+    .optional(),
 }).unknown(true);
 
 const MediaUploadForm: React.FC<{
@@ -122,6 +138,11 @@ const MediaUploadForm: React.FC<{
         filesToAdd.push(file);
       }
       if (filesToAdd.length > 0) {
+        const ids = getValues("mediaFileIds") ?? [];
+        setValue("mediaFileIds", [
+          ...current.map((_, i) => ids[i] ?? null),
+          ...filesToAdd.map(() => null),
+        ]);
         setValue("mediaFiles", [...current, ...filesToAdd], {
           shouldValidate: true,
         });
@@ -134,19 +155,71 @@ const MediaUploadForm: React.FC<{
     (index: number) => {
       const current = getValues("mediaFiles") ?? [];
       const next = current.filter((_, i: number) => i !== index);
+      const ids = current.map((_, i) => getValues("mediaFileIds")?.[i] ?? null);
+      setValue(
+        "mediaFileIds",
+        ids.filter((_, i) => i !== index),
+      );
       setValue("mediaFiles", next, { shouldValidate: true });
     },
     [getValues, setValue],
   );
 
+  /** Moves a photo a place earlier (-1) or later (+1), as the gallery shows it. */
+  const moveFile = useCallback(
+    (index: number, by: -1 | 1) => {
+      const files = getValues("mediaFiles") ?? [];
+      const ids = files.map((_, i) => getValues("mediaFileIds")?.[i] ?? null);
+      setValue("mediaFiles", moveItem(files, index, by), { shouldValidate: true });
+      setValue("mediaFileIds", moveItem(ids, index, by));
+    },
+    [getValues, setValue],
+  );
+
+  /** Sponsors with their logos (and saved logo ids), one entry per sponsor. */
+  const sponsorLists = useCallback(() => {
+    const names = getValues("sponsorNames") ?? [];
+    return {
+      names,
+      images: names.map((_, i) => getValues("sponsorImages")?.[i] ?? ""),
+      ids: names.map((_, i) => getValues("sponsorLogoIds")?.[i] ?? null),
+    };
+  }, [getValues]);
+
+  const setSponsorLists = useCallback(
+    (lists: {
+      names: string[];
+      images: (File | string)[];
+      ids: (string | null)[];
+    }) => {
+      setValue("sponsorNames", lists.names, { shouldValidate: true });
+      setValue("sponsorImages", lists.images, { shouldValidate: true });
+      setValue("sponsorLogoIds", lists.ids);
+    },
+    [setValue],
+  );
+
+  /** Moves a sponsor a place up (-1) or down (+1) the board, logo and all. */
+  const moveSponsor = useCallback(
+    (index: number, by: -1 | 1) => {
+      const { names, images, ids } = sponsorLists();
+      setSponsorLists({
+        names: moveItem(names, index, by),
+        images: moveItem(images, index, by),
+        ids: moveItem(ids, index, by),
+      });
+    },
+    [setSponsorLists, sponsorLists],
+  );
+
   const addSponsor = useCallback(() => {
-    setValue("sponsorNames", [...(getValues("sponsorNames") ?? []), ""], {
-      shouldValidate: true,
+    const { names, images, ids } = sponsorLists();
+    setSponsorLists({
+      names: [...names, ""],
+      images: [...images, ""],
+      ids: [...ids, null],
     });
-    setValue("sponsorImages", [...(getValues("sponsorImages") ?? [])], {
-      shouldValidate: true,
-    });
-  }, [getValues, setValue]);
+  }, [setSponsorLists, sponsorLists]);
 
   const updateSponsorName = useCallback(
     (index: number, value: string) => {
@@ -164,27 +237,26 @@ const MediaUploadForm: React.FC<{
         toast.error("Please select an image file");
         return;
       }
-      const next = [...(getValues("sponsorImages") ?? [])];
-      next[index] = file;
-      setValue("sponsorImages", next, { shouldValidate: true });
+      const { names, images, ids } = sponsorLists();
+      images[index] = file;
+      // The new logo replaces the one it had.
+      ids[index] = null;
+      setSponsorLists({ names, images, ids });
     },
-    [getValues, setValue],
+    [setSponsorLists, sponsorLists],
   );
 
   const removeSponsor = useCallback(
     (index: number) => {
-      setValue(
-        "sponsorNames",
-        (getValues("sponsorNames") ?? []).filter((_, i) => i !== index),
-        { shouldValidate: true },
-      );
-      setValue(
-        "sponsorImages",
-        (getValues("sponsorImages") ?? []).filter((_, i) => i !== index),
-        { shouldValidate: true },
-      );
+      const { names, images, ids } = sponsorLists();
+      const keep = (_: unknown, i: number) => i !== index;
+      setSponsorLists({
+        names: names.filter(keep),
+        images: images.filter(keep),
+        ids: ids.filter(keep),
+      });
     },
-    [getValues, setValue],
+    [setSponsorLists, sponsorLists],
   );
 
   const hasMediaFiles = useMemo(() => {
@@ -214,13 +286,28 @@ const MediaUploadForm: React.FC<{
   }, [handleNextStep]);
 
   return (
-    <div className="gap-3 flex flex-col items-center justify-center w-full py-10 md:py-20">
-      {hasMediaFiles && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-[500px]">
+    <div className="flex w-full flex-col gap-6 py-4 md:py-6">
+      <div className="w-full space-y-4 rounded-2xl border border-secondary-100 bg-white p-5">
+        <div>
+          <p className="text-sm font-semibold text-secondary-950">
+            Event photos
+          </p>
+          <p className="text-xs leading-5 text-secondary-500">
+            Shown in your event&apos;s gallery, in this order. JPG, PNG or
+            WEBP, up to 5MB each.
+          </p>
+        </div>
+
+        <div
+          className={cn(
+            "grid gap-3",
+            hasMediaFiles && "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
+          )}
+        >
           {mediaPreviewUrls.map((previewUrl, index) => (
             <div
               key={`${previewUrl}-${index}`}
-              className="aspect-video relative rounded-lg overflow-hidden bg-secondary-100"
+              className="relative aspect-video overflow-hidden rounded-xl bg-secondary-100"
             >
               <CustomImageComponent
                 src={previewUrl}
@@ -231,129 +318,175 @@ const MediaUploadForm: React.FC<{
               />
               <button
                 type="button"
-                title="Remove"
-                className="absolute top-1 right-1 size-8 rounded-full bg-red-500/90 text-white flex items-center justify-center hover:bg-red-600 z-10"
+                aria-label={`Remove photo ${index + 1}`}
+                className="absolute top-1.5 right-1.5 z-10 flex size-7 items-center justify-center rounded-full bg-white/90 text-red-500 shadow hover:bg-red-50"
                 onClick={() => removeFile(index)}
               >
-                <TrashIcon className="size-4" />
+                <X className="size-4" />
               </button>
+              <div className="absolute bottom-1.5 left-1.5 z-10 flex gap-1">
+                <button
+                  type="button"
+                  aria-label="Move photo earlier"
+                  disabled={index === 0}
+                  onClick={() => moveFile(index, -1)}
+                  className="flex size-7 items-center justify-center rounded-full bg-white/90 text-secondary-800 shadow disabled:opacity-40"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Move photo later"
+                  disabled={index === mediaPreviewUrls.length - 1}
+                  onClick={() => moveFile(index, 1)}
+                  className="flex size-7 items-center justify-center rounded-full bg-white/90 text-secondary-800 shadow disabled:opacity-40"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
+              {index === 0 && (
+                <span className="absolute top-1.5 left-1.5 z-10 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-secondary-800 shadow">
+                  First
+                </span>
+              )}
             </div>
           ))}
-        </div>
-      )}
-      <div
-        className={cn(
-          "border border-dashed flex flex-col gap-3 items-center justify-center w-full max-w-[500px] rounded-xl relative overflow-hidden min-h-[140px] py-8 px-6 md:py-10 md:px-14",
-        )}
-      >
-        <Input
-          key={mediaFiles.length}
-          type="file"
-          accept=".jpg, .png, .webp"
-          multiple
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-          onChange={(e) => {
-            addFiles(e.target.files);
-            e.target.value = "";
-          }}
-        />
-        <>
-          <UploadIcon className="size-10 text-secondary-700" />
-          <p>Drag your files to start uploading</p>
-          <div className="flex flex-row items-center w-full gap-3 max-w-[200px]">
-            <Separator className="flex-1" />
-            <p className="text-sm opacity-60">OR</p>
-            <Separator className="flex-1" />
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="border-secondary-700 text-secondary-700 pointer-events-none"
+
+          {/* Drop or pick photos: a tile beside the others, or the whole area when empty. */}
+          <label
+            className={cn(
+              "relative flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-secondary-200 text-center text-sm text-secondary-500 hover:bg-secondary-50 hover:text-secondary-950",
+              hasMediaFiles ? "aspect-video" : "py-10",
+            )}
           >
-            Browse Files
-          </Button>
-        </>
-      </div>
-      {!errorMessage && (
-        <p className="text-sm max-w-[500px] w-full text-secondary-700">
-          Only .jpg, .png, .webp supported. Max 5MB per file.
-        </p>
-      )}
-      {errorMessage && (
-        <p className="text-sm max-w-[500px] w-full text-destructive">
-          {errorMessage}
-        </p>
-      )}
-      <div className="w-full max-w-[720px] space-y-4 rounded-2xl border border-secondary-100 bg-white p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-secondary-950">Sponsors</p>
-            <p className="text-xs leading-5 text-secondary-500">
-              Add sponsor names or logos. These connect to the event preview
-              sponsor board.
-            </p>
-          </div>
-          <Button type="button" variant="outline" onClick={addSponsor}>
-            Add Sponsor
-          </Button>
+            <Input
+              key={mediaFiles.length}
+              type="file"
+              accept=".jpg, .png, .webp"
+              multiple
+              className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+              onChange={(e) => {
+                addFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            {hasMediaFiles ? (
+              <>
+                <PlusIcon className="size-4" />
+                <span className="font-medium">Add photos</span>
+              </>
+            ) : (
+              <>
+                <UploadIcon className="size-8 text-secondary-700" />
+                <span className="font-medium text-secondary-800">
+                  Drag photos here, or click to browse
+                </span>
+                <span className="text-xs">You can add several at once.</span>
+              </>
+            )}
+          </label>
         </div>
 
-        {sponsorNames.length === 0 && (
-          <div className="rounded-xl border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
-            No sponsors added yet.
-          </div>
+        {errorMessage && (
+          <p className="text-sm text-destructive">{errorMessage}</p>
         )}
+      </div>
 
-        <div className="space-y-3">
+      <div className="w-full space-y-4 rounded-2xl border border-secondary-100 bg-white p-5">
+        <div>
+          <p className="text-sm font-semibold text-secondary-950">Sponsors</p>
+          <p className="text-xs leading-5 text-secondary-500">
+            Laid out as your event&apos;s sponsor board. Tap a tile to add its
+            logo, and use the arrows to change the order.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-secondary-100 sm:grid-cols-3 lg:grid-cols-4">
           {sponsorNames.map((name, index) => (
             <div
               key={`sponsor-${index}`}
-              className="grid gap-3 rounded-xl bg-secondary-50 p-4 md:grid-cols-[1fr_1fr_auto]"
+              className="group relative flex flex-col items-center gap-1.5 border-r border-b border-secondary-100 px-3 pt-7 pb-2"
             >
-              <Input
+              <div className="absolute inset-x-1 top-1 flex items-center justify-between">
+                <div className="flex">
+                  <button
+                    type="button"
+                    disabled={index === 0}
+                    onClick={() => moveSponsor(index, -1)}
+                    aria-label={`Move ${name || "sponsor"} earlier`}
+                    className="flex size-6 items-center justify-center rounded-md text-secondary-400 hover:bg-secondary-50 hover:text-secondary-950 disabled:opacity-30"
+                  >
+                    <ChevronLeft className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={index === sponsorNames.length - 1}
+                    onClick={() => moveSponsor(index, 1)}
+                    aria-label={`Move ${name || "sponsor"} later`}
+                    className="flex size-6 items-center justify-center rounded-md text-secondary-400 hover:bg-secondary-50 hover:text-secondary-950 disabled:opacity-30"
+                  >
+                    <ChevronRight className="size-3.5" />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeSponsor(index)}
+                  aria-label={`Remove ${name || "sponsor"}`}
+                  className="flex size-6 items-center justify-center rounded-md text-secondary-400 hover:bg-red-50 hover:text-red-500"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+              <label
+                className="relative flex h-12 w-full cursor-pointer items-center justify-center rounded-lg hover:bg-secondary-50"
+                title={sponsorImagePreviewUrls[index] ? "Change logo" : "Add logo"}
+              >
+                {sponsorImagePreviewUrls[index] ? (
+                  <CustomImageComponent
+                    src={sponsorImagePreviewUrls[index]}
+                    alt={`${name || "Sponsor"} logo`}
+                    fill
+                    className="size-full"
+                    imageClassName="object-contain"
+                  />
+                ) : (
+                  <span className="flex items-center gap-1 text-xs text-secondary-400">
+                    <UploadIcon className="size-3.5" /> Logo
+                  </span>
+                )}
+                <input
+                  type="file"
+                  accept=".jpg, .png, .webp"
+                  className="sr-only"
+                  onChange={(event) => {
+                    updateSponsorImage(index, event.target.files?.[0]);
+                    event.currentTarget.value = "";
+                  }}
+                />
+              </label>
+              <input
                 value={name}
                 onChange={(event) =>
                   updateSponsorName(index, event.target.value)
                 }
                 placeholder="Sponsor name"
-                className="h-11 rounded-xl bg-white"
+                aria-label="Sponsor name"
+                className="w-full rounded-md bg-transparent px-1 py-0.5 text-center text-sm font-semibold text-secondary-700 outline-none placeholder:font-normal placeholder:text-secondary-300 focus:bg-secondary-50"
               />
-              <Input
-                type="file"
-                accept=".jpg, .png, .webp"
-                className="h-11 rounded-xl bg-white"
-                onChange={(event) => {
-                  updateSponsorImage(index, event.target.files?.[0]);
-                  event.currentTarget.value = "";
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl bg-white"
-                onClick={() => removeSponsor(index)}
-              >
-                Remove
-              </Button>
-              {sponsorImagePreviewUrls[index] && (
-                <div className="h-24 rounded-xl border border-secondary-100 bg-white p-3 md:col-span-3">
-                  <div className="relative h-full w-full">
-                    <CustomImageComponent
-                      src={sponsorImagePreviewUrls[index]}
-                      alt={`${name || "Sponsor"} logo`}
-                      fill
-                      className="size-full"
-                      imageClassName="object-contain"
-                    />
-                  </div>
-                </div>
-              )}
             </div>
           ))}
+          <button
+            type="button"
+            onClick={addSponsor}
+            className="flex min-h-[6.5rem] flex-col items-center justify-center gap-1 border-r border-b border-dashed border-secondary-200 text-sm font-medium text-secondary-500 hover:bg-secondary-50 hover:text-secondary-950"
+          >
+            <PlusIcon className="size-4" />
+            {sponsorNames.length ? "Add sponsor" : "Add your first sponsor"}
+          </button>
         </div>
       </div>
 
-      <div className="w-full max-w-[500px] mt-6 md:mt-10 flex flex-row items-center justify-start gap-3">
+      <div className="flex w-full flex-row items-center justify-start gap-3">
         <Button
           onClick={handlePreviousStep}
           disabled={isSaving}

@@ -9,7 +9,7 @@ import {
   TInsightsDays,
   useVendorInsights,
 } from "@/hooks/use-vendor-tickets";
-import { getCurrencyForCountry } from "@/lib/currency";
+import { getCurrencyForCountry, moneyLocale } from "@/lib/currency";
 import { formatEventDateRange, formatEventTime } from "@/lib/event-time";
 import { cn } from "@/lib/utils";
 import useUserStore from "@/stores/user-store";
@@ -218,7 +218,7 @@ const AnalysisPage = () => {
   const money = useMemo(
     () =>
       chartCurrency
-        ? new Intl.NumberFormat(undefined, {
+        ? new Intl.NumberFormat(moneyLocale(chartCurrency), {
             style: "currency",
             currency: chartCurrency,
             maximumFractionDigits: 0,

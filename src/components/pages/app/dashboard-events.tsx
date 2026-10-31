@@ -24,6 +24,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { memo, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useFeatures } from "@/hooks/use-features";
+
+/** The venue's name: from the directory, else as the organiser typed it. */
+const venueLabel = (event: IEventDetailsType) =>
+  event.venue?.name || event.venueName || "Venue pending";
 
 const formatEventDate = (date: Date | string) => {
   return new Intl.DateTimeFormat("en-US", {
@@ -44,7 +49,11 @@ const EventManagementCard: React.FC<{
 }> = ({ event, onDeleteRequest, onChanged }) => {
   const badgeLabel = isUpcomingEvent(event.date) ? "Upcoming" : "Past";
   const canManage = event.isOwner === true;
-  const canPromote = canManage && isUpcomingEvent(event.date);
+  // Only a live (published) event has a page to send people to.
+  // Admins can switch Promote off for everyone.
+  const { promotion } = useFeatures();
+  const canPromote =
+    canManage && event.status === "published" && isUpcomingEvent(event.date) && promotion;
   const [promoting, setPromoting] = useState(false);
   const eventDescription =
     event.description || "Complete this event listing so attendees know what to expect.";
@@ -72,7 +81,7 @@ const EventManagementCard: React.FC<{
       </div>
 
       <div className="mb-5 overflow-hidden rounded-[1rem] border border-secondary-100 bg-secondary-50/70">
-        <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0 text-sm">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-0 text-sm">
           <div className="border-b border-secondary-100 px-4 py-3 font-semibold text-secondary-950">
             Event Date
           </div>
@@ -84,9 +93,12 @@ const EventManagementCard: React.FC<{
           <div className="border-b border-secondary-100 px-4 py-3 font-semibold text-secondary-950">
             Venue
           </div>
-          <div className="flex items-center gap-2 border-b border-secondary-100 px-4 py-3 text-secondary-500">
+          <div className="flex min-w-0 items-center gap-2 border-b border-secondary-100 px-4 py-3 text-secondary-500">
             <MapPin className="size-4 shrink-0 text-secondary-400" />
-            <span className="truncate">{event.venue?.name || "Venue pending"}</span>
+            {/* Long names end in "…"; hovering shows the whole one. */}
+            <span className="truncate" title={venueLabel(event)}>
+              {venueLabel(event)}
+            </span>
           </div>
 
           <div className="border-b border-secondary-100 px-4 py-3 font-semibold text-secondary-950">
@@ -99,7 +111,9 @@ const EventManagementCard: React.FC<{
 
           <div className="px-4 py-3 font-semibold text-secondary-950">Status</div>
           <div className="px-4 py-3 text-secondary-500">
-            {badgeLabel === "Upcoming"
+            {badgeLabel === "Upcoming" && !promotion
+              ? "Upcoming"
+              : badgeLabel === "Upcoming"
               ? event.manage?.promotion && !event.manage.promotion.ready
                 ? `${event.manage.promotion.done} of ${event.manage.promotion.total} ready to promote`
                 : "✓ Ready to promote"
@@ -164,7 +178,7 @@ const EventManagementSkeleton = () => {
         </div>
         <Skeleton className="h-4 w-16 rounded-xl" />
         <div className="overflow-hidden rounded-[1rem] border border-secondary-100 bg-secondary-50/70">
-          <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-0">
             <Skeleton className="m-3 h-4 w-20 rounded-xl" />
             <Skeleton className="m-3 h-4 rounded-xl" />
             <Skeleton className="m-3 h-4 w-16 rounded-xl" />

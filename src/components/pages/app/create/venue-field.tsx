@@ -6,7 +6,16 @@ import { MapPin } from "lucide-react";
 import React, { memo, useMemo, useState } from "react";
 import { useDebounce } from "use-debounce";
 
-type TPicked = { id: string; name: string; address?: string | null };
+type TPicked = {
+  id: string;
+  name: string;
+  address?: string | null;
+  /** Its map position, which settles the event's timezone. */
+  latitude?: number;
+  longitude?: number;
+  /** How many people it holds, from the directory. */
+  capacity?: number;
+};
 
 /**
  * The venue, typed in. As they type, matching venues from the directory are
@@ -21,6 +30,9 @@ const VenueField: React.FC<{
   onPick: (venue: TPicked) => void;
   onTypeName: (name: string) => void;
   onTypeAddress: (address: string) => void;
+  /** A typed-in venue's capacity, if the organiser knows it. */
+  venueCapacity?: number | null;
+  onTypeCapacity?: (capacity: number | null) => void;
   country?: string;
   state?: string;
   error?: string;
@@ -31,6 +43,8 @@ const VenueField: React.FC<{
   onPick,
   onTypeName,
   onTypeAddress,
+  venueCapacity,
+  onTypeCapacity,
   country,
   state,
   error,
@@ -91,6 +105,9 @@ const VenueField: React.FC<{
                       id: venue.id,
                       name: venue.name,
                       address: venue.address,
+                      latitude: venue.latitude,
+                      longitude: venue.longitude,
+                      capacity: venue.totalAvailableSeat,
                     });
                     setFocused(false);
                   }}
@@ -113,9 +130,14 @@ const VenueField: React.FC<{
       </div>
 
       {isLinked ? (
-        <p className="flex items-center gap-2 text-xs text-secondary-600">
+        <p className="flex flex-wrap items-center gap-2 text-xs text-secondary-600">
           <MapPin className="size-3.5 text-primary-600" />
           {venueAddress || "Address from the directory"}
+          {!!venueCapacity && (
+            <span className="font-semibold text-secondary-800">
+              · Holds {venueCapacity.toLocaleString()}
+            </span>
+          )}
           <button
             type="button"
             onClick={() => onTypeName(venueName)}
@@ -126,14 +148,30 @@ const VenueField: React.FC<{
         </p>
       ) : (
         venueName.trim() && (
-          <InputField
-            label="Venue address (optional)"
-            placeholder="Street, area — helps people find it"
-            value={venueAddress}
-            autoComplete="off"
-            onChange={(event) => onTypeAddress(event.target.value)}
-            helperText="Not in our directory yet? It still shows on your event; our team adds it after a quick check."
-          />
+          <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
+            <InputField
+              label="Venue address (optional)"
+              placeholder="Street, area — helps people find it"
+              value={venueAddress}
+              autoComplete="off"
+              onChange={(event) => onTypeAddress(event.target.value)}
+              helperText="Not in our directory yet? It still shows on your event; our team adds it after a quick check."
+            />
+            {onTypeCapacity && (
+              <InputField
+                label="How many it holds (optional)"
+                type="number"
+                min={1}
+                placeholder="e.g. 500"
+                value={venueCapacity ? String(venueCapacity) : ""}
+                onChange={(event) => {
+                  const value = Math.floor(Number(event.target.value));
+                  onTypeCapacity(value > 0 ? value : null);
+                }}
+                helperText="Tickets and passes can't go over it."
+              />
+            )}
+          </div>
         )
       )}
     </div>

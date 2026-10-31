@@ -18,26 +18,25 @@ import { ROUTES } from "@/lib/variables";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import {
-  ArrowLeft,
-  CalendarDays,
-  Download,
-  Eye,
-  MapPin,
-  TicketIcon,
-} from "lucide-react";
+import { ArrowLeft, Download, QrCode, TicketIcon } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import React, { memo, useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import TicketCard from "@/components/ticket-design/ticket-card";
-import ViewTicketsDialog from "@/components/ticket-design/view-tickets-dialog";
+import {
+  PASS_COLOUR,
+  PassHeader,
+  PassViewer,
+  TEventTickets,
+  statusOf,
+} from "@/components/ticket-design/ticket-wallet";
+import { useUserTickets } from "@/hooks/use-user-tickets";
 
 const OrderDetailPage = () => {
   const params = useParams();
   const orderId = params?.orderId?.toString() ?? "";
   const [isDownloading, setIsDownloading] = useState(false);
-  const [showTicketsDialog, setShowTicketsDialog] = useState(false);
 
   const {
     data: order,
@@ -54,9 +53,21 @@ const OrderDetailPage = () => {
   });
 
   const event = useMemo(
-    () => order?.ticket?.event?.data,
-    [order?.ticket?.event?.data],
+    () => order?.ticket?.event?.data ?? order?.ticket?.event,
+    [order?.ticket?.event],
   );
+
+  // The order's tickets as passes (with their live codes), from your wallet.
+  const { data: wallet } = useUserTickets();
+  const passes = useMemo<TEventTickets | null>(() => {
+    const tickets = (wallet?.data ?? []).filter(
+      (ticket) => ticket.orderId === orderId,
+    );
+    const passEvent = tickets[0]?.ticket?.event ?? event;
+    return tickets.length && passEvent ? { event: passEvent, tickets } : null;
+  }, [wallet?.data, orderId, event]);
+  const [openAt, setOpenAt] = useState<number | null>(null);
+  const closePasses = useCallback(() => setOpenAt(null), []);
 
   const captureAndDownloadAll = useCallback(async () => {
     if (!order?.userTickets?.length) return;
@@ -191,113 +202,155 @@ const OrderDetailPage = () => {
         <h2 className="text-lg font-semibold">Order Details</h2>
       </div>
 
-      <div className="border rounded-xl p-6 space-y-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="font-bold text-lg">{event?.name ?? "Event"}</p>
-            <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
-              {event?.date && (
-                <span className="flex items-center gap-1">
-                  <CalendarDays className="size-3.5" />
-                  {format(new Date(event.date), "MMM dd, yyyy · h:mm a")}
-                </span>
+      <div className="overflow-hidden rounded-2xl border">
+        {event ? (
+          <PassHeader
+            event={event}
+            colour={PASS_COLOUR}
+            right={
+              <span
+                className={cn(
+                  "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium",
+                  orderStatusMeta(order.status).className,
+                )}
+              >
+                {orderStatusMeta(order.status).label}
+              </span>
+            }
+          />
+        ) : (
+          <div className="flex items-center justify-between gap-4 px-4 py-3.5">
+            <p className="text-lg font-bold">Event</p>
+            <span
+              className={cn(
+                "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium",
+                orderStatusMeta(order.status).className,
               )}
-              {event?.venue?.name && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="size-3.5" />
-                  {event.venue.name}
-                </span>
-              )}
-            </div>
-          </div>
-          <span
-            className={cn(
-              "text-xs font-medium px-2.5 py-0.5 rounded-full shrink-0",
-              orderStatusMeta(order.status).className,
-            )}
-          >
-            {orderStatusMeta(order.status).label}
-          </span>
-        </div>
-
-        {/* Why the order ended up where it did, or how long its seats are held. */}
-        {order.statusReason && order.status !== EOrderStatus.COMPLETED && (
-          <p
-            className={cn(
-              "rounded-xl px-4 py-3 text-sm",
-              order.status === EOrderStatus.REFUNDED
-                ? "bg-sky-50 text-sky-800"
-                : order.status === EOrderStatus.NEEDS_REVIEW
-                  ? "bg-secondary-50 text-secondary-800"
-                  : "bg-red-50 text-red-700",
-            )}
-          >
-            {order.statusReason}
-            {order.status === EOrderStatus.NEEDS_REVIEW &&
-              " Our team has been alerted and will get back to you."}
-          </p>
-        )}
-        {order.status === EOrderStatus.PENDING && order.holdExpiresAt && (
-          <p className="rounded-xl bg-secondary-50 px-4 py-3 text-sm text-secondary-800">
-            Your seats are held until{" "}
-            {format(new Date(order.holdExpiresAt), "h:mm a")}. Finish paying
-            before then to keep them.
-          </p>
-        )}
-
-        <Separator />
-
-        <div className="space-y-3">
-          <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-            Tickets
-          </p>
-          {order.userTickets?.map((ut, i) => (
-            <div
-              key={ut.id ?? i}
-              className="flex items-center justify-between gap-3 py-2"
             >
-              <div className="flex items-center gap-3">
-                <div className="size-9 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
-                  <TicketIcon className="size-4 text-primary-700 dark:text-primary-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{ut.ticket.name}</p>
-                  <p className="text-xs text-muted-foreground capitalize">
-                    {ut.ticket.type?.toLowerCase()}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-medium">
-                  {ut.ticket.price?.formatted?.withCurrency ?? "Free"}
-                </p>
-                <p className="text-xs text-muted-foreground font-mono">
-                  {ut.code}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <Separator />
-
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              {(order.items?.length ?? 0) > 1
-                ? orderTicketsLabel(order)
-                : `${order.quantity} ticket${order.quantity !== 1 ? "s" : ""}`}
-            </p>
-            {order.createdAt && (
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Ordered {format(new Date(order.createdAt), "MMM dd, yyyy")}
-              </p>
-            )}
-            <OrderMoneyBack order={order} className="mt-2" />
+              {orderStatusMeta(order.status).label}
+            </span>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">Total</p>
-            <p className="text-lg font-bold">{totalFormatted}</p>
+        )}
+        <div className="space-y-5 p-4 sm:p-6">
+          {/* Why the order ended up where it did, or how long its seats are held. */}
+          {order.statusReason && order.status !== EOrderStatus.COMPLETED && (
+            <p
+              className={cn(
+                "rounded-xl px-4 py-3 text-sm",
+                order.status === EOrderStatus.REFUNDED
+                  ? "bg-sky-50 text-sky-800"
+                  : order.status === EOrderStatus.NEEDS_REVIEW
+                    ? "bg-secondary-50 text-secondary-800"
+                    : "bg-red-50 text-red-700",
+              )}
+            >
+              {order.statusReason}
+              {order.status === EOrderStatus.NEEDS_REVIEW &&
+                " Our team has been alerted and will get back to you."}
+            </p>
+          )}
+          {order.status === EOrderStatus.PENDING && order.holdExpiresAt && (
+            <p className="rounded-xl bg-secondary-50 px-4 py-3 text-sm text-secondary-800">
+              Your seats are held until{" "}
+              {format(new Date(order.holdExpiresAt), "h:mm a")}. Finish paying
+              before then to keep them.
+            </p>
+          )}
+
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              Tickets
+            </p>
+            {passes ? (
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {passes.tickets.map((ticket, index) => {
+                  const status = statusOf(ticket, passes.event);
+                  return (
+                    <button
+                      key={ticket.id}
+                      type="button"
+                      onClick={() => setOpenAt(index)}
+                      className="flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition hover:border-primary hover:bg-primary-50/40 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                    >
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#0b1d2a] text-white">
+                        <QrCode className="size-5" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold">
+                          {ticket.ticket?.name ?? "Ticket"}
+                        </span>
+                        <span className="block truncate text-xs text-muted-foreground tabular-nums">
+                          {ticket.code}
+                        </span>
+                      </span>
+                      <span className="text-right">
+                        <span
+                          className={cn(
+                            "inline-block rounded-full px-2 py-0.5 text-[11px] font-bold",
+                            status.className,
+                          )}
+                        >
+                          {status.label}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                          {ticket.ticket?.price?.formatted?.withCurrency ??
+                            "Free"}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              order.userTickets?.map((ut, i) => (
+                <div
+                  key={ut.id ?? i}
+                  className="flex items-center justify-between gap-3 py-2"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="size-9 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+                      <TicketIcon className="size-4 text-primary-700 dark:text-primary-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{ut.ticket.name}</p>
+                      <p className="text-xs text-muted-foreground capitalize">
+                        {ut.ticket.type?.toLowerCase()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">
+                      {ut.ticket.price?.formatted?.withCurrency ?? "Free"}
+                    </p>
+                    <p className="text-xs text-muted-foreground font-mono">
+                      {ut.code}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">
+                {(order.items?.length ?? 0) > 1
+                  ? orderTicketsLabel(order)
+                  : `${order.quantity} ticket${order.quantity !== 1 ? "s" : ""}`}
+              </p>
+              {order.createdAt && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Ordered {format(new Date(order.createdAt), "MMM dd, yyyy")}
+                </p>
+              )}
+              <OrderMoneyBack order={order} className="mt-2" />
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-lg font-bold">{totalFormatted}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -305,18 +358,22 @@ const OrderDetailPage = () => {
       {order?.status === EOrderStatus.COMPLETED &&
         order?.userTickets?.length > 0 && (
           <div className="flex flex-wrap items-center gap-3">
-            <Button
-              onClick={() => setShowTicketsDialog(true)}
-              variant="outline"
-              className="gap-2"
-            >
-              <Eye className="size-4" />
-              View Tickets
-            </Button>
+            {passes && (
+              <Button
+                onClick={() => setOpenAt(0)}
+                className="gap-2 rounded-full"
+              >
+                <QrCode className="size-4" />
+                {passes.tickets.length > 1
+                  ? `Show your ${passes.tickets.length} passes`
+                  : "Show your pass"}
+              </Button>
+            )}
             <Button
               onClick={handleDownloadTickets}
               loading={isDownloading}
-              className="gap-2"
+              variant="outline"
+              className="gap-2 rounded-full"
             >
               <Download className="size-4" />
               Download All Tickets
@@ -335,7 +392,7 @@ const OrderDetailPage = () => {
         )}
         <OrderHelp
           reference={order.reference ?? order.id}
-          eventName={order.ticket?.event?.data?.name}
+          eventName={event?.name}
         />
       </div>
 
@@ -356,11 +413,12 @@ const OrderDetailPage = () => {
         </div>
       ) : null}
 
-      <ViewTicketsDialog
-        open={showTicketsDialog}
-        onOpenChange={setShowTicketsDialog}
-        userTickets={order.userTickets ?? []}
-        event={event}
+      <PassViewer
+        group={openAt === null ? null : passes}
+        colour={PASS_COLOUR}
+        startAt={openAt ?? 0}
+        hideOrderLink
+        onClose={closePasses}
       />
     </div>
   );

@@ -8,7 +8,8 @@ import CustomImageComponent from "@/components/ui/custom-image.component";
 import InputField from "@/components/ui/input-field";
 import { Input } from "@/components/ui/input";
 import DateSelect from "@/components/ui/date-select";
-import TimezoneSelect from "@/components/ui/timezone-select";
+import EventZoneField, { TZoneSource } from "./event-zone-field";
+import { deviceZone, TEventPlace, zoneForPlace } from "@/lib/event-zone";
 import TextareaField from "@/components/ui/textarea-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrashIcon, UploadIcon } from "lucide-react";
@@ -35,6 +36,7 @@ import { TComboboxItem } from "@/components/ui/combobox-select";
 import { constructErrorMessage } from "@/api/functions";
 import { saveCustomCategory } from "@/lib/custom-event-options";
 import { toast } from "sonner";
+import { useMarketOptions } from "@/hooks/use-markets";
 
 export interface IBasicFormValues {
   coverImage: File | string | null;
@@ -52,6 +54,8 @@ export interface IBasicFormValues {
   venueName?: string;
   /** Typed with a venue that isn't in the directory. */
   venueAddress?: string;
+  /** How many the venue holds: from the directory, or as typed. Caps tickets. */
+  venueCapacity?: number | null;
   categoryId: string;
   categoryName?: string;
   guestIds: string[];
@@ -141,6 +145,7 @@ export const basicInformationSchema = Joi.object({
     }),
   }),
   venueAddress: Joi.string().allow("").optional(),
+  venueCapacity: Joi.number().integer().min(1).allow(null).optional(),
   categoryId: Joi.string().required().messages({
     "string.empty": "Category is required",
     "any.required": "Category is required",
@@ -184,10 +189,7 @@ export const basicInformationSchema = Joi.object({
           "date.empty": "Activity date is required",
           "any.required": "Activity date is required",
         }),
-        activityDescription: Joi.string().required().messages({
-          "string.empty": "Activity description is required",
-          "any.required": "Activity description is required",
-        }),
+        activityDescription: Joi.string().allow("").optional(),
       }),
     )
     .required()
@@ -223,12 +225,41 @@ const BasicForm: React.FC<{
   // Venues are offered for the chosen location, so a venue picked for the old
   // one no longer applies. A venue the user typed in themselves isn't tied to a
   // location and stays.
+  // The timezone follows the location; where it came from decides what's said.
+  const [zoneAction, setZoneSource] = useState<TZoneSource | null>(null);
+  const eventTimezone = watch("eventTimezone");
+  // Before they touch it (a new event, or a draft): read it off the values.
+  const zoneSource: TZoneSource =
+    zoneAction ??
+    (eventTimezone &&
+    eventTimezone ===
+      zoneForPlace({ countryCode: eventCountryCode, stateCode: eventStateCode })
+      ? "location"
+      : eventTimezone === deviceZone()
+        ? "device"
+        : "chosen");
+  const applyZone = useCallback(
+    (place: TEventPlace) => {
+      const zone = zoneForPlace(place);
+      if (!zone) return;
+      setValue("eventTimezone", zone, { shouldDirty: true });
+      setZoneSource("location");
+    },
+    [setValue],
+  );
+  const needsZoneDetail =
+    !!eventCountryCode &&
+    (Country.getCountryByCode(eventCountryCode)?.timezones?.length ?? 0) > 1 &&
+    zoneSource !== "location" &&
+    zoneSource !== "chosen";
+
   const clearVenueForNewLocation = useCallback(() => {
     const venueId = getValues("venueId");
     if (!venueId || venueId.startsWith("custom-venue-")) return;
     setValue("venueId", "", { shouldValidate: true, shouldDirty: true });
     setValue("venueName", "", { shouldDirty: true });
     setValue("venueAddress", "", { shouldDirty: true });
+    setValue("venueCapacity", null, { shouldDirty: true });
   }, [getValues, setValue]);
   const {
     data: categories,
@@ -253,14 +284,8 @@ const BasicForm: React.FC<{
       : undefined;
   }, [categoriesError]);
 
-  const countryOptions = useMemo(
-    () =>
-      Country.getAllCountries().map((country) => ({
-        label: `${country.flag} ${country.name}`,
-        value: country.isoCode,
-      })),
-    [],
-  );
+  // Only where Turnupz is open (the backend's list).
+  const countryOptions = useMarketOptions("code");
 
   const stateOptions = useMemo(() => {
     if (!eventCountryCode) return [];
@@ -425,19 +450,6 @@ const BasicForm: React.FC<{
 
         <Controller
           control={control}
-          name="eventTimezone"
-          render={({ field, fieldState }) => (
-            <TimezoneSelect
-              value={field.value}
-              onChange={field.onChange}
-              error={fieldState?.error?.message}
-              inputClassName="h-10"
-            />
-          )}
-        />
-
-        <Controller
-          control={control}
           name="eventCountryCode"
           render={({ field, fieldState }) => (
             <ComboboxSelect
@@ -448,14 +460,12 @@ const BasicForm: React.FC<{
                 const selectedCountry = Country.getCountryByCode(countryCode);
                 if (countryCode !== field.value) clearVenueForNewLocation();
                 field.onChange(countryCode);
-                // A single-zone country settles the timezone; others are left
-                // for the organiser to pick.
-                const countryZones = selectedCountry?.timezones ?? [];
-                if (countryZones.length === 1) {
-                  setValue("eventTimezone", countryZones[0].zoneName, {
-                    shouldDirty: true,
-                  });
-                }
+                // A single-zone country settles the timezone; in others the
+                // province and city do.
+                // A new country: the old zone no longer applies until this
+                // one's is known.
+                if (countryCode !== field.value) setZoneSource("device");
+                applyZone({ countryCode });
                 setValue("eventCountry", selectedCountry?.name ?? "", {
                   shouldValidate: true,
                   shouldDirty: true,
@@ -497,6 +507,7 @@ const BasicForm: React.FC<{
                 );
                 if (stateCode !== field.value) clearVenueForNewLocation();
                 field.onChange(stateCode);
+                applyZone({ countryCode: eventCountryCode, stateCode });
                 setValue("eventState", selectedState?.name ?? "", {
                   shouldValidate: true,
                   shouldDirty: true,
@@ -527,7 +538,16 @@ const BasicForm: React.FC<{
               label="City"
               required={true}
               item={field.value}
-              setItem={field.onChange}
+              setItem={(cityName) => {
+                field.onChange(cityName);
+                const city = stateCities.find((item) => item.name === cityName);
+                applyZone({
+                  countryCode: eventCountryCode,
+                  stateCode: eventStateCode,
+                  latitude: city?.latitude,
+                  longitude: city?.longitude,
+                });
+              }}
               items={cityOptions}
               error={fieldState?.error?.message}
               placeholder={
@@ -559,9 +579,28 @@ const BasicForm: React.FC<{
                 setValue("venueAddress", venue.address ?? "", {
                   shouldDirty: true,
                 });
+                setValue("venueCapacity", venue.capacity || null, {
+                  shouldDirty: true,
+                });
+                // The venue's own map position is the surest guide.
+                applyZone({
+                  countryCode: eventCountryCode,
+                  stateCode: eventStateCode,
+                  latitude: venue.latitude,
+                  longitude: venue.longitude,
+                });
               }}
+              venueCapacity={watch("venueCapacity") ?? null}
+              onTypeCapacity={(capacity) =>
+                setValue("venueCapacity", capacity, { shouldDirty: true })
+              }
               onTypeName={(name) => {
-                // Typing makes it their own venue, not a directory one.
+                // Typing makes it their own venue, not a directory one; a
+                // directory venue's capacity no longer applies.
+                const linked = getValues("venueId");
+                if (linked && !linked.startsWith("custom-venue-")) {
+                  setValue("venueCapacity", null, { shouldDirty: true });
+                }
                 setValue("venueId", "", { shouldDirty: true });
                 setValue("venueName", name, {
                   shouldDirty: true,
@@ -571,6 +610,23 @@ const BasicForm: React.FC<{
               onTypeAddress={(address) =>
                 setValue("venueAddress", address, { shouldDirty: true })
               }
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="eventTimezone"
+          render={({ field, fieldState }) => (
+            <EventZoneField
+              value={field.value}
+              onChange={(zone) => {
+                field.onChange(zone);
+                setZoneSource("chosen");
+              }}
+              source={zoneSource}
+              needsMoreDetail={needsZoneDetail}
+              error={fieldState?.error?.message}
             />
           )}
         />
@@ -587,6 +643,13 @@ const BasicForm: React.FC<{
               refetch={refetch}
               isLoading={isLoading}
               placeholder="Select or type a new category"
+              emptyText="No category matches."
+              // A new one waits for our team; it's found under "Other" meanwhile.
+              helperText={
+                field.value?.startsWith("custom-category-")
+                  ? `New category. Your event shows "${watch("categoryName")}", and people find it under Other in Explore until our team adds it.`
+                  : undefined
+              }
               items={categoryItems || []}
               item={field.value}
               setItem={(value) => {
@@ -610,19 +673,6 @@ const BasicForm: React.FC<{
                   });
                 }
               }}
-            />
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="eventActivities"
-          render={({ field, fieldState }) => (
-            <EventActivitiesInput
-              selectedDate={eventDate}
-              eventActivities={field.value}
-              setEventActivities={field.onChange}
-              error={fieldState?.error?.message}
             />
           )}
         />
@@ -660,6 +710,20 @@ const BasicForm: React.FC<{
                 error={fieldState?.error?.message}
               />
             </div>
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="eventActivities"
+          render={({ field, fieldState }) => (
+            <EventActivitiesInput
+              selectedDate={eventDate}
+              days={isMultiDay ? (watch("eventDays") ?? []) : []}
+              eventActivities={field.value}
+              setEventActivities={field.onChange}
+              error={fieldState?.error?.message}
+            />
           )}
         />
 

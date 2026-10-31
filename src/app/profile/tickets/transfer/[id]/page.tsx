@@ -39,6 +39,7 @@ import PerformerAvatar from "@/components/discovery/performer-avatar";
 import { parseRecipient, recipientBody } from "@/lib/transfer-recipient";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { moneyLocale } from "@/lib/currency";
 
 interface ITransferFormValues {
   recipient: string;
@@ -83,7 +84,7 @@ function toUserTicketType(ut: UserTicketDetailsResponseType): IUserTicketType {
       name: ut.ticket.name,
       type: ut.ticket.type,
       link: ut.ticket.link ?? null,
-      event: { data: ut.ticket.event },
+      event: { ...ut.ticket.event, data: ut.ticket.event },
       price: ut.ticket.price,
       quantity: ut.ticket.quantity,
       sold: ut.ticket.sold,
@@ -131,7 +132,7 @@ function formatMoney(
   fallbackSymbol = "N",
 ) {
   try {
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(moneyLocale(currencyCode, locale), {
       style: "currency",
       currency: currencyCode,
       minimumFractionDigits: 0,

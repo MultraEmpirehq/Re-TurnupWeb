@@ -102,7 +102,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
     ? startOfDay(new Date(eventEnd)) < startOfDay(new Date())
     : false;
   const daysNote = ticketDaysNote(ticket?.dayIds, event);
-  // Live: the QR changes every 30 seconds, so a screenshot won't get in.
+  // Live: the QR changes every 30 seconds, so a screenshot soon stops working.
   const live = useLiveCode(
     userTicket.liveCode,
     userTicket.code,

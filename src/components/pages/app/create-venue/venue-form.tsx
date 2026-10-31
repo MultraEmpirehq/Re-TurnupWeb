@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useCallback } from "react";
+import React, { memo, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import Joi from "joi";
 import { Controller, useFormContext } from "react-hook-form";
@@ -10,6 +10,7 @@ import TextareaField from "@/components/ui/textarea-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import VenueImagesInput from "./venue-images-input";
 import type { IPlaceResolved } from "@/components/ui/google-places-autocomplete";
+import { useMarkets } from "@/hooks/use-markets";
 
 const GooglePlacesAutocomplete = dynamic(
   () => import("@/components/ui/google-places-autocomplete"),
@@ -126,6 +127,9 @@ const VenueForm: React.FC<{
     setValue,
     formState: { errors, isValid, isSubmitting },
   } = useFormContext<IVenueFormValues>();
+  // Venues can only be where Turnupz is open (the backend's list).
+  const markets = useMarkets();
+  const marketCodes = useMemo(() => markets.map((market) => market.code), [markets]);
 
   const handlePlaceSelected = useCallback(
     (place: IPlaceResolved) => {
@@ -178,6 +182,7 @@ const VenueForm: React.FC<{
               value={field.value ?? ""}
               onChange={field.onChange}
               onPlaceSelected={handlePlaceSelected}
+              countryRestriction={marketCodes}
               placeholder="Search for the venue location..."
               error={errors?.address?.message}
               className="lg:col-span-2"

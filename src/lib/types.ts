@@ -226,6 +226,8 @@ export interface IEventDetailsType {
   reviewNote?: string | null;
   /** IANA zone the event's times are in, e.g. "Africa/Lagos". */
   timezone?: string;
+  /** When it was last saved; sent to its organiser only. */
+  updatedAt?: string | null;
   /** True when the signed-in viewer created this event; only they may edit or delete it. */
   isOwner?: boolean;
   /** How it's selling, from Turnupz: labels shown on its card. */
@@ -248,7 +250,8 @@ export interface IEventDetailsType {
   eventGuestsOfHonour?: ({ name: string } | TUserDetails)[];
   medias?: string[];
   mediaDetails?: TAttachmentDetails[];
-  sponsors?: string[];
+  /** As the API sends them: names with their logo (older data: plain names). */
+  sponsors?: TEventSponsor[];
   sponsorImages?: string[];
   saleMethod?: string;
   ticketUrl?: string;
@@ -334,7 +337,8 @@ export interface IOrderTicketType {
   name: string;
   type: string;
   link: string | null;
-  event?: { data?: IEventDetailsType };
+  /** The event; older responses wrap it in `data`. */
+  event?: IEventDetailsType & { data?: IEventDetailsType };
   price: PriceDetailsType;
   quantity?: number;
   sold?: number;
@@ -658,3 +662,20 @@ export interface IFollowedItem {
   upcomingEvents: number;
   followedAt: string;
 }
+
+/** An event sponsor: its name and, when one was uploaded, its logo. */
+export type TEventSponsor =
+  | string
+  | {
+      id?: string;
+      name: string;
+      imageDetails?: { id?: string; url?: string } | null;
+    };
+
+/** A sponsor's name, whichever shape it came in. */
+export const sponsorName = (sponsor: TEventSponsor) =>
+  typeof sponsor === "string" ? sponsor : sponsor?.name ?? "";
+
+/** A sponsor's logo url, if it has one. */
+export const sponsorLogo = (sponsor: TEventSponsor) =>
+  typeof sponsor === "string" ? undefined : sponsor?.imageDetails?.url || undefined;

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import React, { memo, useId } from "react";
-import { LOGO_PATHS, LOGO_VIEWBOX } from "./brand-loader/logo-paths";
+import { LOGO_PATHS, LOGO_VIEWBOX, LOGO_WIDTH } from "./brand-loader/logo-paths";
 
 /**
  * The Turnupz wordmark inked in the brand gradient, for light backgrounds (the
@@ -20,7 +20,7 @@ const BrandWordmark: React.FC<{ className?: string }> = ({ className }) => {
           id={gradient}
           x1="0"
           y1="0"
-          x2="137"
+          x2={LOGO_WIDTH}
           y2="0"
           gradientUnits="userSpaceOnUse"
         >

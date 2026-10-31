@@ -97,10 +97,10 @@ const QuickLinks = () => {
     retry: 0,
     queryFn: async () =>
       (
-        await getData<{ performers: number; venues: number }>(
+        await getData<{ performers: number; venues: number; categories: number }>(
           "/admin/catalogue-reviews/counts",
         )
-      ).data?.data ?? { performers: 0, venues: 0 },
+      ).data?.data ?? { performers: 0, venues: 0, categories: 0 },
   });
 
   const links: TLink[] = [
@@ -113,11 +113,13 @@ const QuickLinks = () => {
       waitingLabel: "applications to review",
     },
     {
-      label: "Venues & performers",
+      label: "Venues, categories & performers",
       href: `${ADMIN}/events/catalogue`,
       icon: ClipboardCheck,
       permission: "CATALOGUE_MANAGE",
-      waiting: catalogue ? catalogue.performers + catalogue.venues : undefined,
+      waiting: catalogue
+        ? catalogue.performers + catalogue.venues + catalogue.categories
+        : undefined,
       waitingLabel: "waiting",
     },
     {

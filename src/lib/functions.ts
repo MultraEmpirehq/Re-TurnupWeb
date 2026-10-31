@@ -1,5 +1,6 @@
 import { ROUTE_TYPE, RouteProps } from "./types";
 import { ROUTES } from "./variables";
+import { moneyLocale } from "@/lib/currency";
 
 export const getRoutesByType = (type: ROUTE_TYPE) => {
     return Object.values(ROUTES).filter((route: RouteProps) =>
@@ -45,7 +46,7 @@ export const formatCurrency = (
   currency: string = "NGN",
   locale: string = "en-NG",
 ) => {
-  return new Intl.NumberFormat(locale, {
+  return new Intl.NumberFormat(moneyLocale(currency, locale), {
     style: "currency",
     currency: currency,
   }).format(amount);

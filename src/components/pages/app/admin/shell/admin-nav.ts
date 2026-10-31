@@ -191,9 +191,9 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         pendingKey: "verifications",
       },
       // Events go live without review; what organisers add to the shared
-      // directory (venues typed in, performers) is what's reviewed.
+      // directory (venues and categories typed in, performers) is what's reviewed.
       {
-        label: "Venue & Performer Reviews",
+        label: "Directory Reviews",
         pendingKey: "catalogue",
         href: `${ADMIN_BASE}/events/catalogue`,
         icon: ClipboardCheck,

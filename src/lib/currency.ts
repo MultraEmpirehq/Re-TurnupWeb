@@ -14,13 +14,13 @@ const countryCurrencyMap: Record<string, AppCurrency> = {
   NG: { code: "NGN", symbol: "NGN", locale: "en-NG" },
   NGN: { code: "NGN", symbol: "NGN", locale: "en-NG" },
   NIGERIA: { code: "NGN", symbol: "NGN", locale: "en-NG" },
-  CA: { code: "CAD", symbol: "$", locale: "en-CA" },
-  CAD: { code: "CAD", symbol: "$", locale: "en-CA" },
-  CANADA: { code: "CAD", symbol: "$", locale: "en-CA" },
-  US: { code: "USD", symbol: "$", locale: "en-US" },
-  USD: { code: "USD", symbol: "$", locale: "en-US" },
-  USA: { code: "USD", symbol: "$", locale: "en-US" },
-  "UNITED STATES": { code: "USD", symbol: "$", locale: "en-US" },
+  CA: { code: "CAD", symbol: "CA$", locale: "en-CA" },
+  CAD: { code: "CAD", symbol: "CA$", locale: "en-CA" },
+  CANADA: { code: "CAD", symbol: "CA$", locale: "en-CA" },
+  US: { code: "USD", symbol: "US$", locale: "en-US" },
+  USD: { code: "USD", symbol: "US$", locale: "en-US" },
+  USA: { code: "USD", symbol: "US$", locale: "en-US" },
+  "UNITED STATES": { code: "USD", symbol: "US$", locale: "en-US" },
   GB: { code: "GBP", symbol: "GBP", locale: "en-GB" },
   GBP: { code: "GBP", symbol: "GBP", locale: "en-GB" },
   UK: { code: "GBP", symbol: "GBP", locale: "en-GB" },
@@ -34,6 +34,15 @@ const countryCurrencyMap: Record<string, AppCurrency> = {
   "SOUTH AFRICA": { code: "ZAR", symbol: "R", locale: "en-ZA" },
 };
 
+/**
+ * Dollars share "$" (Canadian, US…), so they're written the international way,
+ * CA$50 or US$50, wherever a price shows. Others keep their own locale (₦, £).
+ */
+const DOLLAR_CURRENCIES = new Set(["CAD", "USD", "AUD", "NZD", "SGD", "HKD"]);
+
+export const moneyLocale = (code?: string | null, locale?: string) =>
+  code && DOLLAR_CURRENCIES.has(code.toUpperCase()) ? "en-GB" : locale;
+
 export const getCurrencyForCountry = (country?: string | null): AppCurrency => {
   if (!country) return DEFAULT_APP_CURRENCY;
   return (
@@ -45,7 +54,7 @@ export const formatAppMoney = (
   amount: number,
   currency: AppCurrency = DEFAULT_APP_CURRENCY,
 ) =>
-  new Intl.NumberFormat(currency.locale, {
+  new Intl.NumberFormat(moneyLocale(currency.code, currency.locale), {
     style: "currency",
     currency: currency.code,
     maximumFractionDigits: 0,

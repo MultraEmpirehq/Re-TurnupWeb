@@ -46,6 +46,18 @@ export interface IVenueSuggestion {
   venue: { id: string; name: string; address: string } | null;
 }
 
+/** A category an organiser typed on an event, waiting to be listed. */
+export interface ICategoryForReview {
+  id: string;
+  name: string;
+  reviewStatus: TCatalogueStatus;
+  createdAt: string;
+  creatorDetails: TCreator | null;
+  eventsCount: number;
+  /** A few of the events using it, newest first. */
+  events: { id: string; name: string; date: string; status: string }[];
+}
+
 const pageOf = async <T>(
   url: string,
   status: TCatalogueStatus,
@@ -63,10 +75,10 @@ export const useCatalogueReviewCounts = (enabled = true) =>
     enabled,
     queryFn: async () =>
       (
-        await getData<{ performers: number; venues: number }>(
+        await getData<{ performers: number; venues: number; categories: number }>(
           "/admin/catalogue-reviews/counts",
         )
-      ).data?.data ?? { performers: 0, venues: 0 },
+      ).data?.data ?? { performers: 0, venues: 0, categories: 0 },
     refetchInterval: 60_000,
     retry: 0,
   });
@@ -91,6 +103,21 @@ export const useVenueSuggestions = (status: TCatalogueStatus, page: number) =>
     queryKey: ["catalogue-reviews", "venues", status, page],
     queryFn: () =>
       pageOf<IVenueSuggestion>("/admin/catalogue-reviews/venues", status, page),
+    retry: 0,
+  });
+
+export const useCategoriesForReview = (
+  status: TCatalogueStatus,
+  page: number,
+) =>
+  useQuery({
+    queryKey: ["catalogue-reviews", "categories", status, page],
+    queryFn: () =>
+      pageOf<ICategoryForReview>(
+        "/admin/catalogue-reviews/categories",
+        status,
+        page,
+      ),
     retry: 0,
   });
 
@@ -137,6 +164,31 @@ export const useDismissVenueSuggestion = () => {
     mutationFn: ({ id, note }: { id: string; note?: string }) =>
       postData(`/admin/catalogue-reviews/venues/${id}/dismiss`, {
         ...(note ? { note } : {}),
+      }),
+    onSuccess: refresh,
+  });
+};
+
+export const useApproveCategory = () => {
+  const refresh = useRefresh();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      postData(`/admin/catalogue-reviews/categories/${id}/approve`, {}),
+    onSuccess: () => {
+      refresh();
+      void queryClient.invalidateQueries({ queryKey: ["categories"] });
+    },
+  });
+};
+
+/** Moves a typed category's events to a listed one and removes it. */
+export const useMergeCategory = () => {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: ({ id, categoryId }: { id: string; categoryId: string }) =>
+      postData(`/admin/catalogue-reviews/categories/${id}/merge`, {
+        categoryId,
       }),
     onSuccess: refresh,
   });

@@ -3,6 +3,7 @@
 import { postData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { LogoWhiteSVG } from "@/assets/svg";
+import { LOGO_HEIGHT, LOGO_WIDTH } from "@/components/ui/brand-loader/logo-paths";
 import { Country } from "country-state-city";
 import { cn } from "@/lib/utils";
 import {
@@ -54,7 +55,7 @@ const ROLES = [
 /** An oversized, extruded logo framed by a single blue orbit. */
 const LogoLoop = () => (
   <div className={styles.logoLoop} aria-hidden="true">
-    <Image src={LogoWhiteSVG} alt="" width={137} height={43} priority />
+    <Image src={LogoWhiteSVG} alt="" width={LOGO_WIDTH} height={LOGO_HEIGHT} priority />
   </div>
 );
 
