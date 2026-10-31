@@ -41,6 +41,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { moneyLocale } from "@/lib/currency";
 
 const INK = "var(--popover)";
 const CARD = "var(--card)";
@@ -280,7 +281,7 @@ const AdminDashboard = () => {
     const list: TMeasure[] = [];
     if (money) {
       const asMoney = (value: number) =>
-        new Intl.NumberFormat(undefined, {
+        new Intl.NumberFormat(moneyLocale(money.currency), {
           style: "currency",
           currency: money.currency,
           maximumFractionDigits: 0,

@@ -10,14 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Landmark } from "lucide-react";
 import React, { useState } from "react";
 import { toast } from "sonner";
-
-/** Payout countries the payment provider pays vendors in directly, by name or code. */
-const DIRECT_PAYOUT_COUNTRIES: Record<string, string> = {
-  nigeria: "NG",
-  ng: "NG",
-  "south africa": "ZA",
-  za: "ZA",
-};
+import { findMarket, useMarkets } from "@/hooks/use-markets";
 
 /** How a setup attempt went, for the admin. */
 const adminAttemptMessage = (attempt?: PayoutSetupAttempt) => {
@@ -48,10 +41,9 @@ const PayoutSetupPanel: React.FC<{ verification: IVendorVerification }> = ({
 }) => {
   const queryClient = useQueryClient();
   const account = verification.payoutAccount;
-  const country =
-    DIRECT_PAYOUT_COUNTRIES[
-      verification.payoutCountry?.trim().toLowerCase() ?? ""
-    ];
+  // Banks are picked from Flutterwave's list where Flutterwave pays vendors.
+  const market = findMarket(useMarkets(), verification.payoutCountry);
+  const country = market?.payouts === "FLUTTERWAVE" ? market.code : undefined;
   const [bankCode, setBankCode] = useState(verification.bankCode ?? "");
   const [attempt, setAttempt] = useState<PayoutSetupAttempt>();
 

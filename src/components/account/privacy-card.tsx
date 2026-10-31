@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
   TMessagePolicy,
+  TPrivacy,
   TPersonSummary,
   useAnswerFollowRequest,
   useBlocks,
@@ -15,16 +16,22 @@ import {
   useUnblock,
   useUpdatePrivacy,
 } from "@/hooks/use-privacy";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Lock } from "lucide-react";
 import React, { memo, useState } from "react";
 import { toast } from "sonner";
 
-const POLICIES: { value: TMessagePolicy; title: string; description: string }[] = [
+const POLICIES: {
+  value: TMessagePolicy;
+  title: string;
+  description: string;
+}[] = [
   {
     value: "EVERYONE",
     title: "Everyone",
-    description: "From people you don't follow back, messages arrive as requests.",
+    description:
+      "From people you don't follow back, messages arrive as requests.",
   },
   {
     value: "MUTUALS",
@@ -34,7 +41,8 @@ const POLICIES: { value: TMessagePolicy; title: string; description: string }[] 
   {
     value: "NOBODY",
     title: "No one",
-    description: "No one can start a chat with you. Event and organiser chats still work.",
+    description:
+      "No one can start a chat with you. Event and organiser chats still work.",
   },
 ];
 
@@ -78,6 +86,11 @@ const PersonLine = ({
 const pill =
   "h-9 rounded-full px-4 text-sm font-semibold transition disabled:opacity-60";
 
+const SAVED_MESSAGE_POLICY: Record<TMessagePolicy, string> = {
+  EVERYONE: "Anyone can message you.",
+  MUTUALS: "People who follow each other can message you.",
+  NOBODY: "No one can start a chat with you.",
+};
 /**
  * Privacy, saved as you change it: a private profile (and the follow requests
  * it brings), who can message you, and the people you've blocked. Blocking
@@ -92,11 +105,50 @@ const PrivacyCard = () => {
   const unblock = useUnblock();
   const [toUnblock, setToUnblock] = useState<TPersonSummary | null>(null);
 
-  const save = async (body: Parameters<typeof update.mutateAsync>[0]) => {
+  // Changes wait here until Save, which sends them in one request.
+  const [draft, setDraft] = useState<
+    Partial<Pick<TPrivacy, "isPrivate" | "messagePolicy">>
+  >({});
+  const shown = privacy ? { ...privacy, ...draft } : undefined;
+  const changes: Partial<Pick<TPrivacy, "isPrivate" | "messagePolicy">> = {};
+  if (
+    privacy &&
+    draft.isPrivate !== undefined &&
+    draft.isPrivate !== privacy.isPrivate
+  ) {
+    changes.isPrivate = draft.isPrivate;
+  }
+  if (
+    privacy &&
+    draft.messagePolicy &&
+    draft.messagePolicy !== privacy.messagePolicy
+  ) {
+    changes.messagePolicy = draft.messagePolicy;
+  }
+  const dirty = Object.keys(changes).length > 0;
+
+  const save = async () => {
+    if (!dirty) return;
     try {
-      await update.mutateAsync(body);
+      await update.mutateAsync(changes);
+      setDraft({});
+      toast.success(
+        "Saved. " +
+          [
+            changes.isPrivate === undefined
+              ? null
+              : changes.isPrivate
+                ? "Your profile is private."
+                : "Your profile is public.",
+            changes.messagePolicy
+              ? SAVED_MESSAGE_POLICY[changes.messagePolicy]
+              : null,
+          ]
+            .filter(Boolean)
+            .join(" "),
+      );
     } catch (error) {
-      toast.error(errorText(error, "Couldn't save that setting."));
+      toast.error(errorText(error, "Couldn't save your privacy settings."));
     }
   };
 
@@ -140,7 +192,7 @@ const PrivacyCard = () => {
         </div>
       </div>
 
-      {isLoading || !privacy ? (
+      {isLoading || !privacy || !shown ? (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, index) => (
             <Skeleton key={index} className="h-16 rounded-2xl" />
@@ -161,8 +213,10 @@ const PrivacyCard = () => {
                 </span>
               </span>
               <Switch
-                checked={privacy.isPrivate}
-                onCheckedChange={(value) => void save({ isPrivate: value })}
+                checked={shown.isPrivate}
+                onCheckedChange={(value) =>
+                  setDraft((current) => ({ ...current, isPrivate: value }))
+                }
                 aria-label="Private profile"
               />
             </label>
@@ -181,7 +235,10 @@ const PrivacyCard = () => {
                         type="button"
                         onClick={() => void respond(person.id, true)}
                         disabled={answer.isPending}
-                        className={cn(pill, "bg-primary text-white hover:bg-primary/90")}
+                        className={cn(
+                          pill,
+                          "bg-primary text-white hover:bg-primary/90",
+                        )}
                       >
                         Accept
                       </button>
@@ -189,7 +246,10 @@ const PrivacyCard = () => {
                         type="button"
                         onClick={() => void respond(person.id, false)}
                         disabled={answer.isPending}
-                        className={cn(pill, "border border-secondary-200 bg-white text-secondary-950 hover:bg-secondary-50")}
+                        className={cn(
+                          pill,
+                          "border border-secondary-200 bg-white text-secondary-950 hover:bg-secondary-50",
+                        )}
                       >
                         Decline
                       </button>
@@ -200,17 +260,26 @@ const PrivacyCard = () => {
             )}
           </div>
 
-          <div className="space-y-2" role="radiogroup" aria-label="Who can message you">
+          <div
+            className="space-y-2"
+            role="radiogroup"
+            aria-label="Who can message you"
+          >
             {heading("Who can message you")}
             {POLICIES.map((policy) => {
-              const on = privacy.messagePolicy === policy.value;
+              const on = shown.messagePolicy === policy.value;
               return (
                 <button
                   key={policy.value}
                   type="button"
                   role="radio"
                   aria-checked={on}
-                  onClick={() => !on && void save({ messagePolicy: policy.value })}
+                  onClick={() =>
+                    setDraft((current) => ({
+                      ...current,
+                      messagePolicy: policy.value,
+                    }))
+                  }
                   className={cn(
                     "flex w-full items-center justify-between gap-4 rounded-2xl border px-4 py-3 text-left transition",
                     on
@@ -232,12 +301,39 @@ const PrivacyCard = () => {
                       on ? "border-primary" : "border-secondary-300",
                     )}
                   >
-                    {on && <span className="size-2.5 rounded-full bg-primary" />}
+                    {on && (
+                      <span className="size-2.5 rounded-full bg-primary" />
+                    )}
                   </span>
                 </button>
               );
             })}
           </div>
+
+          {dirty && (
+            <div className="flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-primary/30 bg-primary-50/50 px-4 py-3">
+              <p className="mr-auto text-sm text-secondary-700">
+                You have changes that aren&apos;t saved yet.
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                className="rounded-full"
+                disabled={update.isPending}
+                onClick={() => setDraft({})}
+              >
+                Discard
+              </Button>
+              <Button
+                type="button"
+                className="rounded-full"
+                loading={update.isPending}
+                onClick={() => void save()}
+              >
+                Save changes
+              </Button>
+            </div>
+          )}
 
           <div className="space-y-2">
             {heading("Blocked contacts")}
@@ -255,7 +351,10 @@ const PrivacyCard = () => {
                     <button
                       type="button"
                       onClick={() => setToUnblock(person)}
-                      className={cn(pill, "border border-secondary-200 bg-white text-secondary-950 hover:bg-secondary-50")}
+                      className={cn(
+                        pill,
+                        "border border-secondary-200 bg-white text-secondary-950 hover:bg-secondary-50",
+                      )}
                     >
                       Unblock
                     </button>

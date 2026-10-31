@@ -3,6 +3,7 @@
 import { getData, postData } from "@/api";
 import ComboboxSelect from "@/components/ui/combobox-select";
 import InputField from "@/components/ui/input-field";
+import { findMarket, useMarkets } from "@/hooks/use-markets";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Landmark, Lock } from "lucide-react";
 import React, { useEffect, useState } from "react";
@@ -14,10 +15,6 @@ import {
   VerificationFormValues,
 } from "../types";
 
-const COUNTRY_OPTIONS = PAYOUT_COUNTRIES.map((country) => ({
-  value: country.name,
-  label: `${country.name} (${country.currency})`,
-}));
 
 /** A saved number's last four, as the placeholder, so blank keeps it. */
 const savedHint = (last4?: string | null) =>
@@ -29,6 +26,15 @@ const savedHint = (last4?: string | null) =>
  * Nigeria) the bank confirms whose account it is.
  */
 const PayoutStep: React.FC<{ saved: SavedPayoutDigits }> = ({ saved }) => {
+  // The countries Turnupz is open in (the backend's list) that we know the bank
+  // details for.
+  const markets = useMarkets();
+  const COUNTRY_OPTIONS = PAYOUT_COUNTRIES.filter((country) =>
+    findMarket(markets, country.code),
+  ).map((country) => ({
+    value: country.name,
+    label: `${country.name} (${country.currency})`,
+  }));
   const {
     control,
     register,

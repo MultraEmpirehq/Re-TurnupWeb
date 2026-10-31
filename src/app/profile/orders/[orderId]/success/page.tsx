@@ -8,6 +8,7 @@ import ErrorContainer from "@/components/ui/error-container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EOrderStatus, IOrderDetailsType } from "@/lib/types";
 import { joinEventChatGroup } from "@/lib/event-chat";
+import { orderTotalLabel } from "@/lib/order-status";
 import { ROUTES } from "@/lib/variables";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -17,6 +18,7 @@ import {
   CalendarDays,
   Loader2,
   MapPin,
+  QrCode,
   ShieldAlert,
   TicketIcon,
   Undo2,
@@ -35,7 +37,12 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 import TicketCard from "@/components/ticket-design/ticket-card";
-import ViewTicketsDialog from "@/components/ticket-design/view-tickets-dialog";
+import {
+  PASS_COLOUR,
+  PassViewer,
+  TEventTickets,
+} from "@/components/ticket-design/ticket-wallet";
+import { useUserTickets } from "@/hooks/use-user-tickets";
 import useUserStore from "@/stores/user-store";
 
 const getOrder = async (orderId: string) => {
@@ -49,7 +56,6 @@ const OrderSuccessPage = () => {
   const userDetails = useUserStore((state) => state.userDetails);
   const hasJoinedChat = useRef(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [showTicketsDialog, setShowTicketsDialog] = useState(false);
 
   const {
     data: order,
@@ -65,11 +71,24 @@ const OrderSuccessPage = () => {
   });
 
   const event = useMemo(
-    () => order?.ticket?.event?.data,
-    [order?.ticket?.event?.data],
+    () => order?.ticket?.event?.data ?? order?.ticket?.event,
+    [order?.ticket?.event],
   );
 
   const isPaid = order?.status === EOrderStatus.COMPLETED;
+
+  // The new tickets as passes (with their live codes), once the payment's in.
+  const { data: wallet, refetch: refetchWallet } = useUserTickets();
+  useEffect(() => {
+    if (isPaid) void refetchWallet();
+  }, [isPaid, refetchWallet]);
+  const passes = useMemo<TEventTickets | null>(() => {
+    const tickets = (wallet?.data ?? []).filter((ticket) => ticket.orderId === orderId);
+    const passEvent = tickets[0]?.ticket?.event ?? event;
+    return isPaid && tickets.length && passEvent ? { event: passEvent, tickets } : null;
+  }, [wallet?.data, orderId, event, isPaid]);
+  const [showPasses, setShowPasses] = useState(false);
+  const closePasses = useCallback(() => setShowPasses(false), []);
   const outcome = (() => {
     switch (order?.status) {
       case EOrderStatus.COMPLETED:
@@ -248,8 +267,7 @@ const OrderSuccessPage = () => {
   }
 
   const eventDate = event?.date ? new Date(event.date) : null;
-  const totalFormatted =
-    order?.ticket?.price?.formatted?.withCurrency ?? "Free";
+  const totalFormatted = order ? orderTotalLabel(order) : "Free";
 
   return (
     <SectionContainer className="py-20 max-w-2xl space-y-10">
@@ -341,16 +359,24 @@ const OrderSuccessPage = () => {
         </div>
       ) : null}
 
-      {order?.userTickets && order.userTickets.length > 0 && (
-        <ViewTicketsDialog
-          open={showTicketsDialog}
-          onOpenChange={setShowTicketsDialog}
-          userTickets={order.userTickets}
-          event={event}
-        />
-      )}
+      <PassViewer
+        group={showPasses ? passes : null}
+        colour={PASS_COLOUR}
+        onClose={closePasses}
+      />
 
       <div className="space-y-3">
+        {passes && (
+          <Button
+            onClick={() => setShowPasses(true)}
+            className="h-14 w-full rounded-2xl bg-[#0b1d2a] text-lg font-semibold text-white hover:bg-[#13304a]"
+          >
+            <QrCode className="size-5" />
+            {passes.tickets.length > 1
+              ? `Show your ${passes.tickets.length} passes`
+              : "Show your pass"}
+          </Button>
+        )}
         <Button
           onClick={handleDownloadTickets}
           disabled={isDownloading || !order?.userTickets?.length}

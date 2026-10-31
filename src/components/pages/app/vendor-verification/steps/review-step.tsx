@@ -4,8 +4,19 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { getAllCountryOptions } from "@/lib/vendor-verification-helpers";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { Pencil } from "lucide-react";
-import React from "react";
+import { postData } from "@/api";
+import { constructErrorMessage } from "@/api/functions";
+import { Eye, EyeOff, Loader2, Pencil } from "lucide-react";
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import InputField from "@/components/ui/input-field";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { VendorVerificationStatusBadge } from "../status";
 import {
@@ -21,29 +32,166 @@ const COUNTRY_OPTIONS = getAllCountryOptions();
 const countryLabel = (value: string) =>
   COUNTRY_OPTIONS.find((option) => option.value === value)?.label ?? value;
 
-const masked = (typed: string, last4?: string | null) => {
+type TBankField = "accountNumber" | "routingNumber" | "sortCode" | "iban";
+
+/** The number in full when shown, else its last four. */
+const bankNumber = (
+  typed: string,
+  last4: string | null | undefined,
+  full: string | null | undefined,
+  shown: boolean,
+) => {
   const clean = typed.replace(/[\s-]/g, "");
+  if (shown) return clean || full || (last4 ? `•••• ${last4}` : "");
   if (clean) return `•••• ${clean.slice(-4)}`;
   return last4 ? `•••• ${last4}` : "";
 };
 
-const Row: React.FC<{ label: string; value?: string | null }> = ({
-  label,
-  value,
-}) => (
+const Row: React.FC<{
+  label: string;
+  value?: string | null;
+  action?: React.ReactNode;
+}> = ({ label, value, action }) => (
   <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-4">
     <dt className="text-xs text-secondary-500 sm:w-44 sm:shrink-0 sm:text-sm">
       {label}
     </dt>
     <dd
       className={cn(
-        "text-sm break-words",
+        "flex items-center gap-2 text-sm break-words",
         value ? "text-secondary-950" : "text-secondary-400",
       )}
     >
-      {value || "Not given"}
+      <span className={cn(value && action && "tabular-nums tracking-wide")}>
+        {value || "Not given"}
+      </span>
+      {value && action}
     </dd>
   </div>
+);
+
+/**
+ * Show or hide the bank numbers. Ones typed in this visit are in the form;
+ * saved ones need your password first (yours only, and each look is logged).
+ */
+const useBankNumbers = (needsSaved: boolean) => {
+  const [shown, setShown] = useState(false);
+  const [saved, setSaved] = useState<Partial<Record<TBankField, string | null>>>();
+  const [asking, setAsking] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const toggle = () => {
+    if (shown) return setShown(false);
+    if (needsSaved && !saved) return setAsking(true);
+    setShown(true);
+  };
+  /** Fetches the saved numbers with their password; false if it was refused. */
+  const unlock = async (password: string) => {
+    setLoading(true);
+    try {
+      const { data } = await postData<
+        { password: string },
+        Record<TBankField, string | null>
+      >("/vendor/verification/payout-account/reveal", { password });
+      setSaved(data?.data ?? {});
+      setAsking(false);
+      setShown(true);
+      return null;
+    } catch (error) {
+      return constructErrorMessage(
+        error as TApiErrorResponseType,
+        "Couldn't show your saved bank details.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+  return { shown, saved, loading, asking, setAsking, toggle, unlock };
+};
+
+/** Asks for their password before showing saved bank numbers. */
+const PasswordPrompt: React.FC<{
+  open: boolean;
+  loading: boolean;
+  onClose: () => void;
+  onSubmit: (password: string) => Promise<string | null>;
+}> = ({ open, loading, onClose, onSubmit }) => {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) {
+          setPassword("");
+          setError(null);
+          onClose();
+        }
+      }}
+    >
+      <DialogContent className="rounded-[1.6rem] p-6 sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Show your bank details</DialogTitle>
+          <DialogDescription>
+            Enter your Turnupz password to see your saved account number in full.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          className="space-y-4"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            const problem = await onSubmit(password);
+            setError(problem);
+            if (!problem) setPassword("");
+          }}
+        >
+          <InputField
+            label="Your Turnupz password"
+            type="password"
+            autoComplete="current-password"
+            autoFocus
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setError(null);
+            }}
+            error={error ?? undefined}
+            helperText="Signed up with Google or Apple? Set a password with Forgot password on the sign-in page first."
+          />
+          <Button
+            type="submit"
+            className="w-full rounded-full"
+            disabled={!password}
+            loading={loading}
+          >
+            Show
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const EyeToggle: React.FC<{
+  shown: boolean;
+  loading: boolean;
+  onToggle: () => void;
+}> = ({ shown, loading, onToggle }) => (
+  <button
+    type="button"
+    onClick={onToggle}
+    disabled={loading}
+    aria-label={shown ? "Hide bank details" : "Show bank details"}
+    aria-pressed={shown}
+    className="inline-flex size-7 items-center justify-center rounded-full text-secondary-500 hover:bg-secondary-100 hover:text-secondary-900 disabled:opacity-50"
+  >
+    {loading ? (
+      <Loader2 className="size-4 animate-spin" />
+    ) : shown ? (
+      <EyeOff className="size-4" />
+    ) : (
+      <Eye className="size-4" />
+    )}
+  </button>
 );
 
 const Group: React.FC<{
@@ -92,6 +240,24 @@ const ReviewSummary: React.FC<{
   const isFree = values.plan === "free";
   const isBusiness = !isFree && values.vendorType === "business";
   const country = findPayoutCountry(values.payoutCountry);
+  // A saved number not typed again this visit has to be fetched to show it.
+  const needsSaved = (
+    [
+      ["accountNumber", saved.accountNumberLast4],
+      ["routingNumber", saved.routingNumberLast4],
+      ["sortCode", saved.sortCodeLast4],
+      ["iban", saved.ibanLast4],
+    ] as const
+  ).some(
+    ([field, last4]) =>
+      country?.fields.includes(field) && !!last4 && !values[field]?.trim(),
+  );
+  const bank = useBankNumbers(needsSaved);
+  const eye = (
+    <EyeToggle shown={bank.shown} loading={bank.loading} onToggle={bank.toggle} />
+  );
+  const number = (field: TBankField, last4?: string | null) =>
+    bankNumber(values[field] ?? "", last4, bank.saved?.[field], bank.shown);
   const doc = (value: VerificationFormValues["idDocument"]) =>
     !value
       ? ""
@@ -175,27 +341,36 @@ const ReviewSummary: React.FC<{
           {country?.fields.includes("accountNumber") && (
             <Row
               label="Account number"
-              value={masked(values.accountNumber, saved.accountNumberLast4)}
+              value={number("accountNumber", saved.accountNumberLast4)}
+              action={eye}
             />
           )}
           {country?.fields.includes("routingNumber") && (
             <Row
               label={country.routingNumber?.label ?? "Routing number"}
-              value={masked(values.routingNumber, saved.routingNumberLast4)}
+              value={number("routingNumber", saved.routingNumberLast4)}
+              action={eye}
             />
           )}
           {country?.fields.includes("sortCode") && (
             <Row
               label="Sort code"
-              value={masked(values.sortCode, saved.sortCodeLast4)}
+              value={number("sortCode", saved.sortCodeLast4)}
+              action={eye}
             />
           )}
           {country?.fields.includes("iban") && (
-            <Row label="IBAN" value={masked(values.iban, saved.ibanLast4)} />
+            <Row label="IBAN" value={number("iban", saved.ibanLast4)} action={eye} />
           )}
           {country?.fields.includes("swiftCode") && (
             <Row label="SWIFT / BIC" value={values.swiftCode} />
           )}
+          <PasswordPrompt
+            open={bank.asking}
+            loading={bank.loading}
+            onClose={() => bank.setAsking(false)}
+            onSubmit={bank.unlock}
+          />
         </Group>
       )}
 

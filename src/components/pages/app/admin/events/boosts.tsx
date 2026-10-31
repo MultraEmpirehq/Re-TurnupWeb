@@ -12,6 +12,8 @@ import {
   useSetBoostPrice,
 } from "@/hooks/use-boosts";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
+import { useAdminFeatures, useSetFeature } from "@/hooks/use-features";
 import { Rocket } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useMemo, useState } from "react";
@@ -272,6 +274,54 @@ const Prices: React.FC = () => {
  * vendor's first, a new account's, cross-border, a big spend, or an event with
  * open reports. A report pauses a running boost until someone looks.
  */
+/** Switches organisers' Promote on or off for everyone. */
+const PromotionSwitch: React.FC = () => {
+  const { data: features = [], isLoading } = useAdminFeatures();
+  const setFeature = useSetFeature();
+  const promotion = features.find((item) => item.feature === "promotion");
+  const enabled = promotion?.enabled ?? true;
+
+  const toggle = (next: boolean) =>
+    setFeature.mutate(
+      { feature: "promotion", enabled: next },
+      {
+        onSuccess: () =>
+          toast.success(next ? "Promote is on for organisers" : "Promote is off for organisers"),
+        onError: (error) =>
+          toast.error(
+            constructErrorMessage(error as TApiErrorResponseType, "Couldn't change Promote."),
+          ),
+      },
+    );
+
+  return (
+    <section className="flex items-start justify-between gap-4 rounded-xl border border-border bg-card p-5">
+      <div className="min-w-0 space-y-1">
+        <label htmlFor="promotion-switch" className="font-semibold">
+          Promote for organisers
+        </label>
+        <p className="text-sm text-muted-foreground">
+          {enabled
+            ? "On: organisers can promote their events, make promoter codes and book boosts."
+            : "Off: the Promote button is hidden and no new boosts or promoter codes can be made. Running boosts finish, codes already shared still work, and ticket holders still get their day-before reminder."}
+        </p>
+        {promotion?.updatedAt && (
+          <p className="text-xs text-muted-foreground">
+            Last changed {when(promotion.updatedAt)}
+          </p>
+        )}
+      </div>
+      <Switch
+        id="promotion-switch"
+        checked={enabled}
+        disabled={isLoading || setFeature.isPending}
+        onCheckedChange={toggle}
+        aria-label="Promote for organisers"
+      />
+    </section>
+  );
+};
+
 const AdminBoosts = () => {
   const [status, setStatus] = useState<string | undefined>("IN_REVIEW");
   const { data: boosts = [], isLoading } = useAdminBoosts(status);
@@ -283,6 +333,7 @@ const AdminBoosts = () => {
         stop any that shouldn&apos;t run; unused days are refunded
         automatically.
       </PageHeading>
+      <PromotionSwitch />
       <FilterTabs tabs={TABS} value={status} onChange={setStatus} />
       {isLoading ? (
         <ListSkeleton />

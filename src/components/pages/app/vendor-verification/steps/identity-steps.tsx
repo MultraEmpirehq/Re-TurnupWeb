@@ -5,14 +5,13 @@ import DateSelect from "@/components/ui/date-select";
 import InputField from "@/components/ui/input-field";
 import TextareaField from "@/components/ui/textarea-field";
 import { earliestBirthDate, latestAdultBirthDate } from "@/lib/age";
-import { getAllCountryOptions } from "@/lib/vendor-verification-helpers";
+import { useMarketOptions } from "@/hooks/use-markets";
 import { BadgeCheck, Building2, Info, Ticket, UserRound } from "lucide-react";
 import React from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { ChoiceCards, DocumentField } from "../fields";
 import { VerificationFormValues } from "../types";
 
-const COUNTRY_OPTIONS = getAllCountryOptions();
 
 /**
  * What they'll host. Free events only skips the ID, business and bank steps;
@@ -116,6 +115,8 @@ export const VendorTypeStep: React.FC<{ planLocked?: boolean }> = ({
 
 /** Free hosts only give their name, phone and country here. */
 export const IdentityStep: React.FC<{ free?: boolean }> = ({ free }) => {
+  // Organisers live where Turnupz is open (the backend's list).
+  const COUNTRY_OPTIONS = useMarketOptions("name");
   const {
     control,
     register,

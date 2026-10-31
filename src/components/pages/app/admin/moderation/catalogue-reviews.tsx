@@ -9,12 +9,16 @@ import ResultPagination from "@/components/ui/result-pagination";
 import { Textarea } from "@/components/ui/textarea";
 import {
   CATALOGUE_PAGE_SIZE,
+  ICategoryForReview,
   IPerformerForReview,
   IVenueSuggestion,
   TCatalogueStatus,
+  useApproveCategory,
   useApproveVenueSuggestion,
   useCatalogueReviewCounts,
+  useCategoriesForReview,
   useDismissVenueSuggestion,
+  useMergeCategory,
   usePerformersForReview,
   useReviewPerformer,
   useVenueSuggestions,
@@ -23,7 +27,8 @@ import { useVenues } from "@/hooks/use-venue";
 import { ROUTES } from "@/lib/variables";
 import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
-import { ExternalLink, MapPin, Mic } from "lucide-react";
+import useCategory from "@/hooks/use-category";
+import { ExternalLink, MapPin, Mic, Tag } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -52,12 +57,15 @@ const failed = (fallback: string) => (error: unknown) =>
   toast.error(constructErrorMessage(error as TApiErrorResponseType, fallback));
 
 /**
- * What organisers add to the shared directory: venues they typed in on an event
- * and performers they created. Events go live without review; these join the
- * directory (search, charts, venue pages) only once approved.
+ * What organisers add to the shared directory: venues and categories they
+ * typed in on an event, and performers they created. Events go live without
+ * review; these join the directory (search, charts, venue pages, Explore's
+ * categories) only once approved.
  */
 const CatalogueReviews = () => {
-  const [kind, setKind] = useState<"venues" | "performers">("venues");
+  const [kind, setKind] = useState<"venues" | "categories" | "performers">(
+    "venues",
+  );
   const [status, setStatus] = useState<TCatalogueStatus>("PENDING");
   const [page, setPage] = useState(1);
   useEffect(() => setPage(1), [kind, status]);
@@ -65,10 +73,11 @@ const CatalogueReviews = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeading title="Venue & performer reviews">
+      <PageHeading title="Venue, category & performer reviews">
         Events go live without review. What organisers add to the shared
-        directory waits here: venues typed in on an event, and performers they
-        created. They can use them on their own events in the meantime.
+        directory waits here: venues and categories typed in on an event, and
+        performers they created. They can use them on their own events in the
+        meantime.
       </PageHeading>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -79,6 +88,10 @@ const CatalogueReviews = () => {
               label: `Venues${counts.data?.venues ? ` (${counts.data.venues})` : ""}`,
             },
             {
+              value: "categories" as const,
+              label: `Categories${counts.data?.categories ? ` (${counts.data.categories})` : ""}`,
+            },
+            {
               value: "performers" as const,
               label: `Performers${counts.data?.performers ? ` (${counts.data.performers})` : ""}`,
             },
@@ -86,11 +99,16 @@ const CatalogueReviews = () => {
           value={kind}
           onChange={setKind}
         />
-        <FilterTabs tabs={STATUS_TABS} value={status} onChange={setStatus} />
+        {/* A category filed under another is removed, so only waiting ones are listed. */}
+        {kind !== "categories" && (
+          <FilterTabs tabs={STATUS_TABS} value={status} onChange={setStatus} />
+        )}
       </div>
 
       {kind === "venues" ? (
         <VenueList status={status} page={page} onPage={setPage} />
+      ) : kind === "categories" ? (
+        <CategoryList page={page} onPage={setPage} />
       ) : (
         <PerformerList status={status} page={page} onPage={setPage} />
       )}
@@ -314,6 +332,150 @@ const VenueCard: React.FC<{ suggestion: IVenueSuggestion }> = ({
           </p>
         </div>
       )}
+    </li>
+  );
+};
+
+/* ------------------------------------------------------------ categories */
+
+const CategoryList: React.FC<{
+  page: number;
+  onPage: (page: number) => void;
+}> = ({ page, onPage }) => {
+  const { data, error, isLoading, refetch } = useCategoriesForReview(
+    "PENDING",
+    page,
+  );
+  const items = data?.items ?? [];
+  const totalPages = Math.ceil((data?.total ?? 0) / CATALOGUE_PAGE_SIZE);
+  return (
+    <>
+      {isLoading && <ListSkeleton />}
+      {!!error && !isLoading && (
+        <ErrorContainer
+          error={constructErrorMessage(
+            error as TApiErrorResponseType,
+            "Could not load categories",
+          )}
+          retryFunction={() => void refetch()}
+        />
+      )}
+      {!isLoading && !error && items.length === 0 && (
+        <EmptyContainer
+          icon={<Tag className="size-6" />}
+          title="No categories waiting"
+          description="Categories organisers type in on their events show up here."
+        />
+      )}
+      <ul className="space-y-3">
+        {items.map((category) => (
+          <CategoryCard key={category.id} category={category} />
+        ))}
+      </ul>
+      {totalPages > 1 && (
+        <ResultPagination
+          totalPages={totalPages}
+          currentPage={page}
+          onPageChange={onPage}
+        />
+      )}
+    </>
+  );
+};
+
+const CategoryCard: React.FC<{ category: ICategoryForReview }> = ({
+  category,
+}) => {
+  const approve = useApproveCategory();
+  const merge = useMergeCategory();
+  // The listed categories (from the server only, not ones typed on this device).
+  const { data: listed } = useCategory();
+  const options = useMemo(
+    () =>
+      (listed ?? []).filter((item) => !item.id.startsWith("custom-category-")),
+    [listed],
+  );
+  const [into, setInto] = useState("");
+  const target =
+    options.find((item) => item.id === into) ??
+    options.find((item) => item.name === "Other");
+
+  return (
+    <li className="space-y-4 rounded-xl border border-border bg-card p-4">
+      <div className="min-w-0">
+        <p className="font-semibold text-foreground">{category.name}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Typed by {who(category.creatorDetails)} · on {category.eventsCount}{" "}
+          event{category.eventsCount === 1 ? "" : "s"} ·{" "}
+          {formatDistanceToNow(new Date(category.createdAt), {
+            addSuffix: true,
+          })}
+        </p>
+        {category.events.length > 0 && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            {category.events
+              .map(
+                (event) =>
+                  `“${event.name}” (${format(new Date(event.date), "d MMM yyyy")})`,
+              )
+              .join(" · ")}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-3 rounded-lg bg-muted/40 p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            disabled={approve.isPending || merge.isPending}
+            onClick={() =>
+              approve.mutate(category.id, {
+                onSuccess: () =>
+                  toast.success(`${category.name} is now a category`),
+                onError: failed("Couldn't add it"),
+              })
+            }
+          >
+            Add as a category
+          </Button>
+          <span className="text-xs text-muted-foreground">or file it under</span>
+          <select
+            value={target?.id ?? ""}
+            onChange={(event) => setInto(event.target.value)}
+            aria-label="Category to file it under"
+            className="h-8 rounded-md border border-border bg-card px-2 text-sm"
+          >
+            {options.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!target || approve.isPending || merge.isPending}
+            onClick={() =>
+              target &&
+              merge.mutate(
+                { id: category.id, categoryId: target.id },
+                {
+                  onSuccess: () =>
+                    toast.success(`Its events are now under ${target.name}`),
+                  onError: failed("Couldn't move its events"),
+                },
+              )
+            }
+          >
+            Move its events
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Until then its events show “{category.name}” and are found under
+          Other in Explore. Filing it under another category removes “
+          {category.name}”.
+        </p>
+      </div>
     </li>
   );
 };

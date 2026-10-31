@@ -8,11 +8,13 @@ import {
   VendorVerificationNotice,
 } from "@/components/pages/app/vendor-verification";
 import Joi from "joi";
-import React, { memo, useMemo } from "react";
+import React, { memo, useMemo, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import type { TFormValues } from "@/app/app/create/page";
 import Link from "next/link";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
+import { cn } from "@/lib/utils";
+import AttendeePreview from "./attendee-preview";
 
 export const previewPublishSchema = Joi.object({
   acceptedTerms: Joi.boolean().valid(true).required().messages({
@@ -50,6 +52,8 @@ const PreviewPublishForm: React.FC<{
   } = useFormContext<TFormValues>();
 
   const values = watch();
+  // What attendees will see, or the organiser's numbers.
+  const [view, setView] = useState<"attendee" | "summary">("attendee");
   const verification = useVendorVerificationSnapshot();
   const isAdmin = useUserStore(
     (state) => state.userDetails?.role === EUserRoles.ADMIN,
@@ -66,6 +70,10 @@ const PreviewPublishForm: React.FC<{
   const mediaPreviewUrls = useMemo(
     () => mediaFiles.map(getImagePreviewUrl).filter(Boolean),
     [mediaFiles],
+  );
+  const sponsorLogoPreviewUrls = useMemo(
+    () => (values.sponsorImages ?? []).map(getImagePreviewUrl),
+    [values.sponsorImages],
   );
   const eventTickets = useMemo(
     () => values.eventTickets ?? [],
@@ -183,62 +191,102 @@ const PreviewPublishForm: React.FC<{
       <VendorVerificationNotice context="create" />
 
       <section className="rounded-[1.6rem] border border-secondary-100 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-secondary-400">
-          Preview
-        </p>
-        <h2 className="mt-3 text-3xl font-bold text-secondary-950">
-          {values.eventName || "Untitled event"}
-        </h2>
-        {coverImagePreviewUrl && (
-          <div
-            className="mt-5 h-52 rounded-[1.2rem] bg-cover bg-center sm:h-64"
-            style={{ backgroundImage: `url(${coverImagePreviewUrl})` }}
-          />
-        )}
-        <p className="mt-5 text-sm leading-7 text-secondary-600">
-          {values.description || "No event description yet."}
-        </p>
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
-          <div className="rounded-xl bg-secondary-50 p-4">
-            <p className="text-sm text-secondary-500">Ticket categories</p>
-            <p className="mt-2 text-2xl font-bold text-secondary-950">
-              {eventTickets.length}
-            </p>
-          </div>
-          <div className="rounded-xl bg-secondary-50 p-4">
-            <p className="text-sm text-secondary-500">Pass capacity</p>
-            <p className="mt-2 text-2xl font-bold text-secondary-950">
-              {passAssignments.reduce(
-                (sum, pass) => sum + Number(pass.quantity || 0),
-                0,
-              )}
-            </p>
-          </div>
-          <div className="rounded-xl bg-secondary-50 p-4">
-            <p className="text-sm text-secondary-500">Total attendance</p>
-            <p className="mt-2 text-2xl font-bold text-secondary-950">
-              {totalAttendance}
-            </p>
-          </div>
-        </div>
-        <div className="mt-3 rounded-xl bg-secondary-50 p-4">
-          <p className="text-sm text-secondary-500">Event location</p>
-          <p className="mt-2 text-sm font-semibold text-secondary-950">
-            {[values.eventCity, values.eventState, values.eventCountry]
-              .filter(Boolean)
-              .join(", ") || "No country, province/state, or city selected"}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-secondary-400">
+            Preview
           </p>
-        </div>
-        {mediaPreviewUrls.length > 0 && (
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            {mediaPreviewUrls.slice(0, 6).map((previewUrl, index) => (
-              <div
-                key={`${previewUrl}-${index}`}
-                className="h-28 rounded-xl bg-cover bg-center"
-                style={{ backgroundImage: `url(${previewUrl})` }}
-              />
+          <div className="inline-flex rounded-full bg-secondary-50 p-1 text-sm">
+            {(
+              [
+                ["attendee", "Attendee view"],
+                ["summary", "Your summary"],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setView(key)}
+                aria-pressed={view === key}
+                className={cn(
+                  "rounded-full px-4 py-1.5 font-medium text-secondary-500 transition-colors",
+                  view === key && "bg-white text-secondary-950 shadow-sm",
+                )}
+              >
+                {label}
+              </button>
             ))}
           </div>
+        </div>
+        {view === "attendee" ? (
+          <div className="mt-6">
+            <p className="mb-6 text-xs text-secondary-500">
+              This is how your event page will look to attendees once it&apos;s
+              created.
+            </p>
+            <AttendeePreview
+              values={values}
+              coverUrl={coverImagePreviewUrl}
+              mediaUrls={mediaPreviewUrls}
+              sponsorLogoUrls={sponsorLogoPreviewUrls}
+            />
+          </div>
+        ) : (
+          <>
+            <h2 className="mt-3 text-3xl font-bold text-secondary-950">
+              {values.eventName || "Untitled event"}
+            </h2>
+            {coverImagePreviewUrl && (
+              <div
+                className="mt-5 h-52 rounded-[1.2rem] bg-cover bg-center sm:h-64"
+                style={{ backgroundImage: `url(${coverImagePreviewUrl})` }}
+              />
+            )}
+            <p className="mt-5 text-sm leading-7 text-secondary-600">
+              {values.description || "No event description yet."}
+            </p>
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <div className="rounded-xl bg-secondary-50 p-4">
+                <p className="text-sm text-secondary-500">Ticket categories</p>
+                <p className="mt-2 text-2xl font-bold text-secondary-950">
+                  {eventTickets.length}
+                </p>
+              </div>
+              <div className="rounded-xl bg-secondary-50 p-4">
+                <p className="text-sm text-secondary-500">Pass capacity</p>
+                <p className="mt-2 text-2xl font-bold text-secondary-950">
+                  {passAssignments.reduce(
+                    (sum, pass) => sum + Number(pass.quantity || 0),
+                    0,
+                  )}
+                </p>
+              </div>
+              <div className="rounded-xl bg-secondary-50 p-4">
+                <p className="text-sm text-secondary-500">Total attendance</p>
+                <p className="mt-2 text-2xl font-bold text-secondary-950">
+                  {totalAttendance}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 rounded-xl bg-secondary-50 p-4">
+              <p className="text-sm text-secondary-500">Event location</p>
+              <p className="mt-2 text-sm font-semibold text-secondary-950">
+                {[values.eventCity, values.eventState, values.eventCountry]
+                  .filter(Boolean)
+                  .join(", ") || "No country, province/state, or city selected"}
+              </p>
+            </div>
+            {mediaPreviewUrls.length > 0 && (
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                {mediaPreviewUrls.slice(0, 6).map((previewUrl, index) => (
+                  <div
+                    key={`${previewUrl}-${index}`}
+                    className="h-28 rounded-xl bg-cover bg-center"
+                    style={{ backgroundImage: `url(${previewUrl})` }}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </section>
 
@@ -542,13 +590,7 @@ const PreviewPublishForm: React.FC<{
             loading={isSubmitting || isSaving}
             disabled={isSubmitting || isSaving}
           >
-            {isAdmin
-              ? isSaving
-                ? "Publishing..."
-                : "Publish Event"
-              : isSaving
-                ? "Submitting..."
-                : "Submit for review"}
+            {isSaving ? "Creating..." : "Create event"}
           </Button>
         )}
       </div>

@@ -15,6 +15,11 @@ const DevicesCard = () => {
   const signOut = useSignOutDevice();
   const [pendingId, setPendingId] = useState<string | "all" | null>(null);
   const others = sessions.filter((session) => !session.isCurrent);
+  // This device first, then the rest as they come (most recently active).
+  const ordered = [
+    ...sessions.filter((session) => session.isCurrent),
+    ...others,
+  ];
 
   const handleSignOut = async (sessionId?: string) => {
     setPendingId(sessionId ?? "all");
@@ -71,8 +76,10 @@ const DevicesCard = () => {
           We couldn&apos;t load your devices just now.
         </p>
       ) : (
-        <ul className="divide-y divide-secondary-100 overflow-hidden rounded-2xl border border-secondary-100">
-          {sessions.map((session) => {
+        // About five devices show; more scroll inside the card, so a long list
+        // doesn't stretch the page.
+        <ul className="max-h-[20.5rem] divide-y divide-secondary-100 overflow-y-auto overscroll-contain rounded-2xl border border-secondary-100">
+          {ordered.map((session) => {
             const Icon = session.platform === "app" ? Smartphone : Laptop;
             return (
               <li
@@ -119,6 +126,11 @@ const DevicesCard = () => {
             );
           })}
         </ul>
+      )}
+      {!isLoading && !error && sessions.length > 5 && (
+        <p className="text-xs text-secondary-500">
+          Signed in on {sessions.length} devices. Scroll the list to see them all.
+        </p>
       )}
     </section>
   );

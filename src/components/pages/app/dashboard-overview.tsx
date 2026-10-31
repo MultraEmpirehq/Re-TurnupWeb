@@ -6,7 +6,7 @@ import CurrencyFilter, {
   useCurrencyFilter,
 } from "@/components/pages/app/currency-filter";
 import { IVendorInsights, useVendorInsights } from "@/hooks/use-vendor-tickets";
-import { getCurrencyForCountry } from "@/lib/currency";
+import { getCurrencyForCountry, moneyLocale } from "@/lib/currency";
 import { formatEventTime } from "@/lib/event-time";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
@@ -298,7 +298,7 @@ const DashboardOverview = () => {
   const money = useMemo(
     () =>
       revenue.main
-        ? new Intl.NumberFormat(undefined, {
+        ? new Intl.NumberFormat(moneyLocale(revenue.main.code), {
             style: "currency",
             currency: revenue.main.code,
             maximumFractionDigits: 0,
