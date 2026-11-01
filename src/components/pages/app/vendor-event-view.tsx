@@ -145,7 +145,7 @@ const TicketPreview: React.FC<{
   const hasPassSections = (passAssignments?.length ?? 0) > 0;
   const isRegisterOnly = saleMethod === "register";
   const previewLabel = isRegisterOnly
-    ? "Register on Turnupz"
+    ? "Free registration"
     : "Sell on Turnupz";
   const [showRegistrationDetails, setShowRegistrationDetails] = useState(false);
   if (isRegisterOnly) {
@@ -345,7 +345,7 @@ const TicketPreview: React.FC<{
               </div>
               <p className="text-sm font-semibold text-secondary-950">
                 {ticket.actionType === "register"
-                  ? "Register"
+                  ? "Free"
                   : getTicketPriceAmount(ticket.ticketPrice) === 0
                     ? "Free"
                     : formatTicketPrice(ticket.ticketPrice)}
@@ -432,7 +432,7 @@ const BookingChip: React.FC<{
     ? "Book Now"
     : hasPaidTicket
       ? "Pay Now"
-      : "Register Now";
+      : "Register free";
   const chipClassName = isExternal
     ? "bg-red-500 text-white shadow-red-200/70"
     : "bg-secondary-400 text-white shadow-secondary-200/80";

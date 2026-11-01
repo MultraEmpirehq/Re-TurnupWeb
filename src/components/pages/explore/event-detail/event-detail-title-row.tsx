@@ -28,7 +28,7 @@ const EventDetailTitleRow = ({
     isExternal && ticketUrl
       ? ticketUrl
       : `${ROUTES.EXPLORE.href}/event/${eventId}/ticket`;
-  const label = saleMethod === "register" ? "Register" : "Book Now";
+  const label = saleMethod === "register" ? "Register free" : "Book Now";
 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
