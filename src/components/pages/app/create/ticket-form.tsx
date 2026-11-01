@@ -41,9 +41,9 @@ export interface ITicketFormValues {
 }
 
 const ticketSaleMethodOptions: ISelectFieldOption[] = [
-  { label: "Sell on Turnupz", value: ESaleMethods.SELL_ON_TURNUP },
-  { label: "Register", value: ESaleMethods.REGISTER },
-  { label: "External Link", value: ESaleMethods.EXTERNAL_LINK },
+  { label: "Sell tickets on Turnupz", value: ESaleMethods.SELL_ON_TURNUP },
+  { label: "Free registration (no payment)", value: ESaleMethods.REGISTER },
+  { label: "Use my own ticket link", value: ESaleMethods.EXTERNAL_LINK },
 ];
 
 const ticketItemSchema = Joi.object({
@@ -323,7 +323,7 @@ const TicketForm: React.FC<{
                     ? "People get their tickets on Turnupz. Add the categories below."
                     : "People buy on Turnupz and pay by card or bank. Add the categories below."
                   : field.value === ESaleMethods.REGISTER
-                    ? "Free sign-ups: people register for a place, with no payment. Add the categories below."
+                    ? "Free for attendees: people register for a place and pay nothing. Add the registration types below, for example General or VIP."
                     : field.value === ESaleMethods.EXTERNAL_LINK
                       ? "Your event page sends people to your own ticketing link."
                       : undefined

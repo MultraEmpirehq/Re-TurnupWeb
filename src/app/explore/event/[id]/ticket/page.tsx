@@ -911,7 +911,7 @@ const TicketPage = () => {
               className="w-full h-14 text-lg font-semibold rounded-2xl bg-linear-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
             >
               {isPurchasing && "Registering..."}
-              {!isPurchasing && "Register"}
+              {!isPurchasing && "Register for free"}
             </button>
           </div>
         )}
