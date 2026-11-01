@@ -2,15 +2,33 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { memo } from "react";
 
-// DRAFT FOR LEGAL REVIEW. Written from what the app actually collects and who it
-// shares data with, as of October 2026. Anything in [square brackets] needs a
-// decision from the business or counsel. Keep it out of search until signed off.
-export const metadata: Metadata = {
-  title: "Privacy Policy (draft) | Turnupz",
-  robots: { index: false, follow: false },
+// Written from what Turnupz actually collects and who it shares data with (as
+// of 1 November 2026), and aligned with the approved pricing, tax, settlement
+// and points addendum (revision 4) and the CTO review. Counsel should review
+// it before launch. Fill in LEGAL below: until every value is set, the page
+// shows a draft notice and stays out of search.
+const LEGAL = {
+  /** The company responsible for Turnupz (for now, in both Nigeria and Canada). */
+  company: "Turnupz Inc. (corporation number 1822152-9)",
+  canadaAddress: "285 Herron Mews NE, Calgary, Alberta T3P 1Y6, Canada",
+  nigeriaAddress: "7 Princess Bola Jegede Close, Ajao Estate, Lagos, Nigeria",
+  /** Where people send privacy requests. */
+  privacyEmail: "admin@multraempire.com",
+  /** Who's responsible for personal information (required in Québec): a title is enough. */
+  privacyOfficer: "Our Data Protection Officer",
 };
 
-const LAST_UPDATED = "5 October 2026";
+const IS_DRAFT = Object.values(LEGAL).some((value) => !value.trim());
+const show = (value: string, placeholder: string) => value.trim() || `[${placeholder}]`;
+
+export const metadata: Metadata = {
+  title: IS_DRAFT ? "Privacy Policy (draft) | Turnupz" : "Privacy Policy | Turnupz",
+  description:
+    "What Turnupz collects, why, who it's shared with, how long it's kept, and your choices.",
+  ...(IS_DRAFT ? { robots: { index: false, follow: false } } : {}),
+};
+
+const LAST_UPDATED = "1 November 2026";
 
 type TSection = {
   title: string;
@@ -22,48 +40,63 @@ type TSection = {
 const sections: TSection[] = [
   {
     title: "Who we are",
-    intro:
-      'Turnupz is an event platform for discovering events, buying or registering for tickets, and hosting events. In this policy, "Turnupz", "we" and "us" means [legal entity name], [registered address], [company registration number]. We decide how and why your personal data is used, which makes us its controller.',
+    intro: `Turnupz is an event platform for discovering events, buying or registering for tickets, and hosting events, in Nigeria and Canada. In this policy, "Turnupz", "we" and "us" means ${show(LEGAL.company, "company name and number")}, with offices at ${show(LEGAL.canadaAddress, "Canadian address")} and ${show(LEGAL.nigeriaAddress, "Nigerian address")}. We decide how and why your personal data is used. Organisers are responsible for how they use attendee information for their own events.`,
   },
   {
-    title: "What we collect",
-    intro: "We only collect what we need to run your account and your events.",
+    title: "What we collect, and why",
+    intro: "We only collect what we need to run your account, your tickets and your events.",
     table: [
       {
-        what: "Account details: email address, first and last name, username, date of birth, gender (optional), country, postal code (optional), and a profile photo if you add one.",
-        why: "To create your account, show your profile, confirm your age where needed, and set your currency.",
+        what: "Account details: email address, name, username, date of birth, gender (optional), postal code (optional) and a profile photo if you add one.",
+        why: "To create your account, show your profile and sign you in.",
       },
       {
-        what: "Password, stored only as a one-way hash. If you sign in with Google, we receive your name, email address and profile photo from Google, and a Google account identifier.",
+        what: "The country you normally live in.",
+        why: "To show an approximate amount in your local currency at checkout and to handle the account rules that apply to you. You can browse and buy for events in any country.",
+      },
+      {
+        what: "Sign-in details: your password (stored only as a one-way hash), and if you sign in with Google, your name, email address and the account identifier Google gives us.",
         why: "To sign you in securely.",
       },
       {
-        what: "Orders, tickets and registrations: what you bought or registered for, quantities, amounts, payment references and status, ticket transfers, and check-in scans at the door.",
-        why: "To issue and validate your tickets, handle refunds and transfers, and keep financial records.",
+        what: "Your phone's location, only if you allow it, only while you're using the app.",
+        why: "To find your city and show events near you first. We use it to work out your city and country; we don't keep your precise location. Saying no doesn't stop you browsing or buying.",
       },
       {
-        what: "Payment details. Card and bank details you enter at checkout go directly to Flutterwave. We never see or store your card number; we keep the payment reference Flutterwave gives us.",
-        why: "To take payment and match it to your order.",
+        what: "Orders, tickets and registrations: what you bought or registered for, quantities, prices, discounts, payment references and status, the tax position of each sale, transfers, refunds, and check-ins at the door.",
+        why: "To issue and check your tickets, handle refunds and transfers, and keep the financial and tax records the law requires.",
       },
       {
-        what: "For organisers (vendors): legal name, date of birth, address, phone number, business name and registration number, tax ID, an identity document and any supporting documents, and payout account details. Account numbers, IBANs, sort codes and routing numbers are stored encrypted, with only the last four digits readable.",
-        why: "To verify organisers before they sell paid tickets, prevent fraud, meet our legal obligations, and pay out ticket revenue.",
+        what: "Payment details. Card and bank details you enter at checkout go straight to our payment provider. We never see your full card number. If you choose to save a card, we keep the provider's token for it (encrypted), the card brand, expiry and issuing country.",
+        why: "To take payment, match it to your order and let you pay faster next time.",
       },
       {
-        what: "Event content you create: event details, venues, images, blog posts, guest names and the email addresses you invite to access passes.",
+        what: "For organisers: legal name, date of birth, address, phone number, business name and registration number, tax ID, an identity document and supporting documents, and payout account details. Payout account numbers are stored encrypted, with only the last four digits readable; you can view the full number again by confirming your password.",
+        why: "To verify organisers (who must be 18 or over) before they sell paid tickets, prevent fraud, meet our legal obligations and send ticket proceeds to the right account.",
+      },
+      {
+        what: "Event content you create: event details, venues, line-ups, images, sponsors, blog posts, and the people you invite to access passes or to your team.",
         why: "To publish and run your event.",
       },
       {
-        what: "Messages: event group chat messages, messages you send through our contact form, and reports you make about an event.",
-        why: "To run event chats, answer you, and keep the platform safe.",
+        what: "Messages: event group chats, private chats, support chats, messages through our contact form, and reports about events.",
+        why: "To run chats, help you, and keep the platform safe.",
       },
       {
-        what: "Bookmarks and notification history.",
-        why: "To save events you like and show you updates.",
+        what: "Social activity: who you follow and who follows you, saved events, your privacy settings and notification history.",
+        why: "To show your feed and updates, and respect your privacy choices.",
       },
       {
-        what: "Technical data: your IP address (used for rate limiting and, for administrators, recorded with sensitive actions in our audit log), and the session that keeps you signed in.",
-        why: "To protect accounts from abuse and keep a record of who changed what.",
+        what: "Referrals and Turnupz Credit: who invited you or whose link you bought through, the codes you use, and any credit you earn or spend.",
+        why: "To run the referral programme and give you the credit you've earned.",
+      },
+      {
+        what: "Device and security data: your IP address, the devices you're signed in on (device name and sign-in times), and a scrambled device identifier.",
+        why: "To keep your account secure, let you sign out of other devices, stop abuse such as fake referral accounts, and record who changed what on administrator accounts.",
+      },
+      {
+        what: "Usage counts: a random visitor identifier that lets us count visits to events and promoted listings, and technical error reports when something breaks.",
+        why: "To show organisers how many people saw their event and to fix problems. These don't identify who you are.",
       },
     ],
   },
@@ -71,8 +104,10 @@ const sections: TSection[] = [
     title: "What we don't do",
     items: [
       "We don't sell your personal data.",
-      "We don't use advertising or analytics trackers on the website.",
-      "We don't ask for your device's location. Venue search uses the address text you type.",
+      "We don't use advertising trackers or third-party analytics cookies.",
+      "We don't keep your precise location, and location is never required.",
+      "We don't hold ticket money. Payment providers take payments and send organisers their share directly; Turnupz receives only its own fees.",
+      "We only use the camera when an organiser scans tickets at the door, and we don't keep those images.",
     ],
   },
   {
@@ -80,62 +115,65 @@ const sections: TSection[] = [
     intro:
       "We share data only with the services that help us run Turnupz, and only what each one needs:",
     items: [
-      "Flutterwave: payments, refunds and organiser payouts. Payments taken before we moved to Flutterwave stay with Paystack, which handles their refunds.",
-      "Google: sign-in with Google, and Google Maps / Places to look up venue addresses.",
+      "Payment providers: Flutterwave (Nigeria) and Stripe (Canada) take payments, process refunds and pay organisers. Canadian organisers have their own Stripe account, so Stripe also holds the details they give it. Payments taken earlier through Paystack stay with Paystack, which handles their refunds.",
+      "Google: signing in with Google, and Google Maps to look up venue addresses.",
       "Cloudinary: storing images and documents you upload, including organiser identity documents.",
       "SendGrid: sending emails such as sign-in codes, receipts and event updates.",
       "Novu and OneSignal: delivering in-app and push notifications.",
-      "[Hosting provider and region]: hosting our servers, database and session store.",
-      "Event organisers: the organiser of an event you get a ticket for can see your ticket details when it's scanned at the door, and for events where they approve registrations, your name and email address. [Confirm against what organiser screens show before publishing.]",
-      "Other attendees: your name and profile photo are visible to other members of an event chat you join.",
-      "Authorities, where the law requires it, or to protect people from fraud or harm.",
+      "Sentry: error reports, so we can fix problems.",
+      "Railway and Vercel: hosting our servers, database and website.",
+      "Event organisers: when you get a ticket, the organiser sees your name and ticket details, including at check-in. For events where they approve registrations, they also see your email address.",
+      "Other attendees: your name and profile photo are visible to other members of an event chat you join, and your public profile follows your privacy settings.",
+      "Tax advisers, auditors and authorities, where the law requires it, or to protect people from fraud or harm.",
     ],
   },
   {
-    title: "Your legal bases",
+    title: "Why we're allowed to use it",
     intro:
-      "[Counsel to confirm against the Nigeria Data Protection Act 2023 and, where we serve people in the UK or EU, the UK/EU GDPR.] We rely on:",
+      "Under Nigeria's Data Protection Act 2023 and Canada's privacy laws (PIPEDA, and Québec's Law 25 for people in Québec), we use your data because:",
     items: [
-      "Contract: to provide your account, tickets and payouts.",
-      "Legal obligation: to keep financial records and verify organisers.",
-      "Legitimate interests: to keep the platform secure, prevent fraud and moderate events.",
-      "Consent: for optional push notifications, which you can turn off at any time.",
+      "You asked us to: to provide your account, tickets, payments and payouts.",
+      "The law requires it: to keep financial and tax records and to verify organisers.",
+      "It's needed to keep Turnupz safe: to secure accounts, prevent fraud and moderate events.",
+      "You agreed: for location and push notifications, which you can turn off at any time in your phone's settings.",
     ],
   },
   {
     title: "How long we keep it",
     items: [
-      "Account data: while your account is open, and [X months] after you close it.",
-      "Orders, payments and payouts: [X years], as required for tax and accounting.",
-      "Organiser verification documents: [X years] after verification ends.",
-      "Audit log entries: [X years].",
-      "Contact messages and event reports: [X months] after they're resolved.",
+      "Account details: until you delete your account. Deleting it removes your profile, photo, followers, saved cards and sign-ins straight away.",
+      "Orders, payments, payouts and tax records: at least six years, as tax and accounting law requires, longer where the law says so. If you delete your account, these are kept without your name.",
+      "Organiser verification documents and payout details: while the organiser account is open, then for as long as the law requires for financial records.",
+      "Security and administrator audit records: for as long as we need them to investigate problems, and no longer than the financial records above.",
+      "Messages you send us and event reports: until they're resolved, and for as long as we may need them to answer follow-ups.",
     ],
   },
   {
-    title: "Your rights",
-    intro:
-      "You can ask us to give you a copy of your data, correct it, delete it, restrict or object to how we use it, or move it to another service. You can also withdraw consent you've given. Email [privacy contact email] and we'll reply within [30 days]. If you're not happy with our answer, you can complain to the Nigeria Data Protection Commission [or your local data protection authority].",
+    title: "Your choices and rights",
+    intro: `You can see, correct and download most of your data in your account settings, and delete your account at any time in the app or at turnupz.com/delete-account. You can also ask us for a copy of your data, to correct or delete it, or to stop or limit how we use it, and you can withdraw consent you've given. Email ${show(LEGAL.privacyEmail, "privacy email")} and we'll reply within 30 days. If you're not happy with our answer, you can complain to the Nigeria Data Protection Commission, the Office of the Privacy Commissioner of Canada, or in Québec, the Commission d'accès à l'information.`,
+  },
+  {
+    title: "Who's responsible for your privacy",
+    intro: `${show(LEGAL.privacyOfficer, "privacy officer's title")} is responsible for protecting personal information at Turnupz. You can reach them at ${show(LEGAL.privacyEmail, "privacy email")}.`,
   },
   {
     title: "Cookies and local storage",
     intro:
-      "We use a cookie and your browser's local storage to keep you signed in and remember your settings, and to hold a random visitor id that lets us count how many people visit Turnupz (not who they are). The app keeps a similar random id for the same purpose. We don't use advertising or third-party analytics cookies.",
+      "We use a cookie and your browser's local storage to keep you signed in, remember your settings and keep a copy of an event you're creating while you work on it. We also keep a random visitor identifier to count visits, not to identify you. The app stores the same kind of information on your phone.",
   },
   {
     title: "Security",
-    intro:
-      "Passwords are hashed, payout account numbers are encrypted, connections are encrypted in transit, and administrator access is limited by role and logged. No system is perfectly secure, so please use a strong password and tell us at [security contact email] if you notice anything wrong.",
+    intro: `Passwords are hashed, payout account numbers and saved-card tokens are encrypted, connections are encrypted, and administrator access is limited by role and logged. Tickets show a code that changes every 30 seconds, so a picture of a ticket stops working within minutes. No system is perfectly secure: use a strong password, and tell us at ${show(LEGAL.privacyEmail, "privacy email")} if you notice anything wrong.`,
   },
   {
-    title: "International transfers",
+    title: "Data stored in other countries",
     intro:
-      "Some of the services above store data outside [Nigeria]. [Counsel to describe the safeguards relied on for these transfers.]",
+      "Some of the services above store or process data outside Nigeria and Canada, mainly in the United States. We choose providers that protect personal data under their data processing terms, and we only share what each one needs.",
   },
   {
     title: "Children",
     intro:
-      "Turnupz isn't meant for children under [13/16/18]. We ask for date of birth when you sign up so we can enforce this.",
+      "Turnupz isn't for children under 13. We ask for your date of birth when you sign up. Organisers must be 18 or over. Some events have their own age limits, which the organiser sets and checks at the door.",
   },
   {
     title: "Changes to this policy",
@@ -146,19 +184,18 @@ const sections: TSection[] = [
 
 const PrivacyPolicyPage = () => (
   <main className="mx-auto max-w-5xl space-y-10 px-4 py-12 sm:px-6 lg:px-8">
-    <div
-      role="note"
-      className="rounded-2xl border-2 border-dashed border-secondary-300 bg-secondary-50 px-5 py-4 text-sm text-secondary-900"
-    >
-      <p className="font-bold uppercase tracking-wider">
-        Draft for legal review
-      </p>
-      <p className="mt-1 leading-6">
-        This policy hasn&apos;t been approved yet. It describes what Turnupz
-        collects today, but items in [square brackets] still need to be
-        confirmed. It isn&apos;t a final legal document.
-      </p>
-    </div>
+    {IS_DRAFT && (
+      <div
+        role="note"
+        className="rounded-2xl border-2 border-dashed border-secondary-300 bg-secondary-50 px-5 py-4 text-sm text-secondary-900"
+      >
+        <p className="font-bold uppercase tracking-wider">Draft</p>
+        <p className="mt-1 leading-6">
+          This policy describes what Turnupz collects today. Items in [square
+          brackets] are still being confirmed.
+        </p>
+      </div>
+    )}
 
     <section className="space-y-4">
       <p className="text-xs font-semibold uppercase tracking-[0.28em] text-secondary-400">
@@ -168,8 +205,8 @@ const PrivacyPolicyPage = () => (
         Privacy Policy
       </h1>
       <p className="max-w-3xl text-sm leading-7 text-secondary-500 sm:text-base">
-        What we collect when you use Turnupz, why, who we share it with, and the
-        choices you have. Last updated {LAST_UPDATED}.
+        What we collect when you use Turnupz, why, who we share it with, how
+        long we keep it, and the choices you have. Last updated {LAST_UPDATED}.
       </p>
     </section>
 
@@ -212,9 +249,13 @@ const PrivacyPolicyPage = () => (
     </section>
 
     <p className="text-sm text-secondary-500">
-      Questions? Email [privacy contact email] or use our{" "}
+      Questions? Email {show(LEGAL.privacyEmail, "privacy email")}, use our{" "}
       <Link href="/contact" className="font-semibold text-primary underline">
         contact form
+      </Link>
+      , or see how to{" "}
+      <Link href="/delete-account" className="font-semibold text-primary underline">
+        delete your account
       </Link>
       .
     </p>

@@ -132,8 +132,9 @@ const Referrals = () => {
     <div className="space-y-6">
       <PageHeading title="Referrals">
         Who referred whom. Friends invite with their username; influencers with
-        a code you give them. Rewards are 5% of the new person&apos;s first card
-        payment, capped. {summary.data?.rulesNote}
+        a code you give them. All rewards on an order together are at most 20%
+        of Turnupz&apos;s commission on it (0.8% of the ticket at 4%), and each
+        has its own maximum. {summary.data?.rulesNote}
       </PageHeading>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
