@@ -241,9 +241,8 @@ export default function TransferTicketPage() {
   const quantity = 1;
   const priceAmount = ticket?.ticket?.price?.amount ?? 0;
   const subTotal = priceAmount * quantity;
-  const tax = 0;
-  const fee = 0;
-  const total = subTotal + tax + fee;
+  // A transfer isn't a sale: nothing is charged, so there's no tax or fee line.
+  const total = subTotal;
   const priceLocale = ticket?.ticket?.price?.currency?.locale || "en-NG";
   const priceCurrency = ticket?.ticket?.price?.currency?.code || "NGN";
   const fallbackSymbol = ticket?.ticket?.price?.currency?.symbol || "N";
@@ -507,8 +506,6 @@ export default function TransferTicketPage() {
                     </tr>
                     {[
                       ["Sub Total", subTotal],
-                      ["Tax (0%)", tax],
-                      ["Fee", fee],
                       ["Total", total],
                     ].map(([label, value]) => (
                       <tr

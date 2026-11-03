@@ -1,6 +1,9 @@
 "use client";
 import VenueField from "./venue-field";
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { getData } from "@/api";
+import { IVenueDetailsType } from "@/lib/types";
 import dynamic from "next/dynamic";
 import Joi from "joi";
 import { Button } from "@/components/ui/button";
@@ -261,6 +264,55 @@ const BasicForm: React.FC<{
     setValue("venueAddress", "", { shouldDirty: true });
     setValue("venueCapacity", null, { shouldDirty: true });
   }, [getValues, setValue]);
+
+  // From the Venues page ("Use for an event"): start with that venue, and the
+  // country, state and city it's in.
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const linkedVenueId = searchParams.get("venueId");
+  const venueApplied = useRef(false);
+  useEffect(() => {
+    if (!linkedVenueId || venueApplied.current) return;
+    venueApplied.current = true;
+    void (async () => {
+      try {
+        const { data } = await getData<
+          IVenueDetailsType & { city?: string; state?: string | null; country?: string }
+        >(`/venue/${linkedVenueId}`);
+        const venue = data?.data;
+        if (!venue) return;
+        const country = Country.getAllCountries().find(
+          (c) => c.name.toLowerCase() === venue.country?.toLowerCase(),
+        );
+        if (country) {
+          const state = State.getStatesOfCountry(country.isoCode).find(
+            (s) => s.name.toLowerCase() === venue.state?.toLowerCase(),
+          );
+          setValue("eventCountry", country.name, { shouldDirty: true });
+          setValue("eventCountryCode", country.isoCode, { shouldDirty: true, shouldValidate: true });
+          setValue("eventState", state?.name ?? "", { shouldDirty: true });
+          setValue("eventStateCode", state?.isoCode ?? "", { shouldDirty: true });
+          setValue("eventCity", venue.city ?? "", { shouldDirty: true });
+        }
+        setValue("venueId", venue.id, { shouldDirty: true });
+        setValue("venueName", venue.name, { shouldDirty: true, shouldValidate: true });
+        setValue("venueAddress", venue.address ?? "", { shouldDirty: true });
+        setValue("venueCapacity", venue.totalAvailableSeat || null, { shouldDirty: true });
+        applyZone({
+          countryCode: country?.isoCode ?? "",
+          stateCode: "",
+          latitude: venue.latitude,
+          longitude: venue.longitude,
+        });
+      } catch {
+        // The venue can still be picked by hand.
+      } finally {
+        router.replace(pathname);
+      }
+    })();
+  }, [linkedVenueId, setValue, applyZone, router, pathname]);
+
   const {
     data: categories,
     isLoading,

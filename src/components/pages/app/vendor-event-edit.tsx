@@ -17,6 +17,7 @@ import {
   IEventPassAssignmentDetails,
   IEventTicketOptionDetails,
   sponsorLogo,
+  sponsorShowsName,
   sponsorName,
 } from "@/lib/types";
 import { updateDevMockEvent } from "@/lib/dev-mock-events";
@@ -58,6 +59,8 @@ import TicketSaleRulesFields, {
   TTicketSaleRules,
 } from "./create/ticket-sale-rules";
 import { moveItem } from "@/lib/move-item";
+import SponsorShowToggle from "@/components/pages/app/create/sponsor-show-toggle";
+import { MediaThumb } from "@/components/pages/explore/event-detail/event-detail-media";
 
 
 const toDatetimeInputValue = (date: Date | string) => {
@@ -234,6 +237,8 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
   const [sponsorImageFiles, setSponsorImageFiles] = useState<
     Record<number, File>
   >({});
+  // Parallel to sponsors: show the name instead of the logo.
+  const [sponsorShowNames, setSponsorShowNames] = useState<boolean[]>([]);
   const [eventTickets, setEventTickets] = useState<IEventTicketOptionDetails[]>(
     [],
   );
@@ -278,7 +283,11 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     setSponsors((data.sponsors ?? []).map(sponsorName));
     setSponsorImages(
       (data.sponsors ?? []).map(
-        (sponsor, index) => sponsorLogo(sponsor) ?? data.sponsorImages?.[index] ?? "",
+        (sponsor, index) =>
+          // The separate logo list only lines up for old events saved as names.
+          (typeof sponsor === "string"
+            ? data.sponsorImages?.[index]
+            : sponsorLogo(sponsor)) ?? "",
       ),
     );
     setSponsorImageFiles({});
@@ -287,6 +296,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
         typeof sponsor === "string" ? undefined : sponsor.imageDetails?.id,
       ),
     );
+    setSponsorShowNames((data.sponsors ?? []).map(sponsorShowsName));
     setEventTickets(
       (data.eventTickets ?? []).map((ticket) => ({
         ...ticket,
@@ -606,13 +616,20 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
   };
 
   const handleMediaUpload = (files?: FileList | null) => {
-    const nextFiles = Array.from(files ?? []).filter((file) =>
-      file.type.includes("image"),
-    );
+    // Photos up to 5MB and short videos up to 10MB, as when creating.
+    const nextFiles = Array.from(files ?? []).filter((file) => {
+      const video = file.type.startsWith("video/");
+      if (!video && !file.type.startsWith("image/")) return false;
+      if (file.size > (video ? 10 : 5) * 1024 * 1024) {
+        toast.error(`${file.name}: ${video ? "videos must be under 10MB" : "photos must be under 5MB"}`);
+        return false;
+      }
+      return true;
+    });
     const nextImages = nextFiles.map(createObjectUrl).filter(Boolean);
 
     if (nextImages.length === 0) {
-      toast.error("Please select image files");
+      toast.error("Please select photos or videos");
       return;
     }
 
@@ -657,6 +674,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     setSponsors((current) => moveItem(current, index, by));
     setSponsorImages((current) => moveItem(current, index, by));
     setSponsorLogoIds((current) => moveItem(current, index, by));
+    setSponsorShowNames((current) => moveItem(current, index, by));
     setSponsorImageFiles((current) => {
       const next = { ...current };
       const other = index + by;
@@ -671,6 +689,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     setSponsors((current) => current.filter((_, at) => at !== index));
     setSponsorImages((current) => current.filter((_, at) => at !== index));
     setSponsorLogoIds((current) => current.filter((_, at) => at !== index));
+    setSponsorShowNames((current) => current.filter((_, at) => at !== index));
     // New logo files are kept by position, so the ones after it move up one.
     setSponsorImageFiles((current) => {
       const next: Record<number, File> = {};
@@ -870,6 +889,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
             name: name.trim(),
             file: sponsorImageFiles[index],
             logoId: sponsorLogoIds[index],
+            showName: !!sponsorShowNames[index],
           }))
           .filter((sponsor) => sponsor.name);
         const logoFiles = board
@@ -887,6 +907,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
               imageId: sponsor.file
                 ? uploadedLogos[nextLogo++].id
                 : sponsor.logoId,
+              showName: sponsor.showName,
             })),
           ),
         );
@@ -1258,15 +1279,15 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                     Media
                   </p>
                   <p className="text-sm text-secondary-500">
-                    Add or remove event gallery images.
+                    Add or remove photos and short videos.
                   </p>
                 </div>
                 <label className="inline-flex cursor-pointer items-center rounded-xl border border-secondary-200 px-4 py-2 text-sm font-semibold text-secondary-950 hover:bg-secondary-50">
                   <Plus className="mr-2 size-4" />
-                  Add Images
+                  Add photos or videos
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/mp4,video/quicktime,video/webm"
                     multiple
                     className="hidden"
                     onChange={(event) => {
@@ -1282,10 +1303,19 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                     key={`${image}-${index}`}
                     className="overflow-hidden rounded-[1.2rem] border border-secondary-100 bg-secondary-50"
                   >
-                    <div
-                      className="h-32 w-full bg-cover bg-center"
-                      style={{ backgroundImage: `url(${image})` }}
-                    />
+                    <div className="relative h-32 w-full">
+                      <MediaThumb
+                        item={{
+                          url: image,
+                          type:
+                            mediaSources[index] instanceof File &&
+                            (mediaSources[index] as File).type.startsWith("video/")
+                              ? "VIDEO"
+                              : null,
+                        }}
+                        alt={`Media ${index + 1}`}
+                      />
+                    </div>
                     <div className="flex items-center gap-2 p-3">
                       <Button
                         type="button"
@@ -2088,6 +2118,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                     setSponsors((current) => [...current, ""]);
                     setSponsorImages((current) => [...current, ""]);
                     setSponsorLogoIds((current) => [...current, undefined]);
+                    setSponsorShowNames((current) => [...current, false]);
                   }}
                 >
                   <Plus className="size-4" />
@@ -2165,12 +2196,27 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                       </Button>
                     </div>
                     {sponsorImages[index] && (
-                      <div
-                        className="flex h-24 items-center justify-center rounded-[1rem] border border-secondary-100 bg-white bg-contain bg-center bg-no-repeat md:col-span-2"
-                        style={{
-                          backgroundImage: `url(${sponsorImages[index]})`,
-                        }}
-                      />
+                      <div className="space-y-2 md:col-span-2">
+                        <div
+                          className="flex h-24 items-center justify-center rounded-[1rem] border border-secondary-100 bg-white bg-contain bg-center bg-no-repeat"
+                          style={{
+                            backgroundImage: `url(${sponsorImages[index]})`,
+                          }}
+                        />
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          On the board, show its
+                          <SponsorShowToggle
+                            showName={!!sponsorShowNames[index]}
+                            onChange={(showName) =>
+                              setSponsorShowNames((current) => {
+                                const next = sponsors.map((_, at) => !!current[at]);
+                                next[index] = showName;
+                                return next;
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
                     )}
                   </div>
                 ))}

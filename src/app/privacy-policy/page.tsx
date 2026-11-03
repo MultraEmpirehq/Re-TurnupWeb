@@ -10,8 +10,8 @@ import { memo } from "react";
 const LEGAL = {
   /** The company responsible for Turnupz (for now, in both Nigeria and Canada). */
   company: "Turnupz Inc. (corporation number 1822152-9)",
-  canadaAddress: "285 Herron Mews NE, Calgary, Alberta T3P 1Y6, Canada",
-  nigeriaAddress: "7 Princess Bola Jegede Close, Ajao Estate, Lagos, Nigeria",
+  canadaAddress: "Calgary, Canada",
+  nigeriaAddress: "Lagos, Nigeria",
   /** Where people send privacy requests. */
   privacyEmail: "admin@multraempire.com",
   /** Who's responsible for personal information (required in Québec): a title is enough. */
@@ -40,7 +40,7 @@ type TSection = {
 const sections: TSection[] = [
   {
     title: "Who we are",
-    intro: `Turnupz is an event platform for discovering events, buying or registering for tickets, and hosting events, in Nigeria and Canada. In this policy, "Turnupz", "we" and "us" means ${show(LEGAL.company, "company name and number")}, with offices at ${show(LEGAL.canadaAddress, "Canadian address")} and ${show(LEGAL.nigeriaAddress, "Nigerian address")}. We decide how and why your personal data is used. Organisers are responsible for how they use attendee information for their own events.`,
+    intro: `Turnupz is an event platform for discovering events, buying or registering for tickets, and hosting events, in Nigeria and Canada. In this policy, "Turnupz", "we" and "us" means ${show(LEGAL.company, "company name and number")}, based in ${show(LEGAL.canadaAddress, "Canadian city")} and ${show(LEGAL.nigeriaAddress, "Nigerian city")}. We decide how and why your personal data is used. Organisers are responsible for how they use attendee information for their own events.`,
   },
   {
     title: "What we collect, and why",

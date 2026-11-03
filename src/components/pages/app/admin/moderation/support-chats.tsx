@@ -48,7 +48,7 @@ const SupportChats = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeading title="Support chats">
+      <PageHeading title="Live Chats">
         Messages people send from the app (Get help on an order, or Help &amp; FAQs).
         Your reply shows in their Messages and they get a notification.
       </PageHeading>

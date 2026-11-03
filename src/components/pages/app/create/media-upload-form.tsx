@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button";
+import SponsorShowToggle from "./sponsor-show-toggle";
+import { MediaThumb } from "@/components/pages/explore/event-detail/event-detail-media";
 import CustomImageComponent from "@/components/ui/custom-image.component";
 import { Input } from "@/components/ui/input";
 import { constructErrorMessage } from "@/api/functions";
@@ -24,11 +26,28 @@ export interface IMediaUploadFormValues {
   sponsorImages: (File | string)[];
   /** Parallel to sponsorNames: the logo a saved sponsor has (an attachment id). */
   sponsorLogoIds?: (string | null)[];
+  /** Parallel to sponsorNames: show the name instead of the logo. */
+  sponsorShowNames?: boolean[];
 }
 
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+/** Short clips for the gallery; the upload limit is 10MB. */
+const MAX_VIDEO_SIZE = 10 * 1024 * 1024;
+const VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm"];
+
+/** Why a gallery file can't be used, or null when it can. */
+const galleryFileProblem = (file: File) => {
+  if (file.type.startsWith("video/")) {
+    if (!VIDEO_TYPES.includes(file.type)) return "Videos can be MP4, MOV or WebM";
+    if (file.size > MAX_VIDEO_SIZE) return "Videos must be under 10MB";
+    return null;
+  }
+  if (!ALLOWED_TYPES.includes(file.type)) return "Photos can be JPG, PNG or WEBP";
+  if (file.size > MAX_FILE_SIZE) return "Photos must be under 5MB";
+  return null;
+};
 
 const getImagePreviewUrl = (image: File | string | null | undefined) => {
   if (!image) return "";
@@ -65,9 +84,21 @@ function validateFile(
   return value;
 }
 
+function validateGalleryFile(
+  value: unknown,
+  helpers: Joi.CustomHelpers,
+): File | string | Joi.ErrorReport {
+  if (typeof value === "string" && value.trim()) return value;
+  if (!(value instanceof File)) {
+    return helpers.error("any.custom", { message: "Please select a photo or video" });
+  }
+  const problem = galleryFileProblem(value);
+  return problem ? helpers.error("any.custom", { message: problem }) : value;
+}
+
 export const mediaUploadFormSchema = Joi.object({
   mediaFiles: Joi.array()
-    .items(Joi.any().custom(validateFile))
+    .items(Joi.any().custom(validateGalleryFile))
     .optional()
     .messages({
       "array.min": "Please add at least one image",
@@ -75,6 +106,7 @@ export const mediaUploadFormSchema = Joi.object({
     }),
   mediaFileIds: Joi.array().items(Joi.string().allow(null, "")).optional(),
   sponsorLogoIds: Joi.array().items(Joi.string().allow(null, "")).optional(),
+  sponsorShowNames: Joi.array().items(Joi.boolean()).optional(),
   sponsorNames: Joi.array().items(Joi.string().allow("")).optional(),
   // A sponsor without a logo yet holds an empty slot, which is fine.
   sponsorImages: Joi.array()
@@ -102,6 +134,7 @@ const MediaUploadForm: React.FC<{
     [watchedMediaFiles],
   );
   const sponsorNames = watch("sponsorNames") ?? [];
+  const sponsorShowNames = watch("sponsorShowNames") ?? [];
   const sponsorImages = useMemo(
     () => watchedSponsorImages ?? [],
     [watchedSponsorImages],
@@ -123,16 +156,9 @@ const MediaUploadForm: React.FC<{
       const filesToAdd: File[] = [];
       for (let i = 0; i < newFiles.length; i++) {
         const file = newFiles[i];
-        if (!file.type.includes("image")) {
-          toast.error(`${file.name}: Please select an image file`);
-          continue;
-        }
-        if (file.size > MAX_FILE_SIZE) {
-          toast.error(`${file.name}: File size must be less than 5MB`);
-          continue;
-        }
-        if (!ALLOWED_TYPES.includes(file.type)) {
-          toast.error(`${file.name}: Only .jpg, .png, .webp are supported`);
+        const problem = galleryFileProblem(file);
+        if (problem) {
+          toast.error(`${file.name}: ${problem}`);
           continue;
         }
         filesToAdd.push(file);
@@ -183,6 +209,7 @@ const MediaUploadForm: React.FC<{
       names,
       images: names.map((_, i) => getValues("sponsorImages")?.[i] ?? ""),
       ids: names.map((_, i) => getValues("sponsorLogoIds")?.[i] ?? null),
+      show: names.map((_, i) => !!getValues("sponsorShowNames")?.[i]),
     };
   }, [getValues]);
 
@@ -191,10 +218,12 @@ const MediaUploadForm: React.FC<{
       names: string[];
       images: (File | string)[];
       ids: (string | null)[];
+      show: boolean[];
     }) => {
       setValue("sponsorNames", lists.names, { shouldValidate: true });
       setValue("sponsorImages", lists.images, { shouldValidate: true });
       setValue("sponsorLogoIds", lists.ids);
+      setValue("sponsorShowNames", lists.show, { shouldDirty: true });
     },
     [setValue],
   );
@@ -202,22 +231,24 @@ const MediaUploadForm: React.FC<{
   /** Moves a sponsor a place up (-1) or down (+1) the board, logo and all. */
   const moveSponsor = useCallback(
     (index: number, by: -1 | 1) => {
-      const { names, images, ids } = sponsorLists();
+      const { names, images, ids, show } = sponsorLists();
       setSponsorLists({
         names: moveItem(names, index, by),
         images: moveItem(images, index, by),
         ids: moveItem(ids, index, by),
+        show: moveItem(show, index, by),
       });
     },
     [setSponsorLists, sponsorLists],
   );
 
   const addSponsor = useCallback(() => {
-    const { names, images, ids } = sponsorLists();
+    const { names, images, ids, show } = sponsorLists();
     setSponsorLists({
       names: [...names, ""],
       images: [...images, ""],
       ids: [...ids, null],
+      show: [...show, false],
     });
   }, [setSponsorLists, sponsorLists]);
 
@@ -237,23 +268,24 @@ const MediaUploadForm: React.FC<{
         toast.error("Please select an image file");
         return;
       }
-      const { names, images, ids } = sponsorLists();
+      const { names, images, ids, show } = sponsorLists();
       images[index] = file;
       // The new logo replaces the one it had.
       ids[index] = null;
-      setSponsorLists({ names, images, ids });
+      setSponsorLists({ names, images, ids, show });
     },
     [setSponsorLists, sponsorLists],
   );
 
   const removeSponsor = useCallback(
     (index: number) => {
-      const { names, images, ids } = sponsorLists();
+      const { names, images, ids, show } = sponsorLists();
       const keep = (_: unknown, i: number) => i !== index;
       setSponsorLists({
         names: names.filter(keep),
         images: images.filter(keep),
         ids: ids.filter(keep),
+        show: show.filter(keep),
       });
     },
     [setSponsorLists, sponsorLists],
@@ -290,11 +322,11 @@ const MediaUploadForm: React.FC<{
       <div className="w-full space-y-4 rounded-2xl border border-secondary-100 bg-white p-5">
         <div>
           <p className="text-sm font-semibold text-secondary-950">
-            Event photos
+            Event photos and videos
           </p>
           <p className="text-xs leading-5 text-secondary-500">
-            Shown in your event&apos;s gallery, in this order. JPG, PNG or
-            WEBP, up to 5MB each.
+            Shown in your event&apos;s gallery, in this order. Photos (JPG, PNG
+            or WEBP, up to 5MB) and short videos (MP4, MOV or WebM, up to 10MB).
           </p>
         </div>
 
@@ -309,12 +341,16 @@ const MediaUploadForm: React.FC<{
               key={`${previewUrl}-${index}`}
               className="relative aspect-video overflow-hidden rounded-xl bg-secondary-100"
             >
-              <CustomImageComponent
-                src={previewUrl}
+              <MediaThumb
+                item={{
+                  url: previewUrl,
+                  type:
+                    mediaFiles[index] instanceof File &&
+                    (mediaFiles[index] as File).type.startsWith("video/")
+                      ? "VIDEO"
+                      : null,
+                }}
                 alt={`Media ${index + 1}`}
-                className="size-full"
-                fill
-                imageClassName="object-cover object-center"
               />
               <button
                 type="button"
@@ -362,7 +398,7 @@ const MediaUploadForm: React.FC<{
             <Input
               key={mediaFiles.length}
               type="file"
-              accept=".jpg, .png, .webp"
+              accept=".jpg, .png, .webp, .mp4, .mov, .webm"
               multiple
               className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
               onChange={(e) => {
@@ -373,13 +409,13 @@ const MediaUploadForm: React.FC<{
             {hasMediaFiles ? (
               <>
                 <PlusIcon className="size-4" />
-                <span className="font-medium">Add photos</span>
+                <span className="font-medium">Add photos or videos</span>
               </>
             ) : (
               <>
                 <UploadIcon className="size-8 text-secondary-700" />
                 <span className="font-medium text-secondary-800">
-                  Drag photos here, or click to browse
+                  Drag photos or videos here, or click to browse
                 </span>
                 <span className="text-xs">You can add several at once.</span>
               </>
@@ -397,7 +433,8 @@ const MediaUploadForm: React.FC<{
           <p className="text-sm font-semibold text-secondary-950">Sponsors</p>
           <p className="text-xs leading-5 text-secondary-500">
             Laid out as your event&apos;s sponsor board. Tap a tile to add its
-            logo, and use the arrows to change the order.
+            logo, choose whether the logo or the name shows, and use the arrows
+            to change the order.
           </p>
         </div>
 
@@ -473,6 +510,16 @@ const MediaUploadForm: React.FC<{
                 aria-label="Sponsor name"
                 className="w-full rounded-md bg-transparent px-1 py-0.5 text-center text-sm font-semibold text-secondary-700 outline-none placeholder:font-normal placeholder:text-secondary-300 focus:bg-secondary-50"
               />
+              {sponsorImagePreviewUrls[index] && (
+                <SponsorShowToggle
+                  showName={!!sponsorShowNames[index]}
+                  onChange={(showName) => {
+                    const next = sponsorNames.map((_, i) => !!sponsorShowNames[i]);
+                    next[index] = showName;
+                    setValue("sponsorShowNames", next, { shouldDirty: true });
+                  }}
+                />
+              )}
             </div>
           ))}
           <button

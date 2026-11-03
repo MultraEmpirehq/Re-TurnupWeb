@@ -78,7 +78,7 @@ const InfluencerCodes = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <PageHeading title="Influencer codes">
+        <PageHeading title="Influencer Codes">
           Codes you give influencers. New people enter them at sign-up; we track
           who joined through each and what they spent. Rewards follow the fixed
           referral rules.
