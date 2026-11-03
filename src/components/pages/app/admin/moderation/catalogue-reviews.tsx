@@ -73,7 +73,7 @@ const CatalogueReviews = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeading title="Venue, category & performer reviews">
+      <PageHeading title="Catalogue Submissions">
         Events go live without review. What organisers add to the shared
         directory waits here: venues and categories typed in on an event, and
         performers they created. They can use them on their own events in the

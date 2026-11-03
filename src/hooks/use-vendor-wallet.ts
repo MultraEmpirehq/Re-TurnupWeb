@@ -29,16 +29,38 @@ export interface VendorCurrencyEarnings {
   /** Collected by Turnupz before direct payouts, still owed to them. */
   owed: PriceDetailsType;
   refunded: PriceDetailsType;
+  /** Events with sales in the period. */
+  eventsCount: number;
+  /** Ticket sales in the same number of days just before; null for all time. */
+  previousSales: PriceDetailsType | null;
 }
 
 export interface VendorEarnings {
   payoutAccount: VendorPayoutAccount | null;
   currencies: VendorCurrencyEarnings[];
+  /** The organiser's events, to narrow the wallet to one. */
+  events: { id: string; name: string }[];
+  days: number | null;
 }
+
+/** Narrows the wallet: the last `days` days (all time when left out) and one event. */
+export type TWalletFilter = { days?: number; eventId?: string };
+
+const walletQuery = (filter: TWalletFilter, extra: Record<string, string | number> = {}) => {
+  const params = new URLSearchParams();
+  if (filter.days) params.set("days", String(filter.days));
+  if (filter.eventId) params.set("eventId", filter.eventId);
+  for (const [key, value] of Object.entries(extra)) params.set(key, String(value));
+  const query = params.toString();
+  return query ? `?${query}` : "";
+};
 
 export interface VendorSale {
   id: string;
   date: string;
+  /** The order's reference, as on the buyer's receipt. */
+  reference: string | null;
+  promoCode: string | null;
   event: { id: string; name: string } | null;
   ticketName: string | null;
   quantity: number;
@@ -59,21 +81,24 @@ export type PayoutSetupAttempt =
   | { status: "missing_details"; missing: string[] }
   | { status: "failed"; message: string };
 
-export const useVendorEarnings = () =>
+export const useVendorEarnings = (filter: TWalletFilter = {}) =>
   useQuery({
-    queryKey: ["vendor-earnings"],
+    queryKey: ["vendor-earnings", filter.days ?? null, filter.eventId ?? null],
     queryFn: async () => {
-      const { data } = await getData<VendorEarnings>("/vendor/wallet");
-      return data?.data ?? { payoutAccount: null, currencies: [] };
+      const { data } = await getData<VendorEarnings>(`/vendor/wallet${walletQuery(filter)}`);
+      return (
+        data?.data ?? { payoutAccount: null, currencies: [], events: [], days: null }
+      );
     },
+    placeholderData: (previous) => previous,
   });
 
-export const useVendorSales = (page = 1) =>
+export const useVendorSales = (page = 1, filter: TWalletFilter = {}, limit = 8) =>
   useQuery({
-    queryKey: ["vendor-sales", page],
+    queryKey: ["vendor-sales", page, limit, filter.days ?? null, filter.eventId ?? null],
     queryFn: async () => {
       const { data } = await getData<VendorSale[]>(
-        `/vendor/wallet/sales?page=${page}&limit=20`,
+        `/vendor/wallet/sales${walletQuery(filter, { page, limit })}`,
       );
       return { sales: data?.data ?? [], pagination: data?.pagination };
     },
@@ -112,7 +137,7 @@ export const payoutAttemptMessage = (attempt?: PayoutSetupAttempt) => {
       return "Direct payouts aren't switched on yet. Try again later.";
     case "missing_details":
       return attempt.missing.includes("bankCode")
-        ? "We need your bank picked from our list. Contact support and we'll set it for you."
+        ? "Choose your bank from the list to finish setting up payouts."
         : `Your payout details are missing: ${attempt.missing.join(", ")}.`;
     case "failed":
       return `The payment provider couldn't set up your payouts: ${attempt.message}`;
@@ -215,4 +240,17 @@ export const useChangePayoutBank = () => {
       void queryClient.invalidateQueries({ queryKey: ["vendor-payouts"] });
     },
   });
+};
+
+/** Every sale matching the filter, a page at a time, for a spreadsheet. */
+export const fetchAllVendorSales = async (filter: TWalletFilter) => {
+  const all: VendorSale[] = [];
+  for (let page = 1; page <= 50; page += 1) {
+    const { data } = await getData<VendorSale[]>(
+      `/vendor/wallet/sales${walletQuery(filter, { page, limit: 100 })}`,
+    );
+    all.push(...(data?.data ?? []));
+    if (!data?.pagination?.nextPage) break;
+  }
+  return all;
 };

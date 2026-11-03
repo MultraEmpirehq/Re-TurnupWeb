@@ -2,41 +2,33 @@ import { TAdminPermission } from "@/hooks/use-admin-permissions";
 import { TAdminPendingKey } from "@/hooks/use-admin-dashboard";
 import { ROUTES } from "@/lib/variables";
 import {
-  ArrowLeftRight,
-  ListChecks,
-  MessagesSquare,
   BadgeCheck,
-  Banknote,
   CalendarDays,
   CalendarPlus,
   CircleDollarSign,
-  Gift,
-  Undo2,
   ClipboardCheck,
   Flag,
-  FileChartColumn,
+  Gift,
   Headset,
   Inbox,
   LayoutDashboard,
-  LifeBuoy,
-  Logs,
+  Library,
+  ListChecks,
   LucideIcon,
   Mail,
   MapPin,
-  Mic,
   Megaphone,
-  Rocket,
-  MessageSquareText,
+  MessagesSquare,
   Newspaper,
-  Plug,
-  Receipt,
+  Mic,
+  Rocket,
   ScanLine,
   ScrollText,
-  Sparkles,
   Settings,
-  SlidersHorizontal,
+  ShieldCheck,
+  Sparkles,
   Tags,
-  Ticket,
+  Undo2,
   UserCog,
   Users,
 } from "lucide-react";
@@ -49,13 +41,8 @@ export type TAdminNavItem = {
   alsoActiveOn?: string[];
   /** Hidden from admins who don't hold it, since the page would refuse them. */
   permission?: TAdminPermission;
-    /** Badged with how much is waiting in this queue (see useAdminPendingCounts). */
+  /** Badged with how much is waiting in this queue (see useAdminPendingCounts). */
   pendingKey?: TAdminPendingKey;
-  /**
-   * Not built yet. The link opens the shared "coming soon" page, which shows this
-   * text as what the section will do.
-   */
-  comingSoon?: string;
 };
 
 export type TAdminNavGroup = {
@@ -81,23 +68,119 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         href: ROUTES.ADMIN_OVERVIEW.href,
         icon: LayoutDashboard,
       },
-      // Covers every department, so it sits beside Overview rather than in one.
+    ],
+  },
+  {
+    label: "Events",
+    department: {
+      icon: CalendarDays,
+      accentClassName: "bg-sky-50 text-sky-600",
+      description: "Events, approvals and check-in.",
+    },
+    items: [
       {
-        label: "Audit Log",
-        href: `${ADMIN_BASE}/audit-log`,
-        icon: ScrollText,
-        permission: "AUDIT_VIEW",
+        label: "All Events",
+        href: `${ADMIN_BASE}/events`,
+        icon: CalendarDays,
+        permission: "EVENTS_MODERATE",
+      },
+      {
+        label: ROUTES.CREATE_EVENT.label,
+        href: `${ADMIN_BASE}/events/create`,
+        icon: CalendarPlus,
+        permission: "EVENTS_MODERATE",
+      },
+      {
+        label: "Event Approvals",
+        pendingKey: "eventReviews",
+        href: `${ADMIN_BASE}/events/reviews`,
+        icon: ClipboardCheck,
+        permission: "EVENTS_MODERATE",
+      },
+      {
+        label: "Check-in",
+        href: `${ADMIN_BASE}/events/scan`,
+        icon: ScanLine,
+        permission: "TICKETS_SCAN",
       },
     ],
   },
   {
-    label: "Marketing",
+    label: "Catalogue",
+    department: {
+      icon: Library,
+      accentClassName: "bg-violet-50 text-violet-600",
+      description: "The venues, categories and performers organisers choose from.",
+    },
+    items: [
+      {
+        label: ROUTES.VENUES.label,
+        href: `${ADMIN_BASE}/venues`,
+        icon: MapPin,
+        permission: "CATALOGUE_MANAGE",
+      },
+      {
+        label: ROUTES.CATEGORIES.label,
+        href: `${ADMIN_BASE}/categories`,
+        icon: Tags,
+        permission: "CATALOGUE_MANAGE",
+      },
+      {
+        label: ROUTES.PERFORMERS.label,
+        href: `${ADMIN_BASE}/performers`,
+        icon: Mic,
+        permission: "CATALOGUE_MANAGE",
+      },
+      // What organisers type in themselves (venues, categories, performers)
+      // waits here before it joins the shared catalogue.
+      {
+        label: "Submissions",
+        pendingKey: "catalogue",
+        href: `${ADMIN_BASE}/events/catalogue`,
+        icon: Inbox,
+        permission: "CATALOGUE_MANAGE",
+      },
+    ],
+  },
+  {
+    label: "Trust & Safety",
+    department: {
+      icon: ShieldCheck,
+      accentClassName: "bg-amber-50 text-amber-600",
+      description: "Verifies organisers and deals with reported events.",
+    },
+    items: [
+      {
+        label: "Organiser Verification",
+        href: ROUTES.ADMIN_VERIFICATIONS.href,
+        icon: BadgeCheck,
+        permission: "VENDORS_VERIFY",
+        pendingKey: "verifications",
+      },
+      {
+        label: "Reported Events",
+        pendingKey: "reports",
+        href: `${ADMIN_BASE}/events/reports`,
+        icon: Flag,
+        permission: "EVENTS_MODERATE",
+      },
+    ],
+  },
+  {
+    label: "Growth",
     department: {
       icon: Megaphone,
       accentClassName: "bg-primary-50 text-primary-600",
-      description: "Handles campaigns, content and growth.",
+      description: "Paid promotions, the waitlist, referrals, influencer codes and the company blog.",
     },
     items: [
+      {
+        label: "Promotions",
+        pendingKey: "boosts",
+        href: `${ADMIN_BASE}/events/boosts`,
+        icon: Rocket,
+        permission: "EVENTS_MODERATE",
+      },
       {
         label: "Waitlist",
         href: `${ADMIN_BASE}/marketing/waitlist`,
@@ -117,101 +200,10 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         permission: "MARKETING_MANAGE",
       },
       {
-        label: "Campaigns",
-        href: `${ADMIN_BASE}/marketing/campaigns`,
-        icon: Megaphone,
-        permission: "MARKETING_MANAGE",
-        comingSoon: "Plan, run and measure marketing campaigns.",
-      },
-      {
-        label: "Content",
-        href: `${ADMIN_BASE}/marketing/content`,
+        label: "Company Blog",
+        href: `${ADMIN_BASE}/marketing/news`,
         icon: Newspaper,
         permission: "MARKETING_MANAGE",
-        comingSoon: "Manage the content shown across the platform.",
-      },
-      {
-        label: "Newsletters",
-        href: `${ADMIN_BASE}/marketing/newsletters`,
-        icon: Mail,
-        permission: "MARKETING_MANAGE",
-        comingSoon: "Write and send newsletters to subscribers.",
-      },
-    ],
-  },
-  {
-    label: "Events",
-    department: {
-      icon: CalendarDays,
-      accentClassName: "bg-sky-50 text-sky-600",
-      description: "Creates and manages events, bookings and event details.",
-    },
-    items: [
-      {
-        label: ROUTES.CREATE_EVENT.label,
-        href: `${ADMIN_BASE}/events/create`,
-        icon: CalendarPlus,
-        permission: "EVENTS_MODERATE",
-      },
-      {
-        label: "Manage Events",
-        href: `${ADMIN_BASE}/events`,
-        icon: CalendarDays,
-        permission: "EVENTS_MODERATE",
-      },
-      {
-        label: "Scan Tickets",
-        href: `${ADMIN_BASE}/events/scan`,
-        icon: ScanLine,
-        permission: "TICKETS_SCAN",
-      },
-      {
-        label: ROUTES.VENUES.label,
-        href: `${ADMIN_BASE}/venues`,
-        icon: MapPin,
-        permission: "CATALOGUE_MANAGE",
-      },
-      {
-        label: ROUTES.CATEGORIES.label,
-        href: `${ADMIN_BASE}/categories`,
-        icon: Tags,
-        permission: "CATALOGUE_MANAGE",
-      },
-      {
-        label: ROUTES.PERFORMERS.label,
-        href: `${ADMIN_BASE}/performers`,
-        icon: Mic,
-        permission: "CATALOGUE_MANAGE",
-      },
-      {
-        label: ROUTES.ADMIN_VERIFICATIONS.label,
-        href: ROUTES.ADMIN_VERIFICATIONS.href,
-        icon: BadgeCheck,
-        permission: "VENDORS_VERIFY",
-        pendingKey: "verifications",
-      },
-      // Events go live without review; what organisers add to the shared
-      // directory (venues and categories typed in, performers) is what's reviewed.
-      {
-        label: "Directory Reviews",
-        pendingKey: "catalogue",
-        href: `${ADMIN_BASE}/events/catalogue`,
-        icon: ClipboardCheck,
-        permission: "CATALOGUE_MANAGE",
-      },
-      {
-        label: "Reports",
-        pendingKey: "reports",
-        href: `${ADMIN_BASE}/events/reports`,
-        icon: Flag,
-        permission: "EVENTS_MODERATE",
-      },
-      {
-        label: "Boosts",
-        pendingKey: "boosts",
-        href: `${ADMIN_BASE}/events/boosts`,
-        icon: Rocket,
-        permission: "EVENTS_MODERATE",
       },
     ],
   },
@@ -220,43 +212,22 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
     department: {
       icon: Headset,
       accentClassName: "bg-emerald-50 text-emerald-600",
-      description: "Manages users, tickets and customer support.",
+      description: "Helps attendees and organisers.",
     },
     items: [
       {
-        label: "Support Tickets",
-        href: `${ADMIN_BASE}/support/tickets`,
-        icon: Ticket,
-        permission: "SUPPORT_MANAGE",
-        comingSoon: "Track and respond to support tickets from users.",
-      },
-      {
-        label: "Support chats",
+        label: "Live Chats",
         pendingKey: "supportChats",
         href: `${ADMIN_BASE}/support/chats`,
         icon: MessagesSquare,
         permission: "SUPPORT_MANAGE",
       },
       {
-        label: "Inquiries",
+        label: "Contact Messages",
         pendingKey: "inquiries",
         href: `${ADMIN_BASE}/support/inquiries`,
-        icon: Inbox,
+        icon: Mail,
         permission: "SUPPORT_MANAGE",
-      },
-      {
-        label: "Help Centre",
-        href: `${ADMIN_BASE}/support/help-centre`,
-        icon: LifeBuoy,
-        permission: "SUPPORT_MANAGE",
-        comingSoon: "Manage the help centre articles and FAQs.",
-      },
-      {
-        label: "User Feedback",
-        href: `${ADMIN_BASE}/support/feedback`,
-        icon: MessageSquareText,
-        permission: "SUPPORT_MANAGE",
-        comingSoon: "Feedback and ratings left by users.",
       },
     ],
   },
@@ -265,7 +236,7 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
     department: {
       icon: CircleDollarSign,
       accentClassName: "bg-secondary-50 text-secondary-600",
-      description: "Handles payments, payouts and financial records.",
+      description: "Refunds and payment issues.",
     },
     items: [
       {
@@ -275,42 +246,14 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         icon: Undo2,
         permission: "REFUNDS_MANAGE",
       },
-      {
-        label: "Transactions",
-        href: `${ADMIN_BASE}/finance/transactions`,
-        icon: ArrowLeftRight,
-        permission: "FINANCE_VIEW",
-        comingSoon: "Every payment made on the platform.",
-      },
-      {
-        label: "Payouts",
-        href: `${ADMIN_BASE}/finance/payouts`,
-        icon: Banknote,
-        permission: "FINANCE_VIEW",
-        comingSoon: "Review and manage vendor payouts.",
-      },
-      {
-        label: "Invoices",
-        href: `${ADMIN_BASE}/finance/invoices`,
-        icon: Receipt,
-        permission: "FINANCE_VIEW",
-        comingSoon: "Create and track invoices.",
-      },
-      {
-        label: "Financial Reports",
-        href: `${ADMIN_BASE}/finance/reports`,
-        icon: FileChartColumn,
-        permission: "FINANCE_VIEW",
-        comingSoon: "Revenue, fees and financial analytics.",
-      },
     ],
   },
   {
-    label: "Operations",
+    label: "Administration",
     department: {
       icon: Settings,
-      accentClassName: "bg-primary-50 text-primary-600",
-      description: "Manages system operations, users and integrations.",
+      accentClassName: "bg-slate-100 text-slate-600",
+      description: "Accounts, admin access and the audit log.",
     },
     items: [
       {
@@ -327,26 +270,12 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         icon: UserCog,
         permission: "ADMINS_MANAGE",
       },
+      // Every admin action across all departments.
       {
-        label: "System Settings",
-        href: `${ADMIN_BASE}/operations/settings`,
-        icon: SlidersHorizontal,
-        permission: "ADMINS_MANAGE",
-        comingSoon: "Platform-wide settings and configuration.",
-      },
-      {
-        label: "System Logs",
-        href: `${ADMIN_BASE}/operations/logs`,
-        icon: Logs,
-        permission: "ADMINS_MANAGE",
-        comingSoon: "Application and system logs.",
-      },
-      {
-        label: "Integrations",
-        href: `${ADMIN_BASE}/operations/integrations`,
-        icon: Plug,
-        permission: "ADMINS_MANAGE",
-        comingSoon: "Connect and configure third-party services.",
+        label: "Audit Log",
+        href: `${ADMIN_BASE}/audit-log`,
+        icon: ScrollText,
+        permission: "AUDIT_VIEW",
       },
     ],
   },
@@ -407,14 +336,3 @@ export const isAdminNavItemActive = (pathname: string, item: TAdminNavItem) => {
 export const adminSectionLabel = (pathname: string) =>
   ADMIN_NAV_ITEMS.find((item) => isAdminNavItemActive(pathname, item))?.label ??
   "Admin";
-
-/** The section that hasn't been built yet at exactly this path, if there is one. */
-export const findComingSoonSection = (pathname: string) => {
-  for (const group of ADMIN_NAV_GROUPS) {
-    const item = group.items.find(
-      (candidate) => candidate.comingSoon && candidate.href === pathname,
-    );
-    if (item) return { group, item };
-  }
-  return undefined;
-};

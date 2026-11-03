@@ -86,7 +86,8 @@ const ComingSoon = () => {
   useEffect(() => {
     const consent = getVisitorCountingConsent();
     setAllowVisitorCounting(consent === true);
-    setShowCookieNotice(consent === null);
+    // The site-wide cookie choice (CookieGate) asks first now.
+    setShowCookieNotice(false);
   }, []);
 
   const saveCookieChoice = (allowVisitorCounting: boolean) => {
@@ -125,7 +126,7 @@ const ComingSoon = () => {
         researchConsent,
         personalizationConsent,
         privacyNoticeVersion: "1.2",
-        // e.g. turnupz.com/?ref=instagram, to see which posts bring people in.
+        // e.g. turnupz.app/?ref=instagram, to see which posts bring people in.
         source: searchParams.get("ref") || "coming-soon",
       });
       if (!data?.data?.joined && !data?.data?.alreadyOnList) {

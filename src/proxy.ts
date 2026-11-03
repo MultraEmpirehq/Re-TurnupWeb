@@ -1,5 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PREVIEW_COOKIE, isLaunched } from "@/lib/launch";
+import {
+  APP_HOSTS,
+  APP_ORIGIN,
+  COMPANY_HOSTS,
+  COMPANY_ORIGIN,
+  domainFor,
+  isOnBoth,
+} from "@/lib/domains";
+
+const elsewhere = (request: NextRequest, origin: string, pathname: string) => {
+  const target = new URL(`${pathname}${request.nextUrl.search}`, origin);
+  return NextResponse.redirect(target, 308);
+};
+
+/**
+ * Sends a page asked for on the wrong domain to the right one (see
+ * lib/domains), or null to carry on here.
+ */
+const domainRedirect = (request: NextRequest) => {
+  const host = (request.headers.get("host") ?? "").split(":")[0].toLowerCase();
+  const { pathname } = request.nextUrl;
+  const onCompany = COMPANY_HOSTS.includes(host);
+  const onApp = APP_HOSTS.includes(host);
+  if ((!onCompany && !onApp) || isOnBoth(pathname)) return null;
+  // The product's front door is Explore; the company's is its home page.
+  if (onApp && pathname === "/") return NextResponse.redirect(new URL("/explore", request.url), 307);
+  const belongs = domainFor(pathname);
+  if (belongs === "company" && onApp) return elsewhere(request, COMPANY_ORIGIN, pathname);
+  if (belongs === "app" && onCompany) return elsewhere(request, APP_ORIGIN, pathname);
+  return null;
+};
 
 /**
  * Before launch, the home page goes to Coming soon (the rest of the site still
@@ -8,7 +39,14 @@ import { PREVIEW_COOKIE, isLaunched } from "@/lib/launch";
  * early; `/?preview=off` turns that off.
  */
 export function proxy(request: NextRequest) {
+  const moved = domainRedirect(request);
+  if (moved) return moved;
+
   const { pathname, searchParams } = request.nextUrl;
+  // Only the home page and the waitlist pages wait for launch.
+  if (pathname !== "/" && pathname !== "/coming-soon" && pathname !== "/waitlist") {
+    return NextResponse.next();
+  }
   const launched = isLaunched();
 
   if (pathname === "/coming-soon" || pathname === "/waitlist") {
@@ -48,5 +86,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/coming-soon", "/waitlist"],
+  // Every page (for the domain split); not Next's own files or static files.
+  matcher: ["/((?!_next/|.*\\..*).*)"],
 };

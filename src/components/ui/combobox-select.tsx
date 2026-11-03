@@ -62,6 +62,13 @@ const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
   onCreateOption,
 }) => {
   const [search, setSearch] = useState<string>("");
+  // An open dialog blocks clicks outside it, so inside one the list opens in
+  // the dialog rather than at the end of the page.
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [container, setContainer] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setContainer(wrapperRef.current?.closest<HTMLElement>('[role="dialog"]') ?? null);
+  }, []);
   const shouldDisable = !!isLoading && items.length === 0 && !fetchingError;
   const normalizedSearch = search.trim().toLowerCase();
   const exactMatch = items.find(
@@ -97,7 +104,7 @@ const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
   };
 
   return (
-    <div className={cn("space-y-1 relative", className)}>
+    <div ref={wrapperRef} className={cn("space-y-1 relative", className)}>
       {label && (
         <div className="flex items-center gap-2">
           <Label className={cn("opacity-70", labelClassName)}>{label}</Label>
@@ -125,7 +132,7 @@ const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
           disabled={shouldDisable}
         />
         {!fetchingError && (
-          <ComboboxContent className="w-full">
+          <ComboboxContent className="w-full" container={container}>
             <ComboboxEmpty className="space-y-2">
               <p>{emptyText || "No item found."}</p>
               {allowCreateOption && search.trim() && onCreateOption && (
@@ -161,7 +168,7 @@ const ComboboxSelect: React.FC<IComboboxSelectProps> = ({
           </ComboboxContent>
         )}
         {fetchingError && (
-          <ComboboxContent className="w-full">
+          <ComboboxContent className="w-full" container={container}>
             <ComboboxEmpty className="flex flex-col items-center justify-center py-10 gap-2">
               <div className="flex flex-col items-center justify-center gap-1">
                 <AlertTriangle className="size-10 text-destructive" />

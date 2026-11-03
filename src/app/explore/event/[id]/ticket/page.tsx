@@ -45,6 +45,7 @@ import {
   IEventDetailsType,
   ITicketDetailsType,
 } from "@/lib/types";
+import { useFeatures } from "@/hooks/use-features";
 
 const EXTERNAL_LINK_TYPE = "EXTERNAL_LINK";
 
@@ -137,7 +138,7 @@ const TicketSelectionCard: React.FC<{
               {describeTicketSaleState(
                 ticketSaleState(ticket),
                 event?.timezone,
-              ) ?? "turnupz.com"}
+              ) ?? "turnupz.app"}
             </span>
           </div>
         </div>
@@ -438,8 +439,12 @@ const TicketPage = () => {
         row.currency.toUpperCase() ===
         pricingTicket?.price?.currency?.code?.toUpperCase(),
     )?.available?.amount ?? 0;
+  // Paying with credit can be paused for everyone (Admin switch).
+  const { creditSpending } = useFeatures();
   const creditApplied =
-    useCredit && afterPromo > 0 ? Math.min(creditAvailable, afterPromo) : 0;
+    creditSpending && useCredit && afterPromo > 0
+      ? Math.min(creditAvailable, afterPromo)
+      : 0;
   const toPay = Math.max(afterPromo - creditApplied, 0);
   const money = useCallback(
     (amount: number) =>
@@ -1249,7 +1254,7 @@ const TicketPage = () => {
                     </button>
                   ))}
 
-                {totalPrice > 0 && !!userDetails && (
+                {totalPrice > 0 && !!userDetails && creditSpending && (
                   <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/50 p-3">
                     <div>
                       <p className="text-sm font-semibold">

@@ -64,6 +64,10 @@ const FAQS = [
     a: `It's ${FEE_LABEL} of each paid ticket's price, after any promo code, with no flat fee. A ₦5,000 ticket carries a ₦${(5000 * PRICING.percent).toLocaleString("en-NG")} fee.`,
   },
   {
+    q: "What about tax?",
+    a: "As the seller, you're responsible for any tax on your tickets: VAT in Nigeria, and GST/HST (plus QST in Québec, or PST on qualifying Saskatchewan admissions) in Canada, where you're registered to collect it. Turnupz's fee is worked out on your ticket price before that tax, and where tax applies to our fee, it's added to the fee. We'll ask for your tax registration details before tax is added to your tickets.",
+  },
+  {
     q: "Are there setup or monthly fees?",
     a: "No. There's nothing to pay to sign up, create events or use the organiser tools. You only pay on paid tickets you sell.",
   },

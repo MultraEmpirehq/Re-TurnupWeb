@@ -13,6 +13,10 @@ interface EventDetailTitleRowProps {
   ticketUrl?: string;
   onShare: () => void;
   copied: boolean;
+  /** "by <organiser>", under the name. */
+  byline?: React.ReactNode;
+  /** Message and follow the organiser, beside the booking button. */
+  actions?: React.ReactNode;
 }
 
 const EventDetailTitleRow = ({
@@ -22,6 +26,8 @@ const EventDetailTitleRow = ({
   ticketUrl,
   onShare,
   copied,
+  byline,
+  actions,
 }: EventDetailTitleRowProps) => {
   const isExternal = saleMethod === "external_link" || !!ticketUrl;
   const href =
@@ -31,36 +37,42 @@ const EventDetailTitleRow = ({
   const label = saleMethod === "register" ? "Register free" : "Book Now";
 
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-2">
-        <h2 className="text-2xl font-bold">{name || "Event Name"}</h2>
+    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div className="min-w-0 space-y-1">
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold">{name || "Event Name"}</h2>
+          <Button
+            variant="outline"
+            size="icon"
+            className="shrink-0"
+            onClick={onShare}
+            aria-label={copied ? "Copied" : "Copy link"}
+          >
+            {copied ? (
+              <Check className="size-4 text-green-600" />
+            ) : (
+              <Share2 className="size-4" />
+            )}
+          </Button>
+        </div>
+        {byline}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {actions}
         <Button
-          variant="outline"
-          size="icon"
-          className="shrink-0"
-          onClick={onShare}
-          aria-label={copied ? "Copied" : "Copy link"}
+          asChild
+          className="shrink-0 gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
         >
-          {copied ? (
-            <Check className="size-4 text-green-600" />
+          {isExternal && ticketUrl ? (
+            <a href={href} target="_blank" rel="noopener noreferrer">
+              {label}
+              <ExternalLink className="size-4" aria-hidden />
+            </a>
           ) : (
-            <Share2 className="size-4" />
+            <Link href={href}>{label}</Link>
           )}
         </Button>
       </div>
-      <Button
-        asChild
-        className="shrink-0 gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-      >
-        {isExternal && ticketUrl ? (
-          <a href={href} target="_blank" rel="noopener noreferrer">
-            {label}
-            <ExternalLink className="size-4" aria-hidden />
-          </a>
-        ) : (
-          <Link href={href}>{label}</Link>
-        )}
-      </Button>
     </div>
   );
 };

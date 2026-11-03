@@ -10,8 +10,8 @@ import { memo } from "react";
 const LEGAL = {
   /** The company responsible for Turnupz (for now, in both Nigeria and Canada). */
   company: "Turnupz Inc. (corporation number 1822152-9)",
-  canadaAddress: "285 Herron Mews NE, Calgary, Alberta T3P 1Y6, Canada",
-  nigeriaAddress: "7 Princess Bola Jegede Close, Ajao Estate, Lagos, Nigeria",
+  canadaAddress: "Calgary, Canada",
+  nigeriaAddress: "Lagos, Nigeria",
   /** Where people send privacy requests. */
   privacyEmail: "admin@multraempire.com",
   /** Who's responsible for personal information (required in Québec): a title is enough. */
@@ -40,7 +40,7 @@ type TSection = {
 const sections: TSection[] = [
   {
     title: "Who we are",
-    intro: `Turnupz is an event platform for discovering events, buying or registering for tickets, and hosting events, in Nigeria and Canada. In this policy, "Turnupz", "we" and "us" means ${show(LEGAL.company, "company name and number")}, with offices at ${show(LEGAL.canadaAddress, "Canadian address")} and ${show(LEGAL.nigeriaAddress, "Nigerian address")}. We decide how and why your personal data is used. Organisers are responsible for how they use attendee information for their own events.`,
+    intro: `Turnupz is an event platform for discovering events, buying or registering for tickets, and hosting events, in Nigeria and Canada. In this policy, "Turnupz", "we" and "us" means ${show(LEGAL.company, "company name and number")}, based in ${show(LEGAL.canadaAddress, "Canadian city")} and ${show(LEGAL.nigeriaAddress, "Nigerian city")}. We decide how and why your personal data is used. Organisers are responsible for how they use attendee information for their own events.`,
   },
   {
     title: "What we collect, and why",
@@ -150,7 +150,7 @@ const sections: TSection[] = [
   },
   {
     title: "Your choices and rights",
-    intro: `You can see, correct and download most of your data in your account settings, and delete your account at any time in the app or at turnupz.com/delete-account. You can also ask us for a copy of your data, to correct or delete it, or to stop or limit how we use it, and you can withdraw consent you've given. Email ${show(LEGAL.privacyEmail, "privacy email")} and we'll reply within 30 days. If you're not happy with our answer, you can complain to the Nigeria Data Protection Commission, the Office of the Privacy Commissioner of Canada, or in Québec, the Commission d'accès à l'information.`,
+    intro: `You can see, correct and download most of your data in your account settings, and delete your account at any time in the app or at turnupz.app/delete-account. You can also ask us for a copy of your data, to correct or delete it, or to stop or limit how we use it, and you can withdraw consent you've given. Email ${show(LEGAL.privacyEmail, "privacy email")} and we'll reply within 30 days. If you're not happy with our answer, you can complain to the Nigeria Data Protection Commission, the Office of the Privacy Commissioner of Canada, or in Québec, the Commission d'accès à l'information.`,
   },
   {
     title: "Who's responsible for your privacy",
@@ -159,7 +159,7 @@ const sections: TSection[] = [
   {
     title: "Cookies and local storage",
     intro:
-      "We use a cookie and your browser's local storage to keep you signed in, remember your settings and keep a copy of an event you're creating while you work on it. We also keep a random visitor identifier to count visits, not to identify you. The app stores the same kind of information on your phone.",
+      "We use a cookie and your browser's local storage to keep you signed in, remember your settings and keep a copy of an event you're creating while you work on it. We also keep a random visitor identifier to count visits, not to identify you. The app stores the same kind of information on your phone. Our Cookie Policy lists each one.",
   },
   {
     title: "Security",
