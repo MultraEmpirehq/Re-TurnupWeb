@@ -535,7 +535,7 @@ const CancellationRequestRow: React.FC<{ request: ICancellationRequest }> = ({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1">
           <a
-            href={`/app/events/${request.event.id}`}
+            href={`/app/admin/events/${request.event.id}`}
             className="font-semibold hover:underline"
           >
             {request.event.name}

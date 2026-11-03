@@ -1,7 +1,7 @@
 "use client";
 
 import VendorVenues from "@/components/pages/app/venues/vendor-venues";
-import VenuesList from "@/components/pages/app/venues/venues-list";
+import AdminVenues from "@/components/pages/app/venues/admin-venues";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
 import React, { memo } from "react";
 
@@ -10,11 +10,7 @@ import React, { memo } from "react";
 const VenuesPage = () => {
   const role = useUserStore((state) => state.userDetails?.role);
   if (role === EUserRoles.ADMIN) {
-    return (
-      <div className="space-y-6 md:space-y-10">
-        <VenuesList />
-      </div>
-    );
+    return <AdminVenues />;
   }
   return <VendorVenues />;
 };
