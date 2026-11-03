@@ -107,6 +107,11 @@ const Refunds = () => (
 
 const RefundAnOrder = () => {
   const [search, setSearch] = useState("");
+  // Opened from a payment in Transactions: look that order up straight away.
+  useEffect(() => {
+    const order = new URLSearchParams(window.location.search).get("order");
+    if (order) setSearch(order);
+  }, []);
   const [q] = useDebounce(search.trim(), 400);
   const { data: orders, isFetching } = useOrderLookup(q);
   const [selected, setSelected] = useState<ILookupOrder | null>(null);

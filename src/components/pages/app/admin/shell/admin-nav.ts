@@ -31,6 +31,10 @@ import {
   Undo2,
   UserCog,
   Users,
+  TrendingUp,
+  ReceiptText,
+  Landmark,
+  Coins,
 } from "lucide-react";
 
 export type TAdminNavItem = {
@@ -236,9 +240,33 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
     department: {
       icon: CircleDollarSign,
       accentClassName: "bg-secondary-50 text-secondary-600",
-      description: "Refunds and payment issues.",
+      description: "Revenue, payments, organiser payouts, credit and refunds.",
     },
     items: [
+      {
+        label: "Revenue",
+        href: `${ADMIN_BASE}/finance/revenue`,
+        icon: TrendingUp,
+        permission: "FINANCE_VIEW",
+      },
+      {
+        label: "Transactions",
+        href: `${ADMIN_BASE}/finance/transactions`,
+        icon: ReceiptText,
+        permission: "FINANCE_VIEW",
+      },
+      {
+        label: "Organisers & payouts",
+        href: `${ADMIN_BASE}/finance/organisers`,
+        icon: Landmark,
+        permission: "FINANCE_VIEW",
+      },
+      {
+        label: "Credit",
+        href: `${ADMIN_BASE}/finance/credit`,
+        icon: Coins,
+        permission: "FINANCE_VIEW",
+      },
       {
         label: "Refunds",
         pendingKey: "refunds",
