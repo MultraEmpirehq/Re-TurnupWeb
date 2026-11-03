@@ -70,7 +70,7 @@ const BoostItem: React.FC<{ boost: IBoost }> = ({ boost }) => {
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <Link
-              href={`/explore/event/${boost.event.id}`}
+              href={`/app/admin/events/${boost.event.id}`}
               className="font-semibold hover:underline"
             >
               {boost.event.name}

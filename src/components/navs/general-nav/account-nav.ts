@@ -132,6 +132,10 @@ const VENDOR_NAV: TAccountNav = {
   ],
 };
 
+/**
+ * Admins use turnupz.com, where only the admin console is served, so their
+ * menu stays there: personal tickets and orders aren't for staff accounts.
+ */
 const ADMIN_NAV: TAccountNav = {
   headerLinks: [
     {
@@ -140,7 +144,7 @@ const ADMIN_NAV: TAccountNav = {
       icon: ShieldCheck,
     },
   ],
-  cta: createEvent,
+  cta: { ...createEvent, href: `${ROUTES.ADMIN_OVERVIEW.href}/events/create` },
   menuGroups: [
     [
       {
@@ -149,8 +153,7 @@ const ADMIN_NAV: TAccountNav = {
         icon: ShieldCheck,
       },
     ],
-    [myTickets, myOrders, following, dashboardProfile, dashboardSettings],
-    [help],
+    [dashboardProfile, dashboardSettings],
   ],
 };
 

@@ -1,3 +1,8 @@
-// The admin console's own route for this screen, kept apart from the vendor area.
-export { default } from "@/app/app/venues/page";
+import AdminVenues from "@/components/pages/app/venues/admin-venues";
+import React, { memo } from "react";
+
 export const dynamic = "force-dynamic";
+
+const Page = () => <AdminVenues />;
+
+export default memo(Page);

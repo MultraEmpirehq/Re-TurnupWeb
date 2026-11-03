@@ -26,6 +26,7 @@ import {
 } from "@/lib/types";
 import { CalendarDays, Clock3, MapPin, PencilLine, Ticket } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { moneyLocale } from "@/lib/currency";
@@ -890,6 +891,7 @@ export const EventPreviewCard: React.FC<{
   blogPosts?: IEventBlogPostDetails[];
 }> = ({ data, blogPosts = [] }) => {
   const bannerImage = data.image || "";
+  const inAdmin = !!usePathname()?.startsWith("/app/admin");
   return (
     <section className="overflow-hidden rounded-[1.8rem] border border-secondary-100 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
       <div className="px-4 pt-4 sm:px-6 sm:pt-6">
@@ -1046,7 +1048,15 @@ export const EventPreviewCard: React.FC<{
             <EventDetailLineup performers={data.performers} />
           )}
 
-          <BlogPostsBoard eventId={data.id} posts={blogPosts} />
+          <BlogPostsBoard
+            eventId={data.id}
+            posts={blogPosts}
+            hrefFor={
+              inAdmin
+                ? (postId) => `/app/admin/events/${data.id}/blog/${postId}`
+                : undefined
+            }
+          />
 
           <ActivityTimeline activities={data.activities} />
 
@@ -1066,6 +1076,8 @@ export const EventPreviewCard: React.FC<{
 
 const VendorEventView: React.FC<{ id: string }> = ({ id }) => {
   const { data, error, refetch, isLoading } = useEvent(id);
+  // Admins open this from their console: links stay in the console.
+  const inAdmin = !!usePathname()?.startsWith("/app/admin");
 
   const bannerImage = useMemo(() => {
     if (!data) return "";
@@ -1123,14 +1135,16 @@ const VendorEventView: React.FC<{ id: string }> = ({ id }) => {
             variant="outline"
             className="h-11 rounded-2xl border-secondary-200 px-5 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
           >
-            <Link href="/app/events">Back to Listings</Link>
+            <Link href={inAdmin ? "/app/admin/events" : "/app/events"}>
+              {inAdmin ? "Back to all events" : "Back to Listings"}
+            </Link>
           </Button>
           {data.isOwner && (
             <Button
               asChild
               className="h-11 rounded-2xl bg-secondary-400 px-5 text-sm font-semibold text-white hover:bg-secondary-500"
             >
-              <Link href={`/app/events/${data.id}/edit`}>
+              <Link href={`${inAdmin ? "/app/admin/events" : "/app/events"}/${data.id}/edit`}>
                 <PencilLine className="size-4" />
                 Edit Post
               </Link>
