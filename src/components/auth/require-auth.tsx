@@ -1,7 +1,7 @@
 "use client";
 
 import BrandLoader from "@/components/ui/brand-loader";
-import useUserStore from "@/stores/user-store";
+import useUserStore, { EUserRoles } from "@/stores/user-store";
 import { ROUTES } from "@/lib/variables";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -12,8 +12,19 @@ const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname();
   const isDevelopment = process.env.NODE_ENV === "development";
+  // Admin accounts are staff: the console, plus their own profile and settings.
+  const adminElsewhere =
+    userDetails?.role === EUserRoles.ADMIN &&
+    !!pathname &&
+    !pathname.startsWith(ROUTES.ADMIN_OVERVIEW.href) &&
+    !pathname.startsWith("/app/profile") &&
+    pathname !== "/app/settings";
 
   useEffect(() => {
+    if (adminElsewhere) {
+      router.replace(ROUTES.ADMIN_OVERVIEW.href);
+      return;
+    }
     if (isDevelopment) {
       return;
     }
@@ -25,7 +36,11 @@ const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           : ROUTES.LOGIN.href,
       );
     }
-  }, [isDevelopment, isLoading, userDetails, router, pathname]);
+  }, [adminElsewhere, isDevelopment, isLoading, userDetails, router, pathname]);
+
+  if (adminElsewhere) {
+    return null;
+  }
 
   if (isDevelopment) {
     return <>{children}</>;

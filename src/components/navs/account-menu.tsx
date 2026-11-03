@@ -11,8 +11,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import useSignOut from "@/hooks/use-sign-out";
 import { ROUTES } from "@/lib/variables";
+import { siteHref } from "@/lib/domains";
 import { cn } from "@/lib/utils";
-import useUserStore, { TUserDetails } from "@/stores/user-store";
+import useUserStore, { EUserRoles, TUserDetails } from "@/stores/user-store";
 import { ChevronDown, Compass, LogOut, UsersRound } from "lucide-react";
 import { useMyWorkspaces } from "@/hooks/use-vendor-team";
 import useWorkspaceStore from "@/stores/workspace-store";
@@ -48,6 +49,7 @@ const AccountMenu: React.FC<{ variant: "site" | "workspace" }> = ({
 }) => {
   const router = useRouter();
   const userDetails = useUserStore((state) => state.userDetails);
+  const isAdmin = userDetails?.role === EUserRoles.ADMIN;
   const signOut = useSignOut();
   const queryClient = useQueryClient();
   const setWorkspace = useWorkspaceStore((state) => state.setWorkspace);
@@ -127,11 +129,16 @@ const AccountMenu: React.FC<{ variant: "site" | "workspace" }> = ({
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => router.push(ROUTES.EXPLORE.href)}
+              onClick={() =>
+                // Admins are on turnupz.com: the website opens beside the console.
+                isAdmin
+                  ? window.open(siteHref(ROUTES.EXPLORE.href), "_blank", "noopener")
+                  : router.push(ROUTES.EXPLORE.href)
+              }
               className="cursor-pointer"
             >
               <Compass className="size-4" />
-              Back to the site
+              {isAdmin ? "View the website" : "Back to the site"}
             </DropdownMenuItem>
           </>
         )}

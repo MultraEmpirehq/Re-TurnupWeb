@@ -47,8 +47,14 @@ export const domainFor = (pathname: string): "company" | "app" => {
   return COMPANY_PATHS.some((base) => isWithin(pathname, base)) ? "company" : "app";
 };
 
-/** Pages served on both: an admin and a user can each reset a password. */
-export const isOnBoth = (pathname: string) => pathname === "/auth/forgot-password";
+/**
+ * Pages served on both: password reset, and the account's own profile and
+ * settings, so admins look after their account without leaving turnupz.com.
+ */
+export const isOnBoth = (pathname: string) =>
+  pathname === "/auth/forgot-password" ||
+  isWithin(pathname, "/app/profile") ||
+  pathname === "/app/settings";
 
 /**
  * A link to `path` that works from anywhere: relative on its own domain (and
