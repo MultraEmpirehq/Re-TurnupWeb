@@ -36,7 +36,9 @@ export type TAttachmentPurpose =
   | "SUPPORTING_DOCUMENT"
   | "CHAT_ASSET"
   | "AVATAR"
-  | "PERFORMER_IMAGE";
+  | "PERFORMER_IMAGE"
+  | "TAX_EVIDENCE"
+  | "COMPANY_POST";
 
 /**
  * A stored file. `id` is null for anything uploaded before attachments existed,

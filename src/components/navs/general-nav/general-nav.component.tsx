@@ -23,8 +23,8 @@ import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
 import { LogOut, Menu } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import Link, { useSiteNavigate } from "@/components/ui/site-link";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import React, {
   Fragment,
@@ -48,7 +48,7 @@ const linkClassName =
 
 const GeneralNavComponent = () => {
   const userDetails = useUserStore((state) => state.userDetails);
-  const router = useRouter();
+  const navigate = useSiteNavigate();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   // On pages with a dark hero the header floats over it: clear at the top, then
@@ -112,10 +112,10 @@ const GeneralNavComponent = () => {
 
   const handleMobileNavigate = useCallback(
     (href: string) => {
-      router.push(href);
+      navigate(href);
       setMobileOpen(false);
     },
-    [router],
+    [navigate],
   );
 
   return (
@@ -182,7 +182,7 @@ const GeneralNavComponent = () => {
           <div className="hidden lg:flex flex-row items-center gap-3">
             <Button
               className="h-10 rounded-full bg-white/15 px-5 text-white ring-1 ring-white/25 hover:bg-white/25"
-              onClick={() => router.push(accountNav.cta.href)}
+              onClick={() => navigate(accountNav.cta.href)}
             >
               {accountNav.cta.label}
             </Button>

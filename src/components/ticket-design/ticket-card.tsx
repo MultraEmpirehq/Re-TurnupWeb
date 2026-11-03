@@ -369,7 +369,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
                 letterSpacing: "0.05em",
               }}
             >
-              turnupz.com
+              turnupz.app
             </span>
           </div>
         </div>
@@ -506,7 +506,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
                     color: "#0b1d2a",
                   }}
                 >
-                  Open this ticket on turnupz.com or in the Turnupz app at the
+                  Open this ticket on turnupz.app or in the Turnupz app at the
                   door
                 </div>
               ) : (

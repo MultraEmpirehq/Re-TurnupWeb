@@ -150,7 +150,7 @@ const sections: TSection[] = [
   },
   {
     title: "Your choices and rights",
-    intro: `You can see, correct and download most of your data in your account settings, and delete your account at any time in the app or at turnupz.com/delete-account. You can also ask us for a copy of your data, to correct or delete it, or to stop or limit how we use it, and you can withdraw consent you've given. Email ${show(LEGAL.privacyEmail, "privacy email")} and we'll reply within 30 days. If you're not happy with our answer, you can complain to the Nigeria Data Protection Commission, the Office of the Privacy Commissioner of Canada, or in Québec, the Commission d'accès à l'information.`,
+    intro: `You can see, correct and download most of your data in your account settings, and delete your account at any time in the app or at turnupz.app/delete-account. You can also ask us for a copy of your data, to correct or delete it, or to stop or limit how we use it, and you can withdraw consent you've given. Email ${show(LEGAL.privacyEmail, "privacy email")} and we'll reply within 30 days. If you're not happy with our answer, you can complain to the Nigeria Data Protection Commission, the Office of the Privacy Commissioner of Canada, or in Québec, the Commission d'accès à l'information.`,
   },
   {
     title: "Who's responsible for your privacy",
@@ -159,7 +159,7 @@ const sections: TSection[] = [
   {
     title: "Cookies and local storage",
     intro:
-      "We use a cookie and your browser's local storage to keep you signed in, remember your settings and keep a copy of an event you're creating while you work on it. We also keep a random visitor identifier to count visits, not to identify you. The app stores the same kind of information on your phone.",
+      "We use a cookie and your browser's local storage to keep you signed in, remember your settings and keep a copy of an event you're creating while you work on it. We also keep a random visitor identifier to count visits, not to identify you. The app stores the same kind of information on your phone. Our Cookie Policy lists each one.",
   },
   {
     title: "Security",
