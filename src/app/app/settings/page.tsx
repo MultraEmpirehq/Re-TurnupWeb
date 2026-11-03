@@ -2,6 +2,7 @@
 
 import DevicesCard from "@/components/account/devices-card";
 import NotificationPreferencesCard from "@/components/account/notification-preferences-card";
+import OrganiserNameCard from "@/components/account/organiser-name-card";
 import PrivacyCard from "@/components/account/privacy-card";
 import ChangePasswordForm from "@/components/pages/profile/change-password-form";
 import { ROUTES } from "@/lib/variables";
@@ -61,6 +62,7 @@ const SettingsPage = () => {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
+          {isVendor && <OrganiserNameCard />}
           <NotificationPreferencesCard />
           <PrivacyCard />
         </div>

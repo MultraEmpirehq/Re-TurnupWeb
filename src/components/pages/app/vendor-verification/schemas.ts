@@ -55,6 +55,12 @@ const vendorTypeSchema = (values: VerificationFormValues) =>
       values.plan === "paid"
         ? Joi.string().valid("individual", "business").required()
         : Joi.any(),
+    organiserName: Joi.string().trim().min(2).max(80).required().messages({
+      "string.empty": "Enter the name your events go out under",
+      "any.required": "Enter the name your events go out under",
+      "string.min": "Enter the name your events go out under",
+      "string.max": "Keep it under 80 characters",
+    }),
   }).unknown(true);
 
 const phoneNumber = Joi.string()

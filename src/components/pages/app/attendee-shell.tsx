@@ -20,7 +20,10 @@ import {
 const AttendeeShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
   const router = useRouter();
-  const lockedSection = lockedVendorSection(pathname);
+  // Scanning stays open: door staff an organiser added to an event use it on
+  // their own account, and the api checks every scan.
+  const lockedSection =
+    pathname === ROUTES.SCAN_TICKETS.href ? undefined : lockedVendorSection(pathname);
   const isVendorDashboard = pathname === ROUTES.DASHBOARD.href;
 
   useEffect(() => {

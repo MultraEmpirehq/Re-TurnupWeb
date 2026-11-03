@@ -1,3 +1,4 @@
+import { TAuthIntent, withIntent } from "@/lib/auth-intent";
 import { ROUTES } from "@/lib/variables";
 import { EUserRoles, TUserDetails } from "@/stores/user-store";
 
@@ -16,7 +17,13 @@ export const needsProfileDetails = (user?: TUserDetails | null) =>
     !user.dateOfBirth);
 
 /** Where to finish sign-up, coming back to `redirectTo` afterwards. */
-export const completeProfileRoute = (redirectTo?: string | null) =>
-  redirectTo
-    ? `${ROUTES.COMPLETE_USER_INFORMATION.href}?redirect=${encodeURIComponent(redirectTo)}`
-    : ROUTES.COMPLETE_USER_INFORMATION.href;
+export const completeProfileRoute = (
+  redirectTo?: string | null,
+  intent: TAuthIntent = "attendee",
+) =>
+  withIntent(
+    redirectTo
+      ? `${ROUTES.COMPLETE_USER_INFORMATION.href}?redirect=${encodeURIComponent(redirectTo)}`
+      : ROUTES.COMPLETE_USER_INFORMATION.href,
+    intent,
+  );

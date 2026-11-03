@@ -154,7 +154,7 @@ const LandingHero = () => {
               variant="ghost"
               className="h-12 rounded-full border border-white/20 px-6 text-white hover:bg-white/10 hover:text-white"
             >
-              <Link href={ROUTES.SIGNUP.href}>Host an event</Link>
+              <Link href={ROUTES.VENDOR_LOGIN.href}>Host an event</Link>
             </Button>
           </div>
         </div>

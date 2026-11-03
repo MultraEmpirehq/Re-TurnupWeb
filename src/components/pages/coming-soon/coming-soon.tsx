@@ -1,6 +1,6 @@
 "use client";
 
-import { postData } from "@/api";
+import { postData, WEB_CLIENT_HEADERS } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { LogoWhiteSVG } from "@/assets/svg";
 import { LOGO_HEIGHT, LOGO_WIDTH } from "@/components/ui/brand-loader/logo-paths";
@@ -79,6 +79,12 @@ const ComingSoon = () => {
   const [sending, setSending] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [done, setDone] = useState(false);
+  const [alreadyOnList, setAlreadyOnList] = useState(false);
+  const [alreadyConfirmed, setAlreadyConfirmed] = useState(false);
+  const [emailSent, setEmailSent] = useState(true);
+  // Opened from the confirmation email: the link carries ?waitlistToken=.
+  const [confirming, setConfirming] = useState<"idle" | "checking" | "confirmed" | "failed">("idle");
+  const [confirmError, setConfirmError] = useState("");
   const [showCookieNotice, setShowCookieNotice] = useState(false);
   const [showCookieSettings, setShowCookieSettings] = useState(false);
   const [allowVisitorCounting, setAllowVisitorCounting] = useState(false);
@@ -88,6 +94,34 @@ const ComingSoon = () => {
     setAllowVisitorCounting(consent === true);
     // The site-wide cookie choice (CookieGate) asks first now.
     setShowCookieNotice(false);
+  }, []);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const token = url.searchParams.get("waitlistToken");
+    if (!token) return;
+    // Out of the address bar (and history) before anything else sees it.
+    url.searchParams.delete("waitlistToken");
+    window.history.replaceState(window.history.state, "", url.toString());
+    setConfirming("checking");
+    postData<{ token: string }, { confirmed: boolean }>(
+      "/waitlist/confirm",
+      { token },
+      { headers: WEB_CLIENT_HEADERS },
+    )
+      .then(({ data }) => {
+        if (!data?.data?.confirmed) throw new Error("The link could not be confirmed.");
+        setConfirming("confirmed");
+      })
+      .catch((error) => {
+        setConfirmError(
+          constructErrorMessage(
+            error as TApiErrorResponseType,
+            "This confirmation link is invalid or expired. Submit your email again to get a new link.",
+          ),
+        );
+        setConfirming("failed");
+      });
   }, []);
 
   const saveCookieChoice = (allowVisitorCounting: boolean) => {
@@ -111,7 +145,12 @@ const ComingSoon = () => {
     try {
       const { data } = await postData<
         Record<string, string | boolean>,
-        { joined: boolean; alreadyOnList: boolean }
+        {
+          joined: boolean;
+          alreadyOnList: boolean;
+          alreadyConfirmed?: boolean;
+          confirmationEmailSent?: boolean;
+        }
       >("/waitlist", {
         email: email.trim().toLowerCase(),
         ...(name.trim() ? { name: name.trim() } : {}),
@@ -128,10 +167,14 @@ const ComingSoon = () => {
         privacyNoticeVersion: "1.2",
         // e.g. turnupz.app/?ref=instagram, to see which posts bring people in.
         source: searchParams.get("ref") || "coming-soon",
-      });
+      }, { headers: WEB_CLIENT_HEADERS });
       if (!data?.data?.joined && !data?.data?.alreadyOnList) {
         throw new Error("The signup could not be confirmed. Please try again.");
       }
+      setAlreadyOnList(data.data.alreadyOnList);
+      setAlreadyConfirmed(Boolean(data.data.alreadyConfirmed));
+      setEmailSent(data.data.confirmationEmailSent !== false);
+      setConfirming("idle");
       setDone(true);
     } catch (error) {
       setSubmitError(
@@ -183,8 +226,10 @@ const ComingSoon = () => {
               className={cn(styles.rise, "mt-6 max-w-xl text-lg leading-8 text-white/80 sm:text-xl")}
               style={{ "--delay": "220ms" } as CSSProperties}
             >
-              We&apos;re keeping it under wraps for now. Get on the list and
-              you&apos;ll be the first to know when the doors open.
+              We value good experiences, the people you meet, the things you
+              try, and the memories you take home. That&apos;s why we&apos;re
+              building Turnupz: to help you find experiences you&apos;ll enjoy
+              and help those creating them reach you.
             </p>
             <ul
               className={cn(styles.rise, styles.features)}
@@ -211,19 +256,68 @@ const ComingSoon = () => {
                 <Ticket size={15} />
                 Waitlist pass
               </span>
-              <span>{done ? "Confirmed" : "Admit one"}</span>
+              <span>
+                {confirming === "confirmed" || alreadyConfirmed
+                  ? "Confirmed"
+                  : done
+                    ? "Pending"
+                    : "Admit one"}
+              </span>
             </div>
 
             <div className={styles.ticketBody}>
-              {done ? (
+              {confirming === "checking" ? (
+                <div className="flex flex-col items-center py-10 text-center" role="status" aria-live="polite">
+                  <Loader2 className="size-8 animate-spin text-[#66d1ff]" aria-hidden="true" />
+                  <p className="mt-4 text-sm text-white/75">Confirming your email…</p>
+                </div>
+              ) : confirming === "confirmed" ? (
                 <div className="flex flex-col items-center py-6 text-center" role="status" aria-live="polite">
                   <div className="flex size-14 items-center justify-center rounded-full bg-[#00b2ff]/15 text-[#66d1ff]">
                     <BadgeCheck className="size-8" aria-hidden="true" />
                   </div>
-                  <h2 className="mt-5 text-2xl font-extrabold sm:text-3xl">You&apos;re on the list</h2>
+                  <h2 className="mt-5 text-2xl font-extrabold sm:text-3xl">Your spot is saved</h2>
                   <p className="mt-2 max-w-sm text-sm leading-6 text-white/75">
-                    One last step: open the email we just sent to confirm your pass.
+                    Email confirmed. We&apos;ll let you know the moment the doors open.
                   </p>
+                  <div className={styles.barcode} aria-hidden="true" />
+                </div>
+              ) : done ? (
+                <div className="flex flex-col items-center py-6 text-center" role="status" aria-live="polite">
+                  <div className="flex size-14 items-center justify-center rounded-full bg-[#00b2ff]/15 text-[#66d1ff]">
+                    <BadgeCheck className="size-8" aria-hidden="true" />
+                  </div>
+                  <h2 className="mt-5 text-2xl font-extrabold sm:text-3xl">
+                    {alreadyConfirmed
+                      ? "You're already in"
+                      : alreadyOnList
+                        ? "Already on the list"
+                        : "You're on the list"}
+                  </h2>
+                  {!alreadyConfirmed && !alreadyOnList && emailSent ? (
+                    // A new signup: a thank-you, then the one thing left to do.
+                    <>
+                      <p className="mt-2 max-w-sm text-sm leading-6 text-white/75">
+                        Every experience starts somewhere. Thank you for being
+                        part of ours from the beginning.
+                      </p>
+                      <p className="mt-4 text-sm font-semibold text-white">
+                        Turnupz — Experience you deserve.
+                      </p>
+                      <p className="mt-4 max-w-sm text-xs leading-5 text-white/55">
+                        Confirm your spot from the email we just sent. The link
+                        lasts 24 hours.
+                      </p>
+                    </>
+                  ) : (
+                    <p className="mt-2 max-w-sm text-sm leading-6 text-white/75">
+                      {alreadyConfirmed
+                        ? "This email is confirmed and your spot is saved. Nothing more to do."
+                        : !emailSent
+                          ? "We couldn't send the confirmation email just now. Try again in a minute to get a new link."
+                          : "We've sent a new confirmation link. Open it within 24 hours to save your spot."}
+                    </p>
+                  )}
                   <div className={styles.barcode} aria-hidden="true" />
                 </div>
               ) : (
@@ -232,6 +326,11 @@ const ComingSoon = () => {
                     <h2 id="waitlist-heading" className="text-2xl font-extrabold sm:text-3xl">Save your spot</h2>
                     <p className="mt-1 text-sm leading-6 text-white/70">Spots on the first night are limited.</p>
                   </div>
+                  {confirming === "failed" && (
+                    <p className="rounded-xl border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm text-red-100" role="alert">
+                      {confirmError}
+                    </p>
+                  )}
 
                   <div className={cn(styles.formFields, "grid gap-4 sm:grid-cols-2")}>
                     <div className={styles.formField}>

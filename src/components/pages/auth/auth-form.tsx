@@ -1,5 +1,7 @@
 "use client";
+import { INTENT_PARAM, TAuthIntent } from "@/lib/auth-intent";
 import { resolveLandingRoute } from "@/lib/auth-landing";
+import { completeProfileRoute } from "@/lib/profile-complete";
 import { Button } from "@/components/ui/button";
 import InputField from "@/components/ui/input-field";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -68,7 +70,42 @@ const loginDefaultValues: IFormValues = {
   password: "",
 };
 
-const AuthForm = () => {
+// The words for each door; the form itself is the same.
+const COPY: Record<
+  TAuthIntent,
+  {
+    eyebrow: string;
+    title: string;
+    intro: string;
+    other: { prompt: string; label: string; href: string };
+  }
+> = {
+  attendee: {
+    eyebrow: "Log in or sign up",
+    title: "Let's get you in",
+    intro:
+      "Enter your email. We'll log you in, or send a link to set up your account if you're new.",
+    other: {
+      prompt: "Hosting events?",
+      label: "Organiser sign-in",
+      href: ROUTES.VENDOR_LOGIN.href,
+    },
+  },
+  vendor: {
+    eyebrow: "For organisers",
+    title: "Host on Turnupz",
+    intro:
+      "Enter your email. We'll log you in, or send a link to set up your account. Then tell us about your business and start selling tickets.",
+    other: {
+      prompt: "Just going to events?",
+      label: "Attendee sign-in",
+      href: ROUTES.ATTENDEE_LOGIN.href,
+    },
+  },
+};
+
+const AuthForm = ({ intent = "attendee" }: { intent?: TAuthIntent }) => {
+  const copy = COPY[intent];
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get("redirect");
@@ -127,16 +164,13 @@ const AuthForm = () => {
       await performAuthOperation(payload?.user);
 
       if (payload?.user && payload.user.isAccountCreationCompleted === false) {
-        const completeUrl = redirectTo
-          ? `${ROUTES.COMPLETE_USER_INFORMATION.href}?redirect=${encodeURIComponent(redirectTo)}`
-          : ROUTES.COMPLETE_USER_INFORMATION.href;
-        router.push(completeUrl);
+        router.push(completeProfileRoute(redirectTo, intent));
         return;
       }
 
-      router.push(await resolveLandingRoute(payload?.user, redirectTo));
+      router.push(await resolveLandingRoute(payload?.user, redirectTo, intent));
     },
-    [performAuthOperation, redirectTo, router, setUserToken],
+    [performAuthOperation, redirectTo, router, setUserToken, intent],
   );
 
   const handleAuthError = useCallback((error: unknown) => {
@@ -182,6 +216,9 @@ const AuthForm = () => {
             if (redirectTo) {
               registerUrl.searchParams.set("redirect", redirectTo);
             }
+            if (intent === "vendor") {
+              registerUrl.searchParams.set(INTENT_PARAM, intent);
+            }
             await postData(
               "/auth/register",
               {
@@ -205,7 +242,7 @@ const AuthForm = () => {
         handleAuthError(error);
       }
     },
-    [checkedCredentials, redirectTo, handleAuthSuccess, handleAuthError],
+    [checkedCredentials, redirectTo, intent, handleAuthSuccess, handleAuthError],
   );
 
   return (
@@ -220,17 +257,21 @@ const AuthForm = () => {
       <div className="flex w-full flex-col gap-7">
         <div className="space-y-2">
           <p className="text-sm font-semibold tracking-wider text-primary uppercase">
-            {shouldShowLoginForm ? "Log in" : "Log in or sign up"}
+            {shouldShowLoginForm
+              ? intent === "vendor"
+                ? "Organiser log in"
+                : "Log in"
+              : copy.eyebrow}
           </p>
           <h1 className="text-3xl font-bold tracking-tight text-secondary-950">
-            {shouldShowLoginForm ? "Welcome back" : "Let's get you in"}
+            {shouldShowLoginForm ? "Welcome back" : copy.title}
           </h1>
           <p className="text-secondary-950/60">
             {isPasswordless
               ? "This account was created with Google, so it doesn't have a password yet."
               : shouldShowLoginForm
                 ? "Enter your password to carry on where you left off."
-                : "Enter your email. We'll log you in, or send a link to set up your account if you're new."}
+                : copy.intro}
           </p>
         </div>
 
@@ -346,6 +387,20 @@ const AuthForm = () => {
             </div>
           </>
         )}
+
+        <p className="text-center text-sm text-secondary-950/60">
+          {copy.other.prompt}{" "}
+          <Link
+            href={
+              redirectTo
+                ? `${copy.other.href}?redirect=${encodeURIComponent(redirectTo)}`
+                : copy.other.href
+            }
+            className="font-semibold text-primary hover:underline"
+          >
+            {copy.other.label}
+          </Link>
+        </p>
 
         <p className="text-center text-xs leading-5 text-secondary-950/50">
           By continuing you agree to the Turnupz{" "}

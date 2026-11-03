@@ -714,7 +714,8 @@ const CreateEvent = () => {
         draftStep: currentStep,
         draftSnapshot: body as unknown as Record<string, unknown>,
         name: body.eventName || "Untitled Draft",
-        organizerName: body.organizerName || "Turnupz Nigeria Ltd",
+        // Blank is fine: the api uses the vendor's organiser name.
+        organizerName: body.organizerName || "",
         eventYear: getEventYear(body.eventDate),
         date: body.eventDate || new Date(),
         eventCountry: body.eventCountry,

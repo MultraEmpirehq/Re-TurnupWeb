@@ -98,7 +98,7 @@ const ForOrganisers = () => {
                 size="lg"
                 className="group h-12 rounded-full bg-linear-to-r from-secondary to-primary px-6 text-white hover:opacity-95"
               >
-                <Link href={ROUTES.SIGNUP.href}>
+                <Link href={ROUTES.VENDOR_LOGIN.href}>
                   Start hosting
                   <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </Link>

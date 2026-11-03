@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 
 import useAuth from "@/hooks/use-auth";
+import { INTENT_PARAM, intentFrom } from "@/lib/auth-intent";
 import { forgetInvite, readInvite } from "@/lib/invite";
 import { ROUTES } from "@/lib/variables";
 import useUserStore, { EUserGenders, TUserDetails } from "@/stores/user-store";
@@ -111,6 +112,7 @@ const CompleteUserForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get("redirect");
+  const intent = intentFrom(searchParams?.get(INTENT_PARAM));
   const userDetails = useUserStore((state) => state.userDetails);
   const hasPrefilled = useRef(false);
   const {
@@ -242,7 +244,13 @@ const CompleteUserForm = () => {
         }
         forgetInvite();
         toast.success("Account completed successfully");
-        router.push(redirectTo || ROUTES.EXPLORE.href);
+        // Organisers go on to tell us about their business; everyone else to Explore.
+        router.push(
+          redirectTo ||
+            (intent === "vendor"
+              ? ROUTES.VENDOR_VERIFICATION.href
+              : ROUTES.EXPLORE.href),
+        );
       } catch (error) {
         toast.error(
           constructErrorMessage(
@@ -252,7 +260,7 @@ const CompleteUserForm = () => {
         );
       }
     },
-    [router, performAuthOperation, redirectTo, invite.state],
+    [router, performAuthOperation, redirectTo, intent, invite.state],
   );
   useEffect(() => {
     const trimmedUsername = username?.trim();
@@ -276,13 +284,15 @@ const CompleteUserForm = () => {
     <div className="flex w-full flex-col gap-7">
       <div className="space-y-2">
         <p className="text-sm font-semibold tracking-wider text-primary uppercase">
-          Almost there
+          {intent === "vendor" ? "Organiser sign-up · Step 2 of 3" : "Almost there"}
         </p>
         <h1 className="text-3xl font-bold tracking-tight text-secondary-950">
           Tell us about you
         </h1>
         <p className="text-secondary-950/60">
-          A few details so we can show you events that fit. Takes a minute.
+          {intent === "vendor"
+            ? "Your own details first. Your business comes next, so you can start selling tickets."
+            : "A few details so we can show you events that fit. Takes a minute."}
         </p>
       </div>
       {/* Always clickable: a disabled button never says what's missing, so

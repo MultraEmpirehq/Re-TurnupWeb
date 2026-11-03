@@ -4,10 +4,12 @@ import { LogoWhiteSVG } from "@/assets/svg";
 import Image from "next/image";
 import StoreBadges from "@/components/ui/store-badges";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-links";
+import { INTENT_PARAM, TAuthIntent, intentFrom } from "@/lib/auth-intent";
 import { ROUTES } from "@/lib/variables";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import React, { memo } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import React, { memo, Suspense } from "react";
 import AuthStory from "./auth-story";
 
 /** The night sky behind sign-in; the ticket's notches are cut in it. */
@@ -20,6 +22,37 @@ const STARS = Array.from({ length: 36 }, (_, index) => ({
   size: index % 5 === 0 ? 3 : 2,
   delay: `${(index % 7) * 0.6}s`,
 }));
+
+/** The organiser door, or a later sign-up step that came through it. */
+const useStageIntent = (): TAuthIntent => {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  return pathname === ROUTES.VENDOR_LOGIN.href
+    ? "vendor"
+    : intentFrom(searchParams?.get(INTENT_PARAM));
+};
+
+const Story = () => {
+  const intent = useStageIntent();
+  // Keyed, so switching doors starts the new journey from its first stop.
+  return <AuthStory key={intent} intent={intent} />;
+};
+
+const STUB: Record<TAuthIntent, { kicker: string; title: string }> = {
+  attendee: { kicker: "Admit one", title: "Your pass to Turnupz" },
+  vendor: { kicker: "All access", title: "Your stage on Turnupz" },
+};
+
+const Stub = ({ intent }: { intent: TAuthIntent }) => (
+  <div>
+    <p className="text-[11px] font-semibold tracking-[0.25em] text-white/75 uppercase">
+      {STUB[intent].kicker}
+    </p>
+    <p className="mt-1 text-xl font-bold">{STUB[intent].title}</p>
+  </div>
+);
+
+const StubForDoor = () => <Stub intent={useStageIntent()} />;
 
 /**
  * Every sign-in step happens on one stage: the brand's night sky, full screen,
@@ -65,7 +98,9 @@ const AuthStage: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <main className="relative flex w-full flex-1 items-center justify-center px-4 py-8">
       {/* The sides need a wide laptop screen. */}
       <div className="absolute inset-0 hidden xl:block">
-        <AuthStory />
+        <Suspense fallback={null}>
+          <Story />
+        </Suspense>
       </div>
 
       {/* The ticket: a stub on top, a tear line, then the form. */}
@@ -81,12 +116,9 @@ const AuthStage: React.FC<{ children: React.ReactNode }> = ({ children }) => (
               className="absolute -top-10 -right-10 size-40 rounded-full bg-white/15 blur-2xl"
             />
             <div className="relative flex items-start justify-between">
-              <div>
-                <p className="text-[11px] font-semibold tracking-[0.25em] text-white/75 uppercase">
-                  Admit one
-                </p>
-                <p className="mt-1 text-xl font-bold">Your pass to Turnupz</p>
-              </div>
+              <Suspense fallback={<Stub intent="attendee" />}>
+                <StubForDoor />
+              </Suspense>
               <span className="rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-semibold tracking-wider backdrop-blur">
                 No. 0001
               </span>

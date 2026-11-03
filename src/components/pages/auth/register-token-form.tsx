@@ -11,7 +11,10 @@ import { constructErrorMessage } from "@/api/functions";
 import { toast } from "sonner";
 import { TUserDetails } from "@/stores/user-store";
 import useAuth from "@/hooks/use-auth";
-import { ROUTES } from "@/lib/variables";
+import { INTENT_PARAM, intentFrom } from "@/lib/auth-intent";
+import { completeProfileRoute } from "@/lib/profile-complete";
+import { isStrongPassword, PASSWORD_HINT } from "@/lib/password";
+import PasswordRules from "./password-rules";
 
 interface IFormValues {
   password: string;
@@ -19,11 +22,18 @@ interface IFormValues {
 }
 
 const schema = joi.object({
-  password: joi.string().required().min(8).messages({
-    "string.min": "Password must be at least 8 characters long",
-    "string.empty": "Password is required",
-    "any.required": "Password is required",
-  }),
+  // The api's rule, so a weak one is caught here rather than after sending.
+  password: joi
+    .string()
+    .required()
+    .custom((value: string, helpers) =>
+      isStrongPassword(value) ? value : helpers.error("password.weak"),
+    )
+    .messages({
+      "string.empty": "Password is required",
+      "any.required": "Password is required",
+      "password.weak": PASSWORD_HINT,
+    }),
   confirmPassword: joi.string().required().valid(joi.ref("password")).messages({
     "string.empty": "Confirm password is required",
     "any.required": "Confirm password is required",
@@ -42,6 +52,7 @@ const RegisterTokenForm = () => {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isValid, isSubmitting },
   } = useForm<IFormValues>({
     resolver: joiResolver(schema),
@@ -52,6 +63,7 @@ const RegisterTokenForm = () => {
   const searchParams = useSearchParams();
   const email = searchParams?.get("email");
   const redirectTo = searchParams?.get("redirect");
+  const intent = intentFrom(searchParams?.get(INTENT_PARAM));
   const { token } = params;
 
   const onSubmit = useCallback(
@@ -71,10 +83,7 @@ const RegisterTokenForm = () => {
         });
         await performAuthOperation(data?.data?.user);
         toast.success("Account created successfully");
-        const completeUrl = redirectTo
-          ? `${ROUTES.COMPLETE_USER_INFORMATION.href}?redirect=${encodeURIComponent(redirectTo)}`
-          : ROUTES.COMPLETE_USER_INFORMATION.href;
-        router.push(completeUrl);
+        router.push(completeProfileRoute(redirectTo, intent));
       } catch (error) {
         toast.error(
           constructErrorMessage(
@@ -84,13 +93,14 @@ const RegisterTokenForm = () => {
         );
       }
     },
-    [token, email, performAuthOperation, router, redirectTo],
+    [token, email, performAuthOperation, router, redirectTo, intent],
   );
   return (
     <div className="flex w-full flex-col gap-7">
       <div className="space-y-2">
         <p className="text-sm font-semibold tracking-wider text-primary uppercase">
-          Sign up · Step 1 of 2
+          {intent === "vendor" ? "Organiser sign-up" : "Sign up"} · Step 1 of{" "}
+          {intent === "vendor" ? 3 : 2}
         </p>
         <h1 className="text-3xl font-bold tracking-tight text-secondary-950">
           Create a password
@@ -108,7 +118,8 @@ const RegisterTokenForm = () => {
         </p>
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-5">
-        <InputField
+        <div className="space-y-3">
+          <InputField
           label="Password"
           labelClassName="text-secondary-950"
           inputClassName="h-12 rounded-xl bg-[#f7f9fc]"
@@ -119,6 +130,8 @@ const RegisterTokenForm = () => {
           {...register("password")}
           error={errors.password?.message}
         />
+          <PasswordRules value={watch("password") ?? ""} />
+        </div>
         <InputField
           label="Confirm password"
           labelClassName="text-secondary-950"

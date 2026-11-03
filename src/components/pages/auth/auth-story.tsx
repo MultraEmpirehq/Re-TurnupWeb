@@ -1,8 +1,10 @@
 "use client";
 
+import { TAuthIntent } from "@/lib/auth-intent";
 import { cn } from "@/lib/utils";
 import { Check, Heart, Search, Send, Ticket } from "lucide-react";
 import React, { memo, useEffect, useState } from "react";
+import { ORGANISER_CHAPTERS, ORGANISER_SCREENS } from "./auth-story-organiser";
 
 const CHAPTER_MS = 4800;
 
@@ -272,22 +274,30 @@ const STOPS = [
   "top-[3%] right-[4%]",
 ];
 
+const STORIES = {
+  attendee: { chapters: CHAPTERS, screens: SCREENS },
+  vendor: { chapters: ORGANISER_CHAPTERS, screens: ORGANISER_SCREENS },
+};
+
 /**
  * A booking as a journey around the login ticket: four stops, each a small
  * phone, joined by a dashed route that ends at the ticket. One stop lights up at
  * a time and plays its moment; the rest wait dimmed, so the form stays the focus.
+ * Organisers get their own journey, from posting an event to getting paid.
  */
-const AuthStory = () => {
+const AuthStory = ({ intent = "attendee" }: { intent?: TAuthIntent }) => {
+  const { chapters, screens } = STORIES[intent];
+  const isAttendee = intent === "attendee";
   const [chapter, setChapter] = useState(0);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const timer = setTimeout(
-      () => setChapter((current) => (current + 1) % CHAPTERS.length),
+      () => setChapter((current) => (current + 1) % chapters.length),
       CHAPTER_MS,
     );
     return () => clearTimeout(timer);
-  }, [chapter]);
+  }, [chapter, chapters.length]);
 
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0">
@@ -316,9 +326,9 @@ const AuthStory = () => {
       </svg>
 
       {STOPS.map((position, index) => {
-        const Screen = SCREENS[index];
+        const Screen = screens[index];
         const isActive = index === chapter;
-        const { title, line } = CHAPTERS[index];
+        const { title, line } = chapters[index];
         return (
           <div
             key={title}
@@ -370,7 +380,7 @@ const AuthStory = () => {
               </div>
 
               {/* The ticket flies out on Book it; confetti bursts on Turn up. */}
-              {isActive && index === 1 && (
+              {isAttendee && isActive && index === 1 && (
                 <div
                   key={`ticket-${chapter}`}
                   className="animate-landing-ticket-out absolute top-[40%] right-0 z-20 flex w-[110px] overflow-hidden rounded-xl bg-linear-to-br from-secondary to-primary text-white shadow-[0_18px_30px_-12px_rgba(5,119,250,0.6)] [--out-x:80px]"

@@ -7,7 +7,8 @@ import TextareaField from "@/components/ui/textarea-field";
 import { earliestBirthDate, latestAdultBirthDate } from "@/lib/age";
 import { useMarketOptions } from "@/hooks/use-markets";
 import { BadgeCheck, Building2, Info, Ticket, UserRound } from "lucide-react";
-import React from "react";
+import useUserStore from "@/stores/user-store";
+import React, { useEffect } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { ChoiceCards, DocumentField } from "../fields";
 import { VerificationFormValues } from "../types";
@@ -21,8 +22,25 @@ import { VerificationFormValues } from "../types";
 export const VendorTypeStep: React.FC<{ planLocked?: boolean }> = ({
   planLocked,
 }) => {
-  const { control, watch } = useFormContext<VerificationFormValues>();
+  const {
+    control,
+    watch,
+    register,
+    setValue,
+    getValues,
+    formState: { errors },
+  } = useFormContext<VerificationFormValues>();
   const plan = watch("plan");
+  const vendorType = watch("vendorType");
+  const isBusiness = plan === "paid" && vendorType === "business";
+  const user = useUserStore((state) => state.userDetails);
+  const ownName = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
+  // An individual usually runs events under their own name: start with it.
+  useEffect(() => {
+    if (!isBusiness && ownName && !getValues("organiserName")) {
+      setValue("organiserName", ownName);
+    }
+  }, [isBusiness, ownName, getValues, setValue]);
   return (
     <div className="space-y-6">
       <div className="space-y-3">
@@ -108,6 +126,22 @@ export const VendorTypeStep: React.FC<{ planLocked?: boolean }> = ({
             )}
           />
         </div>
+      )}
+
+      {plan && (
+        <InputField
+          label="Organiser name"
+          placeholder={isBusiness ? "e.g. Afrobeat Live" : ownName || "e.g. DJ Kemi"}
+          autoComplete="organization"
+          required
+          {...register("organiserName")}
+          error={errors.organiserName?.message}
+          helperText={
+            isBusiness
+              ? "The name people know you by, shown as “Organised by” on your events. It can differ from your registered company name."
+              : "Shown as “Organised by” on your events. Use your own name, or a brand or stage name like “DJ Kemi” or “Ada's Parties”."
+          }
+        />
       )}
     </div>
   );

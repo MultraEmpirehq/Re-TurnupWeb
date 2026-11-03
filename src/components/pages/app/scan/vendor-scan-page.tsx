@@ -7,6 +7,7 @@ import {
   readmitEventTicket,
   scanEventTicket,
   scanSummaryKey,
+  useScanEvents,
   useScanSummary,
 } from "@/hooks/use-ticket-scan";
 import { formatEventDateRange, formatEventTime } from "@/lib/event-time";
@@ -29,20 +30,43 @@ const whenOf = (event: IEventDetailsType) =>
 
 /**
  * The door: pick one of the organiser's events (today's comes first), then scan.
- * Owners and team members with "Scan tickets" use it; the api checks every scan.
+ * Owners and team members with "Scan tickets" use it, and so do door staff an
+ * organiser added to a single event; the api checks every scan.
  */
 const VendorScanPage = () => {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const { vendorId } = useActingVendor();
+  const { vendorId, isTeamMember } = useActingVendor();
   const { data, isPending } = useEvents(
     { limit: 50, userId: vendorId ?? undefined },
     { enabled: !!vendorId },
   );
+  // Door staff: events they were given access to on their own account. Not
+  // while working in a team, whose scans go out as that organiser.
+  const { data: scanEvents } = useScanEvents(!isTeamMember);
+  const doorEvents = useMemo(
+    () =>
+      (scanEvents ?? [])
+        .filter((event) => event.via === "door")
+        .map(
+          (event) =>
+            ({
+              id: event.id,
+              name: event.name,
+              date: event.date,
+              endDate: event.endDate ?? undefined,
+              timezone: event.timezone ?? undefined,
+              days: event.days > 1 ? Array.from({ length: event.days }) : undefined,
+            }) as unknown as IEventDetailsType,
+        ),
+    [scanEvents],
+  );
 
   const events = useMemo(() => {
     const now = Date.now();
-    return (data?.pages?.flatMap((page) => page?.data || []) ?? [])
+    const own = data?.pages?.flatMap((page) => page?.data || []) ?? [];
+    const seen = new Set(own.map((event: IEventDetailsType) => event.id));
+    return [...own, ...doorEvents.filter((event) => !seen.has(event.id))]
       .filter(
         (event: IEventDetailsType) =>
           (!event.status || event.status === "published") && endOf(event) >= now,
@@ -51,7 +75,7 @@ const VendorScanPage = () => {
         (a: IEventDetailsType, b: IEventDetailsType) =>
           new Date(a.date).getTime() - new Date(b.date).getTime(),
       ) as IEventDetailsType[];
-  }, [data]);
+  }, [data, doorEvents]);
 
   const [chosenEventId, setChosenEventId] = useState(searchParams.get("event") ?? "");
   // A linked event that isn't one of the scannable ones (a draft, one long over)

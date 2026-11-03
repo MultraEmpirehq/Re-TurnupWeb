@@ -1,6 +1,7 @@
 "use client";
 
 import BrandLoader from "@/components/ui/brand-loader";
+import { INTENT_PARAM, intentFrom } from "@/lib/auth-intent";
 import { resolveLandingRoute } from "@/lib/auth-landing";
 import {
   completeProfileRoute,
@@ -28,23 +29,28 @@ const RedirectWatcher = () => {
     if (isLoading || !userDetails) return;
 
     const redirectTo = searchParams?.get("redirect");
+    // Signed in already and came by the vendor door: straight on to hosting.
+    const intent =
+      pathname === ROUTES.VENDOR_LOGIN.href
+        ? "vendor"
+        : intentFrom(searchParams?.get(INTENT_PARAM));
 
     // A new account has a password before it has a name: finish sign-up first.
     if (needsProfileDetails(userDetails)) {
-      router.replace(completeProfileRoute(redirectTo));
+      router.replace(completeProfileRoute(redirectTo, intent));
       return;
     }
 
     // Same rule the login form follows, so whichever runs first sends them to the
     // same place.
     let isActive = true;
-    resolveLandingRoute(userDetails, redirectTo).then((route) => {
+    resolveLandingRoute(userDetails, redirectTo, intent).then((route) => {
       if (isActive) router.replace(route);
     });
     return () => {
       isActive = false;
     };
-  }, [isLoading, userDetails, router, searchParams, isCompleteUserRoute]);
+  }, [isLoading, userDetails, router, searchParams, pathname, isCompleteUserRoute]);
 
   return null;
 };

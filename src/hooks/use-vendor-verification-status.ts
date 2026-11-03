@@ -30,6 +30,7 @@ const useVendorVerificationStatus = () => {
         status?: TVerificationStatus;
         approvalLevel?: string | null;
         canSellTickets?: boolean;
+        organiserName?: string | null;
       }>("/vendor/verification");
       const status = data?.data?.status ?? "not_started";
       return {
@@ -42,6 +43,7 @@ const useVendorVerificationStatus = () => {
           (!!data?.data?.approvalLevel &&
             !["rejected", "not_started"].includes(status)),
         canSellTickets: !!data?.data?.canSellTickets,
+        organiserName: data?.data?.organiserName ?? null,
       };
     },
     enabled: !!userId && !isAdmin,
@@ -55,6 +57,8 @@ const useVendorVerificationStatus = () => {
       status: "approved" as TVerificationStatus,
       isApproved: true,
       canSellTickets: true,
+      // The organiser's own name is filled in by the api when it's left blank.
+      organiserName: null,
       isChecking: false,
     };
   }
@@ -64,6 +68,8 @@ const useVendorVerificationStatus = () => {
     isApproved: isAdmin || !!query.data?.canHost,
     /** Approved to sell tickets; hosts approved for free events only aren't. */
     canSellTickets: isAdmin || !!query.data?.canSellTickets,
+    /** The name their events go out under ("Organised by"). */
+    organiserName: query.data?.organiserName ?? null,
     // A failed check counts as "not approved" rather than "still checking".
     isChecking: !isAdmin && !!userId && query.isPending,
   };
