@@ -78,7 +78,7 @@ const Waitlist = () => {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <PageHeading title="Waitlist">
           People who asked to hear when Turnupz opens, from the Coming soon page
-          (turnupz.com/coming-soon). Add ?ref=instagram to the link to see where they came from.
+          (turnupz.app/coming-soon). Add ?ref=instagram to the link to see where they came from.
         </PageHeading>
         <Button variant="outline" className="gap-2" onClick={() => void download()} loading={downloading}>
           <Download className="size-4" />

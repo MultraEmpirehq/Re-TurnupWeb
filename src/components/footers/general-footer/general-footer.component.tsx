@@ -3,7 +3,8 @@ import SectionContainer from "@/components/layouts/section-container/section-con
 import StoreBadges from "@/components/ui/store-badges";
 import { ROUTES } from "@/lib/variables";
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/components/ui/site-link";
+import CookieSettingsButton from "@/components/cookies/cookie-settings-button";
 import React, { memo } from "react";
 
 // Only pages that exist. Add a link here once its page does.
@@ -13,7 +14,7 @@ const COLUMNS = [
     links: [
       { label: "Explore events", href: ROUTES.EXPLORE.href },
       { label: "Venues", href: `${ROUTES.EXPLORE.href}?tab=venues` },
-      { label: "Blogs", href: ROUTES.BLOGS.href },
+      { label: "Event blogs", href: ROUTES.BLOGS.href },
       { label: "Pricing", href: ROUTES.PRICING.href },
     ],
   },
@@ -29,9 +30,11 @@ const COLUMNS = [
     title: "Company",
     links: [
       { label: "About us", href: ROUTES.ABOUT_US.href },
+      { label: "News", href: "/news" },
       { label: "Contact us", href: ROUTES.CONTACT.href },
       { label: "Terms of Service", href: ROUTES.TERMS_OF_SERVICE.href },
       { label: "Privacy Policy", href: ROUTES.PRIVACY_POLICY.href },
+      { label: "Cookie Policy", href: "/cookie-policy" },
     ],
   },
 ];
@@ -95,6 +98,8 @@ const GeneralFooterComponent = () => (
         >
           Admin login
         </Link>
+        <span className="mx-2 text-white/20">·</span>
+        <CookieSettingsButton className="transition-colors hover:text-white" />
       </p>
       <p>
         <span className="bg-linear-to-r from-secondary-300 to-primary-300 bg-clip-text font-semibold text-transparent">

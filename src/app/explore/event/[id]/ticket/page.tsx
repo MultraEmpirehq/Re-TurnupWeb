@@ -138,7 +138,7 @@ const TicketSelectionCard: React.FC<{
               {describeTicketSaleState(
                 ticketSaleState(ticket),
                 event?.timezone,
-              ) ?? "turnupz.com"}
+              ) ?? "turnupz.app"}
             </span>
           </div>
         </div>

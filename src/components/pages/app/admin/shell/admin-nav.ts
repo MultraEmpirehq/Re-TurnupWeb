@@ -19,6 +19,7 @@ import {
   MapPin,
   Megaphone,
   MessagesSquare,
+  Newspaper,
   Mic,
   Rocket,
   ScanLine,
@@ -170,7 +171,7 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
     department: {
       icon: Megaphone,
       accentClassName: "bg-primary-50 text-primary-600",
-      description: "Paid promotions, the waitlist, referrals and influencer codes.",
+      description: "Paid promotions, the waitlist, referrals, influencer codes and the company blog.",
     },
     items: [
       {
@@ -196,6 +197,12 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         label: "Influencer Codes",
         href: `${ADMIN_BASE}/marketing/influencer-codes`,
         icon: Sparkles,
+        permission: "MARKETING_MANAGE",
+      },
+      {
+        label: "Company Blog",
+        href: `${ADMIN_BASE}/marketing/news`,
+        icon: Newspaper,
         permission: "MARKETING_MANAGE",
       },
     ],
