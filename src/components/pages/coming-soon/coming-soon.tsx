@@ -72,10 +72,10 @@ const ComingSoon = () => {
   const [termsAccepted, setTermsAccepted] = useState(false);
   // Hearing when it opens is the point of joining, so it starts ticked.
   const [launchEmails, setLaunchEmails] = useState(true);
-  const [marketingConsent, setMarketingConsent] = useState(false);
-  const [newsletterConsent, setNewsletterConsent] = useState(false);
-  const [researchConsent, setResearchConsent] = useState(false);
-  const [personalizationConsent, setPersonalizationConsent] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(true);
+  const [newsletterConsent, setNewsletterConsent] = useState(true);
+  const [researchConsent, setResearchConsent] = useState(true);
+  const [personalizationConsent, setPersonalizationConsent] = useState(true);
   const [sending, setSending] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [done, setDone] = useState(false);
