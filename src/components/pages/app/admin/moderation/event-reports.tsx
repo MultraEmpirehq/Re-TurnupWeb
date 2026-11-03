@@ -90,7 +90,7 @@ const EventReports = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeading title="Reports">
+      <PageHeading title="Reported Events">
         Events attendees have flagged. Check the event, act if it needs it (you
         can suspend it from Manage Events), then close the report.
       </PageHeading>

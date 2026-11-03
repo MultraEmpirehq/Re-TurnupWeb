@@ -28,6 +28,7 @@ import {
 import Link from "next/link";
 import React, { memo, useState } from "react";
 import { toast } from "sonner";
+import { useFeatures } from "@/hooks/use-features";
 
 const STATE: Record<
   TCreditGrant["state"],
@@ -56,6 +57,7 @@ const card =
 const Balances: React.FC = () => {
   const { data: balances = [], isLoading } = useCreditBalance();
   const { hidden, toggle } = useHideBalance();
+  const { creditSpending } = useFeatures();
   return (
     <section className="rounded-[1.75rem] bg-linear-to-br from-secondary-800 via-secondary-600 to-primary p-6 text-white shadow-[0_24px_60px_-30px_rgba(5,119,250,0.6)]">
       <div className="flex items-center justify-between">
@@ -85,7 +87,9 @@ const Balances: React.FC = () => {
               <p className="text-sm text-white/80">
                 {row.pending.amount > 0
                   ? `${maskMoney(row.pending.formatted.withCurrency, hidden)} on the way`
-                  : "Ready to spend"}
+                  : creditSpending
+                    ? "Ready to spend"
+                    : "Paused for now"}
               </p>
               {row.nextExpiry && row.available.amount > 0 && (
                 <p className="mt-0.5 text-xs text-white/65">
@@ -102,8 +106,9 @@ const Balances: React.FC = () => {
         </p>
       )}
       <p className="mt-4 text-sm text-white/80">
-        Spend it on tickets at checkout. You earn it when friends you invite buy
-        tickets.
+        {creditSpending
+          ? "Spend it on tickets at checkout. You earn it when friends you invite buy tickets."
+          : "Paying with Turnupz Credit is paused for now. Your balance is safe and stays here."}
       </p>
     </section>
   );

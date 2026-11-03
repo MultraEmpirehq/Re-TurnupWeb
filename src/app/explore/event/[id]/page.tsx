@@ -17,7 +17,8 @@ import {
   EventDetailActivities,
   EventDetailMedia,
 } from "@/components/pages/explore/event-detail";
-import { resolveAttachmentUrl, resolveAttachmentUrls } from "@/lib/functions";
+import { resolveAttachmentUrl } from "@/lib/functions";
+import { mediaItemsOf } from "@/components/pages/explore/event-detail/event-detail-media";
 import { eventZoneNote, instantToWallTimeInZone } from "@/lib/event-time";
 import ReportEventButton from "@/components/pages/explore/event-detail/report-event-button";
 import HideEventButton from "@/components/pages/explore/event-detail/hide-event-button";
@@ -31,6 +32,7 @@ import { eventShareUrl, rememberArrival, rememberShareRef } from "@/lib/share-re
 import { postData } from "@/api";
 import useUserStore from "@/stores/user-store";
 import ExploreBackLink from "@/components/pages/explore/explore-back-link";
+import { BlogPostsBoard, SponsorsBoard } from "@/components/pages/app/vendor-event-view";
 
 const EventDetails = () => {
   const params = useParams();
@@ -119,11 +121,11 @@ const EventDetails = () => {
   // Prefers the attachment list, which also says what each file is, and falls back
   // to the plain urls for an event saved before attachments.
   const coverImageUrl = resolveAttachmentUrl(data?.imageDetails, data?.image);
-  const eventMedias = resolveAttachmentUrls(data?.mediaDetails, data?.medias);
+  const eventMedias = mediaItemsOf(data?.mediaDetails, data?.medias);
   const mediaList = eventMedias.length
     ? eventMedias
     : coverImageUrl
-      ? [coverImageUrl]
+      ? [{ url: coverImageUrl }]
       : [];
 
   const hasDescription =
@@ -147,6 +149,35 @@ const EventDetails = () => {
         ticketUrl={data?.ticketUrl}
         onShare={handleShare}
         copied={copied}
+        byline={
+          data?.organizerId ? (
+            // Quiet, under the name, so Book Now stays the one thing to press.
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pt-1">
+              <p className="text-sm text-muted-foreground">
+                by{" "}
+                <Link
+                  href={`${ROUTES.EXPLORE.href}/planner/${data.organizerId}`}
+                  className="font-semibold text-foreground hover:text-secondary hover:underline"
+                >
+                  {data.organizerName || "the organiser"}
+                </Link>
+              </p>
+              <span className="flex items-center gap-1.5">
+                <FollowButton
+                  type="PLANNER"
+                  id={data.organizerId}
+                  name={data.organizerName || "this planner"}
+                  className="h-7 rounded-full border border-secondary-200 bg-transparent px-3 text-xs font-semibold text-secondary-700 shadow-none hover:bg-secondary-50"
+                />
+                <MessageOrganiserButton
+                  eventId={id}
+                  isOwner={data?.isOwner}
+                  className="h-7 rounded-full border-secondary-200 px-3 text-xs font-semibold text-secondary-700 shadow-none"
+                />
+              </span>
+            </div>
+          ) : undefined
+        }
       />
 
       {(data?.days?.length ?? 0) > 1 ? (
@@ -165,29 +196,6 @@ const EventDetails = () => {
 
       {data?.venue && <EventDetailLocation venue={data.venue} />}
 
-      {!!data?.organizerId && (
-        <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white p-4 ring-1 ring-black/5">
-          <div>
-            <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-              Organised by
-            </p>
-            <Link
-              href={`${ROUTES.EXPLORE.href}/planner/${data.organizerId}`}
-              className="font-semibold text-foreground hover:text-secondary hover:underline"
-            >
-              {data.organizerName || "See this planner's events"}
-            </Link>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <MessageOrganiserButton eventId={id} isOwner={data?.isOwner} />
-            <FollowButton
-              type="PLANNER"
-              id={data.organizerId}
-              name={data.organizerName || "this planner"}
-            />
-          </div>
-        </section>
-      )}
 
       {hasDescription && (
         <EventDetailDescription
@@ -201,8 +209,24 @@ const EventDetails = () => {
       )}
 
       {mediaList.length > 0 && (
-        <EventDetailMedia mediaList={mediaList} eventName={data?.name} />
+        <EventDetailMedia items={mediaList} eventName={data?.name} />
       )}
+
+      <SponsorsBoard
+        hideWhenEmpty
+        organizerName={data?.organizerName}
+        eventYear={data?.eventYear}
+        sponsors={data?.sponsors}
+        sponsorImages={data?.sponsorImages}
+      />
+
+      {/* Updates from the organiser, read on the public blog. */}
+      <BlogPostsBoard
+        eventId={id}
+        posts={data?.blogPosts}
+        hrefFor={(postId) => `/blogs/${postId}`}
+        fallbackImage={coverImageUrl || undefined}
+      />
 
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t pt-6">
         <HideEventButton eventId={id} isOwner={data?.isOwner} />

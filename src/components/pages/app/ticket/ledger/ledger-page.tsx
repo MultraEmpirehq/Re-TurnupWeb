@@ -8,6 +8,7 @@ import { ScanLine } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import React, { memo, useMemo, useState } from "react";
+import { HideAmountsButton } from "@/components/pages/app/wallet/amount";
 import DoorScannersTab from "./door-scanners-tab";
 import TicketsTab from "./tickets-tab";
 
@@ -40,27 +41,26 @@ const LedgerPage = () => {
   return (
     <div className="space-y-6 pb-16">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1">
-          <p className="text-xs font-semibold tracking-[0.24em] text-secondary-400 uppercase">
-            Tickets
-          </p>
-          <h1 className="text-[clamp(1.9rem,3.4vw,2.6rem)] font-bold leading-tight tracking-tight text-secondary-950">
-            Ticket ledger
-          </h1>
-          <p className="text-sm text-secondary-500">
-            Every ticket for your events. Search, filter, check who&apos;s in, and
-            export a door list.
+        <div>
+          <h1 className="text-[1.75rem] font-bold tracking-tight text-secondary-950">Tickets</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Every ticket for your events: who has it, whether they&apos;re in, and where it went.
           </p>
         </div>
-        {can("TICKETS_SCAN") && (
-          <Link
-            href="/app/scan"
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-secondary-900 px-5 text-sm font-semibold text-white hover:bg-secondary-800"
-          >
-            <ScanLine className="size-4" aria-hidden />
-            Scan tickets
-          </Link>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {activeTab === "tickets" && (
+            <HideAmountsButton className="h-11 border border-secondary-100 bg-white px-4 text-secondary-700 hover:bg-secondary-50" />
+          )}
+          {can("TICKETS_SCAN") && (
+            <Link
+              href="/app/scan"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-secondary-950 px-5 text-sm font-semibold text-white hover:bg-secondary-800"
+            >
+              <ScanLine className="size-4" aria-hidden />
+              Scan tickets
+            </Link>
+          )}
+        </div>
       </header>
 
       {tabs.length > 1 && (
@@ -76,7 +76,7 @@ const LedgerPage = () => {
                 "-mb-px border-b-2 pb-3 text-sm font-semibold transition-colors",
                 activeTab === item.value
                   ? "border-secondary-900 text-secondary-950"
-                  : "border-transparent text-secondary-500 hover:text-secondary-800",
+                  : "border-transparent text-muted-foreground hover:text-secondary-800",
               )}
             >
               {item.label}

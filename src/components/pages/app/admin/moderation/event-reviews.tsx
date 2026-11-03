@@ -71,7 +71,7 @@ const EventReviews = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeading title="Event Reviews">
+      <PageHeading title="Event Approvals">
         New events wait here before attendees can see them, oldest first. Check
         the details and images, then approve it or send it back with what to
         change.

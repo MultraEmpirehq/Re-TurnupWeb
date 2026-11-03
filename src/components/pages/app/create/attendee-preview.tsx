@@ -82,9 +82,18 @@ const AttendeePreview: React.FC<{
         date: new Date(activity.activityDate),
       })),
       medias: mediaUrls,
+      // Typed, so a video picked but not uploaded yet still previews as one.
+      mediaDetails: mediaUrls.map((url, index) => {
+        const file = values.mediaFiles?.[index];
+        return {
+          url,
+          type: file instanceof File && file.type.startsWith("video/") ? "VIDEO" : null,
+        };
+      }),
       sponsors: (values.sponsorNames ?? []).map((name, index) => ({
         name: name?.trim() ?? "",
         imageDetails: sponsorLogoUrls[index] ? { url: sponsorLogoUrls[index] } : null,
+        showName: !!values.sponsorShowNames?.[index],
       })),
       saleMethod: values.saleMethod,
       ticketUrl: values.ticketUrl,

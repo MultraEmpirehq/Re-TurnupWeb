@@ -29,6 +29,16 @@ const policySections = [
     ],
   },
   {
+    title: "Fees And Taxes",
+    items: [
+      "Turnupz charges 4% of each paid ticket's price, after any promo code and before tax, with no flat fee. Free tickets and registrations cost nothing.",
+      "Payment providers take the buyer's payment and send the organiser's share directly to the organiser. Turnupz receives only its own fee and any tax on that fee.",
+      "The organiser sells the ticket and is responsible for any tax on it, such as VAT in Nigeria or GST/HST, QST or PST in Canada, where the organiser must collect it. Being paid through a payment provider doesn't make the provider responsible for that tax.",
+      "Where tax applies to Turnupz's fee, it is added to the fee and Turnupz accounts for it.",
+      "Organisers may be asked for their tax registration details before tax is added to their tickets. Receipts and refunds show and adjust each tax separately.",
+    ],
+  },
+  {
     title: "Venue And Event Conduct",
     items: [
       "Vendors are responsible for attendee communication, event readiness, scanner access, and safe admission processes.",

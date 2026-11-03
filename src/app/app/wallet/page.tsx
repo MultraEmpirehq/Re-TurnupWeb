@@ -2,50 +2,34 @@
 
 import { constructErrorMessage } from "@/api/functions";
 import { VendorVerificationNotice } from "@/components/pages/app/vendor-verification";
-import { Button } from "@/components/ui/button";
 import ErrorContainer from "@/components/ui/error-container";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  payoutAttemptMessage,
-  PayoutSetupAttempt,
+  TWalletFilter,
   useRetryPayoutSetup,
   useStripeSession,
   useVendorEarnings,
-  useVendorSales,
+  useVendorPayouts,
   VendorCurrencyEarnings,
-  VendorPayoutAccount,
 } from "@/hooks/use-vendor-wallet";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { Landmark, ReceiptText, RefreshCw, ShieldCheck } from "lucide-react";
 import ChangeBankDialog from "@/components/pages/app/wallet/change-bank-dialog";
+import EarningsHero from "@/components/pages/app/wallet/earnings-hero";
+import PayoutAccountCard from "@/components/pages/app/wallet/payout-account-card";
 import PayoutChecklist from "@/components/pages/app/wallet/payout-checklist";
-import PayoutsList from "@/components/pages/app/wallet/payouts-list";
+import PayoutsList, {
+  payoutMoney,
+  payoutState,
+} from "@/components/pages/app/wallet/payouts-list";
+import SalesTable from "@/components/pages/app/wallet/sales-table";
+import SplitExplainer from "@/components/pages/app/wallet/split-explainer";
+import WalletStats from "@/components/pages/app/wallet/wallet-stats";
+import { HideAmountsButton } from "@/components/pages/app/wallet/amount";
 import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status";
 import { useActiveWorkspace } from "@/stores/workspace-store";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
-import React, { memo, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import React, { memo, useMemo, useState } from "react";
 
-const cardClassName =
-  "rounded-[1.5rem] border border-secondary-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]";
-
-const PROVIDER_LABELS: Record<VendorPayoutAccount["provider"], string> = {
-  FLUTTERWAVE: "Flutterwave",
-  PAYSTACK: "Paystack",
-  STRIPE: "Stripe",
-};
-
-/** Where the organiser's share of each sale goes, or why it can't yet. */
 // Stripe's screens run in the browser only.
 const StripePayouts = dynamic(
   () => import("@/components/pages/app/wallet/stripe-payouts"),
@@ -55,324 +39,49 @@ const StripePayouts = dynamic(
   },
 );
 
-const PayoutAccountCard: React.FC<{
-  account: VendorPayoutAccount | null;
-  /** Flutterwave organisers can move their payouts to another bank. */
-  onChangeBank?: () => void;
-}> = ({ account, onChangeBank }) => {
-  const retry = useRetryPayoutSetup();
-  const [attempt, setAttempt] = useState<PayoutSetupAttempt>();
-  const message = payoutAttemptMessage(attempt);
+const PERIODS = [
+  { days: 7, label: "Last 7 days" },
+  { days: 30, label: "Last 30 days" },
+  { days: 90, label: "Last 90 days" },
+  { days: 365, label: "Last 12 months" },
+  { days: 0, label: "All time" },
+];
 
-  const setUp = () =>
-    retry.mutate(undefined, {
-      onSuccess: (result) => {
-        setAttempt(result?.attempt);
-        if (result?.attempt?.status === "active") {
-          toast.success("You're set up to be paid directly.");
-        }
-        // Stripe (Canada): bank and identity are added on Stripe's own page.
-        if (result?.attempt?.status === "onboarding") {
-          window.location.assign(result.attempt.url);
-        }
-      },
-      onError: (error) =>
-        toast.error(
-          constructErrorMessage(
-            error as TApiErrorResponseType,
-            "Couldn't set up payouts.",
-          ),
-        ),
-    });
-
-  // Back from Stripe's page: check straight away whether it's all done.
-  const searchParams = useSearchParams();
-  const backFromStripe = searchParams.get("payouts") === "stripe";
-  const checked = useRef(false);
-  useEffect(() => {
-    if (!backFromStripe || checked.current || account?.status === "ACTIVE") return;
-    checked.current = true;
-    retry.mutate(undefined, {
-      onSuccess: (result) => {
-        if (result?.attempt?.status === "onboarding") {
-          // Not finished on Stripe yet: they choose when to go back.
-          toast.info("Stripe still needs a few details. Tap Set up payouts to finish.");
-          return;
-        }
-        setAttempt(result?.attempt);
-        if (result?.attempt?.status === "active") {
-          toast.success("You're set up to be paid directly.");
-        }
-      },
-    });
-  }, [backFromStripe, account?.status, retry]);
-
-  if (account?.status === "ACTIVE") {
-    return (
-      <section className={cardClassName}>
-        <div className="flex items-start gap-4">
-          <span className="rounded-2xl bg-emerald-50 p-3 text-emerald-700">
-            <Landmark className="size-5" />
-          </span>
-          <div className="min-w-0 space-y-1">
-            <p className="text-sm text-secondary-500">You&apos;re paid to</p>
-            <p className="text-lg font-semibold text-secondary-950">
-              {account.bankName ?? "Your bank"}
-              {account.accountLast4 ? ` ••${account.accountLast4}` : ""}
-            </p>
-            <p className="text-sm leading-6 text-secondary-500">
-              Your share of each ticket ({account.currency}) is paid to this
-              account by {PROVIDER_LABELS[account.provider]} on its settlement
-              schedule. Turnupz never holds it.
-            </p>
-            {!account.livemode && (
-              <span className="inline-flex rounded-full bg-secondary-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-secondary-700">
-                Test mode
-              </span>
-            )}
-          </div>
-          {onChangeBank && account.provider === "FLUTTERWAVE" && (
-            <Button
-              variant="outline"
-              onClick={onChangeBank}
-              className="ml-auto shrink-0 rounded-full border-secondary-100"
-            >
-              Change bank
-            </Button>
-          )}
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className={cardClassName}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-4">
-          <span className="rounded-2xl bg-secondary-50 p-3 text-secondary-700">
-            <Landmark className="size-5" />
-          </span>
-          <div className="space-y-1">
-            <p className="text-lg font-semibold text-secondary-950">
-              Get paid directly
-            </p>
-            <p className="max-w-xl text-sm leading-6 text-secondary-500">
-              Once you&apos;re verified, your share of every ticket goes
-              straight to your bank through our payment partner, and Turnupz
-              keeps only its fee.
-            </p>
-            {message && (
-              <p className="text-sm font-medium text-secondary-700">{message}</p>
-            )}
-          </div>
-        </div>
-        <Button
-          variant="outline"
-          onClick={setUp}
-          loading={retry.isPending}
-          className="shrink-0 rounded-full border-secondary-100"
-        >
-          <RefreshCw className="size-4" />
-          Set up payouts
-        </Button>
-      </div>
-    </section>
-  );
-};
-
-const Stat: React.FC<{
-  label: string;
-  value: string;
-  note?: string;
-  tone?: "default" | "good" | "warn";
-}> = ({ label, value, note, tone = "default" }) => (
-  <div className="min-w-0 rounded-[1.1rem] bg-secondary-50 px-4 py-4">
-    <p className="text-xs font-medium text-secondary-500">{label}</p>
-    <p
-      className={cn(
-        "mt-2 truncate text-xl font-bold tracking-tight",
-        tone === "good" && "text-emerald-700",
-        tone === "warn" && "text-secondary-700",
-        tone === "default" && "text-secondary-950",
-      )}
-    >
-      {value}
-    </p>
-    {note && <p className="mt-1 text-xs leading-5 text-secondary-400">{note}</p>}
-  </div>
-);
-
-const CurrencyEarnings: React.FC<{ totals: VendorCurrencyEarnings }> = ({
-  totals,
-}) => (
-  <section className={cardClassName}>
-    <div className="flex items-baseline justify-between gap-3">
-      <h2 className="text-base font-semibold text-secondary-950">
-        {totals.currency} sales
-      </h2>
-      <p className="text-sm text-secondary-500">
-        {totals.ticketsSold.toLocaleString()} ticket
-        {totals.ticketsSold === 1 ? "" : "s"} sold
-      </p>
-    </div>
-    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Stat label="Ticket sales" value={totals.sales.formatted.withCurrency} />
-      <Stat label="Turnupz fee" value={totals.fees.formatted.withCurrency} />
-      <Stat
-        label="Your earnings"
-        value={totals.earnings.formatted.withCurrency}
-        tone="good"
-      />
-      <Stat
-        label="Paid to your bank"
-        value={totals.paidDirect.formatted.withCurrency}
-        note="Settled by our payment partner"
-      />
-    </div>
-    {totals.owed.amount > 0 && (
-      <p className="mt-4 rounded-2xl border border-secondary-100 bg-secondary-50 px-4 py-3 text-sm leading-6 text-secondary-900">
-        <span className="font-semibold">
-          {totals.owed.formatted.withCurrency}
-        </span>{" "}
-        from sales before direct payouts was collected by Turnupz and is owed to
-        you. We&apos;ll be in touch to settle it.
-      </p>
-    )}
-    {totals.refunded.amount > 0 && (
-      <p className="mt-3 text-xs text-secondary-400">
-        {totals.refunded.formatted.withCurrency} refunded to buyers, not
-        counted above.
-      </p>
-    )}
-  </section>
-);
-
-const SalesTable = () => {
-  const [page, setPage] = useState(1);
-  const { data, isLoading, error, refetch } = useVendorSales(page);
-  const sales = data?.sales ?? [];
-  const pagination = data?.pagination;
-
-  return (
-    <section className={cardClassName}>
-      <div className="flex items-center gap-3">
-        <span className="rounded-2xl bg-secondary-50 p-2.5 text-secondary-700">
-          <ReceiptText className="size-4" />
-        </span>
-        <h2 className="text-base font-semibold text-secondary-950">Sales</h2>
-      </div>
-
-      {isLoading ? (
-        <div className="mt-4 space-y-2">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} className="h-10 rounded-xl" />
-          ))}
-        </div>
-      ) : error ? (
-        <div className="py-10">
-          <ErrorContainer
-            error={constructErrorMessage(
-              error as TApiErrorResponseType,
-              "Couldn't load your sales.",
-            )}
-            retryFunction={refetch}
-          />
-        </div>
-      ) : sales.length === 0 ? (
-        <p className="py-10 text-center text-sm text-secondary-500">
-          No ticket sales yet. They&apos;ll show here as people buy.
-        </p>
-      ) : (
-        <div className="mt-4">
-          <Table label="Sales">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Event</TableHead>
-                <TableHead>Tickets</TableHead>
-                <TableHead className="text-right">Paid</TableHead>
-                <TableHead className="text-right">Fee</TableHead>
-                <TableHead className="text-right">You earn</TableHead>
-                <TableHead>Paid to</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sales.map((sale) => (
-                <TableRow
-                  key={sale.id}
-                  className={cn(sale.status === "refunded" && "opacity-60")}
-                >
-                  <TableCell>{format(new Date(sale.date), "d MMM yyyy")}</TableCell>
-                  <TableCell className="font-medium text-secondary-950">
-                    {sale.event?.name ?? "Event"}
-                  </TableCell>
-                  <TableCell>
-                    {sale.quantity} × {sale.ticketName ?? "Ticket"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {sale.amount.formatted.withCurrency}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {sale.fee.formatted.withCurrency}
-                  </TableCell>
-                  <TableCell className="text-right font-semibold">
-                    {sale.status === "refunded"
-                      ? "Refunded"
-                      : sale.earnings.formatted.withCurrency}
-                  </TableCell>
-                  <TableCell>
-                    {sale.settlement === "direct" ? (
-                      <span className="text-emerald-700">
-                        {sale.settledTo ?? "Your bank"}
-                      </span>
-                    ) : (
-                      <span className="text-secondary-700">Owed by Turnupz</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          {pagination && pagination.totalPage > 1 && (
-            <div className="mt-4 flex items-center justify-between text-sm text-secondary-500">
-              <span>
-                Page {pagination.presentPage} of {pagination.totalPage}
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full"
-                  disabled={!pagination.previousPage}
-                  onClick={() => setPage((current) => Math.max(current - 1, 1))}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full"
-                  disabled={!pagination.nextPage}
-                  onClick={() => setPage((current) => current + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </section>
-  );
+/** Nothing sold yet in this currency: the page still shows its shape. */
+const emptyTotals = (currency: string): VendorCurrencyEarnings => {
+  const zero = (code: string) => ({
+    amount: 0,
+    currency: { code, symbol: "", name: code, locale: "en" },
+    formatted: {
+      withCurrency: new Intl.NumberFormat("en-GB", { style: "currency", currency: code }).format(0),
+      withoutCurrency: "0.00",
+    },
+    parts: { whole: "0", fraction: "00" },
+  });
+  return {
+    currency,
+    ticketsSold: 0,
+    sales: zero(currency),
+    fees: zero(currency),
+    earnings: zero(currency),
+    paidDirect: zero(currency),
+    owed: zero(currency),
+    refunded: zero(currency),
+    eventsCount: 0,
+    previousSales: null,
+  } as unknown as VendorCurrencyEarnings;
 };
 
 /**
- * An organiser's earnings: where they're paid, what they've sold and what
- * they've earned. The payment platform pays them directly, so there's no
- * balance to withdraw.
+ * An organiser's wallet: what they've earned, where it's paid, and each sale
+ * and payout. The payment platform pays them directly, so there's no balance
+ * to withdraw.
  */
 const WalletPage = () => {
-  const { data, isLoading, error, refetch } = useVendorEarnings();
+  const [days, setDays] = useState(30);
+  const [eventId, setEventId] = useState<string>();
+  const filter: TWalletFilter = { days: days || undefined, eventId };
+  const { data, isLoading, error, refetch } = useVendorEarnings(filter);
   const verification = useVendorVerificationStatus();
   // Organisers paid through Stripe (Canada) get Stripe's own screens here.
   const stripe = useStripeSession();
@@ -383,30 +92,98 @@ const WalletPage = () => {
   const account = data?.payoutAccount ?? null;
   const onStripe = stripe.data?.status === "ready";
   const payoutsReady = account?.status === "ACTIVE";
+  const onFlutterwave = account?.provider === "FLUTTERWAVE";
+  const payouts = useVendorPayouts(onFlutterwave);
+
+  const currencies = useMemo(() => data?.currencies ?? [], [data]);
+  const [chosenCurrency, setChosenCurrency] = useState<string>();
+  const currency =
+    chosenCurrency && currencies.some((c) => c.currency === chosenCurrency)
+      ? chosenCurrency
+      : (currencies[0]?.currency ?? account?.currency ?? "NGN");
+  const totals = currencies.find((c) => c.currency === currency) ?? emptyTotals(currency);
+  const periodLabel = PERIODS.find((p) => p.days === days)?.label.toLowerCase() ?? "all time";
+
+  // Flutterwave payouts not paid yet, and when the next one lands.
+  const onItsWay = useMemo(() => {
+    if (!onFlutterwave) return null;
+    const pending = (payouts.data ?? []).filter(
+      (p) => payoutState(p.status) === "pending" && p.currency === currency,
+    );
+    const amount = pending.reduce((sum, p) => sum + (p.net ?? 0), 0);
+    const next = pending
+      .map((p) => p.dueDate)
+      .filter(Boolean)
+      .sort()[0];
+    return { amount: payoutMoney(amount, currency), nextDate: next ?? null };
+  }, [onFlutterwave, payouts.data, currency]);
+
+  const bankLabel =
+    account?.bankName && account.accountLast4
+      ? `${account.bankName} ••${account.accountLast4}`
+      : null;
 
   return (
     <div className="space-y-5">
       <VendorVerificationNotice context="wallet" />
 
-      <div>
-        <span className="text-[0.75rem] font-bold uppercase tracking-[0.22em] text-secondary-400">
-          Earnings
-        </span>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-secondary-950 md:text-[2.15rem]">
-          What you&apos;ve sold and earned
-        </h1>
-        <p className="mt-2 flex max-w-3xl items-start gap-2 text-sm leading-6 text-secondary-500">
-          <ShieldCheck className="mt-0.5 size-4 shrink-0 text-secondary-400" />
-          Ticket payments are split as they&apos;re made: your share goes to
-          your bank through our payment partner and Turnupz keeps its fee, so
-          there&apos;s nothing to withdraw.
-        </p>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="text-[1.75rem] font-bold tracking-tight text-secondary-950">Wallet</h1>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Your share of every ticket goes straight to your bank. Turnupz keeps only its fee, so
+            there&apos;s nothing to withdraw.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <HideAmountsButton className="h-10 border border-secondary-100 bg-white px-4 text-secondary-700 hover:bg-secondary-50" />
+          {currencies.length > 1 && (
+            <div
+              role="tablist"
+              aria-label="Currency"
+              className="flex rounded-full border border-secondary-100 bg-white p-1 text-sm font-semibold"
+            >
+              {currencies.map((c) => (
+                <button
+                  key={c.currency}
+                  type="button"
+                  role="tab"
+                  aria-selected={c.currency === currency}
+                  onClick={() => setChosenCurrency(c.currency)}
+                  className={cn(
+                    "rounded-full px-4 py-1.5 transition-colors",
+                    c.currency === currency
+                      ? "bg-secondary-950 text-white"
+                      : "text-muted-foreground hover:text-secondary-800",
+                  )}
+                >
+                  {c.currency}
+                </button>
+              ))}
+            </div>
+          )}
+          <select
+            value={days}
+            onChange={(event) => setDays(Number(event.target.value))}
+            aria-label="Period"
+            className="h-10 rounded-full border border-secondary-100 bg-white px-4 text-sm font-semibold text-secondary-700"
+          >
+            {PERIODS.map((period) => (
+              <option key={period.days} value={period.days}>
+                {period.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {isLoading ? (
-        <div className="space-y-4">
+        <div className="space-y-5">
+          <div className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">
+            <Skeleton className="h-56 rounded-[1.75rem]" />
+            <Skeleton className="h-56 rounded-[1.75rem]" />
+          </div>
           <Skeleton className="h-28 rounded-[1.5rem]" />
-          <Skeleton className="h-44 rounded-[1.5rem]" />
         </div>
       ) : error ? (
         <ErrorContainer
@@ -424,11 +201,26 @@ const WalletPage = () => {
             payoutsHint={
               onStripe
                 ? "Add your bank with Stripe below. It only takes a few minutes."
-                : "Tap Set up payouts below once you're approved."
+                : "Tap Set up payouts once you're approved."
             }
             currency={account?.currency}
           />
-          {stripe.data?.status === "ready" ? (
+
+          <div className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">
+            <EarningsHero totals={totals} periodLabel={periodLabel} onItsWay={onItsWay} />
+            {onStripe ? (
+              <SplitExplainer currency={currency} />
+            ) : (
+              <PayoutAccountCard
+                account={account}
+                onChangeBank={workspace ? undefined : () => setChangingBank(true)}
+              />
+            )}
+          </div>
+
+          <WalletStats totals={totals} days={days || null} />
+
+          {stripe.data?.status === "ready" && (
             <StripePayouts
               publishableKey={stripe.data.publishableKey}
               active={stripe.data.active || payoutsReady}
@@ -442,27 +234,37 @@ const WalletPage = () => {
                 })
               }
             />
-          ) : (
-            <PayoutAccountCard
-              account={account}
-              onChangeBank={workspace ? undefined : () => setChangingBank(true)}
-            />
           )}
-          {account?.provider === "FLUTTERWAVE" && <PayoutsList />}
-          {(data?.currencies ?? []).map((totals) => (
-            <CurrencyEarnings key={totals.currency} totals={totals} />
-          ))}
-          {account?.provider === "FLUTTERWAVE" && (
+
+          <SalesTable
+            filter={filter}
+            events={data?.events ?? []}
+            onEventChange={setEventId}
+          />
+
+          {(onFlutterwave || !onStripe) && (
+            <div className="grid gap-5 lg:grid-cols-2">
+              {onFlutterwave && (
+                <PayoutsList
+                  payouts={payouts.data ?? []}
+                  loading={payouts.isLoading}
+                  bankLabel={bankLabel}
+                />
+              )}
+              {!onStripe && <SplitExplainer currency={currency} />}
+            </div>
+          )}
+
+          {/* Also for a Nigerian organiser whose payouts need a bank picked first. */}
+          {(onFlutterwave || !account) && (
             <ChangeBankDialog
               open={changingBank}
               onOpenChange={setChangingBank}
-              country={account.country}
+              country={account?.country ?? "NG"}
             />
           )}
         </>
       )}
-
-      <SalesTable />
     </div>
   );
 };

@@ -47,6 +47,7 @@ import {
   IEventDetailsType,
   sponsorLogo,
   sponsorName,
+  sponsorShowsName,
 } from "@/lib/types";
 import { getCurrencyForCountry } from "@/lib/currency";
 import { uploadAttachment } from "@/api/attachments";
@@ -112,6 +113,7 @@ const defaultValues: TFormValues = {
   sponsorNames: [],
   sponsorImages: [],
   sponsorLogoIds: [],
+  sponsorShowNames: [],
   saleMethod: "",
   eventTickets: [],
   ticketUrl: "",
@@ -366,6 +368,7 @@ const buildEventFormData = async (
       name: name?.trim() ?? "",
       image: body.sponsorImages?.[index],
       logoId: body.sponsorLogoIds?.[index] || undefined,
+      showName: !!body.sponsorShowNames?.[index],
     }))
     .filter((sponsor) => sponsor.name);
   const logoFiles = sponsorEntries
@@ -385,6 +388,7 @@ const buildEventFormData = async (
             sponsor.image instanceof File
               ? uploadedLogos[nextLogo++]?.id
               : sponsor.logoId,
+          showName: sponsor.showName,
         })),
       ),
     );
@@ -585,6 +589,7 @@ const CreateEvent = () => {
             sponsorLogoIds: (draftEvent.sponsors ?? []).map((sponsor) =>
               typeof sponsor === "string" ? null : (sponsor.imageDetails?.id ?? null),
             ),
+            sponsorShowNames: (draftEvent.sponsors ?? []).map(sponsorShowsName),
             saleMethod: draftEvent.saleMethod ?? "",
             eventTickets: (draftEvent.eventTickets ?? []).map((ticket) => ({
               ...ticket,

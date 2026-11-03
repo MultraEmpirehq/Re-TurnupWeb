@@ -109,6 +109,9 @@ export interface IVenueDetailsType {
   longitude?: number;
   latitude?: number;
   address: string;
+  city?: string;
+  state?: string | null;
+  country?: string;
   rating: number;
   totalAvailableSeat: number;
   description?: string;
@@ -670,6 +673,8 @@ export type TEventSponsor =
       id?: string;
       name: string;
       imageDetails?: { id?: string; url?: string } | null;
+      /** Show the name on the board even though there's a logo. */
+      showName?: boolean;
     };
 
 /** A sponsor's name, whichever shape it came in. */
@@ -679,3 +684,7 @@ export const sponsorName = (sponsor: TEventSponsor) =>
 /** A sponsor's logo url, if it has one. */
 export const sponsorLogo = (sponsor: TEventSponsor) =>
   typeof sponsor === "string" ? undefined : sponsor?.imageDetails?.url || undefined;
+
+/** The organiser chose the name over the logo for this sponsor. */
+export const sponsorShowsName = (sponsor: TEventSponsor) =>
+  typeof sponsor !== "string" && !!sponsor?.showName;

@@ -263,6 +263,8 @@ export type TLedgerStatus =
 
 export type TLedgerFilters = {
   eventId?: string;
+  /** Only the tickets in this order. */
+  orderId?: string;
   ticketTypeId?: string;
   q?: string;
   status?: TLedgerStatus;
@@ -318,6 +320,11 @@ export type TLedgerTicketTypeBreakdown = {
 };
 
 export type TLedgerSummary = {
+  /** Orders and events with tickets matching the filters. */
+  orders?: number;
+  events?: number;
+  /** What buyers paid for the sold tickets, per currency. */
+  value?: PriceDetailsType[];
   all: number;
   checkedIn: number;
   notCheckedIn: number;
@@ -334,8 +341,10 @@ export const useVendorLedger = (
   filters: TLedgerFilters,
   page: number,
   limit = 25,
+  enabled = true,
 ) =>
   useQuery({
+    enabled,
     queryKey: ["vendor-ledger", filters, page, limit],
     queryFn: async () => {
       const query = buildSearchParams({ ...filters, page, limit });
@@ -423,3 +432,175 @@ export const downloadLedgerCsv = async (filters: TLedgerFilters) => {
   URL.revokeObjectURL(url);
   return { truncated: response.headers["x-export-truncated"] === "true" };
 };
+
+/** One order in the ledger: a single row however many tickets it holds. */
+export interface ILedgerOrder {
+  id: string;
+  reference: string | null;
+  boughtAt: string;
+  buyer: { name: string; username: string | null; email: string };
+  event: { id: string; name: string; date: string } | null;
+  /** Most first, e.g. 50 × Regular, 10 × VIP. */
+  ticketTypes: { name: string; quantity: number }[];
+  tickets: number;
+  checkedIn: number;
+  /** Passed on to someone else. */
+  sentOn: number;
+  refunded: number;
+  pending: number;
+  paid: PriceDetailsType;
+}
+
+export const useVendorLedgerOrders = (
+  filters: TLedgerFilters,
+  page: number,
+  limit = 25,
+  enabled = true,
+) =>
+  useQuery({
+    queryKey: ["vendor-ledger-orders", filters, page, limit],
+    queryFn: async () => {
+      const query = buildSearchParams({ ...filters, page, limit });
+      const { data } = await getData<ILedgerOrder[]>(
+        `/vendor/tickets/ledger/orders?${query}`,
+      );
+      return {
+        orders: data?.data ?? [],
+        total: (data?.pagination as { total?: number } | undefined)?.total ?? 0,
+      };
+    },
+    placeholderData: (previous) => previous,
+    enabled,
+  });
+
+export interface IEventCheckIn {
+  id: string;
+  name: string;
+  date: string;
+  timezone: string;
+  sold: number;
+  checkedIn: number;
+  /** Doors are open now (from two hours before the start). */
+  live: boolean;
+}
+
+/** Check-in so far at upcoming and live events. */
+export const useVendorCheckInByEvent = () =>
+  useQuery({
+    queryKey: ["vendor-check-in-by-event"],
+    queryFn: async () => {
+      const { data } = await getData<IEventCheckIn[]>("/vendor/tickets/ledger/check-in");
+      return data?.data ?? [];
+    },
+    refetchInterval: 30_000,
+  });
+
+export type TTicketHistory = {
+  kind: "bought" | "sent_on" | "checked_in" | "let_in_again" | "refunded";
+  at: string;
+  text: string;
+};
+
+export interface ILedgerTicketDetail extends ILedgerRecord {
+  history: TTicketHistory[];
+  /** The holder's live code, for the owner and team members who may scan. */
+  liveCode: { secret: string; windowSeconds: number; serverTime: string } | null;
+  canSeeLiveCode: boolean;
+}
+
+export const useVendorLedgerTicket = (ticketId?: string | null) =>
+  useQuery({
+    queryKey: ["vendor-ledger-ticket", ticketId],
+    enabled: !!ticketId,
+    queryFn: async () => {
+      const { data } = await getData<ILedgerTicketDetail>(
+        `/vendor/tickets/ledger/${ticketId}`,
+      );
+      return data?.data ?? null;
+    },
+  });
+
+/** Someone who can check tickets in for an event. */
+export interface IDoorTeamMember {
+  /** Set for people given access to this event alone (they can be removed). */
+  accessId: string | null;
+  kind: "event" | "team" | "owner";
+  status: "active" | "invited" | "expired";
+  name: string | null;
+  username: string | null;
+  /** Only for someone not on Turnupz yet. */
+  email: string | null;
+  scans: number;
+  lastScanAt: string | null;
+  scanningNow: boolean;
+}
+
+export const useDoorTeam = (eventId?: string) =>
+  useQuery({
+    queryKey: ["door-team", eventId],
+    enabled: !!eventId,
+    queryFn: async () => {
+      const { data } = await getData<{
+        total: number;
+        checkedIn: number;
+        members: IDoorTeamMember[];
+      }>(`/event/${eventId}/door-team`);
+      return data?.data ?? null;
+    },
+    refetchInterval: 30_000,
+  });
+
+export interface IEventCheckInEntry {
+  kind: "checked_in" | "let_in_again";
+  at: string;
+  ticketId: string | null;
+  holder: string;
+  ticketType: string | null;
+  by: string | null;
+  reason: string | null;
+}
+
+export const useEventCheckIns = (eventId?: string, limit = 8) =>
+  useQuery({
+    queryKey: ["event-check-ins", eventId, limit],
+    enabled: !!eventId,
+    queryFn: async () => {
+      const { data } = await getData<IEventCheckInEntry[]>(
+        `/event/${eventId}/check-ins?limit=${limit}`,
+      );
+      return data?.data ?? [];
+    },
+    refetchInterval: 15_000,
+  });
+
+/** Gives door access by @username or email. */
+export const useAddDoorStaff = (eventId?: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (who: { username?: string; email?: string }) => {
+      const { data } = await postData<
+        { username?: string; email?: string },
+        ScannerAccessApiRecord
+      >(`/event/${eventId}/scanners`, who);
+      return data?.data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["door-team", eventId] });
+      void queryClient.invalidateQueries({ queryKey: ["event-scanners", eventId] });
+    },
+  });
+};
+
+/** People on Turnupz by name or @username, for adding door staff. */
+export const usePeopleSearch = (q: string) =>
+  useQuery({
+    queryKey: ["people-search", q],
+    enabled: q.trim().replace(/^@/, "").length >= 2,
+    queryFn: async () => {
+      const { data } = await getData<
+        { id: string; name: string; username: string | null; image: string | null }[]
+      >(`/people/search?q=${encodeURIComponent(q.trim().replace(/^@/, ""))}`);
+      return data?.data ?? [];
+    },
+    staleTime: 30_000,
+  });

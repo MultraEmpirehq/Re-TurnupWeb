@@ -63,7 +63,7 @@ const Inquiries = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeading title="Inquiries">
+      <PageHeading title="Contact Messages">
         Messages from the Contact Us form, newest first. Each one is also
         emailed to the support inbox. Reply by email, then mark it resolved.
       </PageHeading>

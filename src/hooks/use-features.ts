@@ -5,6 +5,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 export type TFeatures = {
   /** Organisers' Promote: share tools, promoter codes and boosts. */
   promotion: boolean;
+  /** Buyers paying for tickets with Turnupz Credit. */
+  creditSpending: boolean;
+  /** New welcome, referral and share-link credit. */
+  referralRewards: boolean;
 };
 
 export type TAdminFeature = {
@@ -15,8 +19,12 @@ export type TAdminFeature = {
   updatedBy: string | null;
 };
 
-/** Used until the list loads, and if it can't: everything on, as the server defaults. */
-const DEFAULT_FEATURES: TFeatures = { promotion: true };
+/** Used until the list loads, and if it can't: the server's defaults. */
+const DEFAULT_FEATURES: TFeatures = {
+  promotion: true,
+  creditSpending: false,
+  referralRewards: false,
+};
 
 export const useFeatures = () => {
   const query = useQuery({

@@ -1,6 +1,7 @@
 "use client";
 
 import { postData } from "@/api";
+import { cn } from "@/lib/utils";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/variables";
@@ -17,7 +18,8 @@ import { toast } from "sonner";
 const MessageOrganiserButton: React.FC<{
   eventId: string;
   isOwner?: boolean;
-}> = ({ eventId, isOwner }) => {
+  className?: string;
+}> = ({ eventId, isOwner, className }) => {
   const router = useRouter();
   const pathname = usePathname();
   const isSignedIn = !!useUserStore((state) => state.userDetails);
@@ -59,7 +61,7 @@ const MessageOrganiserButton: React.FC<{
       variant="outline"
       onClick={() => void open()}
       disabled={opening}
-      className="gap-2"
+      className={cn("gap-2", className)}
     >
       {opening ? (
         <Loader2 className="size-4 animate-spin" aria-hidden />

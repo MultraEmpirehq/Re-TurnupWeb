@@ -4,25 +4,23 @@ import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
   downloadLedgerCsv,
+  ILedgerOrder,
   ILedgerRecord,
   TLedgerFilters,
   TLedgerSort,
   TLedgerStatus,
   TLedgerSummary,
-  useReviewRegistration,
   useVendorLedger,
+  useVendorLedgerOrders,
   useVendorLedgerSummary,
 } from "@/hooks/use-vendor-tickets";
 import { useActingVendor } from "@/stores/workspace-store";
-import { formatEventTime } from "@/lib/event-time";
+import { Amount } from "@/components/pages/app/wallet/amount";
+import LedgerOverview from "./ledger-overview";
+import OrderPanel from "./order-panel";
+import OrdersTable from "./orders-table";
+import TicketPanel from "./ticket-panel";
 import { IEventDetailsType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
@@ -31,7 +29,6 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleDashed,
-  Copy,
   Download,
   Ban,
   Hourglass,
@@ -40,7 +37,6 @@ import {
   Undo2,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { QRCodeSVG } from "qrcode.react";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -74,7 +70,7 @@ const STATUS_STYLE: Record<
   },
   pending: { icon: Hourglass, className: "bg-amber-50 text-amber-700" },
   refunded: { icon: Undo2, className: "bg-red-50 text-red-700" },
-  declined: { icon: Ban, className: "bg-secondary-50 text-secondary-500" },
+  declined: { icon: Ban, className: "bg-secondary-50 text-muted-foreground" },
 };
 
 const LEDGER_STATUSES = STATUSES.map((option) => option.value);
@@ -125,230 +121,22 @@ const StatusChip: React.FC<{
           : record.statusLabel}
       </span>
       {showScanner && record.checkedInAt && record.scannerEmail && (
-        <span className="block max-w-[200px] truncate text-xs text-secondary-500">
+        <span className="block max-w-[200px] truncate text-xs text-muted-foreground">
           by {record.scannerEmail}
         </span>
       )}
       {record.transfer?.status === "claimed" && (
-        <span className="inline-flex items-center gap-1 text-xs text-secondary-500">
+        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
           <ArrowRightLeft className="size-3" aria-hidden />
           Passed on
         </span>
       )}
       {record.transfer?.status === "pending" && (
-        <span className="text-xs text-secondary-500">Transfer pending</span>
+        <span className="text-xs text-muted-foreground">Transfer pending</span>
       )}
     </span>
   );
 };
-
-const DetailRow: React.FC<{ label: string; children: React.ReactNode }> = ({
-  label,
-  children,
-}) => (
-  <div className="flex justify-between gap-4 border-b border-secondary-50 py-2.5 text-sm last:border-0">
-    <dt className="text-secondary-500">{label}</dt>
-    <dd className="text-right font-medium text-secondary-950">{children}</dd>
-  </div>
-);
-
-/** One ticket in full, with its QR code, in a side panel. */
-/** Approve or decline a booking for an event that needs approval. */
-const ReviewActions: React.FC<{
-  record: ILedgerRecord;
-  onDone: () => void;
-}> = ({ record, onDone }) => {
-  const review = useReviewRegistration();
-  const [choice, setChoice] = useState<"confirmed" | "rejected" | null>(null);
-  const decide = async (status: "confirmed" | "rejected") => {
-    setChoice(status);
-    try {
-      await review.mutateAsync({
-        eventId: record.eventId,
-        ticketId: record.id,
-        status,
-      });
-      toast.success(
-        status === "confirmed"
-          ? `${record.holderName} is in`
-          : `Declined ${record.holderName}'s booking`,
-      );
-      onDone();
-    } catch (error) {
-      toast.error(
-        constructErrorMessage(
-          error as TApiErrorResponseType,
-          "Couldn't review this booking.",
-        ),
-      );
-    } finally {
-      setChoice(null);
-    }
-  };
-  return (
-    <div className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
-      <p className="text-sm text-secondary-800">
-        This event needs your approval. Their ticket works once you let them in.
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          className="rounded-xl bg-white"
-          disabled={review.isPending}
-          onClick={() => decide("rejected")}
-        >
-          {choice === "rejected" && (
-            <Loader2 className="size-4 animate-spin" aria-hidden />
-          )}
-          Decline
-        </Button>
-        <Button
-          type="button"
-          className="rounded-xl"
-          disabled={review.isPending}
-          onClick={() => decide("confirmed")}
-        >
-          {choice === "confirmed" && (
-            <Loader2 className="size-4 animate-spin" aria-hidden />
-          )}
-          Approve
-        </Button>
-      </div>
-    </div>
-  );
-};
-
-const TicketDrawer: React.FC<{
-  record: ILedgerRecord | null;
-  onClose: () => void;
-  canReview: boolean;
-}> = ({ record, onClose, canReview }) => (
-  <Sheet open={!!record} onOpenChange={(open) => !open && onClose()}>
-    <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
-      {record && (
-        <>
-          <SheetHeader>
-            <SheetTitle>{record.holderName}</SheetTitle>
-            <SheetDescription>
-              {record.ticketType} · {record.eventName}
-            </SheetDescription>
-          </SheetHeader>
-          <div className="space-y-5 px-4 pb-8">
-            <div className="flex flex-col items-center rounded-2xl border border-secondary-100 bg-secondary-50/50 p-5">
-              <div
-                className={cn(
-                  "rounded-xl bg-white p-3",
-                  record.status === "refunded" && "opacity-30",
-                )}
-              >
-                <QRCodeSVG value={record.ticketCode} size={164} />
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  void navigator.clipboard?.writeText(record.ticketCode);
-                  toast.success("Ticket code copied");
-                }}
-                className="mt-3 inline-flex items-center gap-1.5 font-mono text-sm font-semibold tracking-wider text-secondary-800 hover:text-secondary-950"
-              >
-                {record.ticketCode}
-                <Copy className="size-3.5" aria-hidden />
-              </button>
-              <div className="mt-3">
-                <StatusChip record={record} />
-              </div>
-            </div>
-            {canReview && record.status === "pending" && (
-              <ReviewActions record={record} onDone={onClose} />
-            )}
-            <dl>
-              <DetailRow label="Holder">
-                {record.holderName}
-                <span className="block text-xs font-normal text-secondary-500">
-                  {record.holderEmail}
-                </span>
-              </DetailRow>
-              {record.buyerName && (
-                <DetailRow label="Bought by">
-                  {record.buyerName}
-                  {record.buyerEmail && (
-                    <span className="block text-xs font-normal text-secondary-500">
-                      {record.buyerEmail}
-                    </span>
-                  )}
-                </DetailRow>
-              )}
-              <DetailRow label="Event">
-                {record.eventName}
-                <span className="block text-xs font-normal text-secondary-500">
-                  {formatEventTime(record.eventDate)}
-                </span>
-              </DetailRow>
-              {record.venue && (
-                <DetailRow label="Venue">
-                  {record.venue.name ?? record.venue.address}
-                  {record.venue.name && record.venue.address && (
-                    <span className="block text-xs font-normal text-secondary-500">
-                      {record.venue.address}
-                    </span>
-                  )}
-                </DetailRow>
-              )}
-              <DetailRow label="Ticket">{record.ticketType}</DetailRow>
-              <DetailRow label="Price">
-                {record.price.formatted?.withCurrency}
-              </DetailRow>
-              <DetailRow label="Bought">{time(record.boughtAt)}</DetailRow>
-              {record.orderReference && (
-                <DetailRow label="Order">
-                  <span className="font-mono text-xs">
-                    {record.orderReference}
-                  </span>
-                </DetailRow>
-              )}
-              {record.checkedInAt && (
-                <DetailRow label="Checked in">
-                  {time(record.checkedInAt)}
-                  {record.scannerEmail && (
-                    <span className="block text-xs font-normal text-secondary-500">
-                      by {record.scannerEmail}
-                    </span>
-                  )}
-                </DetailRow>
-              )}
-              {record.days && (
-                <DetailRow label="Days">
-                  In on {record.days.checkedIn} of {record.days.covered}
-                </DetailRow>
-              )}
-              {record.transfer && (
-                <DetailRow label="Transfer">
-                  {record.transfer.status === "claimed"
-                    ? "Passed on to"
-                    : "On its way to"}{" "}
-                  {record.transfer.to ?? "someone"}
-                  <span className="block text-xs font-normal text-secondary-500">
-                    {record.transfer.toEmail &&
-                    record.transfer.toEmail !== record.transfer.to
-                      ? `${record.transfer.toEmail} · `
-                      : ""}
-                    {time(record.transfer.at)}
-                  </span>
-                </DetailRow>
-              )}
-              {record.refundedAt && (
-                <DetailRow label="Refunded">
-                  {time(record.refundedAt)}
-                </DetailRow>
-              )}
-            </dl>
-          </div>
-        </>
-      )}
-    </SheetContent>
-  </Sheet>
-);
 
 const Meter: React.FC<{
   value: number;
@@ -411,14 +199,14 @@ const TicketTypeBreakdown: React.FC<{
       <h2 className="font-bold text-secondary-950">
         {eventName ? `${eventName} · by ticket type` : "By ticket type"}
       </h2>
-      <span className="text-xs text-secondary-400">
+      <span className="text-xs text-muted-foreground">
         Pick a row to see only those tickets
       </span>
     </div>
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead>
-          <tr className="text-xs font-semibold tracking-wide text-secondary-400 uppercase">
+          <tr className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             <th className="pb-2 font-semibold">Ticket type</th>
             <th className="pb-2 font-semibold">Sold</th>
             <th className="pb-2 font-semibold">Checked in</th>
@@ -511,13 +299,18 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
   const [page, setPage] = useState(1);
   const [exporting, setExporting] = useState(false);
   const [openRecord, setOpenRecord] = useState<ILedgerRecord | null>(null);
+  const [openOrder, setOpenOrder] = useState<ILedgerOrder | null>(null);
+  // By order keeps a bulk purchase to one row; each ticket is the full list.
+  const [view, setView] = useState<"orders" | "tickets">(
+    searchParams.get("view") === "tickets" ? "tickets" : "orders",
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => setSearch(searchInput.trim()), 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
   // Any change to what's asked for starts again at the first page.
-  useEffect(() => setPage(1), [search, eventId, ticketTypeId, status, sort]);
+  useEffect(() => setPage(1), [search, eventId, ticketTypeId, status, sort, view]);
 
   const baseFilters = useMemo(
     () => ({
@@ -535,7 +328,9 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
     filters,
     page,
     PAGE_SIZE,
+    view === "tickets",
   );
+  const ordersQuery = useVendorLedgerOrders(filters, page, PAGE_SIZE, view === "orders");
   const { data: summary } = useVendorLedgerSummary(baseFilters);
 
   // A ticket linked to directly (e.g. /app/tickets?ticket=…) opens on arrival.
@@ -554,7 +349,10 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
     [eventId, events],
   );
   const records = data?.records ?? [];
-  const total = data?.total ?? 0;
+  const orders = ordersQuery.data?.orders ?? [];
+  const total = (view === "orders" ? ordersQuery.data?.total : data?.total) ?? 0;
+  const loading = view === "orders" ? ordersQuery.isPending && !ordersQuery.data : isPending && !data;
+  const empty = view === "orders" ? orders.length === 0 : records.length === 0;
   const first = total ? (page - 1) * PAGE_SIZE + 1 : 0;
   const last = Math.min(page * PAGE_SIZE, total);
 
@@ -581,16 +379,24 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
 
   return (
     <div className="space-y-4">
+      <LedgerOverview
+        summary={summary}
+        onPickEvent={(id) => {
+          setEventId(id);
+          setTicketTypeId("");
+          setView("tickets");
+        }}
+      />
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="relative flex-1">
           <Search
-            className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-secondary-400"
+            className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden
           />
           <Input
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Search name, email or ticket code"
+            placeholder="Search name, email, order or ticket code"
             aria-label="Search tickets"
             className="h-11 rounded-xl bg-white pl-10"
           />
@@ -651,6 +457,32 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
             )}
             Export CSV
           </Button>
+          <div
+            role="tablist"
+            aria-label="Show"
+            className="col-span-2 flex h-11 shrink-0 rounded-xl border border-secondary-200 bg-white p-1 text-xs font-semibold sm:col-span-1"
+          >
+            {(
+              [
+                ["orders", "By order"],
+                ["tickets", "Each ticket"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={view === value}
+                onClick={() => setView(value)}
+                className={cn(
+                  "flex-1 rounded-lg px-3 whitespace-nowrap transition-colors",
+                  view === value ? "bg-secondary-950 text-white" : "text-muted-foreground hover:text-secondary-800",
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -691,7 +523,7 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
                     "rounded-full px-1.5 text-xs tabular-nums",
                     isSelected
                       ? "bg-white/20"
-                      : "bg-secondary-50 text-secondary-500",
+                      : "bg-secondary-50 text-muted-foreground",
                   )}
                 >
                   {count.toLocaleString()}
@@ -713,22 +545,24 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
       )}
 
       <section className="overflow-hidden rounded-[1.5rem] border border-secondary-100 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
-        {isPending && !data ? (
+        {loading ? (
           <div className="flex justify-center py-20">
             <Loader2
-              className="size-6 animate-spin text-secondary-400"
+              className="size-6 animate-spin text-muted-foreground"
               aria-label="Loading tickets"
             />
           </div>
-        ) : records.length === 0 ? (
+        ) : empty ? (
           <div className="px-6 py-16 text-center">
             <p className="font-semibold text-secondary-950">No tickets match</p>
-            <p className="mt-1 text-sm text-secondary-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               {search || eventId || status !== "all"
                 ? "Try a different search or clear the filters."
                 : "Tickets will show here as soon as people book."}
             </p>
           </div>
+        ) : view === "orders" ? (
+          <OrdersTable orders={orders} fetching={ordersQuery.isFetching} onOpen={setOpenOrder} />
         ) : (
           <>
             {/* Phones: one card per ticket instead of a wide table. */}
@@ -754,16 +588,18 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
                           {record.holderName}
                         </span>
                         <span className="shrink-0 text-sm font-semibold text-secondary-950">
-                          {record.price.amount
-                            ? record.price.formatted?.withCurrency
-                            : "Free"}
+                          {record.price.amount ? (
+                            <Amount value={record.price.formatted?.withCurrency} />
+                          ) : (
+                            "Free"
+                          )}
                         </span>
                       </span>
-                      <span className="block truncate text-xs text-secondary-500">
+                      <span className="block truncate text-xs text-muted-foreground">
                         {record.ticketType} · {record.eventName}
                       </span>
                       <span className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-[11px] tracking-wide text-secondary-500">
+                        <span className="font-mono text-[11px] tracking-wide text-muted-foreground">
                           {record.ticketCode}
                         </span>
                         <StatusChip record={record} />
@@ -781,7 +617,7 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
             >
               <table className="w-full min-w-[860px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-secondary-100 bg-secondary-50/60 text-xs font-semibold tracking-wide text-secondary-500 uppercase">
+                  <tr className="border-b border-secondary-100 bg-secondary-50/60 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                     <th className="px-5 py-3 font-semibold">Holder</th>
                     <th className="px-3 py-3 font-semibold">Ticket</th>
                     <th className="px-3 py-3 font-semibold">Code</th>
@@ -818,7 +654,7 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
                             <span className="block max-w-[200px] truncate font-semibold text-secondary-950">
                               {record.holderName}
                             </span>
-                            <span className="block max-w-[200px] truncate text-xs text-secondary-500">
+                            <span className="block max-w-[200px] truncate text-xs text-muted-foreground">
                               {record.buyerName
                                 ? `Bought by ${record.buyerName}`
                                 : record.holderEmail}
@@ -830,7 +666,7 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
                         <span className="block font-medium text-secondary-950">
                           {record.ticketType}
                         </span>
-                        <span className="block max-w-[220px] truncate text-xs text-secondary-500">
+                        <span className="block max-w-[220px] truncate text-xs text-muted-foreground">
                           {record.eventName}
                         </span>
                       </td>
@@ -838,9 +674,11 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
                         {record.ticketCode}
                       </td>
                       <td className="px-3 py-3 text-right font-semibold whitespace-nowrap text-secondary-950">
-                        {record.price.amount
-                          ? record.price.formatted?.withCurrency
-                          : "Free"}
+                        {record.price.amount ? (
+                          <Amount value={record.price.formatted?.withCurrency} />
+                        ) : (
+                          "Free"
+                        )}
                       </td>
                       <td className="px-3 py-3 whitespace-nowrap text-secondary-600">
                         {sort === "checked_in"
@@ -860,10 +698,10 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
           </>
         )}
         {total > 0 && (
-          <div className="flex items-center justify-between gap-3 border-t border-secondary-100 px-5 py-3 text-sm text-secondary-500">
+          <div className="flex items-center justify-between gap-3 border-t border-secondary-100 px-5 py-3 text-sm text-muted-foreground">
             <span>
               {first.toLocaleString()}–{last.toLocaleString()} of{" "}
-              {total.toLocaleString()}
+              {total.toLocaleString()} {view === "orders" ? "orders" : "tickets"}
             </span>
             <div className="flex gap-2">
               <Button
@@ -891,7 +729,12 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
         )}
       </section>
 
-      <TicketDrawer
+      <OrderPanel
+        order={openOrder}
+        onClose={() => setOpenOrder(null)}
+        onOpenTicket={setOpenRecord}
+      />
+      <TicketPanel
         canReview={can("REGISTRATIONS_REVIEW")}
         record={openRecord}
         onClose={() => {

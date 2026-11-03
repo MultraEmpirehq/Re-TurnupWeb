@@ -1,5 +1,12 @@
 "use client";
 
+import {
+  isVideo,
+  MediaLightbox,
+  mediaItemsOf,
+  MediaThumb,
+  TMediaItem,
+} from "@/components/pages/explore/event-detail/event-detail-media";
 import { getData, patchData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
@@ -14,6 +21,7 @@ import {
   IEventTicketOptionDetails,
   TEventSponsor,
   sponsorLogo,
+  sponsorShowsName,
   sponsorName,
 } from "@/lib/types";
 import { CalendarDays, Clock3, MapPin, PencilLine, Ticket } from "lucide-react";
@@ -695,12 +703,10 @@ const ActivityTimeline: React.FC<{ activities?: IEventActivityDetails[] }> = ({
 };
 
 const MediaStrip: React.FC<{
-  media?: string[];
-}> = ({ media }) => {
-  const mediaItems = useMemo(
-    () => (media ?? []).filter(Boolean).slice(0, 8),
-    [media],
-  );
+  items: TMediaItem[];
+}> = ({ items }) => {
+  const mediaItems = useMemo(() => items.slice(0, 8), [items]);
+  const [open, setOpen] = useState<number | null>(null);
 
   return (
     <section className="space-y-4">
@@ -713,54 +719,62 @@ const MediaStrip: React.FC<{
       {mediaItems.length === 0 ? (
         <div className="flex h-32 flex-col items-center justify-center gap-1 rounded-[1rem] border border-dashed border-secondary-200 bg-secondary-50/60 px-4 text-center">
           <p className="text-sm font-semibold text-secondary-700">
-            No photos yet
+            No photos or videos yet
           </p>
           <p className="text-xs text-secondary-500">
-            Add photos to show people what to expect.
+            Add some to show people what to expect.
           </p>
         </div>
       ) : (
         <div className="-mx-1 overflow-x-auto pb-2">
           <div className="flex min-w-max gap-3 px-1">
             {mediaItems.map((item, index) => (
-              <div
-                key={`${item || "placeholder"}-${index}`}
-                className="relative h-32 w-48 flex-none overflow-hidden rounded-[1rem] border border-secondary-100 bg-secondary-50"
+              <button
+                type="button"
+                key={`${item.url}-${index}`}
+                onClick={() => setOpen(index)}
+                aria-label={`Open ${isVideo(item) ? "video" : "photo"} ${index + 1}`}
+                className="relative h-32 w-48 flex-none cursor-zoom-in overflow-hidden rounded-[1rem] border border-secondary-100 bg-secondary-50"
               >
-                {item ? (
-                  <div
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={{ backgroundImage: `url(${item})` }}
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(226,232,240,0.9),rgba(241,245,249,0.95))]" />
-                )}
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent,rgba(15,23,42,0.08))]" />
-                <div className="absolute bottom-3 left-3 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-500 backdrop-blur">
-                  {`Media ${index + 1}`}
-                </div>
-              </div>
+                <MediaThumb item={item} alt={`Media ${index + 1}`} />
+              </button>
             ))}
           </div>
         </div>
       )}
+      <MediaLightbox
+        items={mediaItems}
+        index={open}
+        onIndexChange={setOpen}
+        onClose={() => setOpen(null)}
+      />
     </section>
   );
 };
 
-const SponsorsBoard: React.FC<{
+export const SponsorsBoard: React.FC<{
   organizerName?: string;
   eventYear?: string;
   sponsors?: TEventSponsor[];
   sponsorImages?: string[];
-}> = ({ organizerName, eventYear, sponsors, sponsorImages }) => {
+  /** On the public page there's nothing to show until sponsors are added. */
+  hideWhenEmpty?: boolean;
+}> = ({ organizerName, eventYear, sponsors, sponsorImages, hideWhenEmpty }) => {
   // Each with its name and logo (an uploaded one, else an older separate list).
   const sponsorItems = (sponsors ?? [])
     .map((sponsor, index) => ({
       name: sponsorName(sponsor),
-      logo: sponsorLogo(sponsor) ?? sponsorImages?.[index],
+      // The name when the organiser chose it, or there's no logo.
+      // The separate logo list only lines up for old events saved as names;
+      // it skips sponsors without a logo, so it can't be matched by position.
+      logo: sponsorShowsName(sponsor)
+        ? undefined
+        : typeof sponsor === "string"
+          ? sponsorImages?.[index]
+          : sponsorLogo(sponsor),
     }))
     .filter((sponsor) => sponsor.name);
+  if (hideWhenEmpty && !sponsorItems.length) return null;
 
   return (
     <section className="space-y-4">
@@ -786,11 +800,12 @@ const SponsorsBoard: React.FC<{
           {sponsorItems.map((sponsor, index) => (
             <div
               key={`${sponsor.name}-${index}`}
-              className="flex h-24 items-center justify-center border-b border-r border-secondary-100 px-4 text-center"
+              className="relative flex h-24 items-center justify-center overflow-hidden border-b border-r border-secondary-100 px-4 text-center"
             >
               {sponsor.logo ? (
+                // The logo fills its tile.
                 <div
-                  className="h-14 w-full rounded-lg bg-contain bg-center bg-no-repeat"
+                  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
                   style={{ backgroundImage: `url(${sponsor.logo})` }}
                   role="img"
                   aria-label={sponsor.name}
@@ -812,10 +827,14 @@ const SponsorsBoard: React.FC<{
   );
 };
 
-const BlogPostsBoard: React.FC<{
+export const BlogPostsBoard: React.FC<{
   eventId: string;
   posts?: IEventBlogPostDetails[];
-}> = ({ eventId, posts }) => {
+  /** Where a post opens; the organiser's own view by default. */
+  hrefFor?: (postId: string) => string;
+  /** Shown for a post without a photo of its own, e.g. the event's cover. */
+  fallbackImage?: string;
+}> = ({ eventId, posts, hrefFor, fallbackImage }) => {
   if (!posts?.length) {
     return null;
   }
@@ -832,15 +851,15 @@ const BlogPostsBoard: React.FC<{
         {posts.map((post) => (
           <Link
             key={post.id}
-            href={`/app/events/${eventId}/blog/${post.id}`}
+            href={hrefFor ? hrefFor(post.id) : `/app/events/${eventId}/blog/${post.id}`}
             className="group overflow-hidden rounded-[1.2rem] border border-secondary-100 bg-white shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition-transform hover:-translate-y-1"
           >
             <div
               className="h-40 bg-secondary-50 bg-cover bg-center"
               style={{
                 backgroundImage:
-                  post.images?.[0] || post.image
-                    ? `url(${post.images?.[0] || post.image})`
+                  post.images?.[0] || post.image || fallbackImage
+                    ? `url(${post.images?.[0] || post.image || fallbackImage})`
                     : undefined,
               }}
             />
@@ -1031,7 +1050,7 @@ export const EventPreviewCard: React.FC<{
 
           <ActivityTimeline activities={data.activities} />
 
-          <MediaStrip media={data.medias} />
+          <MediaStrip items={mediaItemsOf(data.mediaDetails, data.medias)} />
 
           <SponsorsBoard
             organizerName={data.organizerName}

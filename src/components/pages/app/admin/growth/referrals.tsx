@@ -22,6 +22,7 @@ import {
   ListSkeleton,
   PageHeading,
 } from "../moderation/moderation-ui";
+import FeatureSwitch from "../feature-switch";
 
 export const REFERRAL_STATUS: Record<
   TReferralStatus,
@@ -136,6 +137,21 @@ const Referrals = () => {
         of Turnupz&apos;s commission on it (0.8% of the ticket at 4%), and each
         has its own maximum. {summary.data?.rulesNote}
       </PageHeading>
+
+      <div className="grid gap-3 lg:grid-cols-2">
+        <FeatureSwitch
+          feature="creditSpending"
+          label="Paying with Turnupz Credit"
+          onText="On: buyers can use their credit at checkout."
+          offText="Off: checkout doesn't offer credit. Balances stay safe and visible, marked as paused."
+        />
+        <FeatureSwitch
+          feature="referralRewards"
+          label="New referral and welcome credit"
+          onText="On: invited friends and referrers earn credit on a friend's first purchase, split evenly from the reward budget."
+          offText="Off: invites are still recorded, but no new credit is given."
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Sign-ups with a code" value={totals.all} />
