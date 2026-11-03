@@ -45,6 +45,33 @@ export type TScanSummary = {
 export const scanSummaryKey = (eventId?: string) => ["scan-summary", eventId];
 
 /** How the door is going for one event; refreshed after every scan by the page. */
+/** An event this account can scan for, as GET /scanning/events lists them. */
+export type TScanEvent = {
+  id: string;
+  name: string;
+  date: string;
+  endDate: string | null;
+  timezone?: string | null;
+  days: number;
+  /** Their own, a team they're on, or one event they were given door access to. */
+  via: "own" | "team" | "door";
+  vendorId: string | null;
+};
+
+/**
+ * Every event they can scan for, including single events someone gave them
+ * door access to (by @username), which aren't among any organiser's own.
+ */
+export const useScanEvents = (enabled = true) =>
+  useQuery({
+    queryKey: ["scan-events"],
+    queryFn: async () => {
+      const { data } = await getData<TScanEvent[]>("/scanning/events");
+      return data?.data ?? [];
+    },
+    enabled,
+  });
+
 export const useScanSummary = (eventId?: string) =>
   useQuery({
     queryKey: scanSummaryKey(eventId),

@@ -21,7 +21,7 @@ const COLUMNS = [
   {
     title: "Organisers",
     links: [
-      { label: "Host an event", href: ROUTES.SIGNUP.href },
+      { label: "Host an event", href: ROUTES.VENDOR_LOGIN.href },
       { label: "Log in", href: ROUTES.LOGIN.href },
       { label: "FAQs", href: ROUTES.FAQS.href },
     ],

@@ -38,6 +38,17 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Login",
     href: "/auth",
   },
+  // The two doors /auth offers: same account, different start (see lib/auth-intent).
+  ATTENDEE_LOGIN: {
+    shouldShowIn: [],
+    label: "Attendee sign-in",
+    href: "/auth/attendee",
+  },
+  VENDOR_LOGIN: {
+    shouldShowIn: [],
+    label: "Organiser sign-in",
+    href: "/auth/vendor",
+  },
   OTP: {
     shouldShowIn: [],
     label: "OTP Verification",

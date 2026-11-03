@@ -43,7 +43,7 @@ const COMPANY_PATHS = [
 export const domainFor = (pathname: string): "company" | "app" => {
   if (pathname === "/" || isAdminPath(pathname)) return "company";
   // The admin sign-in links to it, so admins reset on their own domain too.
-  if (pathname === "/auth/forgot-password") return "company";
+  if (pathname === "/auth/forgot-password" || pathname === "/auth/otp") return "company";
   return COMPANY_PATHS.some((base) => isWithin(pathname, base)) ? "company" : "app";
 };
 
@@ -53,6 +53,7 @@ export const domainFor = (pathname: string): "company" | "app" => {
  */
 export const isOnBoth = (pathname: string) =>
   pathname === "/auth/forgot-password" ||
+  pathname === "/auth/otp" ||
   isWithin(pathname, "/app/profile") ||
   pathname === "/app/settings";
 

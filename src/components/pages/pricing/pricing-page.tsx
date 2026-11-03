@@ -31,14 +31,14 @@ const PLANS = [
     price: "₦0",
     unit: "always",
     body: "Running a free event? It costs nothing, however many people you let in.",
-    cta: { label: "List a free event", href: ROUTES.SIGNUP.href },
+    cta: { label: "List a free event", href: ROUTES.VENDOR_LOGIN.href },
   },
   {
     name: "Paid events",
     price: FEE_LABEL,
     unit: "per ticket sold",
     body: "Only pay when you sell: it comes off each ticket, and your share is paid straight to your bank.",
-    cta: { label: "Start selling", href: ROUTES.SIGNUP.href },
+    cta: { label: "Start selling", href: ROUTES.VENDOR_LOGIN.href },
     featured: true,
   },
   {

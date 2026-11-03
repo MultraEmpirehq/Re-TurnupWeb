@@ -40,6 +40,7 @@ import { constructErrorMessage } from "@/api/functions";
 import { saveCustomCategory } from "@/lib/custom-event-options";
 import { toast } from "sonner";
 import { useMarketOptions } from "@/hooks/use-markets";
+import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status";
 
 export interface IBasicFormValues {
   coverImage: File | string | null;
@@ -116,9 +117,9 @@ export const basicInformationSchema = Joi.object({
     "string.empty": "Event name is required",
     "any.required": "Event name is required",
   }),
-  organizerName: Joi.string().required().messages({
-    "string.empty": "Organizer name is required",
-    "any.required": "Organizer name is required",
+  // Optional for vendors: left blank, the api uses their organiser name.
+  organizerName: Joi.string().allow("").max(80).messages({
+    "string.max": "Keep it under 80 characters",
   }),
   eventDate: Joi.date().required().messages({
     "date.empty": "Event date is required",
@@ -214,6 +215,13 @@ const BasicForm: React.FC<{
     getValues,
     formState: { errors, isValid, isSubmitting },
   } = useFormContext<IBasicFormValues>();
+  // A new event starts with the name they host under; they can change it here.
+  const { organiserName } = useVendorVerificationStatus();
+  useEffect(() => {
+    if (organiserName && !getValues("organizerName")) {
+      setValue("organizerName", organiserName, { shouldValidate: true });
+    }
+  }, [organiserName, getValues, setValue]);
   const eventDate = watch("eventDate");
   const isMultiDay = watch("isMultiDay");
   const coverImage = watch("coverImage");
@@ -474,10 +482,10 @@ const BasicForm: React.FC<{
         />
 
         <InputField
-          label="Organized By"
-          required={true}
-          placeholder="Turnupz Nigeria Ltd"
+          label="Organised by"
+          placeholder={organiserName || "Your organiser name"}
           error={errors?.organizerName?.message}
+          helperText="Starts as your organiser name. Change it for this event, e.g. when you co-host."
           {...register("organizerName")}
         />
 

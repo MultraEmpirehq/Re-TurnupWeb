@@ -148,6 +148,7 @@ export type VendorVerificationApiResponse = SavedPayoutDigits & {
   signUpCap?: number | null;
   approvalLevel?: string | null;
   vendorType?: VendorType | null;
+  organiserName?: string | null;
   legalFirstName?: string | null;
   legalLastName?: string | null;
   dateOfBirth?: string | null;
@@ -180,6 +181,8 @@ export interface VerificationFormValues {
   /** Blank until they choose. */
   plan: VendorPlan | "";
   vendorType: VendorType;
+  /** What attendees see as "Organised by"; new events start with it. */
+  organiserName: string;
   legalFirstName: string;
   legalLastName: string;
   dateOfBirth?: Date;
@@ -213,6 +216,7 @@ export interface VerificationFormValues {
 export const DEFAULT_VALUES: VerificationFormValues = {
   plan: "",
   vendorType: "individual",
+  organiserName: "",
   legalFirstName: "",
   legalLastName: "",
   dateOfBirth: undefined,
@@ -262,6 +266,7 @@ export const formFromApi = (
     ...DEFAULT_VALUES,
     plan: data.plan ?? "",
     vendorType: data.vendorType ?? "individual",
+    organiserName: data.organiserName ?? "",
     legalFirstName: data.legalFirstName ?? "",
     legalLastName: data.legalLastName ?? "",
     dateOfBirth:
@@ -292,7 +297,7 @@ export const formFromApi = (
 
 /** Which fields each step sends, as the API names them. */
 export const STEP_FIELDS: Record<VerificationStepKey, (keyof ApiPayload)[]> = {
-  vendorType: ["plan", "vendorType"],
+  vendorType: ["plan", "vendorType", "organiserName"],
   identity: [
     "legalFirstName",
     "legalLastName",
@@ -333,6 +338,7 @@ export const STEP_FIELDS: Record<VerificationStepKey, (keyof ApiPayload)[]> = {
 export interface ApiPayload {
   plan?: VendorPlan;
   vendorType?: VendorType;
+  organiserName?: string;
   legalFirstName?: string;
   legalLastName?: string;
   dateOfBirth?: string;
@@ -382,6 +388,7 @@ export const toApiPayload = (
   const payload: ApiPayload = {
     plan: values.plan || undefined,
     vendorType: values.vendorType,
+    organiserName: clean(values.organiserName),
     legalFirstName: clean(values.legalFirstName),
     legalLastName: clean(values.legalLastName),
     dateOfBirth: values.dateOfBirth
