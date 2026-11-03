@@ -70,7 +70,7 @@ export interface BackendChatMessage {
   attachmentDetails?: { id: string | null; url: string; type: string } | null;
   assetName?: string;
   href?: string;
-  reactions?: Array<{ reaction: string; count: number }>;
+  reactions?: Array<{ reaction: string; count: number; mine?: boolean }>;
   hiddenByVendor?: boolean;
   createdAt: string;
   metadata?: Record<string, unknown>;
@@ -195,6 +195,7 @@ export const mapBackendMessage = (
     emoji: reaction.reaction,
     count: reaction.count,
     reactedBy: [],
+    mine: !!reaction.mine,
   })),
   hiddenByVendor: !!message.hiddenByVendor,
   sharedEvent: isSharedEvent(message.metadata?.sharedEvent)
@@ -368,23 +369,43 @@ export const useMuteEventChat = () => {
 
 export const useReactToEventChatMessage = () => {
   const queryClient = useQueryClient();
+  type TVars = { groupId: string; messageId: string; reaction: string };
   return useMutation({
-    mutationFn: async ({
-      groupId,
-      messageId,
-      reaction,
-    }: {
-      groupId: string;
-      messageId: string;
-      reaction: string;
-    }) => {
+    mutationFn: async ({ groupId, messageId, reaction }: TVars) => {
       await postData<{ reaction: string }, unknown>(
         `/event-chat/${groupId}/messages/${messageId}/reactions`,
         { reaction },
       );
     },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({
+    // Shown straight away: your reaction goes on (or comes off) before the
+    // server answers, and is put back if it says no.
+    onMutate: async ({ groupId, messageId, reaction }: TVars) => {
+      const key = ["event-chat-messages", groupId];
+      await queryClient.cancelQueries({ queryKey: key });
+      const before = queryClient.getQueryData<IEventChatMessage[]>(key);
+      queryClient.setQueryData<IEventChatMessage[]>(key, (messages) =>
+        messages?.map((message) => {
+          if (message.id !== messageId) return message;
+          const reactions = [...(message.reactions ?? [])];
+          const at = reactions.findIndex((item) => item.emoji === reaction);
+          if (at === -1) {
+            reactions.push({ emoji: reaction, count: 1, reactedBy: [], mine: true });
+          } else {
+            const current = reactions[at];
+            const count = current.count + (current.mine ? -1 : 1);
+            if (count <= 0) reactions.splice(at, 1);
+            else reactions[at] = { ...current, count, mine: !current.mine };
+          }
+          return { ...message, reactions };
+        }),
+      );
+      return { before, key };
+    },
+    onError: (_error, _vars, context) => {
+      if (context?.before) queryClient.setQueryData(context.key, context.before);
+    },
+    onSettled: (_data, _error, variables) => {
+      void queryClient.invalidateQueries({
         queryKey: ["event-chat-messages", variables.groupId],
       });
     },

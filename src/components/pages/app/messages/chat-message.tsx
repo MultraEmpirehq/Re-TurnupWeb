@@ -149,7 +149,7 @@ const ChatMessage: React.FC<{
           onClick={() => onReact(message.id, reaction.emoji)}
           className={cn(
             "rounded-full border px-2 py-0.5 text-xs",
-            myId && reaction.reactedBy.includes(myId)
+            reaction.mine || (myId && reaction.reactedBy.includes(myId))
               ? "border-primary/30 bg-primary/10 text-secondary-800"
               : "border-secondary-100 bg-white text-secondary-600",
           )}
