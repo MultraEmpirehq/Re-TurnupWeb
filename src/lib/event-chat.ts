@@ -21,6 +21,8 @@ export interface IEventChatReaction {
   emoji: string;
   count: number;
   reactedBy: string[];
+  /** The signed-in person reacted with it. */
+  mine?: boolean;
 }
 
 export interface IEventChatMessage {
