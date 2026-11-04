@@ -5,7 +5,8 @@ import { cn } from "@/lib/utils";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/variables";
-import useUserStore from "@/stores/user-store";
+import useUserStore, { EUserRoles } from "@/stores/user-store";
+import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { Loader2, MessageCircle } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { memo, useState } from "react";
@@ -23,8 +24,12 @@ const MessageOrganiserButton: React.FC<{
   const router = useRouter();
   const pathname = usePathname();
   const isSignedIn = !!useUserStore((state) => state.userDetails);
+  const isAdmin = useUserStore((state) => state.userDetails?.role === EUserRoles.ADMIN);
+  // Admins only with "Contact organisers" (the api checks it too).
+  const { has, isLoading } = useAdminPermissions();
   const [opening, setOpening] = useState(false);
   if (isOwner) return null;
+  if (isAdmin && (isLoading || !has("ORGANISERS_CONTACT"))) return null;
 
   const open = async () => {
     if (!isSignedIn) {

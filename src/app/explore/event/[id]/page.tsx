@@ -28,11 +28,18 @@ import FollowButton from "@/components/discovery/follow-button";
 import MessageOrganiserButton from "@/components/pages/explore/event-detail/message-organiser-button";
 import Link from "next/link";
 import { ROUTES } from "@/lib/variables";
-import { eventShareUrl, rememberArrival, rememberShareRef } from "@/lib/share-ref";
+import {
+  eventShareUrl,
+  rememberArrival,
+  rememberShareRef,
+} from "@/lib/share-ref";
 import { postData } from "@/api";
-import useUserStore from "@/stores/user-store";
+import useUserStore, { EUserRoles } from "@/stores/user-store";
 import ExploreBackLink from "@/components/pages/explore/explore-back-link";
-import { BlogPostsBoard, SponsorsBoard } from "@/components/pages/app/vendor-event-view";
+import {
+  BlogPostsBoard,
+  SponsorsBoard,
+} from "@/components/pages/app/vendor-event-view";
 
 const EventDetails = () => {
   const params = useParams();
@@ -58,6 +65,11 @@ const EventDetails = () => {
   }, [id]);
   // Shared on, it carries their own username so a purchase earns them credit.
   const myUsername = useUserStore((state) => state.userDetails?.username);
+  // The Turnupz team can't buy, follow, message, save or report (the api
+  // refuses), so those aren't offered; they manage the event instead.
+  const isAdmin = useUserStore(
+    (state) => state.userDetails?.role === EUserRoles.ADMIN,
+  );
   const shareUrl =
     typeof window !== "undefined" ? eventShareUrl(id, myUsername) : "";
   const handleShare = useCallback(async () => {
@@ -149,6 +161,11 @@ const EventDetails = () => {
         ticketUrl={data?.ticketUrl}
         onShare={handleShare}
         copied={copied}
+        cta={
+          isAdmin
+            ? { label: "Manage in admin", href: `/app/admin/events/${id}` }
+            : undefined
+        }
         byline={
           data?.organizerId ? (
             // Quiet, under the name, so Book Now stays the one thing to press.
@@ -162,6 +179,7 @@ const EventDetails = () => {
                   {data.organizerName || "the organiser"}
                 </Link>
               </p>
+              {/* Follow hides itself for admins; they can still message the organiser. */}
               <span className="flex items-center gap-1.5">
                 <FollowButton
                   type="PLANNER"
@@ -196,7 +214,6 @@ const EventDetails = () => {
 
       {data?.venue && <EventDetailLocation venue={data.venue} />}
 
-
       {hasDescription && (
         <EventDetailDescription
           description={data?.description}
@@ -228,14 +245,16 @@ const EventDetails = () => {
         fallbackImage={coverImageUrl || undefined}
       />
 
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t pt-6">
-        <HideEventButton eventId={id} isOwner={data?.isOwner} />
-        <ReportEventButton
-          eventId={id}
-          eventName={data?.name}
-          isOwner={data?.isOwner}
-        />
-      </div>
+      {!isAdmin && (
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t pt-6">
+          <HideEventButton eventId={id} isOwner={data?.isOwner} />
+          <ReportEventButton
+            eventId={id}
+            eventName={data?.name}
+            isOwner={data?.isOwner}
+          />
+        </div>
+      )}
     </SectionContainer>
   );
 };

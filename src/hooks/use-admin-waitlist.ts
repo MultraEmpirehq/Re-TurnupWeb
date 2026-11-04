@@ -3,13 +3,27 @@
 import { getData } from "@/api";
 import { useQuery } from "@tanstack/react-query";
 
+export type TWaitlistRole = "attendee" | "organiser" | "both";
+
 export type TWaitlistSignup = {
   id: string;
   email: string;
   name: string | null;
-  interest: "attendee" | "organiser" | null;
+  interest: TWaitlistRole | null;
+  role: TWaitlistRole | null;
   city: string | null;
+  country: string | null;
+  countryCode: string | null;
   source: string | null;
+  /** Set once they opened the link in the confirmation email. */
+  emailConfirmedAt: string | null;
+  termsAcceptedAt: string | null;
+  privacyNoticeVersion: string | null;
+  launchEmails: boolean;
+  marketingConsent: boolean;
+  newsletterConsent: boolean;
+  researchConsent: boolean;
+  personalizationConsent: boolean;
   createdAt: string;
 };
 
@@ -18,7 +32,7 @@ export type TWaitlistPage = {
   matching: number;
   page: number;
   limit: number;
-  totals: { total: number; lastWeek: number; organisers: number };
+  totals: { total: number; lastWeek: number; organisers: number; confirmed?: number };
 };
 
 export const WAITLIST_PAGE_SIZE = 50;

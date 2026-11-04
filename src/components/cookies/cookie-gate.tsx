@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import SiteLink from "@/components/ui/site-link";
 import { getVisitorCountingConsent, setVisitorCountingConsent } from "@/lib/visitor-id";
 import { CONSENT_PARAM } from "@/lib/domains";
-import { Cookie } from "lucide-react";
+import { X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import React, { memo, useEffect, useState } from "react";
 
@@ -66,73 +66,115 @@ const CookieGate = () => {
     setCustomising(false);
   };
 
+  const primary =
+    "h-11 flex-1 rounded-lg bg-primary text-sm font-bold tracking-wide text-white uppercase hover:bg-primary/90";
+
   const panel = (
     <div
       role="dialog"
       aria-modal={blocking}
       aria-labelledby="cookie-choice-title"
-      className="pointer-events-auto mx-auto w-full max-w-3xl rounded-2xl bg-secondary-950 px-4 py-3.5 text-white shadow-[0_18px_50px_rgba(1,12,25,0.35)] sm:px-5"
+      className="pointer-events-auto mx-auto flex max-h-[min(78vh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-secondary-950 text-white shadow-[0_24px_60px_rgba(1,12,25,0.45)] ring-1 ring-white/10"
     >
+      <div className="flex items-center justify-between gap-4 px-5 pt-5 sm:px-6">
+        <h2 id="cookie-choice-title" className="text-base font-bold tracking-[0.12em] uppercase">
+          {customising ? "Cookie settings" : "Cookie notice"}
+        </h2>
+        <button
+          type="button"
+          onClick={() => choose(false)}
+          aria-label="Close and use essential cookies only"
+          className="rounded-full p-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <X className="size-5" aria-hidden />
+        </button>
+      </div>
+
       {!customising ? (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <Cookie className="size-5 shrink-0 text-primary-300" aria-hidden />
-            <p id="cookie-choice-title" className="text-sm leading-5 text-white/85">
-              We use cookies to keep you signed in, and count visits if you allow it. No ads.{" "}
-              <SiteLink href="/cookie-policy" className="font-semibold text-white underline underline-offset-2">
-                Learn more
-              </SiteLink>
-            </p>
+        <div className="space-y-5 px-5 pt-3 pb-5 sm:px-6">
+          <p className="text-sm leading-6 text-white/80">
+            We use cookies to keep you signed in and the site working. With your OK we
+            also count visits, anonymously, to see what&apos;s working. No ads, and nothing
+            sold to anyone. You can change this any time in Cookie settings, and read more
+            in our{" "}
+            <SiteLink href="/cookie-policy" className="font-semibold text-white underline underline-offset-2">
+              Cookie Policy
+            </SiteLink>
+            .
+          </p>
+          <div className="flex gap-3">
+            <Button className={primary} onClick={() => choose(true)}>
+              Accept all
+            </Button>
+            <Button className={primary} onClick={() => choose(false)}>
+              Reject all
+            </Button>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="text-center">
             <button
               type="button"
               onClick={() => setCustomising(true)}
-              className="px-2 text-sm font-semibold text-white/70 hover:text-white"
+              className="text-sm font-semibold tracking-wide text-white uppercase underline underline-offset-4 hover:text-white/80"
             >
-              Manage
+              Cookie settings
             </button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="flex-1 rounded-full border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white sm:flex-none"
-              onClick={() => choose(false)}
-            >
-              Essential only
-            </Button>
-            <Button size="sm" className="flex-1 rounded-full px-5 sm:flex-none" onClick={() => choose(true)}>
-              Accept
-            </Button>
           </div>
         </div>
       ) : (
-        <div className="space-y-3">
-          <p id="cookie-choice-title" className="text-sm font-semibold">Cookie settings</p>
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <span>
-              Essential <span className="text-white/55">· sign-in and checkout</span>
-            </span>
-            <span className="text-xs font-semibold text-white/55">Always on</span>
+        <>
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 pt-3 pb-4 text-sm leading-6 text-white/80 sm:px-6">
+            <p>
+              Cookies are small files a site keeps in your browser. Some are needed for
+              Turnupz to work; the one below is your choice. Blocking the essential ones in
+              your browser stops sign-in from working.
+            </p>
+            <div className="rounded-xl border border-white/10 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <p className="font-semibold text-white">Essential</p>
+                <span className="text-xs font-semibold text-white/55">Always on</span>
+              </div>
+              <p className="mt-1 text-white/65">
+                Keep you signed in, remember your settings and keep checkout secure.
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/10 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <label htmlFor="cookie-counting" className="font-semibold text-white">
+                  Visitor counting
+                </label>
+                <Switch id="cookie-counting" checked={counting} onCheckedChange={setCounting} />
+              </div>
+              <p className="mt-1 text-white/65">
+                A random number, not your name, so we can count visits and see which pages
+                help. Never used for ads.
+              </p>
+            </div>
+            <SiteLink href="/cookie-policy" className="inline-block font-semibold text-white underline underline-offset-2">
+              Read the Cookie Policy
+            </SiteLink>
           </div>
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <span>
-              Visitor counting <span className="text-white/55">· anonymous</span>
-            </span>
-            <Switch checked={counting} onCheckedChange={setCounting} aria-label="Visitor counting" />
-          </div>
-          <div className="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => setCustomising(false)}
-              className="px-2 text-sm font-semibold text-white/70 hover:text-white"
-            >
-              Back
-            </button>
-            <Button size="sm" className="rounded-full px-5" onClick={() => choose(counting)}>
-              Save
+          <div className="space-y-2.5 border-t border-white/10 px-5 py-4 sm:px-6">
+            <Button className={`${primary} w-full`} onClick={() => choose(true)}>
+              Allow all
             </Button>
+            <div className="flex gap-2.5">
+              <Button
+                variant="outline"
+                className="h-11 flex-1 rounded-lg border-white/25 bg-transparent text-sm font-bold tracking-wide text-white uppercase hover:bg-white/10 hover:text-white"
+                onClick={() => choose(false)}
+              >
+                Reject all
+              </Button>
+              <Button
+                variant="outline"
+                className="h-11 flex-1 rounded-lg border-white/25 bg-transparent text-sm font-bold tracking-wide text-white uppercase hover:bg-white/10 hover:text-white"
+                onClick={() => choose(counting)}
+              >
+                Save choices
+              </Button>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

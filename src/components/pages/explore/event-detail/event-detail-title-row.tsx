@@ -17,6 +17,8 @@ interface EventDetailTitleRowProps {
   byline?: React.ReactNode;
   /** Message and follow the organiser, beside the booking button. */
   actions?: React.ReactNode;
+  /** In place of booking, e.g. "Manage in admin" for the Turnupz team. */
+  cta?: { label: string; href: string };
 }
 
 const EventDetailTitleRow = ({
@@ -28,6 +30,7 @@ const EventDetailTitleRow = ({
   copied,
   byline,
   actions,
+  cta,
 }: EventDetailTitleRowProps) => {
   const isExternal = saleMethod === "external_link" || !!ticketUrl;
   const href =
@@ -63,7 +66,9 @@ const EventDetailTitleRow = ({
           asChild
           className="shrink-0 gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
         >
-          {isExternal && ticketUrl ? (
+          {cta ? (
+            <Link href={cta.href}>{cta.label}</Link>
+          ) : isExternal && ticketUrl ? (
             <a href={href} target="_blank" rel="noopener noreferrer">
               {label}
               <ExternalLink className="size-4" aria-hidden />

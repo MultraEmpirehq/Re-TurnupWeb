@@ -6,7 +6,7 @@ import { useFollows, useToggleFollow } from "@/hooks/use-discovery";
 import { TFollowTargetType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/variables";
-import useUserStore from "@/stores/user-store";
+import useUserStore, { EUserRoles } from "@/stores/user-store";
 import { Check, Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { memo } from "react";
@@ -25,9 +25,11 @@ const FollowButton: React.FC<{
   const router = useRouter();
   const pathname = usePathname();
   const isSignedIn = !!useUserStore((state) => state.userDetails);
+  // Staff accounts can't follow (the api refuses), so it isn't offered.
+  const isAdmin = useUserStore((state) => state.userDetails?.role === EUserRoles.ADMIN);
   const follows = useFollows();
   const toggle = useToggleFollow();
-  if (!id) return null;
+  if (!id || isAdmin) return null;
 
   const isFollowing = !!follows.data?.some(
     (item) => item.targetType === type && item.targetId === id,

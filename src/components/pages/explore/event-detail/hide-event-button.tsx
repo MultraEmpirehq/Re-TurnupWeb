@@ -2,7 +2,7 @@
 
 import { constructErrorMessage } from "@/api/functions";
 import { useHiddenEventIds, useToggleHiddenEvent } from "@/hooks/use-discovery";
-import useUserStore from "@/stores/user-store";
+import useUserStore, { EUserRoles } from "@/stores/user-store";
 import { Eye, EyeOff } from "lucide-react";
 import React, { memo } from "react";
 import { toast } from "sonner";
@@ -16,9 +16,11 @@ const HideEventButton: React.FC<{ eventId: string; isOwner?: boolean }> = ({
   isOwner,
 }) => {
   const isSignedIn = !!useUserStore((state) => state.userDetails);
+  // Staff accounts can't hide events from their own feed (the api refuses).
+  const isAdmin = useUserStore((state) => state.userDetails?.role === EUserRoles.ADMIN);
   const { data: hiddenIds = [] } = useHiddenEventIds();
   const toggle = useToggleHiddenEvent();
-  if (!isSignedIn || isOwner) return null;
+  if (!isSignedIn || isOwner || isAdmin) return null;
   const isHidden = hiddenIds.includes(eventId);
 
   const handleClick = async () => {

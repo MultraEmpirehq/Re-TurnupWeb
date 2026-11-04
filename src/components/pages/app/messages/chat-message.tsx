@@ -59,6 +59,8 @@ const ChatMessage: React.FC<{
   mine: boolean;
   seen: boolean;
   isOrganiser: boolean;
+  /** The Turnupz team moderating: can hide messages (pinning stays the organiser's). */
+  isModerator?: boolean;
   isPinned: boolean;
   myId?: string;
   onReact: (messageId: string, emoji: string) => void;
@@ -70,6 +72,7 @@ const ChatMessage: React.FC<{
   mine,
   seen,
   isOrganiser,
+  isModerator,
   isPinned,
   myId,
   onReact,
@@ -109,21 +112,23 @@ const ChatMessage: React.FC<{
           {emoji}
         </button>
       ))}
-      {isOrganiser && isGroup && (
+      {(isOrganiser || isModerator) && isGroup && (
         <>
-          <button
-            type="button"
-            onClick={() => onTogglePin(message.id)}
-            aria-label={isPinned ? "Unpin" : "Pin to the top"}
-            title={isPinned ? "Unpin" : "Pin to the top"}
-            className="flex size-7 items-center justify-center rounded-full border border-secondary-100 bg-white text-secondary-500 hover:text-secondary-900"
-          >
-            {isPinned ? (
-              <PinOffIcon className="size-3.5" />
-            ) : (
-              <PinIcon className="size-3.5" />
-            )}
-          </button>
+          {isOrganiser && (
+            <button
+              type="button"
+              onClick={() => onTogglePin(message.id)}
+              aria-label={isPinned ? "Unpin" : "Pin to the top"}
+              title={isPinned ? "Unpin" : "Pin to the top"}
+              className="flex size-7 items-center justify-center rounded-full border border-secondary-100 bg-white text-secondary-500 hover:text-secondary-900"
+            >
+              {isPinned ? (
+                <PinOffIcon className="size-3.5" />
+              ) : (
+                <PinIcon className="size-3.5" />
+              )}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onHide(message.id)}

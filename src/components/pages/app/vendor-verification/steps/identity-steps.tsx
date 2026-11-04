@@ -6,6 +6,7 @@ import InputField from "@/components/ui/input-field";
 import TextareaField from "@/components/ui/textarea-field";
 import { earliestBirthDate, latestAdultBirthDate } from "@/lib/age";
 import { useMarketOptions } from "@/hooks/use-markets";
+import { Country } from "country-state-city";
 import { BadgeCheck, Building2, Info, Ticket, UserRound } from "lucide-react";
 import useUserStore from "@/stores/user-store";
 import React, { useEffect } from "react";
@@ -154,14 +155,44 @@ export const IdentityStep: React.FC<{ free?: boolean }> = ({ free }) => {
   const {
     control,
     register,
+    getValues,
+    setValue,
     formState: { errors },
   } = useFormContext<VerificationFormValues>();
+
+  // What they already told us when they signed up, so it isn't asked twice.
+  // Only empty fields are filled, and each can still be changed (an ID may
+  // carry a fuller legal name than the profile).
+  const user = useUserStore((state) => state.userDetails);
+  useEffect(() => {
+    if (!user) return;
+    type TFillable = "legalFirstName" | "legalLastName" | "phoneNumber" | "countryOfResidence" | "dateOfBirth";
+    const fill = (key: TFillable, value: string | Date | undefined | null) => {
+      if (value && !getValues(key)) {
+        setValue(key, value as never, { shouldDirty: true });
+      }
+    };
+    fill("legalFirstName", user.firstName);
+    fill("legalLastName", user.lastName);
+    fill("phoneNumber", user.phone);
+    if (!free && user.dateOfBirth) fill("dateOfBirth", new Date(user.dateOfBirth));
+    // The profile keeps a country code or name; this form keeps the name of a
+    // country Turnupz is open in.
+    const countryName =
+      (user.countryCode && Country.getCountryByCode(user.countryCode)?.name) ||
+      (user.country && Country.getCountryByCode(user.country)?.name) ||
+      user.country;
+    if (countryName && COUNTRY_OPTIONS.some((option) => option.value === countryName)) {
+      fill("countryOfResidence", countryName);
+    }
+  }, [user, free, COUNTRY_OPTIONS, getValues, setValue]);
 
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
       <InputField
         label={free ? "First name" : "Legal first name"}
         placeholder={free ? "Your first name" : "As on your ID"}
+        helperText={free ? undefined : "Filled in from your profile. Change it if your ID shows it differently."}
         autoComplete="given-name"
         required
         {...register("legalFirstName")}

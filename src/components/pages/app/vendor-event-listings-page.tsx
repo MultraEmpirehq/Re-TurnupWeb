@@ -31,6 +31,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useFeatures } from "@/hooks/use-features";
+import { adminPathFor } from "@/lib/admin-routes";
+
+/**
+ * An admin's links stay in the admin console (on turnupz.com): the vendor
+ * pages are on turnupz.app, where the admin isn't signed in.
+ */
+const forViewer = (href: string, isAdmin: boolean) => {
+  if (!isAdmin) return href;
+  const [path, query] = href.split("?");
+  const mapped = adminPathFor(path) ?? path;
+  return query ? `${mapped}?${query}` : mapped;
+};
 
 /** The venue's name: from the directory, else as the organiser typed it. */
 const venueLabel = (event: IEventDetailsType) =>
@@ -124,11 +136,12 @@ const EventListingCard: React.FC<{
         ? "Upcoming"
         : "Past";
 
-  const editHref = isDraft
-    ? `/app/create?draftId=${event.id}`
-    : `/app/events/${event.id}/edit`;
+  const editHref = forViewer(
+    isDraft ? `/app/create?draftId=${event.id}` : `/app/events/${event.id}/edit`,
+    isAdmin,
+  );
 
-  const previewHref = `/app/events/${event.id}`;
+  const previewHref = forViewer(`/app/events/${event.id}`, isAdmin);
 
   return (
     <article className="overflow-hidden rounded-[1.35rem] border border-secondary-100 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition-transform hover:-translate-y-1 sm:rounded-[1.6rem]">
@@ -448,6 +461,9 @@ const ListingsPageSkeleton = () => {
 
 const VendorEventListingsPage = () => {
   const searchParams = useSearchParams();
+  const isAdminViewer = useUserStore(
+    (state) => state?.userDetails?.role === EUserRoles.ADMIN,
+  );
 
   const pageSearchQuery = searchParams.get("q")?.trim() ?? "";
 
@@ -741,14 +757,14 @@ const VendorEventListingsPage = () => {
               variant="outline"
               className="h-12 rounded-2xl border-secondary-200 px-5 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
             >
-              <Link href="/app">Back to Dashboard</Link>
+              <Link href={forViewer("/app", isAdminViewer)}>Back to Dashboard</Link>
             </Button>
 
             <Button
               asChild
               className="h-12 rounded-2xl bg-secondary-400 px-5 text-sm font-semibold text-white hover:bg-secondary-500"
             >
-              <Link href="/app/create">Create Event</Link>
+              <Link href={forViewer("/app/create", isAdminViewer)}>Create Event</Link>
             </Button>
           </div>
         </div>

@@ -7,7 +7,7 @@ import {
   MediaThumb,
   TMediaItem,
 } from "@/components/pages/explore/event-detail/event-detail-media";
-import { getData, patchData } from "@/api";
+import { getData, patchData, postData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import ErrorContainer from "@/components/ui/error-container";
@@ -24,9 +24,12 @@ import {
   sponsorShowsName,
   sponsorName,
 } from "@/lib/types";
-import { CalendarDays, Clock3, MapPin, PencilLine, Ticket } from "lucide-react";
+import { CalendarDays, Clock3, MapPin, MessagesSquare, PencilLine, Ticket } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { ROUTES } from "@/lib/variables";
+import { useAdminPermissions } from "@/hooks/use-admin-permissions";
+import MessageOrganiserButton from "@/components/pages/explore/event-detail/message-organiser-button";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { moneyLocale } from "@/lib/currency";
@@ -1074,10 +1077,47 @@ export const EventPreviewCard: React.FC<{
   );
 };
 
+/**
+ * For the Turnupz team on an event: open its group chat to moderate it (they
+ * post as the Turnupz team and can hide messages).
+ */
+const OpenEventChatButton: React.FC<{ eventId: string }> = ({ eventId }) => {
+  const router = useRouter();
+  const [opening, setOpening] = useState(false);
+  const open = async () => {
+    setOpening(true);
+    try {
+      const { data } = await postData<undefined, { id: string }>(
+        `/admin/events/${eventId}/chat/join`,
+      );
+      if (!data?.data?.id) throw new Error("No chat");
+      router.push(`${ROUTES.MESSAGES.href}?chat=${data.data.id}&about=${eventId}`);
+    } catch (failure) {
+      toast.error(
+        constructErrorMessage(failure as TApiErrorResponseType, "Couldn't open the event chat."),
+      );
+      setOpening(false);
+    }
+  };
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      loading={opening}
+      onClick={() => void open()}
+      className="h-11 rounded-2xl border-secondary-200 px-5 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
+    >
+      <MessagesSquare className="size-4" aria-hidden />
+      Open event chat
+    </Button>
+  );
+};
+
 const VendorEventView: React.FC<{ id: string }> = ({ id }) => {
   const { data, error, refetch, isLoading } = useEvent(id);
   // Admins open this from their console: links stay in the console.
   const inAdmin = !!usePathname()?.startsWith("/app/admin");
+  const { has } = useAdminPermissions();
 
   const bannerImage = useMemo(() => {
     if (!data) return "";
@@ -1139,6 +1179,16 @@ const VendorEventView: React.FC<{ id: string }> = ({ id }) => {
               {inAdmin ? "Back to all events" : "Back to Listings"}
             </Link>
           </Button>
+          {inAdmin && !data.isOwner && (
+            <>
+              {has("ORGANISERS_CONTACT") && <OpenEventChatButton eventId={data.id} />}
+              <MessageOrganiserButton
+                eventId={data.id}
+                isOwner={data.isOwner}
+                className="h-11 rounded-2xl border-secondary-200 px-5 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
+              />
+            </>
+          )}
           {data.isOwner && (
             <Button
               asChild
