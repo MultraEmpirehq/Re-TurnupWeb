@@ -100,7 +100,7 @@ const Credit = () => {
               <strong>Paying with credit is paused.</strong> People keep their balance; it can be spent once
               it&apos;s switched back on in{" "}
               <Link href="/app/admin/marketing/referrals" className="font-semibold underline underline-offset-2">
-                Growth → Referrals
+                Marketing → Referrals
               </Link>
               .
             </div>

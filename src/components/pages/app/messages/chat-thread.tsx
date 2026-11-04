@@ -12,6 +12,7 @@ import {
   useUploadEventChatAsset,
 } from "@/hooks/use-event-chat";
 import { IEventChatGroup } from "@/lib/event-chat";
+import useUserStore, { EUserRoles } from "@/stores/user-store";
 import { formatEventTime } from "@/lib/event-time";
 import { cn } from "@/lib/utils";
 import {
@@ -102,6 +103,8 @@ const ChatThread: React.FC<{
   const isGroup = kind === "EVENT_GROUP";
   const isOneToOne = kind === "DIRECT" || kind === "PERSON";
   const iAmOrganiser = kind !== "PERSON" && !!myId && chat.vendor.id === myId;
+  // The Turnupz team, moderating an event chat they opened from the console.
+  const isAdmin = useUserStore((state) => state.userDetails?.role === EUserRoles.ADMIN);
   const onlyOrganiser = isGroup && !!chat.announcementMode && !iAmOrganiser;
   const canPost = !chat.isClosed && !onlyOrganiser;
 
@@ -435,6 +438,7 @@ const ChatThread: React.FC<{
                   mine={messages[row.index].senderId === myId}
                   seen={seen && lastMine?.id === messages[row.index].id}
                   isOrganiser={iAmOrganiser}
+                  isModerator={isAdmin}
                   isPinned={messages[row.index].id === pinnedId}
                   onReact={(messageId, emoji) =>
                     react.mutate({

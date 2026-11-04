@@ -12,18 +12,18 @@ import {
   CalendarDays,
   ClipboardCheck,
   Flag,
-  Gift,
   Inbox,
   LucideIcon,
-  ScrollText,
+  TrendingUp,
   Undo2,
-  UserCog,
   Users,
 } from "lucide-react";
 import Link from "next/link";
 import React, { memo } from "react";
 
 const ADMIN = ROUTES.ADMIN_OVERVIEW.href;
+/** A short row: everything else is in the sidebar. */
+const MAX_LINKS = 4;
 const CARD = "var(--card)";
 const LINE = "var(--border)";
 const BLUE = "var(--primary)";
@@ -59,9 +59,9 @@ type TLink = {
 };
 
 /**
- * One click to the departments used most, each showing what's waiting there.
- * Only the ones this admin's permissions open are shown, and only their
- * counts are asked for.
+ * A few shortcuts: whatever has work waiting (with its count), then the pages
+ * used most, up to four. Only the ones this admin's permissions open are
+ * shown, and only their counts are asked for.
  */
 const QuickLinks = () => {
   const { has, isLoading } = useAdminPermissions();
@@ -103,7 +103,8 @@ const QuickLinks = () => {
       ).data?.data ?? { performers: 0, venues: 0, categories: 0 },
   });
 
-  const links: TLink[] = [
+  // Work waiting comes first, and only when there is some.
+  const queues: TLink[] = [
     {
       label: "Verifications",
       href: ROUTES.ADMIN_VERIFICATIONS.href,
@@ -113,7 +114,7 @@ const QuickLinks = () => {
       waitingLabel: "applications to review",
     },
     {
-      label: "Venues, categories & performers",
+      label: "Catalogue reviews",
       href: `${ADMIN}/events/catalogue`,
       icon: ClipboardCheck,
       permission: "CATALOGUE_MANAGE",
@@ -131,12 +132,6 @@ const QuickLinks = () => {
       waitingLabel: "open",
     },
     {
-      label: "Manage events",
-      href: `${ADMIN}/events`,
-      icon: CalendarDays,
-      permission: "EVENTS_MODERATE",
-    },
-    {
       label: "Inquiries",
       href: `${ADMIN}/support/inquiries`,
       icon: Inbox,
@@ -152,37 +147,38 @@ const QuickLinks = () => {
       waiting: failedRefunds,
       waitingLabel: "failed, to retry",
     },
+  ];
+  // Then the pages used most, to fill the row.
+  const everyday: TLink[] = [
+    {
+      label: "Revenue",
+      href: `${ADMIN}/finance/revenue`,
+      icon: TrendingUp,
+      permission: "FINANCE_VIEW",
+    },
+    {
+      label: "Manage events",
+      href: `${ADMIN}/events`,
+      icon: CalendarDays,
+      permission: "EVENTS_MODERATE",
+    },
     {
       label: "Users",
       href: ROUTES.ADMIN_USERS.href,
       icon: Users,
       permission: "USERS_VIEW",
     },
-    {
-      label: "Referrals",
-      href: `${ADMIN}/marketing/referrals`,
-      icon: Gift,
-      permission: "MARKETING_MANAGE",
-    },
-    {
-      label: "Admins",
-      href: `${ADMIN}/operations/admins`,
-      icon: UserCog,
-      permission: "ADMINS_MANAGE",
-    },
-    {
-      label: "Audit log",
-      href: `${ADMIN}/audit-log`,
-      icon: ScrollText,
-      permission: "AUDIT_VIEW",
-    },
-  ].filter((link) => can(link.permission as TAdminPermission)) as TLink[];
+  ];
+  const links = [
+    ...queues.filter((link) => can(link.permission) && !!link.waiting),
+    ...everyday.filter((link) => can(link.permission)),
+  ].slice(0, MAX_LINKS);
 
   if (!links.length) return null;
   return (
     <nav
       aria-label="Quick links"
-      className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5"
+      className="grid grid-cols-2 gap-2 lg:grid-cols-4"
     >
       {links.map((link) => {
         const Icon = link.icon;

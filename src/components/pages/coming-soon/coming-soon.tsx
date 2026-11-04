@@ -26,6 +26,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import React, { CSSProperties, memo, useEffect, useState } from "react";
 import styles from "./coming-soon.module.css";
+import SocialLinks from "@/components/ui/social-links";
 
 const PRIORITY_COUNTRY_CODES = ["CA", "GB", "NG", "US"];
 const COUNTRIES = Country.getAllCountries().sort((a, b) => {
@@ -67,7 +68,8 @@ const ComingSoon = () => {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState<"attendee" | "organiser" | "both">("attendee");
+  // Nothing chosen to start with, so everyone picks on purpose.
+  const [role, setRole] = useState<"attendee" | "organiser" | "both" | "">("");
   const [country, setCountry] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   // Hearing when it opens is the point of joining, so it starts ticked.
@@ -136,6 +138,10 @@ const ComingSoon = () => {
     const selectedCountry = COUNTRIES.find(
       (item) => item.name.toLocaleLowerCase() === country.trim().toLocaleLowerCase(),
     );
+    if (!role) {
+      setSubmitError("Choose whether you're here as an attendee, an organizer or both.");
+      return;
+    }
     if (!selectedCountry) {
       setSubmitError("Choose a country from the suggestions so we can record the correct country.");
       return;
@@ -387,6 +393,7 @@ const ComingSoon = () => {
                                 value={value}
                                 checked={role === value}
                                 onChange={() => setRole(value)}
+                                required
                                 className="peer sr-only"
                               />
                               <span>
@@ -481,6 +488,7 @@ const ComingSoon = () => {
             <div>
               <p className="font-semibold text-white">© {new Date().getFullYear()} TurnUpz</p>
               <p className="mt-1">Turnupz Inc operates TurnUpz.</p>
+              <SocialLinks className="mt-3" />
             </div>
             <nav aria-label="Footer links" className="flex flex-wrap gap-x-5 gap-y-3">
               <a className="underline-offset-4 hover:text-white hover:underline" href="mailto:support@turnupz.com">Contact</a>

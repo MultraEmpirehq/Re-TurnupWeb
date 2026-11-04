@@ -171,7 +171,7 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
     ],
   },
   {
-    label: "Growth",
+    label: "Marketing",
     department: {
       icon: Megaphone,
       accentClassName: "bg-primary-50 text-primary-600",

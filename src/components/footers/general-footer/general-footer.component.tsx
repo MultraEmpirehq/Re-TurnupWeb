@@ -5,6 +5,7 @@ import { ROUTES } from "@/lib/variables";
 import Image from "next/image";
 import Link from "@/components/ui/site-link";
 import CookieSettingsButton from "@/components/cookies/cookie-settings-button";
+import SocialLinks from "@/components/ui/social-links";
 import React, { memo } from "react";
 
 // Only pages that exist. Add a link here once its page does.
@@ -59,6 +60,7 @@ const GeneralFooterComponent = () => (
           Made for your phone.
         </p>
         <StoreBadges tone="light" />
+        <SocialLinks />
       </div>
 
       <nav
