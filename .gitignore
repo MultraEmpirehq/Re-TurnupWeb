@@ -50,3 +50,6 @@ next-env.d.ts
 *.bak
 *.bak-*
 .tmp-*
+
+# Claude Code settings are per machine, not for the repo.
+.claude/
