@@ -8,7 +8,8 @@ import {
 } from "@/lib/event-notifications";
 import { useVendorNotifications } from "@/hooks/use-vendor-notifications";
 import { markNotificationsSeen } from "@/hooks/use-unread-notifications";
-import useUserStore from "@/stores/user-store";
+import useUserStore, { EUserRoles } from "@/stores/user-store";
+import { consoleHref } from "@/lib/admin-routes";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import React, { memo, useEffect, useMemo, useState } from "react";
@@ -27,6 +28,8 @@ const NotificationsPage = () => {
     [vendorNotificationsData],
   );
   const userId = useUserStore((state) => state.userDetails?.id);
+  // Admins' links stay in the console on turnupz.com, where they're signed in.
+  const isAdmin = useUserStore((state) => state.userDetails?.role === EUserRoles.ADMIN);
 
   // Being on this page means everything listed has been seen, including anything
   // that arrives while it's open, so the nav badge clears.
@@ -60,9 +63,9 @@ const NotificationsPage = () => {
           month: "short",
           day: "numeric",
         }).format(new Date(notification.createdAt)),
-        href: notification.href,
+        href: notification.href ? consoleHref(notification.href, isAdmin) : notification.href,
       })),
-    [eventNotifications, vendorNotifications],
+    [eventNotifications, vendorNotifications, isAdmin],
   );
 
   const filteredItems = useMemo(() => {
@@ -97,7 +100,7 @@ const NotificationsPage = () => {
           variant="outline"
           className="h-12 rounded-2xl border-secondary-200 px-5 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
         >
-          <Link href="/app">Back to Dashboard</Link>
+          <Link href={consoleHref("/app", isAdmin)}>Back to Dashboard</Link>
         </Button>
       </header>
 

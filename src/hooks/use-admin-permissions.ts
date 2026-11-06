@@ -181,13 +181,26 @@ const useAdminMutation = <TVariables>(
   });
 };
 
+/** A new admin account; their temporary password is emailed to them. */
 export const useAddAdmin = () =>
-  useAdminMutation((body: { email: string; permissions: TAdminPermission[] }) =>
-    postData("/admin/admins", {
-      ...body,
-      email: body.email.trim().toLowerCase(),
-    }),
+  useAdminMutation(
+    (body: {
+      email: string;
+      firstName: string;
+      lastName: string;
+      permissions: TAdminPermission[];
+    }) =>
+      postData("/admin/admins", {
+        ...body,
+        email: body.email.trim().toLowerCase(),
+        firstName: body.firstName.trim(),
+        lastName: body.lastName.trim(),
+      }),
   );
+
+/** Emails an admin a fresh temporary password and signs them out everywhere. */
+export const useResendTemporaryPassword = () =>
+  useAdminMutation((id: string) => postData(`/admin/admins/${id}/temporary-password`, {}));
 
 export const useUpdateAdminPermissions = () =>
   useAdminMutation(

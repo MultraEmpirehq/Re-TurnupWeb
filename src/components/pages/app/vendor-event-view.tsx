@@ -1087,8 +1087,9 @@ const OpenEventChatButton: React.FC<{ eventId: string }> = ({ eventId }) => {
   const open = async () => {
     setOpening(true);
     try {
-      const { data } = await postData<undefined, { id: string }>(
+      const { data } = await postData<Record<string, never>, { id: string }>(
         `/admin/events/${eventId}/chat/join`,
+        {},
       );
       if (!data?.data?.id) throw new Error("No chat");
       router.push(`${ROUTES.MESSAGES.href}?chat=${data.data.id}&about=${eventId}`);

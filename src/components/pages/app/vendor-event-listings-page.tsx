@@ -31,18 +31,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useFeatures } from "@/hooks/use-features";
-import { adminPathFor } from "@/lib/admin-routes";
-
-/**
- * An admin's links stay in the admin console (on turnupz.com): the vendor
- * pages are on turnupz.app, where the admin isn't signed in.
- */
-const forViewer = (href: string, isAdmin: boolean) => {
-  if (!isAdmin) return href;
-  const [path, query] = href.split("?");
-  const mapped = adminPathFor(path) ?? path;
-  return query ? `${mapped}?${query}` : mapped;
-};
+// An admin's links stay in the admin console (on turnupz.com): the vendor
+// pages are on turnupz.app, where the admin isn't signed in.
+import { consoleHref as forViewer } from "@/lib/admin-routes";
 
 /** The venue's name: from the directory, else as the organiser typed it. */
 const venueLabel = (event: IEventDetailsType) =>

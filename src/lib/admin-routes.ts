@@ -38,3 +38,15 @@ export const adminPathFor = (pathname: string): string | null => {
   // The vendor dashboard, analysis, wallet, tickets and the rest.
   return ADMIN;
 };
+
+/**
+ * `href` as an admin should open it: a vendor-area address becomes its admin
+ * equivalent (query kept), so admins stay in the console on turnupz.com.
+ * Anyone else gets `href` back unchanged.
+ */
+export const consoleHref = (href: string, isAdmin: boolean) => {
+  if (!isAdmin || !href.startsWith("/app")) return href;
+  const [path, query] = href.split("?");
+  const mapped = adminPathFor(path) ?? path;
+  return query ? `${mapped}?${query}` : mapped;
+};

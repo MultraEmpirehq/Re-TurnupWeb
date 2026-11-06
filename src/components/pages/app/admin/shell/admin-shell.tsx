@@ -10,8 +10,9 @@ import {
 import { ROUTES } from "@/lib/variables";
 import { LockKeyhole } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import React, { memo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import React, { memo, useEffect, useState } from "react";
+import useUserStore from "@/stores/user-store";
 import { adminPermissionFor, adminSectionLabel } from "./admin-nav";
 import AdminSidebar from "./admin-sidebar";
 import WorkspaceTopBar from "../../workspace-top-bar";
@@ -37,8 +38,17 @@ const NoAccess: React.FC<{ permissionLabel: string }> = ({
   </div>
 );
 
+export const ADMIN_CHANGE_PASSWORD_HREF = `${ROUTES.ADMIN_OVERVIEW.href}/change-password`;
+
 const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
+  const router = useRouter();
+  // On a temporary password, choosing their own comes before anything else.
+  const mustChangePassword = useUserStore((state) => !!state.userDetails?.mustChangePassword);
+  const onChangePage = pathname === ADMIN_CHANGE_PASSWORD_HREF;
+  useEffect(() => {
+    if (mustChangePassword && !onChangePage) router.replace(ADMIN_CHANGE_PASSWORD_HREF);
+  }, [mustChangePassword, onChangePage, router]);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const { has, isLoading: isLoadingPermissions } = useAdminPermissions();
   const requiredPermission = adminPermissionFor(pathname);
@@ -54,6 +64,14 @@ const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (navPathname !== pathname) {
     setNavPathname(pathname);
     setIsNavOpen(false);
+  }
+
+  if (mustChangePassword) {
+    return (
+      <div className="flex min-h-svh items-center justify-center bg-[linear-gradient(180deg,rgba(244,248,255,0.92)_0%,rgba(255,255,255,1)_30%)] px-4 py-10">
+        {onChangePage ? children : <BrandLoader />}
+      </div>
+    );
   }
 
   return (

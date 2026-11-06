@@ -44,6 +44,8 @@ export type TUserDetails = {
   profileImage?: string;
   profileImageDetails?: { id: string | null; url: string; type: string } | null;
   isAccountCreationCompleted?: boolean;
+  /** Signed in with a temporary password: they choose their own before anything else. */
+  mustChangePassword?: boolean;
 };
 
 type TStoreState = {

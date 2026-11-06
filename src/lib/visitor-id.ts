@@ -31,16 +31,64 @@ export const visitorId = () => {
   }
 };
 
+/**
+ * Bump when the cookie policy changes what's asked, so everyone is asked
+ * again. A choice also lapses after a year (the usual European practice).
+ */
+export const COOKIE_POLICY_VERSION = 1;
+const CHOICE_LIFETIME_MS = 365 * 24 * 60 * 60 * 1000;
+
+type TStoredChoice = { allowed: boolean; version: number; decidedAt: string };
+
+/** The browser's "don't track me" signal (Global Privacy Control). */
+const browserSaysNo = () =>
+  typeof navigator !== "undefined" &&
+  (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl === true;
+
+const readChoice = (): boolean | null => {
+  const saved = localStorage.getItem(CONSENT_KEY);
+  if (saved === null) return null;
+  // Before the date and version were kept: honour it, and keep it from now.
+  if (saved === "true" || saved === "false") {
+    writeChoice(saved === "true");
+    return saved === "true";
+  }
+  try {
+    const choice = JSON.parse(saved) as TStoredChoice;
+    const lapsed = Date.now() - new Date(choice.decidedAt).getTime() > CHOICE_LIFETIME_MS;
+    if (choice.version !== COOKIE_POLICY_VERSION || lapsed) return null;
+    return !!choice.allowed;
+  } catch {
+    return null;
+  }
+};
+
+const writeChoice = (allowed: boolean) => {
+  const choice: TStoredChoice = {
+    allowed,
+    version: COOKIE_POLICY_VERSION,
+    decidedAt: new Date().toISOString(),
+  };
+  localStorage.setItem(CONSENT_KEY, JSON.stringify(choice));
+};
+
+/**
+ * Whether visits may be counted: true, false, or null when they haven't been
+ * asked (or their answer lapsed). With no answer, a browser sending Global
+ * Privacy Control counts as "no", without asking; their own choice in Cookie
+ * settings still wins.
+ */
 export const getVisitorCountingConsent = () => {
   if (visitorCountingConsent !== null || typeof window === "undefined") {
     return visitorCountingConsent;
   }
+  let saved: boolean | null = null;
   try {
-    const saved = localStorage.getItem(CONSENT_KEY);
-    visitorCountingConsent = saved === null ? null : saved === "true";
+    saved = readChoice();
   } catch {
-    visitorCountingConsent = null;
+    saved = null;
   }
+  visitorCountingConsent = saved ?? (browserSaysNo() ? false : null);
   return visitorCountingConsent;
 };
 
@@ -48,7 +96,7 @@ export const setVisitorCountingConsent = (allowed: boolean) => {
   visitorCountingConsent = allowed;
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(CONSENT_KEY, String(allowed));
+    writeChoice(allowed);
     if (!allowed) {
       localStorage.removeItem(KEY);
       cached = null;

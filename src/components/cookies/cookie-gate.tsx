@@ -10,7 +10,7 @@ import { usePathname } from "next/navigation";
 import React, { memo, useEffect, useState } from "react";
 
 /** Readable before choosing, so people can see what they're agreeing to. */
-const READABLE_FIRST = ["/cookie-policy", "/privacy-policy", "/terms"];
+const READABLE_FIRST = ["/cookie-policy", "/privacy-policy", "/terms", "/unsubscribe"];
 
 /** Fired by "Cookie settings" links to ask again. */
 export const OPEN_COOKIE_CHOICE = "turnupz:cookie-choice";
