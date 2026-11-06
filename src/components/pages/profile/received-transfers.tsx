@@ -17,7 +17,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Inbox } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 /**
  * Tickets someone has sent you. Accepting moves it into My Tickets; declining

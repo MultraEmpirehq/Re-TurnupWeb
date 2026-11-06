@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import React, { memo, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { APPROVAL_LEVELS } from "./verification-utils";
 
 /** Common reasons, to start from (and edit) rather than type each time. */

@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Copy, Plus, Sparkles } from "lucide-react";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { ListSkeleton, PageHeading } from "../moderation/moderation-ui";
 import { REFERRAL_STATUS } from "./referrals";
 

@@ -20,7 +20,7 @@ import { format } from "date-fns";
 import { Search } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useDebounce } from "use-debounce";
 import { ListSkeleton } from "../moderation/moderation-ui";
 import { downloadCsv, FinanceHeader, money, Pill, PROVIDER_LABEL, useFinanceRange } from "./finance-ui";
@@ -64,6 +64,9 @@ const PaymentPanel: React.FC<{ row: IFinanceTransaction | null; currency: string
         ["Ticket value", money(row.gross, currency), true],
         ["Turnupz fee", money(row.fee, currency)],
         [`To ${row.organiser ?? "the organiser"}`, money(row.toOrganiser, currency), true],
+        ...(row.creditTopUp
+          ? ([["Of that, Turnupz sends them later", money(row.creditTopUp, currency), false]] as [string, string, boolean][])
+          : []),
         ...(row.refunded ? ([["Refunded", `−${money(row.refunded, currency)}`]] as [string, string][]) : []),
         ["Paid to", settledText(row)],
         ["Provider", row.provider ? PROVIDER_LABEL[row.provider] : "—"],
@@ -204,10 +207,10 @@ const Transactions = () => {
               className={cn(
                 "rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors",
                 active
-                  ? "border-secondary-800 bg-secondary-800 text-white"
+                  ? "border-secondary-800 bg-secondary-800 text-white dark:border-foreground dark:bg-foreground dark:text-background"
                   : filter.value === "held" && count
-                    ? "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
-                    : "border-border bg-card text-secondary-800 hover:bg-muted",
+                    ? "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                    : "border-border bg-card text-secondary-800 hover:bg-muted dark:text-foreground",
               )}
             >
               {filter.label}

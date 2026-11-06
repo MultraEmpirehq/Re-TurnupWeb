@@ -7,7 +7,7 @@ import Joi from "joi";
 import { TrashIcon, UploadIcon } from "lucide-react";
 import React, { memo, useCallback, useMemo } from "react";
 import { Controller, useFormContext } from "react-hook-form";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 export interface ICoverFormValues {
   coverImage: File | null;

@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
 import { AlertTriangle, Search, Undo2 } from "lucide-react";
 import React, { memo, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useDebounce } from "use-debounce";
 import {
   FilterTabs,
@@ -40,7 +40,7 @@ import {
 const STATUS_STYLE: Record<TRefundStatus, string> = {
   PROCESSING: "bg-secondary-50 text-secondary-700",
   COMPLETED: "bg-emerald-50 text-emerald-700",
-  FAILED: "bg-red-50 text-red-700",
+  FAILED: "bg-red-50 text-red-700 dark:text-red-300",
 };
 const STATUS_LABEL: Record<TRefundStatus, string> = {
   PROCESSING: "Processing",
@@ -317,7 +317,7 @@ const OrderRefundPanel: React.FC<{
           <p className="mb-2 font-medium">What happens</p>
           {preview.isLoading && <Skeleton className="h-20 w-full" />}
           {preview.error && (
-            <p className="text-red-700">
+            <p className="text-red-700 dark:text-red-300">
               {constructErrorMessage(
                 preview.error as TApiErrorResponseType,
                 "Couldn't work out this refund",
@@ -759,7 +759,7 @@ const RefundHistory = () => {
                       {STATUS_LABEL[refund.status]}
                     </span>
                     {refund.status === "FAILED" && refund.providerMessage && (
-                      <p className="mt-1 max-w-[180px] text-xs text-red-700">
+                      <p className="mt-1 max-w-[180px] text-xs text-red-700 dark:text-red-300">
                         {refund.providerMessage}
                       </p>
                     )}

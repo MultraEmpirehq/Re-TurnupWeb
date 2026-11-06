@@ -26,6 +26,10 @@ const SHARED = [
   /^\/app\/settings\/?$/,
 ];
 
+/** The account's own pages, which admins use as they are. */
+export const isSharedWithAdmins = (pathname: string) =>
+  pathname.startsWith("/app/profile") || SHARED.some((pattern) => pattern.test(pathname));
+
 /** Where an admin on `pathname` belongs, or null if they're already there. */
 export const adminPathFor = (pathname: string): string | null => {
   if (pathname === ADMIN || pathname.startsWith(`${ADMIN}/`)) return null;
@@ -45,7 +49,11 @@ export const adminPathFor = (pathname: string): string | null => {
  * Anyone else gets `href` back unchanged.
  */
 export const consoleHref = (href: string, isAdmin: boolean) => {
-  if (!isAdmin || !href.startsWith("/app")) return href;
+  if (!isAdmin) return href;
+  // Notifications sent before this address was corrected.
+  const oldVerification = href.match(/^\/admin\/vendor-verifications\/(.+)$/);
+  if (oldVerification) return `${ADMIN}/verifications/${oldVerification[1]}`;
+  if (!href.startsWith("/app")) return href;
   const [path, query] = href.split("?");
   const mapped = adminPathFor(path) ?? path;
   return query ? `${mapped}?${query}` : mapped;

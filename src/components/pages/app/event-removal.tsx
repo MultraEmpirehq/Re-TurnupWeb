@@ -16,7 +16,7 @@ import { IEventDetailsType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Archive, ArchiveRestore, Ban, Hourglass, Trash2 } from "lucide-react";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const people = (count: number) =>
   `${count.toLocaleString()} ${count === 1 ? "person holds a ticket" : "people hold tickets"}`;

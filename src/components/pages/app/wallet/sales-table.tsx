@@ -23,7 +23,7 @@ import { Amount } from "@/components/pages/app/wallet/amount";
 import { format, isToday, isYesterday } from "date-fns";
 import { Download } from "lucide-react";
 import React, { memo, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const when = (date: string) => {
   const day = new Date(date);

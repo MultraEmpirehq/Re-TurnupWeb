@@ -4,7 +4,13 @@ import { constructErrorMessage } from "@/api/functions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import EmptyContainer from "@/components/ui/empty-container";
 import ErrorContainer from "@/components/ui/error-container";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useAdminPermissions } from "@/hooks/use-admin-permissions";
+import { recordOrganiserPayout } from "@/hooks/use-tax";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "@/lib/toast";
 import { IFinanceOrganiser, TOrganiserFilter, useFinanceOrganisers } from "@/hooks/use-admin-finance";
 import { cn } from "@/lib/utils";
 import { Search } from "lucide-react";
@@ -47,6 +53,63 @@ const paidThrough = (row: IFinanceOrganiser) =>
         .join(" · ")
     : "Not set up";
 
+/** Records a transfer already made outside Turnupz. It doesn't send the money. */
+const RecordPayment: React.FC<{
+  organiser: IFinanceOrganiser | null;
+  currency: string;
+  onClose: () => void;
+}> = ({ organiser, currency, onClose }) => {
+  const queryClient = useQueryClient();
+  const [amount, setAmount] = useState("");
+  const [reference, setReference] = useState("");
+  const [saving, setSaving] = useState(false);
+  const save = async () => {
+    if (!organiser) return;
+    setSaving(true);
+    try {
+      await recordOrganiserPayout(organiser.vendorId, { currency, amount: Number(amount), reference });
+      await queryClient.invalidateQueries({ queryKey: ["admin-finance", "organisers"] });
+      toast.success("Recorded. It's off what Turnupz owes them.");
+      setAmount("");
+      setReference("");
+      onClose();
+    } catch (failure) {
+      toast.error(constructErrorMessage(failure as TApiErrorResponseType, "We couldn't record that payment"));
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <Dialog open={!!organiser} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Record a payment to {organiser?.name}</DialogTitle>
+          <DialogDescription>
+            Turnupz owes them {organiser ? money(organiser.owed, currency) : ""}. Send the money from the bank or the
+            payment provider first, then record it here. This doesn&apos;t move any money.
+          </DialogDescription>
+        </DialogHeader>
+        <label className="space-y-1 text-sm font-medium">
+          Amount sent ({currency})
+          <Input type="number" min="0" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} />
+        </label>
+        <label className="space-y-1 text-sm font-medium">
+          Transfer reference
+          <Input value={reference} onChange={(event) => setReference(event.target.value)} />
+        </label>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button onClick={save} disabled={saving || !(Number(amount) > 0) || reference.trim().length < 3}>
+            {saving ? "Saving…" : "Record payment"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 /** Who sells, what they earned, and whether they can be paid. */
 const Organisers = () => {
   const { range, currency } = useFinanceRange();
@@ -55,6 +118,9 @@ const Organisers = () => {
   const [q] = useDebounce(search.trim(), 300);
   const { data, isPending, error, refetch } = useFinanceOrganisers(range, { filter, q });
   const summary = data?.summary;
+  const { has } = useAdminPermissions();
+  const canRecord = has("FINANCE_MANAGE");
+  const [paying, setPaying] = useState<IFinanceOrganiser | null>(null);
 
   const exportCsv = () => {
     if (!data) return;
@@ -148,10 +214,10 @@ const Organisers = () => {
                     className={cn(
                       "rounded-full border px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors",
                       active
-                        ? "border-secondary-800 bg-secondary-800 text-white"
+                        ? "border-secondary-800 bg-secondary-800 text-white dark:border-foreground dark:bg-foreground dark:text-background"
                         : value === "attention" && count
-                          ? "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
-                          : "border-border bg-card text-secondary-800 hover:bg-muted",
+                          ? "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                          : "border-border bg-card text-secondary-800 hover:bg-muted dark:text-foreground",
                     )}
                   >
                     {label}
@@ -188,7 +254,7 @@ const Organisers = () => {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             <Avatar className="size-9">
-                              <AvatarFallback className="bg-secondary-50 text-xs font-semibold text-secondary-700">
+                              <AvatarFallback className="bg-secondary-50 text-xs font-semibold text-secondary-700 dark:bg-white/10 dark:text-foreground">
                                 {initials(row.name)}
                               </AvatarFallback>
                             </Avatar>
@@ -207,10 +273,19 @@ const Organisers = () => {
                         <td
                           className={cn(
                             "px-4 py-3 text-right tabular-nums",
-                            row.owed > 0 ? "font-semibold text-amber-700" : "text-muted-foreground",
+                            row.owed > 0 ? "font-semibold text-amber-700 dark:text-amber-300" : "text-muted-foreground",
                           )}
                         >
                           {money(row.owed, currency)}
+                          {canRecord && row.owed > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setPaying(row)}
+                              className="ml-2 text-xs font-semibold text-primary-700 underline-offset-2 dark:text-primary-300 hover:underline"
+                            >
+                              Record payment
+                            </button>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-right tabular-nums">{row.tickets.toLocaleString()}</td>
                         <td className="px-4 py-3">
@@ -225,6 +300,7 @@ const Organisers = () => {
           )}
         </>
       )}
+      <RecordPayment organiser={paying} currency={currency} onClose={() => setPaying(null)} />
     </div>
   );
 };

@@ -17,7 +17,9 @@ export type TAdminPermission =
   | "FINANCE_VIEW"
   | "MARKETING_MANAGE"
   | "TICKETS_SCAN"
-  | "ORGANISERS_CONTACT";
+  | "ORGANISERS_CONTACT"
+  | "FINANCE_MANAGE"
+  | "ANALYTICS_VIEW";
 
 /** Every permission, in the order the admin screens list them. */
 export const ADMIN_PERMISSIONS: {
@@ -88,6 +90,17 @@ export const ADMIN_PERMISSIONS: {
     label: "Contact organisers",
     description:
       "Message organisers and join event chats, posting as the Turnupz team. Speaks for Turnupz: give it only to people who should.",
+  },
+  {
+    value: "ANALYTICS_VIEW",
+    label: "View analytics",
+    description: "See audience, the sales funnel, how events did and where buyers come from, as totals. Read-only.",
+  },
+  {
+    value: "FINANCE_MANAGE",
+    label: "Manage tax and organiser payments",
+    description:
+      "Approve tax decisions (which changes what buyers pay), review organisers' tax details, and record money sent to organisers. Give it only to people you trust with that.",
   },
   {
     value: "REFUNDS_MANAGE",

@@ -25,7 +25,7 @@ import {
 import { useActiveWorkspace, TVendorPermission } from "@/stores/workspace-store";
 import { Loader2, Pencil, Trash2, UserPlus, UsersRound } from "lucide-react";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 type TDraft = { id?: string; email: string; permissions: TVendorPermission[] };
 

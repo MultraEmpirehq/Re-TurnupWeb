@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { ListSkeleton, NoteDialog, PageHeading } from "./moderation-ui";
 
 const errorText = (error: unknown, fallback: string) =>

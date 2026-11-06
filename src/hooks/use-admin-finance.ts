@@ -37,6 +37,7 @@ export interface IFinanceRevenue {
   byCountry: { currency: string; country: string; sales: number }[];
   topCities: { city: string; currency: string; sales: number }[];
   taxCollected: number | null;
+  taxByKind?: { label: string; amount: number }[];
 }
 
 export type TTransactionStatus =
@@ -63,6 +64,7 @@ export interface IFinanceTransaction {
   fee: number;
   credit: number;
   toOrganiser: number;
+  creditTopUp?: number;
   refunded: number;
   settledTo:
     | { kind: "direct"; provider: string; bankName: string | null; last4: string | null }

@@ -4,6 +4,7 @@ import DevicesCard from "@/components/account/devices-card";
 import NotificationPreferencesCard from "@/components/account/notification-preferences-card";
 import OrganiserNameCard from "@/components/account/organiser-name-card";
 import PrivacyCard from "@/components/account/privacy-card";
+import TaxDetailsCard from "@/components/account/tax-details-card";
 import ChangePasswordForm from "@/components/pages/profile/change-password-form";
 import { ROUTES } from "@/lib/variables";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
@@ -19,6 +20,8 @@ import React, { memo } from "react";
 const SettingsPage = () => {
   const role = useUserStore((state) => state.userDetails?.role);
   const isVendor = role === EUserRoles.VENDOR;
+  // Admins are staff: no attendee privacy or notification choices, just sign-in.
+  const isAdmin = role === EUserRoles.ADMIN;
 
   return (
     <div className="space-y-8 pb-20">
@@ -30,8 +33,9 @@ const SettingsPage = () => {
           Your account
         </h1>
         <p className="max-w-2xl text-secondary-500">
-          Choose what you&apos;re notified about and who can reach you, check
-          where you&apos;re signed in, and change your password.
+          {isAdmin
+            ? "Check where you're signed in and change your password."
+            : "Choose what you're notified about and who can reach you, check where you're signed in, and change your password."}
         </p>
       </div>
 
@@ -60,11 +64,13 @@ const SettingsPage = () => {
         </Link>
       )}
 
+      {isVendor && <TaxDetailsCard />}
+
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
           {isVendor && <OrganiserNameCard />}
-          <NotificationPreferencesCard />
-          <PrivacyCard />
+          {!isAdmin && <NotificationPreferencesCard />}
+          {!isAdmin && <PrivacyCard />}
         </div>
         <div className="space-y-6">
           <DevicesCard />

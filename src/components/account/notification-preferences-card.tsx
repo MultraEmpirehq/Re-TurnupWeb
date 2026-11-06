@@ -10,7 +10,7 @@ import {
 } from "@/hooks/use-account";
 import { Bell } from "lucide-react";
 import React, { memo } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const CHANNELS: {
   key: keyof TNotificationPreferences;

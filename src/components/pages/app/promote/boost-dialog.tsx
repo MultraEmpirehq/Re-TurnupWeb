@@ -22,7 +22,7 @@ import { IEventDetailsType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Minus, Plus, Rocket } from "lucide-react";
 import React, { memo, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const PLACEMENTS: { id: TBoostPlacement; title: string; body: string }[] = [
   {

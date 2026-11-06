@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { TrashIcon, UploadIcon } from "lucide-react";
 import React, { memo, useCallback, useMemo } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];

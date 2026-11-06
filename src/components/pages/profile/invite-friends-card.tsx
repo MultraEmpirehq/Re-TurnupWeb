@@ -9,7 +9,7 @@ import { forgetInvite, inviteLink, readInvite } from "@/lib/invite";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Gift, Share2 } from "lucide-react";
 import React, { memo, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 type TPrice = { amount: number; formatted: { withCurrency: string } };
 

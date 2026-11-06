@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ExternalLink, ImagePlus, Plus } from "lucide-react";
 import React, { memo, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { ListSkeleton, PageHeading } from "../moderation/moderation-ui";
 
 type TDraft = {

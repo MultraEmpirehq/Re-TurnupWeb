@@ -5,7 +5,7 @@ import { formatEventTime } from "@/lib/event-time";
 import { cn } from "@/lib/utils";
 import { Check, Clock, Copy, Lock, Pencil, Trash2, UserRound } from "lucide-react";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 /** What a category card needs to show (a ticket in the event form). */
 export type TTicketCardData = {

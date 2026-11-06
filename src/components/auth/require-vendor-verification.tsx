@@ -5,7 +5,7 @@ import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status"
 import { ROUTES } from "@/lib/variables";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 export const VENDOR_VERIFICATION_ROUTE = ROUTES.VENDOR_VERIFICATION.href;
 

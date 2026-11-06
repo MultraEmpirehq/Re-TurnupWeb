@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import React, { memo, useCallback, useMemo } from "react";
 import { useFormContext } from "react-hook-form";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { moveItem } from "@/lib/move-item";
 
 export interface IMediaUploadFormValues {

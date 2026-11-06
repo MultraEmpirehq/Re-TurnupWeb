@@ -23,7 +23,7 @@ import { CalendarDays, MapPin, Megaphone, Ticket } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { memo, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useFeatures } from "@/hooks/use-features";
 
 /** The venue's name: from the directory, else as the organiser typed it. */

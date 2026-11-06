@@ -13,7 +13,7 @@ import {
 import { IVendorVerification, IVerificationDocument } from "@/lib/types";
 import { ROUTES } from "@/lib/variables";
 import { ArrowLeft, ArrowRight, Copy, FileText, Maximize2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import Image from "next/image";
 import Link from "next/link";
 import React, { memo, useState } from "react";

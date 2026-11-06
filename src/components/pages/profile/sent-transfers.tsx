@@ -19,7 +19,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Send } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const STATUS: Record<TTransferStatus, { label: string; className: string }> = {
   PENDING: {

@@ -7,7 +7,7 @@ import { useSessions, useSignOutDevice } from "@/hooks/use-account";
 import { formatDistanceToNow } from "date-fns";
 import { Laptop, Smartphone } from "lucide-react";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 /** Where the account is signed in, with a way to sign out any other device. */
 const DevicesCard = () => {

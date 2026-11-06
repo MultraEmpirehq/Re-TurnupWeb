@@ -8,7 +8,7 @@ import { joiResolver } from "@hookform/resolvers/joi";
 import { useForm } from "react-hook-form";
 import { postData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { TUserDetails } from "@/stores/user-store";
 import useAuth from "@/hooks/use-auth";
 import { INTENT_PARAM, intentFrom } from "@/lib/auth-intent";

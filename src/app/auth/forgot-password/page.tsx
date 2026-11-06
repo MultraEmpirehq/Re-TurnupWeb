@@ -5,7 +5,7 @@ import { joiResolver } from "@hookform/resolvers/joi";
 import { useForm } from "react-hook-form";
 import React, { memo, useCallback } from "react";
 import joi from "joi";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { getData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { IUserCheckedCredentials, OTP_VERIFICATION_TYPE } from "@/lib/types";

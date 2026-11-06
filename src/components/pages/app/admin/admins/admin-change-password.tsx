@@ -11,7 +11,7 @@ import useUserStore from "@/stores/user-store";
 import { KeyRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 /**
  * First sign-in on a temporary password (emailed when they were added, or

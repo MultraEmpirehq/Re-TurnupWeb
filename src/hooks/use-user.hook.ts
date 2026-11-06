@@ -2,7 +2,7 @@ import { getData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import useUserStore, { TUserDetails } from "@/stores/user-store";
 import { useCallback } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const useUser = () => {
   const setUserDetails = useUserStore((state) => state?.setUserDetails);

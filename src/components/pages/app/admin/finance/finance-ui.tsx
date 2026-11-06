@@ -26,7 +26,7 @@ export type TPeriod =
   | "this_year"
   | "last_12_months";
 
-const PERIODS: { value: TPeriod; label: string }[] = [
+export const PERIODS: { value: TPeriod; label: string }[] = [
   { value: "this_month", label: "This month" },
   { value: "last_month", label: "Last month" },
   { value: "last_30", label: "Last 30 days" },
@@ -136,7 +136,7 @@ export const FinanceHeader: React.FC<{
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div className="space-y-1">
-        <h1 className="text-xl font-bold text-secondary-800">{title}</h1>
+        <h1 className="text-xl font-bold text-secondary-800 dark:text-foreground">{title}</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -150,7 +150,7 @@ export const FinanceHeader: React.FC<{
                 onClick={() => setCurrency(code)}
                 className={cn(
                   "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
-                  code === currency ? "bg-secondary-800 text-white" : "text-muted-foreground hover:text-foreground",
+                  code === currency ? "bg-secondary-800 text-white dark:bg-foreground dark:text-background" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {code}
@@ -196,7 +196,7 @@ export const FinanceCard: React.FC<{
   <section className={cn("rounded-xl border border-border bg-card p-5", className)}>
     {(title || action) && (
       <div className="mb-4 flex items-center justify-between gap-3">
-        {title && <h2 className="font-semibold text-secondary-950">{title}</h2>}
+        {title && <h2 className="font-semibold text-secondary-950 dark:text-foreground">{title}</h2>}
         {action}
       </div>
     )}
@@ -216,13 +216,13 @@ export const Stat: React.FC<{
   <div
     className={cn(
       "rounded-xl border bg-card p-4",
-      tone === "warn" ? "border-amber-200 bg-amber-50/60" : "border-border",
+      tone === "warn" ? "border-amber-200 bg-amber-50/60 dark:border-amber-500/30 dark:bg-amber-500/10" : "border-border",
     )}
   >
     <p
       className={cn(
         "text-[11px] font-semibold tracking-wider uppercase",
-        tone === "warn" ? "text-amber-700" : "text-muted-foreground",
+        tone === "warn" ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground",
       )}
     >
       {label}
@@ -230,13 +230,13 @@ export const Stat: React.FC<{
     {loading ? (
       <Skeleton className="mt-2 h-7 w-24" />
     ) : (
-      <p className="mt-1.5 text-2xl font-bold tracking-tight text-secondary-950 tabular-nums">{value}</p>
+      <p className="mt-1.5 text-2xl font-bold tracking-tight text-secondary-950 tabular-nums dark:text-foreground">{value}</p>
     )}
     {change !== undefined && change !== null && !loading ? (
       <p
         className={cn(
           "mt-1 inline-flex items-center gap-0.5 text-xs font-semibold",
-          change >= 0 ? "text-emerald-600" : "text-red-600",
+          change >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
         )}
       >
         {change >= 0 ? <ArrowUpRight className="size-3.5" aria-hidden /> : <ArrowDownRight className="size-3.5" aria-hidden />}
@@ -256,10 +256,10 @@ export const Pill: React.FC<{ tone: "good" | "warn" | "bad" | "muted" | "info"; 
   <span
     className={cn(
       "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap",
-      tone === "good" && "bg-emerald-50 text-emerald-700",
-      tone === "warn" && "bg-amber-50 text-amber-800",
-      tone === "bad" && "bg-red-50 text-red-700",
-      tone === "info" && "bg-secondary-50 text-secondary-700",
+      tone === "good" && "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+      tone === "warn" && "bg-amber-50 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300",
+      tone === "bad" && "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300",
+      tone === "info" && "bg-secondary-50 text-secondary-700 dark:bg-white/10 dark:text-foreground",
       tone === "muted" && "bg-muted text-muted-foreground",
     )}
   >

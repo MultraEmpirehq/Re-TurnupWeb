@@ -3,7 +3,7 @@ import { apiBaseUrl } from "@/lib/env";
 import useUserStore from "@/stores/user-store";
 import useWorkspaceStore, { getActiveWorkspace } from "@/stores/workspace-store";
 import axios, { AxiosRequestConfig } from "axios";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 // Lazy initialization to avoid circular dependency
 const getResetUserDetails = () => useUserStore.getState().clearStore;

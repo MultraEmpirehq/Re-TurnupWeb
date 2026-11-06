@@ -29,7 +29,7 @@ import { MoreHorizontal, Mic, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import React, { memo, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 /** Enough to count an organiser's own performers in one go. */
 const MINE_LIMIT = 200;

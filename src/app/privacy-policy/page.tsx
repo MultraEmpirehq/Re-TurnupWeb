@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   ...(IS_DRAFT ? { robots: { index: false, follow: false } } : {}),
 };
 
-const LAST_UPDATED = "1 November 2026";
+const LAST_UPDATED = "6 November 2026";
 
 type TSection = {
   title: string;
@@ -117,11 +117,9 @@ const sections: TSection[] = [
     items: [
       "Payment providers: Flutterwave (Nigeria) and Stripe (Canada) take payments, process refunds and pay organisers. Canadian organisers have their own Stripe account, so Stripe also holds the details they give it. Payments taken earlier through Paystack stay with Paystack, which handles their refunds.",
       "Google: signing in with Google, and Google Maps to look up venue addresses.",
-      "Cloudinary: storing images and documents you upload, including organiser identity documents.",
-      "SendGrid: sending emails such as sign-in codes, receipts and event updates.",
-      "Novu and OneSignal: delivering in-app and push notifications.",
-      "Sentry: error reports, so we can fix problems.",
-      "Railway and Vercel: hosting our servers, database and website.",
+      "Storage providers: keeping images and documents you upload, including organiser identity documents.",
+      "Messaging providers: sending emails such as sign-in codes, receipts and event updates, and in-app and push notifications.",
+      "Hosting providers: running our servers, database and website.",
       "Event organisers: when you get a ticket, the organiser sees your name and ticket details, including at check-in. For events where they approve registrations, they also see your email address.",
       "Other attendees: your name and profile photo are visible to other members of an event chat you join, and your public profile follows your privacy settings.",
       "Tax advisers, auditors and authorities, where the law requires it, or to protect people from fraud or harm.",
