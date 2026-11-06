@@ -31,6 +31,7 @@ import {
   useAdminPermissions,
   useAdmins,
   useRemoveAdmin,
+  useResendTemporaryPassword,
   useSetAdminSuspension,
   useUpdateAdminPermissions,
 } from "@/hooks/use-admin-permissions";
@@ -49,7 +50,10 @@ type TEditor =
   { mode: "add" } | { mode: "edit"; admin: IAdminSummary } | undefined;
 
 type TConfirm =
-  | { kind: "suspend" | "reactivate" | "remove"; admin: IAdminSummary }
+  | {
+      kind: "suspend" | "reactivate" | "remove" | "password";
+      admin: IAdminSummary;
+    }
   | undefined;
 
 /**
@@ -179,6 +183,8 @@ const AdminsList = () => {
 
   const [editor, setEditor] = useState<TEditor>();
   const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [picked, setPicked] = useState<TAdminPermission[]>([]);
   const [confirm, setConfirm] = useState<TConfirm>();
 
@@ -186,9 +192,11 @@ const AdminsList = () => {
   const updatePermissions = useUpdateAdminPermissions();
   const setSuspension = useSetAdminSuspension();
   const removeAdmin = useRemoveAdmin();
+  const resendPassword = useResendTemporaryPassword();
 
   const isSaving = addAdmin.isPending || updatePermissions.isPending;
-  const isConfirming = setSuspension.isPending || removeAdmin.isPending;
+  const isConfirming =
+    setSuspension.isPending || removeAdmin.isPending || resendPassword.isPending;
 
   // Mirrors the api's rules so nobody is offered an action it will refuse.
   const lockReason = (admin: IAdminSummary) => {
@@ -202,6 +210,8 @@ const AdminsList = () => {
 
   const openAdd = () => {
     setEmail("");
+    setFirstName("");
+    setLastName("");
     setPicked([]);
     setEditor({ mode: "add" });
   };
@@ -219,8 +229,10 @@ const AdminsList = () => {
     if (!editor) return;
     try {
       if (editor.mode === "add") {
-        await addAdmin.mutateAsync({ email, permissions: picked });
-        toast.success(`${email.trim()} is now an admin.`);
+        await addAdmin.mutateAsync({ email, firstName, lastName, permissions: picked });
+        toast.success(
+          `Admin added. Their temporary password is on its way to ${email.trim()}.`,
+        );
       } else {
         await updatePermissions.mutateAsync({
           id: editor.admin.id,
@@ -241,6 +253,9 @@ const AdminsList = () => {
       if (kind === "remove") {
         await removeAdmin.mutateAsync(admin.id);
         toast.success(`${admin.email} is no longer an admin.`);
+      } else if (kind === "password") {
+        await resendPassword.mutateAsync(admin.id);
+        toast.success(`A new temporary password is on its way to ${admin.email}.`);
       } else {
         await setSuspension.mutateAsync({
           id: admin.id,
@@ -266,7 +281,8 @@ const AdminsList = () => {
     !isSaving &&
     picked.length > 0 &&
     !unchanged &&
-    (editor?.mode !== "add" || /\S+@\S+\.\S+/.test(email.trim()));
+    (editor?.mode !== "add" ||
+      (/\S+@\S+\.\S+/.test(email.trim()) && !!firstName.trim() && !!lastName.trim()));
 
   const confirmCopy =
     confirm &&
@@ -280,6 +296,11 @@ const AdminsList = () => {
         title: `Reactivate ${confirm.admin.email}?`,
         body: "They can sign in again, with the permissions they had before.",
         action: "Reactivate",
+      },
+      password: {
+        title: `Send ${confirm.admin.email} a new temporary password?`,
+        body: "Their current password stops working and they're signed out everywhere. The new one is emailed to them, lasts 24 hours, and they choose their own when they sign in.",
+        action: "Send password",
       },
       remove: {
         title: `Remove ${confirm.admin.email} as an admin?`,
@@ -381,6 +402,11 @@ const AdminsList = () => {
                       Edit permissions
                     </DropdownMenuItem>
                     <DropdownMenuItem
+                      onSelect={() => setConfirm({ kind: "password", admin })}
+                    >
+                      Send new temporary password
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
                       onSelect={() =>
                         setConfirm({
                           kind: admin.isSuspended ? "reactivate" : "suspend",
@@ -416,13 +442,38 @@ const AdminsList = () => {
             <DialogDescription className="text-sm leading-6 text-secondary-500">
               {editor?.mode === "edit"
                 ? "Changes apply from their next action; they don't need to sign in again."
-                : "They need a Turnupz account already. They'll keep it, and get the admin console the next time they open the app."}
+                : "A new account for their work email. We email them a temporary password that lasts 24 hours; they choose their own when they first sign in."}
             </DialogDescription>
           </DialogHeader>
 
           {editor?.mode === "add" && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="admin-first-name">First name</Label>
+                <Input
+                  id="admin-first-name"
+                  autoComplete="off"
+                  value={firstName}
+                  disabled={isSaving}
+                  onChange={(event) => setFirstName(event.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="admin-last-name">Last name</Label>
+                <Input
+                  id="admin-last-name"
+                  autoComplete="off"
+                  value={lastName}
+                  disabled={isSaving}
+                  onChange={(event) => setLastName(event.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          {editor?.mode === "add" && (
             <div className="space-y-1.5">
-              <Label htmlFor="admin-email">Email</Label>
+              <Label htmlFor="admin-email">Work email</Label>
               <Input
                 id="admin-email"
                 type="email"

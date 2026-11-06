@@ -630,6 +630,8 @@ export interface IPerformer extends IPerformerSummary {
   twitter?: string | null;
   website?: string | null;
   upcomingEventsCount: number;
+  /** People following them (on the organiser's list). */
+  followersCount?: number;
   /** The viewer added it, so they can edit or remove it (admins always can). */
   isOwner?: boolean;
   /** One a vendor added waits for an admin before it's listed publicly. */

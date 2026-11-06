@@ -57,8 +57,8 @@ const STORAGE: TRow[] = [
   },
   {
     name: "turnupz-visitor-counting-consent",
-    what: "Your answer to whether visits may be counted.",
-    lasts: "Until you clear it",
+    what: "Your answer to whether visits may be counted, with when you gave it.",
+    lasts: "A year, or until this policy changes; then we ask again",
   },
   {
     name: "turnupz-share-refs, turnupz-invite, turnupz-event-arrivals",
@@ -147,7 +147,8 @@ const CookiePolicyPage = () => (
       </Card>
       <Card title="Your choices">
         <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-secondary-600">
-          <li>Turn visitor counting on or off when we ask, or by clearing this site&apos;s data.</li>
+          <li>Turn visitor counting on or off when we ask, or any time from Cookie settings at the bottom of every page.</li>
+          <li>If your browser sends Global Privacy Control (a &ldquo;don&apos;t track me&rdquo; setting), we treat it as no and don&apos;t ask.</li>
           <li>Clear cookies and site data in your browser settings at any time. You&apos;ll be signed out, and settings go back to how they started.</li>
           <li>Blocking the cookies above stops sign-in and some pages from working.</li>
         </ul>

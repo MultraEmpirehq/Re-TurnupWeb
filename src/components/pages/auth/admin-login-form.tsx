@@ -67,7 +67,12 @@ const AdminLoginForm = () => {
         payload?.token || payload?.accessToken || payload?.authToken;
       if (token) setUserToken(token.replace(/^Bearer\s+/i, ""));
       await performAuthOperation(payload?.user);
-      router.push(ROUTES.ADMIN_OVERVIEW.href);
+      // A temporary password is changed first (the console sends them there too).
+      router.push(
+        payload?.user?.mustChangePassword
+          ? `${ROUTES.ADMIN_OVERVIEW.href}/change-password`
+          : ROUTES.ADMIN_OVERVIEW.href,
+      );
     } catch (error) {
       toast.error(
         constructErrorMessage(

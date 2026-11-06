@@ -13,7 +13,8 @@ import {
   useWaitlist,
 } from "@/hooks/use-admin-waitlist";
 import { format } from "date-fns";
-import { BadgeCheck, Clock, Download, ListChecks } from "lucide-react";
+import { BadgeCheck, Clock, Download, ListChecks, Mail } from "lucide-react";
+import Link from "next/link";
 import React, { memo, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ListSkeleton, PageHeading } from "../moderation/moderation-ui";
@@ -106,10 +107,18 @@ const Waitlist = () => {
           (turnupz.com/coming-soon). Only confirmed emails should get launch and
           marketing emails. Add ?ref=instagram to the link to see where they came from.
         </PageHeading>
+        <div className="flex flex-wrap gap-2">
+        <Button asChild className="gap-2">
+          <Link href="/app/admin/marketing/waitlist/email">
+            <Mail className="size-4" />
+            Email the waitlist
+          </Link>
+        </Button>
         <Button variant="outline" className="gap-2" onClick={() => void download()} loading={downloading}>
           <Download className="size-4" />
           Download CSV
         </Button>
+        </div>
       </div>
 
       {!!totals && (

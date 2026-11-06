@@ -52,25 +52,37 @@ export const usePerformers = (
     q = "",
     type,
     forLineup,
+    mine,
+    limit = PAGE_SIZE,
   }: {
     q?: string;
     type?: TPerformerType;
     /** Also find performers not verified yet, so nobody adds them twice. */
     forLineup?: boolean;
+    /** Only the ones the signed-in organiser added, whatever their review. */
+    mine?: boolean;
+    limit?: number;
   } = {},
   enabled = true,
 ) =>
   useInfiniteQuery({
-    queryKey: ["performers", q, type ?? "all", forLineup ? "lineup" : "public"],
+    queryKey: [
+      "performers",
+      q,
+      type ?? "all",
+      forLineup ? "lineup" : mine ? "mine" : "public",
+      limit,
+    ],
     initialPageParam: 1,
     queryFn: async ({ pageParam }) => {
       const params = new URLSearchParams({
         page: String(pageParam),
-        limit: String(PAGE_SIZE),
+        limit: String(limit),
       });
       if (q.trim()) params.set("q", q.trim());
       if (type) params.set("type", type);
       if (forLineup) params.set("forLineup", "true");
+      if (mine) params.set("mine", "true");
       const { data } = await getData<IPerformer[]>(`/performers?${params}`);
       return { performers: data?.data ?? [], pagination: data?.pagination };
     },
