@@ -2,7 +2,7 @@
 
 import { useParams, useSearchParams } from "next/navigation";
 import React, { memo, useCallback } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useEvent } from "@/hooks/use-event";
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import ErrorContainer from "@/components/ui/error-container";
@@ -185,12 +185,14 @@ const EventDetails = () => {
                   type="PLANNER"
                   id={data.organizerId}
                   name={data.organizerName || "this planner"}
-                  className="h-7 rounded-full border border-secondary-200 bg-transparent px-3 text-xs font-semibold text-secondary-700 shadow-none hover:bg-secondary-50"
+                  iconOnly
+                  className="size-9 rounded-full border border-secondary-200 bg-transparent p-0 text-secondary-700 shadow-none hover:bg-secondary-50"
                 />
                 <MessageOrganiserButton
                   eventId={id}
                   isOwner={data?.isOwner}
-                  className="h-7 rounded-full border-secondary-200 px-3 text-xs font-semibold text-secondary-700 shadow-none"
+                  iconOnly
+                  className="size-9 rounded-full border-secondary-200 p-0 text-secondary-700 shadow-none"
                 />
               </span>
             </div>

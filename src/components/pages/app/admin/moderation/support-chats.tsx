@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { MessagesSquare } from "lucide-react";
 import React, { memo, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { ListSkeleton, PageHeading } from "./moderation-ui";
 
 /**

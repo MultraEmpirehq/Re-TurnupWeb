@@ -13,7 +13,7 @@ import { IEventChatGroup } from "@/lib/event-chat";
 import { cn } from "@/lib/utils";
 import { Loader2, MessageSquareIcon, SearchIcon, TicketIcon } from "lucide-react";
 import React, { memo, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
   CHAT_FILTERS,
   TChatFilter,

@@ -5,6 +5,7 @@ import { IEventChatGroup, IEventChatMessage } from "@/lib/event-chat";
 import { cn } from "@/lib/utils";
 import { FileIcon, PinIcon, PinOffIcon, Trash2Icon } from "lucide-react";
 import Link from "next/link";
+import VerifiedTick from "@/components/discovery/verified-tick";
 import React, { memo } from "react";
 import { SharedEventCard } from "./chat-cards";
 import { clock, initials, kindOf } from "./chat-format";
@@ -292,7 +293,11 @@ const ChatMessage: React.FC<{
             {!mine && isGroup && (
               <p className="mb-0.5 text-[11.5px] font-extrabold text-secondary-700">
                 {message.senderName}
-                {message.senderMemberRole === "team" && " · Turnupz team"}
+                {/* Admins see which of the team wrote it; everyone else just "Turnupz team". */}
+                {message.senderMemberRole === "team" &&
+                  message.senderName !== "Turnupz team" &&
+                  " · Turnupz team"}
+                {message.senderMemberRole === "team" && <VerifiedTick className="ml-1 size-3.5 align-text-bottom" />}
               </p>
             )}
             <p className="whitespace-pre-line text-[13.5px] leading-5">

@@ -2,6 +2,7 @@
 
 import BrandLoader from "@/components/ui/brand-loader";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
+import { isSharedWithAdmins } from "@/lib/admin-routes";
 import { ROUTES } from "@/lib/variables";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -12,13 +13,13 @@ const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname();
   const isDevelopment = process.env.NODE_ENV === "development";
-  // Admin accounts are staff: the console, plus their own profile and settings.
+  // Admin accounts are staff: the console, plus their own account pages
+  // (profile, settings, notifications and messages).
   const adminElsewhere =
     userDetails?.role === EUserRoles.ADMIN &&
     !!pathname &&
     !pathname.startsWith(ROUTES.ADMIN_OVERVIEW.href) &&
-    !pathname.startsWith("/app/profile") &&
-    pathname !== "/app/settings";
+    !isSharedWithAdmins(pathname);
 
   useEffect(() => {
     if (adminElsewhere) {

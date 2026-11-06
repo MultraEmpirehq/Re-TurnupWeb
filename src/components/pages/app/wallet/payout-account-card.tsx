@@ -11,7 +11,7 @@ import {
 import { Landmark, RefreshCw } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import React, { memo, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const PROVIDER_LABELS: Record<VendorPayoutAccount["provider"], string> = {
   FLUTTERWAVE: "Flutterwave",

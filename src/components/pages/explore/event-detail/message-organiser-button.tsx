@@ -10,7 +10,7 @@ import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { Loader2, MessageCircle } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 /**
  * Opens a chat with the event's organiser (one per organiser, reused), with this
@@ -20,7 +20,9 @@ const MessageOrganiserButton: React.FC<{
   eventId: string;
   isOwner?: boolean;
   className?: string;
-}> = ({ eventId, isOwner, className }) => {
+  /** A round icon button, where there's no room for the words. */
+  iconOnly?: boolean;
+}> = ({ eventId, isOwner, className, iconOnly }) => {
   const router = useRouter();
   const pathname = usePathname();
   const isSignedIn = !!useUserStore((state) => state.userDetails);
@@ -66,6 +68,8 @@ const MessageOrganiserButton: React.FC<{
       variant="outline"
       onClick={() => void open()}
       disabled={opening}
+      aria-label={iconOnly ? "Message organiser" : undefined}
+      title={iconOnly ? "Message organiser" : undefined}
       className={cn("gap-2", className)}
     >
       {opening ? (
@@ -73,7 +77,7 @@ const MessageOrganiserButton: React.FC<{
       ) : (
         <MessageCircle className="size-4" aria-hidden />
       )}
-      Message organiser
+      {!iconOnly && "Message organiser"}
     </Button>
   );
 };

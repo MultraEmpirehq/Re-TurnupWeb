@@ -10,7 +10,7 @@ import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { memo, useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import PasswordRules from "./password-rules";
 
 const RESEND_AFTER_SECONDS = 60;

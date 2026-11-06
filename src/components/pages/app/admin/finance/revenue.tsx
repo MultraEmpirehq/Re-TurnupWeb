@@ -229,7 +229,18 @@ const Revenue = () => {
               <p className="text-sm text-muted-foreground">No sales in the last twelve months.</p>
             )}
           </FinanceCard>
-          <p className="text-xs text-muted-foreground">Tax collected appears here once tax is switched on.</p>
+          {data?.taxCollected ? (
+            <FinanceCard title="Tax collected for organisers">
+              <p className="text-2xl font-bold tabular-nums">{money(data.taxCollected, currency)}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {(data.taxByKind ?? []).map((tax) => `${tax.label} ${money(tax.amount, currency)}`).join(" · ")}. Paid by
+                buyers in this period and included in sales. It reaches organisers with their share, and they send it to
+                the tax office.
+              </p>
+            </FinanceCard>
+          ) : (
+            <p className="text-xs text-muted-foreground">No tax charged in this period.</p>
+          )}
         </>
       )}
     </div>

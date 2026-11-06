@@ -31,7 +31,7 @@ import { ROUTES } from "@/lib/variables";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import MessageOrganiserButton from "@/components/pages/explore/event-detail/message-organiser-button";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { moneyLocale } from "@/lib/currency";
 import {
   eventZoneNote,

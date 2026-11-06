@@ -29,7 +29,7 @@ import Link from "next/link";
 import React, { memo, useMemo, useState } from "react";
 import QuickLinks from "./quick-links";
 import styles from "./admin-dashboard.module.css";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
   Area,
   AreaChart,

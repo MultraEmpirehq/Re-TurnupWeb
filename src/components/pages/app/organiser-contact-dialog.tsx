@@ -23,7 +23,7 @@ import {
   UserRound,
 } from "lucide-react";
 import React, { memo } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 interface IEventOrganiser {
   eventId: string;

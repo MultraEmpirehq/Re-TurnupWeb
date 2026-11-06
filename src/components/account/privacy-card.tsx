@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Lock } from "lucide-react";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const POLICIES: {
   value: TMessagePolicy;

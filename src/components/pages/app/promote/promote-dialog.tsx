@@ -26,7 +26,7 @@ import {
 import Link from "next/link";
 import { QRCodeCanvas } from "qrcode.react";
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
   PICTURE_SIZES,
   TPictureFormat,

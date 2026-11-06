@@ -39,7 +39,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { MoreHorizontal, ShieldCheck, UserPlus } from "lucide-react";
 import React, { memo, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const ALL_PERMISSIONS = ADMIN_PERMISSIONS.map(({ value }) => value);
 

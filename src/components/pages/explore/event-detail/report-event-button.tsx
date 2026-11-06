@@ -19,7 +19,7 @@ import useUserStore, { EUserRoles } from "@/stores/user-store";
 import { Flag } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const REASONS = Object.keys(REPORT_REASON_LABELS);
 

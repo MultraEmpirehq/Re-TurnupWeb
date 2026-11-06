@@ -25,7 +25,7 @@ import { IPerformer, TPerformerType } from "@/lib/types";
 import { Country } from "country-state-city";
 import dynamic from "next/dynamic";
 import React, { memo, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import PerformerAvatar from "./performer-avatar";
 
 const ComboboxSelect = dynamic(

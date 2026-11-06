@@ -63,31 +63,20 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
   const pendingFor = (item: TAdminNavItem) =>
     item.pendingKey ? (pending?.[item.pendingKey] ?? 0) : 0;
 
-  // Departments start collapsed except the one holding the current page, and
-  // opening a page elsewhere expands its department so the active link is visible.
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {
-    const label = activeGroupLabel(pathname);
-    return new Set(label ? [label] : []);
-  });
+  // One department open at a time: the one holding the current page, or the one
+  // just opened. Opening a page elsewhere moves to its department.
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(
+    () => activeGroupLabel(pathname) ?? null,
+  );
   const [expandedFor, setExpandedFor] = useState(pathname);
   if (expandedFor !== pathname) {
     setExpandedFor(pathname);
     const label = activeGroupLabel(pathname);
-    if (label && !expandedGroups.has(label)) {
-      setExpandedGroups(new Set(expandedGroups).add(label));
-    }
+    if (label) setExpandedGroup(label);
   }
 
   const toggleGroup = (label: string) => {
-    setExpandedGroups((current) => {
-      const next = new Set(current);
-      if (next.has(label)) {
-        next.delete(label);
-      } else {
-        next.add(label);
-      }
-      return next;
-    });
+    setExpandedGroup((current) => (current === label ? null : label));
   };
 
   const renderItem = (item: TAdminNavItem) => {
@@ -103,7 +92,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
         className={cn(
           "flex items-center gap-2.5 rounded-[10px] px-[11px] py-2.5 text-sm transition-colors duration-100 ease-out",
           isActive
-            ? "bg-secondary-50 font-semibold text-secondary-800"
+            ? "bg-secondary-50 font-semibold text-secondary-800 dark:bg-white/10 dark:text-foreground"
             : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
         )}
       >
@@ -142,7 +131,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
   return (
     <aside
       className={cn(
-        "flex w-[248px] shrink-0 flex-col gap-1 border-r border-border bg-white px-4 pb-4",
+        "flex w-[248px] shrink-0 flex-col gap-1 border-r border-border bg-white px-4 dark:bg-card pb-4",
         className,
       )}
     >
@@ -158,7 +147,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
             priority
           />
         </Link>
-        <span className="rounded-full bg-secondary-50 px-2 py-1 text-[11px] font-bold tracking-wide text-secondary-700">
+        <span className="rounded-full bg-secondary-50 px-2 py-1 text-[11px] font-bold tracking-wide text-secondary-700 dark:bg-white/10 dark:text-foreground">
           ADMIN
         </span>
       </div>
@@ -181,7 +170,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
             }
 
             const { icon: DepartmentIcon, accentClassName } = group.department;
-            const isExpanded = expandedGroups.has(group.label);
+            const isExpanded = expandedGroup === group.label;
             const isGroupActive = group.items.some((item) =>
               isAdminNavItemActive(pathname, item),
             );
@@ -207,9 +196,9 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
                   className={cn(
                     "flex items-center gap-2.5 rounded-[10px] px-[7px] py-1.5 text-left text-sm font-semibold transition-colors duration-100 ease-out",
                     isGroupActive
-                      ? "text-secondary-800"
+                      ? "text-secondary-800 dark:text-foreground"
                       : "text-foreground hover:bg-muted",
-                    isGroupActive && !isExpanded && "bg-secondary-50",
+                    isGroupActive && !isExpanded && "bg-secondary-50 dark:bg-white/10",
                     isGroupActive && isExpanded && "hover:bg-muted",
                   )}
                 >
@@ -237,7 +226,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
                   )}
                   {!isExpanded && isGroupActive && groupBadge === 0 && (
                     <span
-                      className="size-1.5 shrink-0 rounded-full bg-secondary-800"
+                      className="size-1.5 shrink-0 rounded-full bg-secondary-800 dark:bg-foreground"
                       aria-hidden
                     />
                   )}
@@ -265,14 +254,14 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
         <div
           aria-hidden
           className={cn(
-            "pointer-events-none absolute inset-x-0 top-0 h-8 bg-linear-to-b from-white to-transparent transition-opacity duration-150",
+            "pointer-events-none absolute inset-x-0 top-0 h-8 bg-linear-to-b from-white to-transparent dark:from-card transition-opacity duration-150",
             fade.top ? "opacity-100" : "opacity-0",
           )}
         />
         <div
           aria-hidden
           className={cn(
-            "pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-linear-to-t from-white to-transparent transition-opacity duration-150",
+            "pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-linear-to-t from-white to-transparent dark:from-card transition-opacity duration-150",
             fade.bottom ? "opacity-100" : "opacity-0",
           )}
         />

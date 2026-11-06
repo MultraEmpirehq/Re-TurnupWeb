@@ -11,7 +11,7 @@ import { eventShareUrl } from "@/lib/share-ref";
 import { cn } from "@/lib/utils";
 import { Copy, Loader2, Pause, Play, Plus } from "lucide-react";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const STATUS: Record<
   IPromoCode["status"],

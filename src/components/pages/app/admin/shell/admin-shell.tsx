@@ -22,7 +22,7 @@ const NoAccess: React.FC<{ permissionLabel: string }> = ({
   permissionLabel,
 }) => (
   <div className="mx-auto flex max-w-md flex-col items-center gap-3 rounded-xl border border-border bg-card px-6 py-12 text-center">
-    <span className="flex size-12 items-center justify-center rounded-full bg-secondary-50 text-secondary-800">
+    <span className="flex size-12 items-center justify-center rounded-full bg-secondary-50 text-secondary-800 dark:bg-white/10 dark:text-foreground">
       <LockKeyhole className="size-5" aria-hidden />
     </span>
     <h1 className="text-lg font-semibold text-foreground">
@@ -68,14 +68,14 @@ const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   if (mustChangePassword) {
     return (
-      <div className="flex min-h-svh items-center justify-center bg-[linear-gradient(180deg,rgba(244,248,255,0.92)_0%,rgba(255,255,255,1)_30%)] px-4 py-10">
+      <div className="flex min-h-svh items-center justify-center bg-[linear-gradient(180deg,rgba(244,248,255,0.92)_0%,rgba(255,255,255,1)_30%)] dark:bg-none dark:bg-background px-4 py-10">
         {onChangePage ? children : <BrandLoader />}
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-svh bg-[linear-gradient(180deg,rgba(244,248,255,0.92)_0%,rgba(255,255,255,1)_30%)]">
+    <div className="flex min-h-svh bg-[linear-gradient(180deg,rgba(244,248,255,0.92)_0%,rgba(255,255,255,1)_30%)] dark:bg-none dark:bg-background">
       <AdminSidebar className="sticky top-0 hidden h-svh lg:flex" />
 
       <Sheet open={isNavOpen} onOpenChange={setIsNavOpen}>

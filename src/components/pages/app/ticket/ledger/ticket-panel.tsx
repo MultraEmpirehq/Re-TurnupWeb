@@ -26,7 +26,7 @@ import { format } from "date-fns";
 import { Copy, Loader2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import React, { memo, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const time = (value: string) => format(new Date(value), "d MMM yyyy, h:mm a");
 

@@ -11,7 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import React, { memo, useCallback } from "react";
 import { FormProvider, useForm } from "react-hook-form";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { uploadAttachments } from "@/api/attachments";
 
 export const dynamic = "force-dynamic";

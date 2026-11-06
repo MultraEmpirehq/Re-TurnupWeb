@@ -62,6 +62,7 @@ export enum EOrderStatus {
   FAILED = "FAILED",
   /** Paid, couldn't be fulfilled, money returned. */
   REFUNDED = "REFUNDED",
+  CANCELLED = "CANCELLED",
   /** Paid, but held for a person to check (amount mismatch, failed refund). */
   NEEDS_REVIEW = "NEEDS_REVIEW",
 }
@@ -221,6 +222,8 @@ export interface IEventManageState {
 }
 
 export interface IEventDetailsType {
+  taxInclusive?: boolean | null;
+  taxQualifyingAdmission?: boolean;
   id: string;
   name: string;
   date: Date;
@@ -444,6 +447,11 @@ export interface IOrderDetailsType {
   userTickets: IUserTicketType[];
   /** How much Turnupz Credit paid, or null. */
   paidWithCredit?: IMoney | null;
+  /** What the order cost as sold, tax included. */
+  total?: IMoney | null;
+  tax?: { label: string; amount: IMoney }[];
+  /** Tax is part of the ticket prices rather than added on top. */
+  taxIncluded?: boolean;
   /** Money given back, oldest first. */
   refunds?: IOrderRefund[];
   refundedTickets?: number;

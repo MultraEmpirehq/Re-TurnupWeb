@@ -38,7 +38,7 @@ import useCategory from "@/hooks/use-category";
 import { TComboboxItem } from "@/components/ui/combobox-select";
 import { constructErrorMessage } from "@/api/functions";
 import { saveCustomCategory } from "@/lib/custom-event-options";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useMarketOptions } from "@/hooks/use-markets";
 import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status";
 

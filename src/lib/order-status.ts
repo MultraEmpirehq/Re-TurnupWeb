@@ -24,6 +24,10 @@ export const ORDER_STATUS_META: Record<
     label: "Refunded",
     className: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300",
   },
+  [EOrderStatus.CANCELLED]: {
+    label: "Cancelled",
+    className: "bg-muted text-muted-foreground",
+  },
   [EOrderStatus.NEEDS_REVIEW]: {
     label: "Being checked",
     className:
@@ -52,6 +56,10 @@ export const orderTicketsLabel = (order: IOrderDetailsType) => {
 
 /** What the whole order cost, at the ticket prices. "Free" when nothing. */
 export const orderTotalLabel = (order: IOrderDetailsType) => {
+  // As sold, tax included. Older answers from the api only have the ticket prices.
+  if (order.total) {
+    return order.total.amount > 0 ? order.total.formatted.withCurrency : "Free";
+  }
   const lines = orderLines(order);
   const total = lines.reduce(
     (sum, line) => sum + (line.ticket?.price?.amount ?? 0) * line.quantity,

@@ -38,7 +38,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import PerformerAvatar from "@/components/discovery/performer-avatar";
 import { parseRecipient, recipientBody } from "@/lib/transfer-recipient";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { moneyLocale } from "@/lib/currency";
 
 interface ITransferFormValues {

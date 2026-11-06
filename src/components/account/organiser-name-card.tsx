@@ -8,7 +8,7 @@ import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status"
 import { useQueryClient } from "@tanstack/react-query";
 import { Megaphone } from "lucide-react";
 import React, { memo, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 /**
  * The name a vendor's events go out under ("Organised by"). It can change any

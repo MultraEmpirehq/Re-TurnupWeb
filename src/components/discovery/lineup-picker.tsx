@@ -1,6 +1,6 @@
 "use client";
 
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { performerNameKey } from "@/lib/performer-name";
 import VerifiedTick from "@/components/discovery/verified-tick";
 import { Button } from "@/components/ui/button";

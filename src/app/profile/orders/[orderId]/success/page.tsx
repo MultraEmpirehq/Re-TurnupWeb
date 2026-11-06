@@ -35,7 +35,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import TicketCard from "@/components/ticket-design/ticket-card";
 import {
   PASS_COLOUR,
@@ -76,6 +76,8 @@ const OrderSuccessPage = () => {
   );
 
   const isPaid = order?.status === EOrderStatus.COMPLETED;
+  // Nothing was charged: no talk of payment.
+  const isFreeOrder = !!order && orderTotalLabel(order) === "Free";
 
   // The new tickets as passes (with their live codes), once the payment's in.
   const { data: wallet, refetch: refetchWallet } = useUserTickets();
@@ -95,7 +97,7 @@ const OrderSuccessPage = () => {
         return {
           Icon: CheckCircle2,
           tone: "bg-green-100 text-green-600 dark:bg-green-950/40",
-          title: "Payment successful!",
+          title: isFreeOrder ? "You're in!" : "Payment successful!",
           message:
             "Your tickets have been confirmed. You can download them or head to the event group chat.",
         };
@@ -143,8 +145,12 @@ const OrderSuccessPage = () => {
       user: userDetails,
       joinReason: (order?.ticket?.price?.amount ?? 0) > 0 ? "paid" : "booked",
     });
-    toast.success("Payment confirmed. You joined the event group chat");
-  }, [isPaid, event, userDetails, order?.ticket?.price?.amount]);
+    toast.success(
+      isFreeOrder
+        ? "You're in. You joined the event group chat"
+        : "Payment confirmed. You joined the event group chat",
+    );
+  }, [isPaid, isFreeOrder, event, userDetails, order?.ticket?.price?.amount]);
 
   const captureAndDownloadAll = useCallback(async () => {
     if (!order?.userTickets?.length) return;
@@ -335,6 +341,14 @@ const OrderSuccessPage = () => {
             <span className="text-muted-foreground">Order ID</span>
             <span className="font-mono text-xs">{orderId}</span>
           </div>
+          {(order?.tax ?? []).map((tax) => (
+            <div key={tax.label} className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                {order?.taxIncluded ? `Includes ${tax.label}` : tax.label}
+              </span>
+              <span className="font-medium">{tax.amount.formatted?.withCurrency}</span>
+            </div>
+          ))}
           <div className="border-t pt-3 flex items-center justify-between">
             <span className="font-semibold">Total</span>
             <span className="font-bold text-lg">{totalFormatted}</span>

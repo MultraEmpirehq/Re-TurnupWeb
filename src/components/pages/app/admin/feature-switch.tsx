@@ -4,7 +4,7 @@ import { constructErrorMessage } from "@/api/functions";
 import { Switch } from "@/components/ui/switch";
 import { TFeatures, useAdminFeatures, useSetFeature } from "@/hooks/use-features";
 import React, { memo } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-GB", {

@@ -8,6 +8,11 @@ import {
 import { IEventDetailsType, UserTicketDetailsResponseType } from "@/lib/types";
 import { ROUTES } from "@/lib/variables";
 import { cn } from "@/lib/utils";
+import { postData } from "@/api";
+import { constructErrorMessage } from "@/api/functions";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
+import { toast } from "@/lib/toast";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useCallback, useEffect, useRef, useState } from "react";
@@ -119,6 +124,54 @@ const typesOf = (tickets: UserTicketDetailsResponseType[]) => {
  * Free tickets can't be passed on, nor used ones; otherwise the ticket type
  * decides. One already on its way shows "View transfer".
  */
+const isFreePlace = (ticket: UserTicketDetailsResponseType) =>
+  ticket.ticket.type?.toUpperCase() === "FREE" ||
+  !(Number(ticket.ticket.price?.amount ?? 0) > 0);
+
+/** Gives up a free ticket or registration, after asking. */
+const CancelPlaceButton: React.FC<{ ticketId: string; eventName?: string }> = ({
+  ticketId,
+  eventName,
+}) => {
+  const queryClient = useQueryClient();
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const cancel = async () => {
+    setBusy(true);
+    try {
+      await postData(`/ticket/${ticketId}/cancel-place`, {});
+      await queryClient.invalidateQueries({ queryKey: ["user-tickets"] });
+      toast.success("Your place was cancelled.");
+      setAsking(false);
+    } catch (error) {
+      toast.error(constructErrorMessage(error as TApiErrorResponseType, "We couldn't cancel your place."));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setAsking(true)}
+        className="mt-3 text-sm font-semibold text-zinc-500 underline-offset-2 hover:text-red-600 hover:underline"
+      >
+        Cancel my place
+      </button>
+      <ConfirmDialog
+        open={asking}
+        title="Cancel your place?"
+        description={`Your place${eventName ? ` at ${eventName}` : ""} goes back for someone else. You can get another if any are left.`}
+        confirmLabel="Cancel my place"
+        tone="danger"
+        busy={busy}
+        onCancel={() => setAsking(false)}
+        onConfirm={() => void cancel()}
+      />
+    </>
+  );
+};
+
 const canTransfer = (ticket: UserTicketDetailsResponseType) => {
   const price = Number(ticket.ticket.price?.amount ?? 0);
   if (ticket.ticket.type?.toUpperCase() === "FREE" || !(price > 0))
@@ -383,6 +436,12 @@ const Pass = ({
             </span>
           </div>
         </div>
+        {isFreePlace(ticket) &&
+          !past &&
+          ticket.registrationStatus !== "REJECTED" &&
+          (status === STATUS.UN_USED || ticket.registrationStatus === "PENDING") && (
+            <CancelPlaceButton ticketId={ticket.id} eventName={group.event?.name} />
+          )}
         {(transfer || ticket.orderId) && (
           <div className="mt-4 flex w-full gap-2">
             {transfer && (

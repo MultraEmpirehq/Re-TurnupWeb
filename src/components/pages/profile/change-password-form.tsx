@@ -8,7 +8,7 @@ import { joiResolver } from "@hookform/resolvers/joi";
 import Joi from "joi";
 import React, { memo, useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 interface IPasswordFormValues {
   currentPassword: string;

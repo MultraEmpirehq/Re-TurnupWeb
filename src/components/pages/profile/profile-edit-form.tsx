@@ -30,7 +30,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { memo, useEffect, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 interface IEditValues {
   firstName: string;

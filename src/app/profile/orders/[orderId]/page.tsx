@@ -22,7 +22,7 @@ import { ArrowLeft, Download, QrCode, TicketIcon } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import React, { memo, useCallback, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import TicketCard from "@/components/ticket-design/ticket-card";
 import {
   PASS_COLOUR,
@@ -350,6 +350,12 @@ const OrderDetailPage = () => {
             <div className="text-right">
               <p className="text-xs text-muted-foreground">Total</p>
               <p className="text-lg font-bold">{totalFormatted}</p>
+              {(order.tax ?? []).map((tax) => (
+                <p key={tax.label} className="text-xs text-muted-foreground">
+                  {order.taxIncluded ? "Includes " : ""}
+                  {tax.label} {tax.amount.formatted?.withCurrency}
+                </p>
+              ))}
             </div>
           </div>
         </div>

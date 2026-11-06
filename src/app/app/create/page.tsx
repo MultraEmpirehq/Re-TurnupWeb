@@ -32,7 +32,7 @@ import {
   type UseFormReturn,
 } from "react-hook-form";
 import useUserStore from "@/stores/user-store";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -230,6 +230,13 @@ const buildEventFormData = async (
   formData.append("eventCountryCode", body.eventCountryCode);
   formData.append("eventState", body.eventState);
   formData.append("eventStateCode", body.eventStateCode);
+  if (body.saleMethod === "register") {
+    formData.append("requiresApproval", String(!!body.requiresApproval));
+  }
+  if (typeof body.taxInclusive === "boolean") {
+    formData.append("taxInclusive", String(body.taxInclusive));
+  }
+  if (body.taxQualifyingAdmission) formData.append("taxQualifyingAdmission", "true");
   formData.append("eventCity", body.eventCity);
   formData.append("currency", eventCurrency.code);
   formData.append("ticketCurrency", eventCurrency.code);
@@ -597,6 +604,9 @@ const CreateEvent = () => {
               dayIndexes: ticketDayIndexes(ticket.dayIds, draftEvent),
             })),
             ticketUrl: draftEvent.ticketUrl ?? "",
+            requiresApproval: !!draftEvent.requiresApproval,
+            taxInclusive: draftEvent.taxInclusive ?? undefined,
+            taxQualifyingAdmission: !!draftEvent.taxQualifyingAdmission,
             passAssignments: draftEvent.passAssignments ?? [],
             blogPosts: draftEvent.blogPosts ?? [],
           });

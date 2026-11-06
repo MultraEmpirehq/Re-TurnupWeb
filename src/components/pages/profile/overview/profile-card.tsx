@@ -21,7 +21,7 @@ import {
 import { resolveAttachmentUrl } from "@/lib/functions";
 import { inviteLink } from "@/lib/invite";
 import { ROUTES } from "@/lib/variables";
-import useUserStore, { TUserDetails } from "@/stores/user-store";
+import useUserStore, { EUserRoles, TUserDetails } from "@/stores/user-store";
 import { useQuery } from "@tanstack/react-query";
 import {
   Camera,
@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import InviteFriendsCard from "../invite-friends-card";
 
 const initialsOf = (name: string) =>
@@ -343,9 +343,10 @@ const ProfileCard: React.FC = () => {
         </div>
       </section>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className={user?.role === EUserRoles.VENDOR ? "grid gap-3" : "grid grid-cols-2 gap-3"}>
         <CreditTile />
-        <InviteTile code={user?.username} />
+        {/* Invites are for attendees: an organiser's code no longer works. */}
+        {user?.role !== EUserRoles.VENDOR && <InviteTile code={user?.username} />}
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { MessageSquareText, SendHorizontal } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { vendorName } from "./verification-utils";
 
 /** Openers for the usual reasons to get in touch while an application is open. */

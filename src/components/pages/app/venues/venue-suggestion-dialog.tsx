@@ -18,7 +18,7 @@ import {
   VenueSuggestion,
 } from "@/hooks/use-vendor-venues";
 import React, { memo, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const COUNTRIES = [
   { value: "Nigeria", label: "Nigeria" },

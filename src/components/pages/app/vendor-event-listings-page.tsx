@@ -29,7 +29,7 @@ import { CalendarDays, MapPin, Megaphone, Ticket } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { memo, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useFeatures } from "@/hooks/use-features";
 // An admin's links stay in the admin console (on turnupz.com): the vendor
 // pages are on turnupz.app, where the admin isn't signed in.

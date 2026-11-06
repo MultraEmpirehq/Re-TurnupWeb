@@ -1,4 +1,6 @@
 ﻿"use client";
+import EventTaxOptions from "./event-tax-options";
+import RegistrationApprovalSwitch from "./registration-approval-switch";
 import SelectField, { ISelectFieldOption } from "@/components/ui/select-field";
 import React, { memo, useCallback, useMemo } from "react";
 import { Controller, useFormContext } from "react-hook-form";
@@ -30,6 +32,13 @@ export interface ITicketFormValues {
   passAssignments?: IAccessPassType[];
   eventCountry?: string;
   eventCountryCode?: string;
+  eventStateCode?: string;
+  /** Registration: the organiser approves each person. */
+  requiresApproval?: boolean;
+  /** Whether ticket prices include tax. Unset, the country's normal way. */
+  taxInclusive?: boolean;
+  /** Saskatchewan: an admission PST covers. */
+  taxQualifyingAdmission?: boolean;
   /** From the first step: when it starts, which sales have to fit before. */
   eventDate?: Date;
   /** From the first step: the venue, and how many it holds (if known). */
@@ -78,6 +87,9 @@ const passItemSchema = Joi.object({
 }).unknown(true);
 
 export const ticketFormSchema = Joi.object({
+  requiresApproval: Joi.boolean().optional(),
+  taxInclusive: Joi.boolean().optional(),
+  taxQualifyingAdmission: Joi.boolean().optional(),
   saleMethod: Joi.string()
     .required()
     .valid(
@@ -145,6 +157,10 @@ const TicketForm: React.FC<{
   const saleMethod = watch("saleMethod");
   const eventCountry = watch("eventCountry");
   const eventCountryCode = watch("eventCountryCode");
+  const eventStateCode = watch("eventStateCode");
+  const taxInclusive = watch("taxInclusive");
+  const requiresApproval = watch("requiresApproval");
+  const taxQualifyingAdmission = watch("taxQualifyingAdmission");
   const eventTimezone = watch("eventTimezone");
   // Set on the first step; a multi-day event's tickets say which days they're for.
   const isMultiDay = watch("isMultiDay");
@@ -436,8 +452,23 @@ const TicketForm: React.FC<{
           </>
         )}
 
+        {saleMethod === ESaleMethods.SELL_ON_TURNUP && !isFreeHost && (
+          <EventTaxOptions
+            countryCode={eventCountryCode}
+            stateCode={eventStateCode}
+            taxInclusive={taxInclusive}
+            qualifying={taxQualifyingAdmission}
+            onTaxInclusive={(value) => setValue("taxInclusive", value, { shouldDirty: true })}
+            onQualifying={(value) => setValue("taxQualifyingAdmission", value, { shouldDirty: true })}
+          />
+        )}
+
         {saleMethod === ESaleMethods.REGISTER && (
           <>
+            <RegistrationApprovalSwitch
+              checked={!!requiresApproval}
+              onChange={(value) => setValue("requiresApproval", value, { shouldDirty: true })}
+            />
             <Controller
               control={control}
               name="eventTickets"

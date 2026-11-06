@@ -19,7 +19,7 @@ import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { useSetUserSuspension } from "@/hooks/use-admin-moderation";
 import { NoteDialog } from "../moderation/moderation-ui";
 import UserTransfers from "./user-transfers";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import StatusPill from "../status-pill";
 
 const APPROVAL_LABEL: Record<string, string> = {

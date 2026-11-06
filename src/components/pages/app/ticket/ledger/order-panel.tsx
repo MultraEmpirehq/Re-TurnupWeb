@@ -21,7 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ChevronRight, Download, Search } from "lucide-react";
 import React, { memo, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { describeTypes, orderWhen } from "./orders-table";
 
 const PAGE = 25;

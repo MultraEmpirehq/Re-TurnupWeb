@@ -13,7 +13,7 @@ import useSignOut from "@/hooks/use-sign-out";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { memo, useMemo, useRef } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status";
 import { useUnreadChatCount } from "@/hooks/use-event-chat";
 import { usePendingApprovalCount } from "@/hooks/use-vendor-tickets";

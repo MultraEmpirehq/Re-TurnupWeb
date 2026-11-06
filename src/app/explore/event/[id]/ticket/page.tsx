@@ -9,7 +9,7 @@ import ErrorContainer from "@/components/ui/error-container";
 import { useEvent } from "@/hooks/use-event";
 import { useEventTickets } from "@/hooks/use-ticket.hook";
 import { formatCurrency } from "@/lib/functions";
-import { eventDayName, formatEventTime } from "@/lib/event-time";
+import { eventDayName } from "@/lib/event-time";
 import { describeTicketSaleState, ticketSaleState } from "@/lib/ticket-sales";
 import { joinEventChatGroup } from "@/lib/event-chat";
 import LeavingTurnupzDialog from "@/components/pages/explore/leaving-turnupz-dialog";
@@ -28,37 +28,25 @@ import useUserStore from "@/stores/user-store";
 import { cn } from "@/lib/utils";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
-  CalendarDays,
   CalendarRange,
   ExternalLink,
   LockKeyhole,
-  MapPin,
   Minus,
   Plus,
   TicketIcon,
 } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
 import {
   EOrderStatus,
-  IEventDetailsType,
   ITicketDetailsType,
 } from "@/lib/types";
 import { useFeatures } from "@/hooks/use-features";
+import { useEventTaxRates } from "@/hooks/use-tax";
+import { checkoutTax } from "@/lib/checkout-tax";
 
 const EXTERNAL_LINK_TYPE = "EXTERNAL_LINK";
 
-const getTicketPriceLabel = (ticket: ITicketDetailsType) => {
-  if (ticket.price?.formatted?.withCurrency) {
-    return ticket.price.formatted.withCurrency;
-  }
-  if (ticket.price?.amount) {
-    const { locale, code } = ticket.price.currency;
-    return formatCurrency(ticket.price.amount, code, locale);
-  }
-  return "Free";
-};
 
 /** The most of one ticket type a buyer can take: stock, then the organiser's cap. */
 const maxFor = (ticket: ITicketDetailsType) => {
@@ -69,96 +57,45 @@ const maxFor = (ticket: ITicketDetailsType) => {
   );
 };
 
-const TicketSelectionCard: React.FC<{
+/** One registration type to choose. No ticket design yet: they don't have a ticket. */
+const RegistrationTypeRow: React.FC<{
   ticket: ITicketDetailsType;
-  event?: IEventDetailsType;
   selected?: boolean;
   onSelect: () => void;
-}> = ({ ticket, event, selected, onSelect }) => {
-  const eventDate = event?.date ? new Date(event.date) : null;
-  const venue = [
-    event?.venue?.name,
-    event?.venueName,
-    event?.venueAddress,
-    event?.eventCity,
-    event?.eventState,
-    event?.eventCountry,
-  ]
-    .filter(Boolean)
-    .slice(0, 2)
-    .join(", ");
-  const scanValue = `${event?.id ?? "event"}:${ticket.id}:${ticket.name}`;
-
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={cn(
-        "w-full overflow-hidden rounded-[1.4rem] border text-left shadow-[0_18px_45px_rgba(15,23,42,0.10)] transition",
-        selected
-          ? "border-primary-300 ring-2 ring-primary-100"
-          : "border-transparent hover:-translate-y-0.5 hover:border-primary-200",
-      )}
-    >
-      <div className="grid min-h-[11.5rem] bg-[linear-gradient(135deg,#319d91_0%,#1f6d86_54%,#174867_100%)] text-white sm:grid-cols-[minmax(0,1fr)_9rem]">
-        <div className="relative flex min-h-[11.5rem] flex-col justify-between overflow-hidden px-5 py-5">
-          <div className="absolute inset-0 opacity-[0.08] [background-image:repeating-linear-gradient(45deg,transparent,transparent_10px,#ffffff_10px,#ffffff_11px)]" />
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <span className="-rotate-20 text-5xl font-black uppercase tracking-[0.16em] text-white/10">
-              Turnupz
-            </span>
-          </div>
-          <div className="relative z-10 space-y-4">
-            <span className="inline-flex rounded-full bg-white/18 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]">
-              {ticket.name || ticket.type || "Ticket"}
-            </span>
-            <div>
-              <h3 className="text-lg font-black leading-tight">
-                {event?.name || "Turnupz Event"}
-              </h3>
-              <div className="mt-4 space-y-2 text-xs text-white/80">
-                <p className="flex items-center gap-2">
-                  <CalendarDays className="size-4" />
-                  {eventDate
-                    ? formatEventTime(eventDate, event?.timezone)
-                    : "Date pending"}
-                </p>
-                <p className="flex items-center gap-2">
-                  <MapPin className="size-4" />
-                  {venue || "Venue pending"}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="relative z-10 flex items-center justify-between gap-3">
-            <span className="rounded-full bg-white/18 px-4 py-2 text-sm font-semibold">
-              {ticket.name || ticket.type || "Ticket"}
-            </span>
-            <span className="text-xs font-semibold text-white/45">
-              {describeTicketSaleState(
-                ticketSaleState(ticket),
-                event?.timezone,
-              ) ?? "turnupz.app"}
-            </span>
-          </div>
-        </div>
-
-        <div className="relative flex min-h-[11.5rem] flex-col items-center justify-center bg-black/12 px-4 py-4">
-          <div className="absolute -left-3 top-0 hidden h-full border-l border-dashed border-white/30 sm:block" />
-          <div className="absolute -left-3 top-0 hidden size-6 -translate-y-1/2 rounded-full bg-white sm:block" />
-          <div className="absolute -left-3 bottom-0 hidden size-6 translate-y-1/2 rounded-full bg-white sm:block" />
-          <p className="text-base font-black">{getTicketPriceLabel(ticket)}</p>
-          <div className="mt-3 rounded-lg bg-white p-2">
-            <QRCodeSVG value={scanValue} size={82} level="M" />
-          </div>
-          <p className="mt-2 break-all text-center text-[10px] font-medium text-white/58">
-            {ticket.id.slice(0, 12).toUpperCase()}
-          </p>
-        </div>
-      </div>
-    </button>
-  );
-};
+}> = ({ ticket, selected, onSelect }) => (
+  <button
+    type="button"
+    onClick={onSelect}
+    aria-pressed={!!selected}
+    className={cn(
+      "flex w-full items-center justify-between gap-4 rounded-2xl border-2 p-5 text-left transition-colors",
+      selected
+        ? "border-primary-500 bg-primary-50/50"
+        : "border-border hover:border-primary-300",
+    )}
+  >
+    <span className="flex min-w-0 items-center gap-3">
+      <span
+        aria-hidden
+        className={cn(
+          "flex size-5 shrink-0 items-center justify-center rounded-full border-2",
+          selected ? "border-primary-500" : "border-secondary-200",
+        )}
+      >
+        {selected && <span className="size-2.5 rounded-full bg-primary-500" />}
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate font-semibold text-secondary-950">{ticket.name}</span>
+        {typeof ticket.available === "number" && ticket.available > 0 && (
+          <span className="block text-sm text-secondary-500">
+            {ticket.available.toLocaleString()} {ticket.available === 1 ? "place" : "places"} left
+          </span>
+        )}
+      </span>
+    </span>
+    <span className="shrink-0 font-bold text-primary-600">Free</span>
+  </button>
+);
 
 const TicketPage = () => {
   const params = useParams();
@@ -259,9 +196,9 @@ const TicketPage = () => {
   }, [getTicketVisibility, tickets]);
 
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
-  const [quantity, setQuantity] = useState(1);
+  // Registration is one place per person; tickets have their own counts.
+  const quantity = 1;
   const [isPurchasing, setIsPurchasing] = useState(false);
-  const [showRegistrationTypes, setShowRegistrationTypes] = useState(false);
 
   const selectedTicket = useMemo(
     () => accessibleTickets.find((t) => t.id === selectedTicketId) ?? null,
@@ -409,6 +346,10 @@ const TicketPage = () => {
     },
     [eventId],
   );
+  // Counts the ticket page being opened, for the sales funnel. Never gets in the way.
+  useEffect(() => {
+    if (eventId) void postData(`/event/${eventId}/view`, { page: "tickets" }).catch(() => undefined);
+  }, [eventId]);
   // A promoter's link (?code=…) fills the code in for them.
   const codeFromLink = searchParams?.get("code");
   useEffect(() => {
@@ -441,11 +382,17 @@ const TicketPage = () => {
     )?.available?.amount ?? 0;
   // Paying with credit can be paused for everyone (Admin switch).
   const { creditSpending } = useFeatures();
+  // Tax on the tickets, if any applies here. The api works it out again when paying.
+  const { data: taxRates } = useEventTaxRates(
+    !isRegistrationOnly && totalPrice > 0 ? eventId : undefined,
+    pricingTicket?.price?.currency?.code,
+  );
+  const taxed = checkoutTax(afterPromo, taxRates);
   const creditApplied =
-    creditSpending && useCredit && afterPromo > 0
-      ? Math.min(creditAvailable, afterPromo)
+    creditSpending && useCredit && taxed.gross > 0
+      ? Math.min(creditAvailable, taxed.gross)
       : 0;
-  const toPay = Math.max(afterPromo - creditApplied, 0);
+  const toPay = Math.max(taxed.gross - creditApplied, 0);
   const money = useCallback(
     (amount: number) =>
       pricingTicket
@@ -510,11 +457,6 @@ const TicketPage = () => {
 
   const handleSelectTicket = useCallback((ticketId: string) => {
     setSelectedTicketId(ticketId);
-    setQuantity(1);
-  }, []);
-
-  const handleDecrement = useCallback(() => {
-    setQuantity((prev) => Math.max(1, prev - 1));
   }, []);
 
   const selectedSaleState = useMemo(
@@ -526,22 +468,6 @@ const TicketPage = () => {
     event?.timezone,
   );
   const isSelectedOnSale = selectedSaleState.status === "open";
-
-  const maxQuantity = useMemo(() => {
-    const byStock = isRegistrationOnly
-      ? Math.max(
-          Math.min(
-            event?.remainingRegistrationSpots ?? 1,
-            selectedTicket?.available ?? selectedTicket?.quantity ?? 1,
-          ),
-          1,
-        )
-      : (selectedTicket?.available ?? selectedTicket?.quantity ?? 10);
-    // The organiser can cap how many one buyer takes in a single order.
-    return selectedTicket?.maxPerOrder
-      ? Math.max(1, Math.min(byStock, selectedTicket.maxPerOrder))
-      : byStock;
-  }, [event?.remainingRegistrationSpots, isRegistrationOnly, selectedTicket]);
 
   const saleNoticeBlock = selectedTicket &&
     (selectedSaleNotice || selectedTicket.maxPerOrder) && (
@@ -556,10 +482,6 @@ const TicketPage = () => {
         {selectedSaleNotice ?? `Up to ${selectedTicket.maxPerOrder} per order`}
       </p>
     );
-
-  const handleIncrement = useCallback(() => {
-    setQuantity((prev) => Math.min(maxQuantity, prev + 1));
-  }, [maxQuantity]);
 
   const handlePurchase = useCallback(async () => {
     if (!userDetails) {
@@ -768,86 +690,31 @@ const TicketPage = () => {
       </div>
 
       <div className="space-y-8">
-        <h2 className="text-2xl font-bold">Choose Ticket</h2>
+        <h2 className="text-2xl font-bold">
+          {isRegistrationOnly ? "Register" : "Choose Ticket"}
+        </h2>
 
         {isRegistrationOnly && (
           <div className="space-y-6">
-            <button
-              type="button"
-              onClick={() => setShowRegistrationTypes((current) => !current)}
-              className="w-full rounded-2xl border border-primary-100 bg-primary-50/70 p-5 text-left transition hover:border-primary-200 hover:bg-primary-50"
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary-700">
-                Registration
+            {event?.requiresApproval && (
+              <p className="rounded-xl border border-primary-100 bg-primary-50/70 px-4 py-3 text-sm text-secondary-600">
+                This event requires organiser approval. Your registration will
+                be marked pending until approved.
               </p>
-              <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h3 className="text-xl font-bold text-secondary-950">
-                    Register for {event?.name}
-                  </h3>
-                  <div className="mt-4 grid gap-3 text-sm text-secondary-600 sm:grid-cols-2">
-                    <p>
-                      <span className="font-semibold text-secondary-950">
-                        Registered:
-                      </span>{" "}
-                      {(event?.registrationCount ?? 0).toLocaleString()}
-                    </p>
-                    <p>
-                      <span className="font-semibold text-secondary-950">
-                        Spots left:
-                      </span>{" "}
-                      {(
-                        event?.remainingRegistrationSpots ?? 0
-                      ).toLocaleString()}
-                    </p>
-                    <p>
-                      <span className="font-semibold text-secondary-950">
-                        Limit:
-                      </span>{" "}
-                      {(
-                        event?.registrationLimit ??
-                        event?.totalTickets ??
-                        0
-                      ).toLocaleString()}
-                    </p>
-                    <p className="capitalize">
-                      <span className="font-semibold text-secondary-950">
-                        Status:
-                      </span>{" "}
-                      {event?.registrationStatus ?? "open"}
-                    </p>
-                  </div>
-                </div>
-                <span className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-primary-500 px-4 text-sm font-semibold text-white">
-                  {showRegistrationTypes ? "Hide Types" : "Choose Type"}
-                </span>
-              </div>
-              {event?.requiresApproval && (
-                <p className="mt-4 rounded-xl bg-white px-4 py-3 text-sm text-secondary-600">
-                  This event requires organizer approval. Your registration will
-                  be marked pending until approved.
-                </p>
-              )}
-            </button>
+            )}
 
-            {showRegistrationTypes && registrationTickets.length > 0 && (
+            {registrationTickets.length > 0 && (
               <div className="space-y-4">
-                <div>
+                {registrationTickets.length > 1 && (
                   <p className="text-lg font-semibold text-secondary-950">
                     Choose registration type
                   </p>
-                  <p className="mt-1 text-sm text-secondary-500">
-                    Select the registration category you want. Private
-                    categories only appear when you open the organizer&apos;s
-                    invite link.
-                  </p>
-                </div>
+                )}
                 <div className="space-y-4">
                   {registrationTickets.map((ticket) => (
-                    <TicketSelectionCard
+                    <RegistrationTypeRow
                       key={ticket.id}
                       ticket={ticket}
-                      event={event}
                       selected={selectedTicketId === ticket.id}
                       onSelect={() => handleSelectTicket(ticket.id)}
                     />
@@ -856,8 +723,7 @@ const TicketPage = () => {
               </div>
             )}
 
-            {showRegistrationTypes &&
-              tickets.length > 0 &&
+            {tickets.length > 0 &&
               registrationTickets.length === 0 && (
                 <div className="rounded-2xl border border-secondary-200 bg-secondary-50 p-5 text-secondary-900">
                   <div className="flex items-start gap-3">
@@ -875,35 +741,28 @@ const TicketPage = () => {
                 </div>
               )}
 
-            <div className="space-y-4 border rounded-xl p-6">
-              <div className="flex items-center justify-between">
-                <p className="font-semibold text-lg">Number of Registrations</p>
-                <div className="flex items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={handleDecrement}
-                    disabled={quantity <= 1}
-                    aria-label="Decrease quantity"
-                    className="size-9 rounded-full border border-border flex items-center justify-center transition-colors hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    <Minus className="size-4" />
-                  </button>
-                  <span className="text-lg font-semibold w-8 text-center tabular-nums">
-                    {quantity}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleIncrement}
-                    disabled={quantity >= maxQuantity}
-                    aria-label="Increase quantity"
-                    className="size-9 rounded-full bg-primary-500 text-white flex items-center justify-center transition-colors hover:bg-primary-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    <Plus className="size-4" />
-                  </button>
+            {selectedTicket && (
+              <div className="space-y-3 rounded-xl border p-6">
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <p className="text-muted-foreground">1 × {selectedTicket.name}</p>
+                  <p className="font-semibold">Free</p>
                 </div>
+                <div className="border-t" />
+                <div className="flex items-center justify-between">
+                  <p className="text-lg font-semibold">Total</p>
+                  <p className="text-xl font-bold text-primary-600">Free</p>
+                </div>
+                {saleNoticeBlock}
               </div>
-              {saleNoticeBlock}
-            </div>
+            )}
+
+            {event?.registrationStatus && event.registrationStatus !== "open" && (
+              <p className="text-center text-sm font-medium text-secondary-600">
+                {event.registrationStatus === "full"
+                  ? "This event's registration is full."
+                  : "Registration for this event has closed."}
+              </p>
+            )}
 
             <button
               onClick={handlePurchase}
@@ -1274,6 +1133,14 @@ const TicketPage = () => {
                     />
                   </div>
                 )}
+                {taxed.lines.map((line) => (
+                  <div key={line.code} className="flex items-center justify-between text-sm">
+                    <p className="text-muted-foreground">
+                      {taxed.included ? `Includes ${line.label}` : line.label}
+                    </p>
+                    <p className="font-semibold">{money(line.amount)}</p>
+                  </div>
+                ))}
                 {creditApplied > 0 && (
                   <div className="flex items-center justify-between text-sm">
                     <p className="text-muted-foreground">Turnupz Credit</p>
@@ -1283,13 +1150,13 @@ const TicketPage = () => {
 
                 <div className="flex items-center justify-between">
                   <p className="font-semibold text-lg">
-                    {creditApplied > 0 || promoDiscount > 0
+                    {creditApplied > 0 || promoDiscount > 0 || toPay !== totalPrice
                       ? "To pay:"
                       : "Total Price:"}
                   </p>
                   <p className="text-xl font-bold text-primary-600">
                     {totalPrice > 0 &&
-                      (creditApplied > 0 || promoDiscount > 0
+                      (creditApplied > 0 || promoDiscount > 0 || toPay !== totalPrice
                         ? toPay > 0
                           ? money(toPay)
                           : "Covered by credit"

@@ -10,7 +10,7 @@ import { Download, SendHorizontal } from "lucide-react";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import React, { memo, useCallback, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 interface TicketCardProps {
   userTicket: IUserTicketType;
@@ -473,7 +473,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
                 lineHeight: 1.2,
               }}
             >
-              {ticket.price?.formatted?.withCurrency ?? "Free"}
+              {(ticket.price?.amount ?? 0) > 0 ? ticket.price?.formatted?.withCurrency : "Free"}
             </p>
 
             {/* QR Code */}

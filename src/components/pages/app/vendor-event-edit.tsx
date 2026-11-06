@@ -1,5 +1,7 @@
 "use client";
 
+import RegistrationApprovalSwitch from "./create/registration-approval-switch";
+import EventTaxOptions from "./create/event-tax-options";
 import { deleteData, patchData, postData, putData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
@@ -34,7 +36,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { uploadAttachment, uploadAttachments } from "@/api/attachments";
 import TimezoneSelect from "@/components/ui/timezone-select";
 import LineupPicker from "@/components/discovery/lineup-picker";
@@ -220,6 +222,9 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     [eventDays],
   );
   const [saleMethod, setSaleMethod] = useState("");
+  const [taxInclusive, setTaxInclusive] = useState<boolean | null>(null);
+  const [taxQualifying, setTaxQualifying] = useState(false);
+  const [requiresApproval, setRequiresApproval] = useState(false);
   const [ticketUrl, setTicketUrl] = useState("");
   const [activities, setActivities] = useState<IEventActivityDetails[]>([]);
   const [blogPosts, setBlogPosts] = useState<IEventBlogPostDetails[]>([]);
@@ -262,6 +267,9 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
       totalTickets: `${data.totalTickets ?? 0}`,
     });
     setSaleMethod(data.saleMethod ?? "");
+    setTaxInclusive(data.taxInclusive ?? null);
+    setTaxQualifying(!!data.taxQualifyingAdmission);
+    setRequiresApproval(!!data.requiresApproval);
     setTicketUrl(data.ticketUrl ?? "");
     setTimezone(data.timezone || DEFAULT_EVENT_TIMEZONE);
     setLineup(data.performers ?? []);
@@ -825,6 +833,13 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
         );
         formData.append("description", formValues.description);
         if (saleMethod) formData.append("saleMethod", saleMethod);
+        if (saleMethod === "register") {
+          formData.append("requiresApproval", String(requiresApproval));
+        }
+        if (saleMethod === "on_turnup") {
+          if (taxInclusive !== null) formData.append("taxInclusive", String(taxInclusive));
+          formData.append("taxQualifyingAdmission", String(taxQualifying));
+        }
         if (saleMethod === "external_link" && ticketUrl.trim()) {
           formData.append("ticketUrl", ticketUrl.trim());
         }
@@ -1410,6 +1425,26 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                         onChange={(event) => setTicketUrl(event.target.value)}
                         placeholder="https://example.com/tickets"
                         className="h-11 rounded-xl border-secondary-200 bg-white"
+                      />
+                    </div>
+                  )}
+                  {saleMethod === "register" && (
+                    <div className="md:col-span-2">
+                      <RegistrationApprovalSwitch
+                        checked={requiresApproval}
+                        onChange={setRequiresApproval}
+                      />
+                    </div>
+                  )}
+                  {saleMethod === "on_turnup" && (
+                    <div className="md:col-span-2">
+                      <EventTaxOptions
+                        countryCode={data?.eventCountryCode}
+                        stateCode={data?.eventStateCode}
+                        taxInclusive={taxInclusive}
+                        qualifying={taxQualifying}
+                        onTaxInclusive={setTaxInclusive}
+                        onQualifying={setTaxQualifying}
                       />
                     </div>
                   )}

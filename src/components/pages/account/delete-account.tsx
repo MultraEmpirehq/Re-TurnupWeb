@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import useUserStore from "@/stores/user-store";
 import Link from "next/link";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const WHAT_HAPPENS = [
   "Your profile, photo, followers and saved cards are removed, and you're signed out everywhere.",

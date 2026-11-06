@@ -16,7 +16,7 @@ import FeatureSwitch from "../feature-switch";
 import { Rocket } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
   FilterTabs,
   ListSkeleton,

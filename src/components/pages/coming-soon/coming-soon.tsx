@@ -170,7 +170,7 @@ const ComingSoon = () => {
         newsletterConsent,
         researchConsent,
         personalizationConsent,
-        privacyNoticeVersion: "1.2",
+        privacyNoticeVersion: "1.3",
         // e.g. turnupz.app/?ref=instagram, to see which posts bring people in.
         source: searchParams.get("ref") || "coming-soon",
       }, { headers: WEB_CLIENT_HEADERS });

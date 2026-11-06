@@ -19,7 +19,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ExternalLink, Flag } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import OrganiserContactDialog, {
   TOrganiserContactTarget,
 } from "../../organiser-contact-dialog";

@@ -11,7 +11,7 @@ import { joiResolver } from "@hookform/resolvers/joi";
 import { getData, postData, WEB_CLIENT_HEADERS } from "@/api";
 import { Separator } from "@/components/ui/separator";
 import MagicLinkModal from "@/components/pages/auth/magic-link-modal";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { constructErrorMessage } from "@/api/functions";
 import useAuth from "@/hooks/use-auth";
 import useSocialAuth, {

@@ -25,6 +25,9 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-heat: var(--heat);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -122,6 +125,10 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: #00b2ff;
+  /* Chart colours per mode, checked for contrast and colour blindness. */
+  --series-1: #008fcc;
+  --series-2: #e17100;
+  --heat: #008fcc;
   --chart-1: #00b2ff;
   --chart-2: #0577fa;
   --chart-3: #006b99;
@@ -183,6 +190,9 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: #00b2ff;
+  --series-1: #33c2ff;
+  --series-2: #ffb900;
+  --heat: #0577fa;
   --chart-1: #00b2ff;
   --chart-2: #0577fa;
   --chart-3: #006b99;
@@ -562,4 +572,74 @@
   .animate-landing-orbit-counter {
     animation: none;
   }
+}
+
+/* Toasts: the same as the app's, in the colour of what happened. The bar along the
+   bottom runs down over the toast's time (--toast-time, from lib/toast) and pauses
+   while hovering, when the toast waits too. Colours are fixed in both themes. */
+@keyframes toast-time {
+  from {
+    background-size: 100% 3px, 100% 3px;
+  }
+  to {
+    background-size: 0% 3px, 100% 3px;
+  }
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
+  --toast-colour: #0577fa;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+  padding: 14px 44px 17px 16px;
+  border: 0;
+  border-radius: 1rem;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  box-shadow: 0 8px 18px rgba(7, 20, 29, 0.22);
+  background-color: var(--toast-colour);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.9) 0 0), linear-gradient(rgba(255, 255, 255, 0.25) 0 0);
+  background-position: 0 100%, 0 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 3px, 100% 3px;
+  animation: toast-time var(--toast-time, 0s) linear forwards;
+}
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] {
+  --toast-colour: #15803d;
+}
+[data-sonner-toaster] [data-sonner-toast][data-type="error"],
+[data-sonner-toaster] [data-sonner-toast][data-type="warning"] {
+  --toast-colour: #dc2626;
+}
+[data-sonner-toaster] [data-sonner-toast][data-type="loading"] {
+  animation: none;
+  background-image: none;
+}
+[data-sonner-toaster]:hover [data-sonner-toast] {
+  animation-play-state: paused;
+}
+[data-sonner-toaster] [data-sonner-toast] [data-icon] {
+  width: 32px;
+  height: 32px;
+  margin: 0;
+}
+[data-sonner-toaster] [data-sonner-toast] [data-description] {
+  color: rgba(255, 255, 255, 0.85);
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-close-button] {
+  top: 50%;
+  right: 12px;
+  left: auto;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  transform: translateY(-50%);
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-close-button]:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
 }
