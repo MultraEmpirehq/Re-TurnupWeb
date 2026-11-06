@@ -16,7 +16,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { memo } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 type TAdminLoginValues = { email: string; password: string };
 type TAdminLoginResponse = {

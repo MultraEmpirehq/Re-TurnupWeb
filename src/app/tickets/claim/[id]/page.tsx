@@ -7,7 +7,7 @@ import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useRef } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 export default function ClaimTicketPage() {
   const params = useParams();

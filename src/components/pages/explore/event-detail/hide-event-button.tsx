@@ -5,7 +5,7 @@ import { useHiddenEventIds, useToggleHiddenEvent } from "@/hooks/use-discovery";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
 import { Eye, EyeOff } from "lucide-react";
 import React, { memo } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 /**
  * "Not for me": hides the event from your listings (Explore, the home feed and

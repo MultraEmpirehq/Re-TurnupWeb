@@ -7,10 +7,10 @@ import { TFollowTargetType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/variables";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
-import { Check, Plus } from "lucide-react";
+import { Check, Plus, UserCheck, UserPlus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { memo } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 /**
  * Follow or unfollow a performer, venue or planner; what you follow is listed on
@@ -21,7 +21,9 @@ const FollowButton: React.FC<{
   id?: string | null;
   name: string;
   className?: string;
-}> = ({ type, id, name, className }) => {
+  /** A round icon button, where there's no room for the word. */
+  iconOnly?: boolean;
+}> = ({ type, id, name, className, iconOnly }) => {
   const router = useRouter();
   const pathname = usePathname();
   const isSignedIn = !!useUserStore((state) => state.userDetails);
@@ -61,6 +63,12 @@ const FollowButton: React.FC<{
       onClick={() => void handleClick()}
       disabled={toggle.isPending || (isSignedIn && follows.isLoading)}
       aria-pressed={isFollowing}
+      {...(iconOnly
+        ? {
+            "aria-label": isFollowing ? `Unfollow ${name}` : `Follow ${name}`,
+            title: isFollowing ? `Following ${name}` : `Follow ${name}`,
+          }
+        : {})}
       variant={isFollowing ? "outline" : "default"}
       className={cn(
         "rounded-full px-5",
@@ -69,11 +77,11 @@ const FollowButton: React.FC<{
       )}
     >
       {isFollowing ? (
-        <Check className="size-4" aria-hidden />
+        iconOnly ? <UserCheck className="size-4" aria-hidden /> : <Check className="size-4" aria-hidden />
       ) : (
-        <Plus className="size-4" aria-hidden />
+        iconOnly ? <UserPlus className="size-4" aria-hidden /> : <Plus className="size-4" aria-hidden />
       )}
-      {isFollowing ? "Following" : "Follow"}
+      {!iconOnly && (isFollowing ? "Following" : "Follow")}
     </Button>
   );
 };

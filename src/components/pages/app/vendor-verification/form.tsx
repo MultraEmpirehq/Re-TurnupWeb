@@ -26,7 +26,7 @@ import React, {
   useState,
 } from "react";
 import { FormProvider, Resolver, useForm } from "react-hook-form";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { StepHeader } from "./fields";
 import { schemaFor } from "./schemas";
 import { VendorVerificationStatusBadge, writeSnapshot } from "./status";

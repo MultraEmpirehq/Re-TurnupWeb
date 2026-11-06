@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { NoteDialog } from "../moderation/moderation-ui";
 
 const STATUS_TONE: Record<IAdminUserTransfer["status"], string> = {

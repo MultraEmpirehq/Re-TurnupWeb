@@ -29,7 +29,7 @@ const EventDetailHero = ({
         />
         <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 text-white bg-linear-to-t from-black/70 to-transparent flex flex-col gap-2">
           <p className="text-xs md:text-sm font-medium opacity-90 uppercase tracking-wider">
-            {venueName || "Event"} present
+            {venueName || "Event"} presents
           </p>
           <h1 className="text-2xl md:text-4xl font-bold">
             {name || "Event Name"}

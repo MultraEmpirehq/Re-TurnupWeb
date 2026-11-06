@@ -19,7 +19,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2 } from "lucide-react";
 import React, { memo, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 /**
  * Moves an organiser's Flutterwave payouts to another bank account. The bank

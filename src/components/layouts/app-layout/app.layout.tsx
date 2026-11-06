@@ -33,7 +33,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {!shouldHideNav && <GeneralNavComponent />}
         <div className="min-h-[calc(100vh-70px)]">{children}</div>
         {!shouldHideFooter && <GeneralFooterComponent />}
-        <Toaster position="top-center" richColors duration={7000} />
+        <Toaster position="top-center" />
         <CookieGate />
       </AuthProvider>
     </QueryClientProvider>

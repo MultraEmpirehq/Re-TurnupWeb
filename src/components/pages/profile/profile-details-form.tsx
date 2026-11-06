@@ -40,7 +40,7 @@ import Link from "next/link";
 import { ROUTES } from "@/lib/variables";
 import React, { memo, useCallback, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 interface IProfileFormValues {
   firstName: string;
@@ -87,6 +87,11 @@ const schema = Joi.object({
     .messages({ "string.pattern.base": "Please enter a valid phone number" }),
 });
 
+/** Admins are staff: their account doesn't need a birth date or gender. */
+const adminSchema = schema.fork(["dateOfBirth", "gender"], (field) =>
+  field.optional().allow(null),
+);
+
 const roleLabels: Record<EUserRoles, string> = {
   [EUserRoles.ADMIN]: "Admin account",
   [EUserRoles.VENDOR]: "Vendor account",
@@ -102,6 +107,7 @@ const cardClassName =
  */
 const ProfileDetailsForm = () => {
   const userDetails = useUserStore((state) => state.userDetails);
+  const isAdmin = userDetails?.role === EUserRoles.ADMIN;
   const { performAuthOperation } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -129,7 +135,7 @@ const ProfileDetailsForm = () => {
     reset,
     formState: { errors, isSubmitting, dirtyFields },
   } = useForm<IProfileFormValues>({
-    resolver: joiResolver(schema),
+    resolver: joiResolver(isAdmin ? adminSchema : schema),
     defaultValues,
     // Picks up the saved details once they load, unless mid-edit.
     values: isEditing ? undefined : defaultValues,
@@ -311,8 +317,9 @@ const ProfileDetailsForm = () => {
                 Personal information
               </h2>
               <p className="mt-1 max-w-2xl text-sm text-secondary-500">
-                Used on your tickets and orders, and by organisers to reach you
-                about events you&apos;re going to.
+                {isAdmin
+                  ? "Your name and photo, for your admin account. In chats, people outside the team see \"Turnupz team\"."
+                  : "Used on your tickets and orders, and by organisers to reach you about events you're going to."}
               </p>
             </div>
             <div className="flex shrink-0 gap-2">
@@ -379,40 +386,44 @@ const ProfileDetailsForm = () => {
               {...register("phone")}
               error={errors.phone?.message}
             />
-            <Controller
-              control={control}
-              name="dateOfBirth"
-              render={({ field, fieldState }) => (
-                <DateSelect
-                  date={field.value}
-                  setDate={field.onChange}
-                  label="Date of Birth"
-                  placeholder="Select your date of birth"
-                  error={fieldState?.error?.message}
-                  className="w-full"
-                  disabled={!isEditing}
-                  minDate={earliestBirthDate()}
-                  maxDate={latestAdultBirthDate()}
-                  helperText="You must be 18 or older."
+            {!isAdmin && (
+              <>
+                <Controller
+                  control={control}
+                  name="dateOfBirth"
+                  render={({ field, fieldState }) => (
+                    <DateSelect
+                      date={field.value}
+                      setDate={field.onChange}
+                      label="Date of Birth"
+                      placeholder="Select your date of birth"
+                      error={fieldState?.error?.message}
+                      className="w-full"
+                      disabled={!isEditing}
+                      minDate={earliestBirthDate()}
+                      maxDate={latestAdultBirthDate()}
+                      helperText="You must be 18 or older."
+                    />
+                  )}
                 />
-              )}
-            />
-            <Controller
-              control={control}
-              name="gender"
-              render={({ field, fieldState }) => (
-                <GenderSelect
-                  gender={field.value}
-                  setGender={field.onChange}
-                  label="Gender"
-                  placeholder="Select your gender"
-                  error={fieldState?.error?.message}
-                  className="w-full"
-                  inputClassName="w-full"
-                  disabled={!isEditing}
+                <Controller
+                  control={control}
+                  name="gender"
+                  render={({ field, fieldState }) => (
+                    <GenderSelect
+                      gender={field.value}
+                      setGender={field.onChange}
+                      label="Gender"
+                      placeholder="Select your gender"
+                      error={fieldState?.error?.message}
+                      className="w-full"
+                      inputClassName="w-full"
+                      disabled={!isEditing}
+                    />
+                  )}
                 />
-              )}
-            />
+              </>
+            )}
             {/* Lets Enter submit while editing. */}
             <button type="submit" hidden disabled={!isEditing} />
           </form>
@@ -420,8 +431,9 @@ const ProfileDetailsForm = () => {
 
         {/* How they sign in, and where to change the rest. */}
         <aside className="space-y-6">
-          <CreditCard className={cardClassName} />
-          <InviteFriendsCard className={cardClassName} />
+          {!isAdmin && <CreditCard className={cardClassName} />}
+          {/* Invites are for attendees: organisers and admins don't invite. */}
+          {userDetails?.role === EUserRoles.USER && <InviteFriendsCard className={cardClassName} />}
           <section className={cardClassName}>
             <h2 className="text-base font-bold text-secondary-950">
               Sign-in &amp; security
@@ -464,31 +476,33 @@ const ProfileDetailsForm = () => {
             >
               <Link href={settingsHref}>
                 <KeyRound className="size-4" />
-                Password, devices &amp; notifications
+                {isAdmin ? "Password and devices" : "Password, devices & notifications"}
               </Link>
             </Button>
           </section>
 
-          <section className="rounded-[1.75rem] bg-secondary-50 p-6 sm:p-8">
-            <div className="flex items-start gap-3">
-              <CircleHelp className="mt-0.5 size-5 shrink-0 text-secondary-500" />
-              <div>
-                <p className="text-sm font-semibold text-secondary-950">
-                  Need to change your email?
-                </p>
-                <p className="mt-1 text-sm leading-6 text-secondary-500">
-                  It&apos;s how you sign in, so our team changes it for you
-                  after checking it&apos;s you.
-                </p>
-                <Link
-                  href={ROUTES.PROFILE_HELP.href}
-                  className="mt-3 inline-block text-sm font-semibold text-secondary-600 hover:text-secondary-900 hover:underline"
-                >
-                  Contact support
-                </Link>
+          {!isAdmin && (
+            <section className="rounded-[1.75rem] bg-secondary-50 p-6 sm:p-8">
+              <div className="flex items-start gap-3">
+                <CircleHelp className="mt-0.5 size-5 shrink-0 text-secondary-500" />
+                <div>
+                  <p className="text-sm font-semibold text-secondary-950">
+                    Need to change your email?
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-secondary-500">
+                    It&apos;s how you sign in, so our team changes it for you
+                    after checking it&apos;s you.
+                  </p>
+                  <Link
+                    href={ROUTES.PROFILE_HELP.href}
+                    className="mt-3 inline-block text-sm font-semibold text-secondary-600 hover:text-secondary-900 hover:underline"
+                  >
+                    Contact support
+                  </Link>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
         </aside>
       </div>
     </div>

@@ -5,7 +5,7 @@ import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { LifeBuoy } from "lucide-react";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 /**
  * "Get help with this order": a message to the Turnupz team with the order

@@ -9,7 +9,7 @@ import TextareaField from "@/components/ui/textarea-field";
 import useUserStore from "@/stores/user-store";
 import { CheckCircle2 } from "lucide-react";
 import React, { memo, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 type TContactForm = {
   name: string;

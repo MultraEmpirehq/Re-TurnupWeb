@@ -16,7 +16,7 @@ import { format } from "date-fns";
 import { BadgeCheck, Clock, Download, ListChecks, Mail } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { ListSkeleton, PageHeading } from "../moderation/moderation-ui";
 
 const csvCell = (value: string | null | undefined) =>

@@ -27,7 +27,7 @@ import { format } from "date-fns";
 import { ImageOff, MapPin, MoreHorizontal, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import VenueSuggestionDialog from "./venue-suggestion-dialog";
 
 /** Cities organisers hold events in, before their own venues add more. */

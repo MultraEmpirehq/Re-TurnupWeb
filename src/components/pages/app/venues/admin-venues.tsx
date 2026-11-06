@@ -25,7 +25,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, ImageOff, MapPin, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 /** Cities Turnupz runs in, before the venues themselves add more. */
 const DEFAULT_CITIES = ["Lagos", "Abuja", "Calgary", "Toronto"];

@@ -21,7 +21,7 @@ import { format } from "date-fns";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useDebounce } from "use-debounce";
 
 const AUDIENCES: { value: TWaitlistAudience; title: string; note: string }[] = [

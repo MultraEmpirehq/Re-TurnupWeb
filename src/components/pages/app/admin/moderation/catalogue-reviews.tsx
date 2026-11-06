@@ -31,7 +31,7 @@ import useCategory from "@/hooks/use-category";
 import { ExternalLink, MapPin, Mic, Tag } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useDebounce } from "use-debounce";
 import { FilterTabs, ListSkeleton, PageHeading } from "./moderation-ui";
 

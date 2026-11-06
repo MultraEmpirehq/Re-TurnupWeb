@@ -7,7 +7,7 @@ import { getVisitorCountingConsent, setVisitorCountingConsent } from "@/lib/visi
 import { CONSENT_PARAM } from "@/lib/domains";
 import { X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import React, { memo, useEffect, useState } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 
 /** Readable before choosing, so people can see what they're agreeing to. */
 const READABLE_FIRST = ["/cookie-policy", "/privacy-policy", "/terms", "/unsubscribe"];
@@ -26,6 +26,9 @@ const CookieGate = () => {
   const [open, setOpen] = useState(false);
   const [customising, setCustomising] = useState(false);
   const [counting, setCounting] = useState(true);
+  // Only someone who has already chosen can close this without choosing again.
+  const [hasChosen, setHasChosen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Carried over from the other domain: save it and tidy the address.
@@ -36,9 +39,13 @@ const CookieGate = () => {
       url.searchParams.delete(CONSENT_PARAM);
       window.history.replaceState(window.history.state, "", url.toString());
     }
-    setOpen(getVisitorCountingConsent() === null);
+    const saved = getVisitorCountingConsent();
+    setHasChosen(saved !== null);
+    setOpen(saved === null);
     const reopen = () => {
-      setCounting(getVisitorCountingConsent() ?? true);
+      const current = getVisitorCountingConsent();
+      setHasChosen(current !== null);
+      setCounting(current ?? true);
       setOpen(true);
     };
     window.addEventListener(OPEN_COOKIE_CHOICE, reopen);
@@ -46,7 +53,8 @@ const CookieGate = () => {
   }, []);
 
   const readable = READABLE_FIRST.some((path) => pathname === path);
-  const blocking = open && !readable;
+  // Reopened from "Cookie settings", the choice already stands, so nothing is blocked.
+  const blocking = open && !readable && !hasChosen;
 
   // Nothing behind it scrolls while it's waiting for an answer.
   useEffect(() => {
@@ -58,10 +66,35 @@ const CookieGate = () => {
     };
   }, [blocking]);
 
+  // The keyboard can't reach the page behind while it's waiting for an answer.
+  useEffect(() => {
+    if (!blocking) return;
+    panelRef.current?.focus();
+    const keepFocusInside = (event: KeyboardEvent) => {
+      const panel = panelRef.current;
+      if (event.key !== "Tab" || !panel) return;
+      const stops = [...panel.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), input, [role='switch']")];
+      if (!stops.length) return;
+      const first = stops[0];
+      const last = stops[stops.length - 1];
+      const active = document.activeElement;
+      if (!panel.contains(active) || (event.shiftKey && (active === first || active === panel))) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", keepFocusInside);
+    return () => document.removeEventListener("keydown", keepFocusInside);
+  }, [blocking, customising]);
+
   if (!open) return null;
 
   const choose = (countVisits: boolean) => {
     setVisitorCountingConsent(countVisits);
+    setHasChosen(true);
     setOpen(false);
     setCustomising(false);
   };
@@ -74,20 +107,27 @@ const CookieGate = () => {
       role="dialog"
       aria-modal={blocking}
       aria-labelledby="cookie-choice-title"
-      className="pointer-events-auto mx-auto flex max-h-[min(78vh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-secondary-950 text-white shadow-[0_24px_60px_rgba(1,12,25,0.45)] ring-1 ring-white/10"
+      ref={panelRef}
+      tabIndex={-1}
+      className="pointer-events-auto mx-auto flex outline-none max-h-[min(78vh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-secondary-950 text-white shadow-[0_24px_60px_rgba(1,12,25,0.45)] ring-1 ring-white/10"
     >
       <div className="flex items-center justify-between gap-4 px-5 pt-5 sm:px-6">
         <h2 id="cookie-choice-title" className="text-base font-bold tracking-[0.12em] uppercase">
           {customising ? "Cookie settings" : "Cookie notice"}
         </h2>
-        <button
-          type="button"
-          onClick={() => choose(false)}
-          aria-label="Close and use essential cookies only"
-          className="rounded-full p-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-        >
-          <X className="size-5" aria-hidden />
-        </button>
+        {hasChosen && (
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              setCustomising(false);
+            }}
+            aria-label="Close without changing your choice"
+            className="rounded-full p-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <X className="size-5" aria-hidden />
+          </button>
+        )}
       </div>
 
       {!customising ? (
@@ -181,8 +221,8 @@ const CookieGate = () => {
 
   return (
     <>
-      {/* The page stays in view, but can't be used until the choice is made. */}
-      {blocking && <div aria-hidden className="fixed inset-0 z-[10000]" />}
+      {/* The page stays in view, dimmed, and can't be used until the choice is made. */}
+      {blocking && <div aria-hidden className="fixed inset-0 z-[10000] bg-secondary-950/50" />}
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[10001] p-3 sm:p-6">{panel}</div>
     </>
   );

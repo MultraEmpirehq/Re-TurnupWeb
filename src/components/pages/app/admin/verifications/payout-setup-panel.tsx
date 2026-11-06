@@ -9,7 +9,7 @@ import { IVendorVerification } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Landmark } from "lucide-react";
 import React, { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { findMarket, useMarkets } from "@/hooks/use-markets";
 
 /** How a setup attempt went, for the admin. */

@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { Inbox, Mail } from "lucide-react";
 import React, { memo, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { FilterTabs, ListSkeleton, PageHeading } from "./moderation-ui";
 
 type TStatus = "new" | "resolved" | undefined;

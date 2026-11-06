@@ -20,7 +20,7 @@ import { CheckIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useDebouncedCallback } from "use-debounce";
 import {
   adultAgeMessage,

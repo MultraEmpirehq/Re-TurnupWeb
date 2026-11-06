@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { AboutEventCard, YourTicketsCard, useChatTopic } from "./chat-cards";
 import { QUICK_QUESTIONS, dayDivider, kindOf } from "./chat-format";
 import { ChatPicture } from "./chat-list";

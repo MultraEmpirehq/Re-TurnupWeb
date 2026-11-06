@@ -7,7 +7,7 @@ import { useReviewVerification } from "@/hooks/use-admin-verifications";
 import { IVendorVerification, TVerificationStepKey } from "@/lib/types";
 import { Check, MessageSquareWarning } from "lucide-react";
 import React, { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import StatusPill from "../status-pill";
 import { formatDate } from "./verification-utils";
 
