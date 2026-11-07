@@ -13,6 +13,7 @@ import {
 import {
   ArrowRight,
   BadgeCheck,
+  Mail,
   Bell,
   Cookie,
   Eye,
@@ -310,10 +311,20 @@ const ComingSoon = () => {
                       <p className="mt-4 text-sm font-semibold text-white">
                         Turnupz — Experience you deserve.
                       </p>
-                      <p className="mt-4 max-w-sm text-xs leading-5 text-white/55">
-                        Confirm your spot from the email we just sent. The link
-                        lasts 24 hours.
-                      </p>
+                      <div className="mt-6 w-full max-w-sm rounded-2xl border border-[#00b2ff]/40 bg-[#00b2ff]/10 p-4 text-left">
+                        <p className="flex items-center gap-2 text-sm font-bold text-white">
+                          <Mail className="size-4 shrink-0 text-[#00b2ff]" aria-hidden="true" />
+                          One more step: check your email
+                        </p>
+                        <p className="mt-1.5 text-sm leading-6 text-white/80">
+                          We just sent a confirmation link to{" "}
+                          <span className="font-semibold text-white [overflow-wrap:anywhere]">{email.trim()}</span>.
+                          Open it within 24 hours to save your spot.
+                        </p>
+                        <p className="mt-1.5 text-xs leading-5 text-white/60">
+                          Can&apos;t see it? Check your spam or promotions folder.
+                        </p>
+                      </div>
                     </>
                   ) : (
                     <p className="mt-2 max-w-sm text-sm leading-6 text-white/75">
@@ -321,7 +332,7 @@ const ComingSoon = () => {
                         ? "This email is confirmed and your spot is saved. Nothing more to do."
                         : !emailSent
                           ? "We couldn't send the confirmation email just now. Try again in a minute to get a new link."
-                          : "We've sent a new confirmation link. Open it within 24 hours to save your spot."}
+                          : `We've sent a new confirmation link to ${email.trim()}. Open it within 24 hours to save your spot. Can't see it? Check your spam or promotions folder.`}
                     </p>
                   )}
                   <div className={styles.barcode} aria-hidden="true" />
