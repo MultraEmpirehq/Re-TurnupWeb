@@ -8,21 +8,6 @@ export interface CurrencyItem {
 }
 
 /**
- * Standard E.164 phone number validation.
- * Complies with ITU-T E.164 international numbering recommendation:
- * - Allows optional leading '+'
- * - Non-zero leading country code digit
- * - Total digits between 7 and 15
- * - Strips common display formatting (spaces, dashes, parentheses, dots)
- */
-export const isValidPhoneNumberStandard = (phone: string): boolean => {
-  if (!phone || typeof phone !== "string") return false;
-  const cleaned = phone.replace(/[\s\-().]/g, "");
-  const e164Regex = /^\+?[1-9]\d{6,14}$/;
-  return e164Regex.test(cleaned);
-};
-
-/**
  * Validates that the provided date of birth indicates an age of at least 18 years.
  */
 export const isValidAdultDOB = (dobString: string): boolean => {

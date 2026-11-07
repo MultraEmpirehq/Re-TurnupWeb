@@ -90,8 +90,7 @@ const Card: React.FC<{
 const Refunds = () => (
   <div className="space-y-6">
     <PageHeading title="Refunds">
-      Credit goes back at once; the card part through Flutterwave (or Paystack
-      for older payments). Refunding one order keeps Turnupz&apos;s fee;
+      Credit goes back at once; the card part through the payment provider. Refunding one order keeps Turnupz&apos;s fee;
       cancelling an event returns it. Everything here is audited.
     </PageHeading>
     <CancellationRequests />

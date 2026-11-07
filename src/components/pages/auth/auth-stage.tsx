@@ -59,6 +59,16 @@ const StubForDoor = () => <Stub intent={useStageIntent()} />;
  * with the form itself drawn as a ticket. On wide screens, real upcoming events
  * and what the account is for sit either side.
  */
+/** Half a hole out of each bottom corner of the stub and top corner of the form. */
+const notches = (y: "0" | "100%"): React.CSSProperties => {
+  const hole = (x: string) =>
+    `radial-gradient(circle 14px at ${x} ${y}, transparent 13.5px, #000 14px)`;
+  const mask = `${hole("0")}, ${hole("100%")}`;
+  return { WebkitMaskImage: mask, maskImage: mask, WebkitMaskComposite: "source-in", maskComposite: "intersect" };
+};
+const STUB_NOTCHES = notches("100%");
+const FORM_NOTCHES = notches("0");
+
 const AuthStage: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div
     className="relative isolate flex min-h-svh w-full flex-col overflow-hidden text-white"
@@ -109,8 +119,8 @@ const AuthStage: React.FC<{ children: React.ReactNode }> = ({ children }) => (
           aria-hidden
           className="pointer-events-none absolute -inset-10 -z-10 rounded-full bg-linear-to-br from-secondary/35 via-primary/25 to-primary/35 blur-[70px]"
         />
-        <div className="overflow-hidden rounded-[2rem] bg-white text-secondary-950 shadow-[0_50px_100px_-30px_rgba(0,0,0,0.85)]">
-          <div className="relative overflow-hidden bg-linear-to-br from-secondary via-secondary-500 to-primary px-7 pt-6 pb-7 text-white">
+        <div className="overflow-hidden rounded-[2rem] text-secondary-950 shadow-[0_50px_100px_-30px_rgba(0,0,0,0.85)]">
+          <div style={STUB_NOTCHES} className="relative overflow-hidden bg-linear-to-br from-secondary via-secondary-500 to-primary px-7 pt-6 pb-7 text-white">
             <div
               aria-hidden
               className="absolute -top-10 -right-10 size-40 rounded-full bg-white/15 blur-2xl"
@@ -125,20 +135,12 @@ const AuthStage: React.FC<{ children: React.ReactNode }> = ({ children }) => (
             </div>
           </div>
 
-          {/* The tear line, with a notch punched out of each side. */}
-          <div aria-hidden className="relative h-0">
-            <span
-              className="absolute -top-3.5 -left-3.5 size-7 rounded-full"
-              style={{ backgroundColor: STAGE }}
-            />
-            <span
-              className="absolute -top-3.5 -right-3.5 size-7 rounded-full"
-              style={{ backgroundColor: STAGE }}
-            />
+          {/* The tear line. The notches are real holes: the sky shows through them. */}
+          <div aria-hidden className="relative z-10 h-0">
             <span className="absolute inset-x-7 top-0 border-t-2 border-dashed border-secondary-100" />
           </div>
 
-          <div className="px-7 pt-8 pb-7">{children}</div>
+          <div style={FORM_NOTCHES} className="bg-white px-7 pt-8 pb-7">{children}</div>
         </div>
       </div>
     </main>

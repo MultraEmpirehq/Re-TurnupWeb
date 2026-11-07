@@ -40,6 +40,8 @@ import Link from "next/link";
 import { ROUTES } from "@/lib/variables";
 import React, { memo, useCallback, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import PhoneField from "@/components/ui/phone-field";
+import { PHONE_INVALID_MESSAGE, isValidPhone } from "@/lib/phone";
 import { toast } from "@/lib/toast";
 
 interface IProfileFormValues {
@@ -132,6 +134,7 @@ const ProfileDetailsForm = () => {
     register,
     control,
     handleSubmit,
+    setError,
     reset,
     formState: { errors, isSubmitting, dirtyFields },
   } = useForm<IProfileFormValues>({
@@ -195,6 +198,11 @@ const ProfileDetailsForm = () => {
 
   const onSubmit = useCallback(
     async (values: IProfileFormValues) => {
+      // Left alone, an older number stays as it was. Cleared is fine too.
+      if (dirtyFields.phone && values.phone.trim() && !isValidPhone(values.phone)) {
+        setError("phone", { message: PHONE_INVALID_MESSAGE });
+        return;
+      }
       // Only what was changed goes up, so a field the API doesn't know yet
       // (or one left as it was) can't fail the whole save.
       const body = Object.fromEntries(
@@ -223,7 +231,7 @@ const ProfileDetailsForm = () => {
         );
       }
     },
-    [performAuthOperation, dirtyFields],
+    [performAuthOperation, dirtyFields, setError],
   );
 
   const handleCancelEdit = useCallback(() => {
@@ -379,12 +387,19 @@ const ProfileDetailsForm = () => {
               {...register("username")}
               error={errors.username?.message}
             />
-            <InputField
-              label="Phone Number"
-              placeholder="+234 801 234 5678"
-              disabled={!isEditing}
-              {...register("phone")}
-              error={errors.phone?.message}
+            <Controller
+              control={control}
+              name="phone"
+              render={({ field, fieldState }) => (
+                <PhoneField
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  disabled={!isEditing}
+                  defaultCountry={userDetails?.countryCode}
+                  error={fieldState.error?.message}
+                />
+              )}
             />
             {!isAdmin && (
               <>

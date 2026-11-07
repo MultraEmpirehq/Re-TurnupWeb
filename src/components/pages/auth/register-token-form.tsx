@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { postData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { toast } from "@/lib/toast";
-import { TUserDetails } from "@/stores/user-store";
+import useUserStore, { TUserDetails } from "@/stores/user-store";
 import useAuth from "@/hooks/use-auth";
 import { INTENT_PARAM, intentFrom } from "@/lib/auth-intent";
 import { completeProfileRoute } from "@/lib/profile-complete";
@@ -49,6 +49,7 @@ const defaultValues: IFormValues = {
 const RegisterTokenForm = () => {
   const router = useRouter();
   const { performAuthOperation } = useAuth();
+  const setUserToken = useUserStore((state) => state.setUserToken);
   const {
     register,
     handleSubmit,
@@ -75,12 +76,16 @@ const RegisterTokenForm = () => {
       try {
         const { data } = await postData<
           { password: string; token: string; email: string },
-          { user: TUserDetails }
+          { user: TUserDetails; accessToken?: string }
         >("/auth/register/verify", {
           password: body?.password,
           token: token?.toString(),
           email: email?.toString(),
         });
+        // The app and the api are on different domains, so the browser won't send
+        // the cookie: the next steps need this token, as they do after a login.
+        const accessToken = data?.data?.accessToken;
+        if (accessToken) setUserToken(accessToken.replace(/^Bearer\s+/i, ""));
         await performAuthOperation(data?.data?.user);
         toast.success("Account created successfully");
         router.push(completeProfileRoute(redirectTo, intent));
@@ -93,7 +98,7 @@ const RegisterTokenForm = () => {
         );
       }
     },
-    [token, email, performAuthOperation, router, redirectTo, intent],
+    [token, email, performAuthOperation, setUserToken, router, redirectTo, intent],
   );
   return (
     <div className="flex w-full flex-col gap-7">
