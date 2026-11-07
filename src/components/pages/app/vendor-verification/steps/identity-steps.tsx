@@ -3,6 +3,7 @@
 import ComboboxSelect from "@/components/ui/combobox-select";
 import DateSelect from "@/components/ui/date-select";
 import InputField from "@/components/ui/input-field";
+import PhoneField from "@/components/ui/phone-field";
 import TextareaField from "@/components/ui/textarea-field";
 import { earliestBirthDate, latestAdultBirthDate } from "@/lib/age";
 import { useMarketOptions } from "@/hooks/use-markets";
@@ -231,18 +232,15 @@ export const IdentityStep: React.FC<{ free?: boolean }> = ({ free }) => {
         control={control}
         name="phoneNumber"
         render={({ field, fieldState }) => (
-          <InputField
+          <PhoneField
             label="Phone number"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            placeholder="+234 801 234 5678"
             required
             value={field.value}
             onChange={field.onChange}
             onBlur={field.onBlur}
+            defaultCountry={user?.countryCode}
             error={fieldState.error?.message}
-            helperText="With your country code. We may call to confirm it's you."
+            helperText="We may call to confirm it's you."
           />
         )}
       />

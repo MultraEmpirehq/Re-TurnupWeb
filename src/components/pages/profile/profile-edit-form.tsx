@@ -30,6 +30,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { memo, useEffect, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
+import PhoneField from "@/components/ui/phone-field";
+import { PHONE_INVALID_MESSAGE, isValidPhone } from "@/lib/phone";
 import { toast } from "@/lib/toast";
 
 interface IEditValues {
@@ -136,6 +138,7 @@ const ProfileEditForm = () => {
     register,
     control,
     handleSubmit,
+    setError,
     reset,
     watch,
     formState: { errors, isSubmitting, isDirty, dirtyFields },
@@ -164,6 +167,11 @@ const ProfileEditForm = () => {
   };
 
   const onSubmit = async (values: IEditValues) => {
+    // Left alone, an older number stays as it was. Cleared is fine too.
+    if (dirtyFields.phone && values.phone.trim() && !isValidPhone(values.phone)) {
+      setError("phone", { message: PHONE_INVALID_MESSAGE });
+      return;
+    }
     // Only what changed goes up, so a field left as it was can't fail the save.
     const body = Object.fromEntries(
       Object.entries(values)
@@ -259,11 +267,19 @@ const ProfileEditForm = () => {
             title="Contact"
             hint="Organisers use these to reach you about events you're going to."
           >
-            <InputField
-              label="Phone"
-              placeholder="+234 801 234 5678"
-              {...register("phone")}
-              error={errors.phone?.message}
+            <Controller
+              control={control}
+              name="phone"
+              render={({ field, fieldState }) => (
+                <PhoneField
+                  label="Phone"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  defaultCountry={user?.countryCode}
+                  error={fieldState.error?.message}
+                />
+              )}
             />
             <InputField
               label="Email"

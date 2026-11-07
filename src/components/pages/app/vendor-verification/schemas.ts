@@ -1,5 +1,5 @@
 import { latestAdultBirthDate } from "@/lib/age";
-import { isValidPhoneNumberStandard } from "@/lib/vendor-verification-helpers";
+import { PHONE_INVALID_MESSAGE, isValidPhone } from "@/lib/phone";
 import Joi from "joi";
 import {
   findPayoutCountry,
@@ -67,14 +67,12 @@ const phoneNumber = Joi.string()
   .trim()
   .required()
   .custom((value: string, helpers) =>
-    isValidPhoneNumberStandard(value) && value.startsWith("+")
-      ? value
-      : helpers.error("phone.invalid"),
+    isValidPhone(value) ? value : helpers.error("phone.invalid"),
   )
   .messages({
     "string.empty": "Phone number is required",
     "any.required": "Phone number is required",
-    "phone.invalid": "Enter it with the country code, e.g. +234 801 234 5678",
+    "phone.invalid": PHONE_INVALID_MESSAGE,
   });
 
 /** Free hosting: who they are and how to reach them, no ID. */
