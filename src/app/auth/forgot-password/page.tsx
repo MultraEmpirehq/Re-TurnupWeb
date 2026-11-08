@@ -6,9 +6,8 @@ import { useForm } from "react-hook-form";
 import React, { memo, useCallback } from "react";
 import joi from "joi";
 import { toast } from "@/lib/toast";
-import { getData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
-import { IUserCheckedCredentials, OTP_VERIFICATION_TYPE } from "@/lib/types";
+import { OTP_VERIFICATION_TYPE } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/variables";
 import Link from "next/link";
@@ -46,18 +45,8 @@ const ForgotPasswordPage = () => {
     async (values: IFormValues) => {
       const body = { ...values, email: values.email.trim().toLowerCase() };
       try {
-        const { data } = await getData<IUserCheckedCredentials>(
-          `/auth?email=${body.email}`,
-        );
-        if (!data?.data?.exists) {
-          toast.error("An account with this email does not exist");
-          return;
-        }
-        if (!data?.data?.isAccountCreationCompleted) {
-          toast.info("Please complete your account creation first");
-          push(`${ROUTES.LOGIN.href}?email=${body.email}`);
-          return;
-        }
+        // Straight on to the code, account or not: saying which would tell
+        // anyone whether an email has an account.
         push(
           `${ROUTES.OTP.href}?email=${body.email}&type=${OTP_VERIFICATION_TYPE.FORGOT_PASSWORD}`,
         );
