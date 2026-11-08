@@ -205,8 +205,8 @@ const ResetPasswordForm = () => {
             "Sending a code…"
           ) : (
             <>
-              We sent a 6-digit code to <span className="font-medium text-secondary-950">{email}</span>. It
-              expires in 10 minutes.
+              If <span className="font-medium text-secondary-950">{email}</span> has a Turnupz
+              account, we&apos;ve sent it a 6-digit code. It expires in 10 minutes.
             </>
           )}
         </p>

@@ -114,7 +114,7 @@ const RegisterTokenForm = () => {
           {email ? (
             <>
               You&apos;ll use it with{" "}
-              <span className="font-medium text-secondary-950">{email}</span> to
+              <span className="font-medium text-secondary-950 break-all">{email}</span> to
               log in.
             </>
           ) : (
