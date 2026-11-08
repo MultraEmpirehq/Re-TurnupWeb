@@ -20,6 +20,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Turnupz",
+  // Phones turn emails, numbers and addresses on the page into links by
+  // rewriting it, and React can crash when it next updates that text (it did:
+  // closing the sign-up popup on an iPhone). Our own links are added on purpose.
+  formatDetection: { email: false, telephone: false, address: false, date: false },
   description:
     "Find what's on near you, from concerts and conferences to sports, food, comedy and family days. Book tickets in a few taps and walk in with one scan.",
 };

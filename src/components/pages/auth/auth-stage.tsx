@@ -54,6 +54,42 @@ const Stub = ({ intent }: { intent: TAuthIntent }) => (
 
 const StubForDoor = () => <Stub intent={useStageIntent()} />;
 
+const OTHER_DOOR: Record<TAuthIntent, { prompt: string; label: string; href: string }> = {
+  attendee: { prompt: "Hosting events?", label: "Organiser sign-in", href: ROUTES.VENDOR_LOGIN.href },
+  vendor: { prompt: "Just going to events?", label: "Attendee sign-in", href: ROUTES.ATTENDEE_LOGIN.href },
+};
+
+/**
+ * Kept off the ticket so the form stays short: the other door and the terms,
+ * on the sign-in pages only.
+ */
+const BelowTicket = () => {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const doors = ["/auth", ROUTES.ATTENDEE_LOGIN.href, ROUTES.VENDOR_LOGIN.href];
+  if (!doors.includes(pathname ?? "")) return null;
+  const door = OTHER_DOOR[pathname === ROUTES.VENDOR_LOGIN.href ? "vendor" : "attendee"];
+  const redirect = searchParams?.get("redirect");
+  return (
+    <div className="mt-6 space-y-2 text-center text-sm text-white/60">
+      <p>
+        {door.prompt}{" "}
+        <Link
+          href={redirect ? `${door.href}?redirect=${encodeURIComponent(redirect)}` : door.href}
+          className="font-semibold text-white hover:underline"
+        >
+          {door.label}
+        </Link>
+      </p>
+      <p className="text-xs text-white/45">
+        By continuing you agree to the{" "}
+        <Link href="/terms" className="underline-offset-2 hover:underline">Terms</Link> and{" "}
+        <Link href="/privacy-policy" className="underline-offset-2 hover:underline">Privacy Policy</Link>.
+      </p>
+    </div>
+  );
+};
+
 /**
  * Every sign-in step happens on one stage: the brand's night sky, full screen,
  * with the form itself drawn as a ticket. On wide screens, real upcoming events
@@ -142,6 +178,9 @@ const AuthStage: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
           <div style={FORM_NOTCHES} className="bg-white px-7 pt-8 pb-7">{children}</div>
         </div>
+        <Suspense fallback={null}>
+          <BelowTicket />
+        </Suspense>
       </div>
     </main>
 
