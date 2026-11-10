@@ -59,7 +59,7 @@ const OrderHelp = ({
         value={message}
         onChange={(event) => setMessage(event.target.value)}
         rows={4}
-        placeholder="e.g. I was charged but didn't get my tickets"
+        placeholder="e.g. I'd like a refund, or I was charged but didn't get my tickets"
         className="w-full resize-none rounded-lg border px-3 py-2 text-sm outline-none focus:border-primary-400"
       />
       <div className="flex gap-2">

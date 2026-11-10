@@ -215,6 +215,15 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* iPhones zoom the page in when a field with text under 16px is tapped, and it
+     stays zoomed. On touch screens every field is 16px, so that never happens. */
+  @media (hover: none) and (pointer: coarse) {
+    input,
+    select,
+    textarea {
+      font-size: max(16px, 1em) !important;
+    }
+  }
 }
 
 /* Landing page motion. Kept small and slow; all of it stops for reduced motion. */

@@ -94,7 +94,7 @@ const GroupMembersPage = () => {
       router.back();
       return;
     }
-    router.push("/app/messages");
+    router.push("/app/chats");
   };
 
   return (

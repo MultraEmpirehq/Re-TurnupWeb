@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useMemo } from "react";
-import type { TFormValues } from "@/app/app/create/page";
+import type { TFormValues } from "@/app/app/events/create/page";
 import { EventPreviewCard } from "@/components/pages/app/vendor-event-view";
 import { getCurrencyForCountry } from "@/lib/currency";
 import { wallTimeInZoneToInstant } from "@/lib/event-time";

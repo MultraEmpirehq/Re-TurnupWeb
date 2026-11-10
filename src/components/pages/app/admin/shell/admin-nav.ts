@@ -153,7 +153,7 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
     ],
   },
   {
-    label: "Trust & Safety",
+    label: "Moderation",
     department: {
       icon: ShieldCheck,
       accentClassName: "bg-amber-50 text-amber-600",
@@ -409,4 +409,9 @@ export const isAdminNavItemActive = (pathname: string, item: TAdminNavItem) => {
 
 export const adminSectionLabel = (pathname: string) =>
   ADMIN_NAV_ITEMS.find((item) => isAdminNavItemActive(pathname, item))?.label ??
-  "Admin";
+  // Pages outside the menu, reached from the account menu.
+  (pathname.startsWith("/app/settings")
+    ? "Settings"
+    : pathname.startsWith("/app/notifications")
+      ? "Notifications"
+      : "Overview");

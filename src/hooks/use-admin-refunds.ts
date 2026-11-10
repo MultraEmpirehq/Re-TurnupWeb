@@ -30,6 +30,8 @@ export interface IAdminRefund {
   createdAt: string;
   completedAt: string | null;
   createdBy: TName | null;
+  /** Who started it: an admin, the organiser here, the organiser in Stripe, or Turnupz. */
+  by?: "admin" | "organiser" | "stripe" | "turnupz";
   order: {
     id: string;
     reference: string | null;

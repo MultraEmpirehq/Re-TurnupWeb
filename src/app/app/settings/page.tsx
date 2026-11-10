@@ -3,25 +3,27 @@
 import DevicesCard from "@/components/account/devices-card";
 import NotificationPreferencesCard from "@/components/account/notification-preferences-card";
 import OrganiserNameCard from "@/components/account/organiser-name-card";
-import PrivacyCard from "@/components/account/privacy-card";
 import TaxDetailsCard from "@/components/account/tax-details-card";
 import ChangePasswordForm from "@/components/pages/profile/change-password-form";
+import ProfileDetailsForm from "@/components/pages/profile/profile-details-form";
 import { ROUTES } from "@/lib/variables";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
-import { ShieldCheck } from "lucide-react";
+import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status";
+import { BadgeCheck, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import React, { memo } from "react";
 
 /**
- * Account settings in the dashboard, for organisers and admins: the same
- * notification, device and password settings attendees have, plus vendor
- * verification for organisers.
+ * Account settings in the dashboard, for organisers and admins. Organisers get
+ * their verification, tax, name and notifications; privacy (followers,
+ * messages) lives on their profile, not here. Admins just have sign-in.
  */
 const SettingsPage = () => {
   const role = useUserStore((state) => state.userDetails?.role);
   const isVendor = role === EUserRoles.VENDOR;
   // Admins are staff: no attendee privacy or notification choices, just sign-in.
   const isAdmin = role === EUserRoles.ADMIN;
+  const verification = useVendorVerificationStatus();
 
   return (
     <div className="space-y-8 pb-20">
@@ -34,49 +36,68 @@ const SettingsPage = () => {
         </h1>
         <p className="max-w-2xl text-secondary-500">
           {isAdmin
-            ? "Check where you're signed in and change your password."
-            : "Choose what you're notified about and who can reach you, check where you're signed in, and change your password."}
+            ? "Your details, where you're signed in, and your password."
+            : "Your details, tax and organiser name, what you're notified about, where you're signed in, and your password."}
         </p>
       </div>
 
-      {isVendor && (
+      {isVendor && verification.status === "approved" ? (
         <Link
           href={ROUTES.VENDOR_VERIFICATION.href}
-          className="flex flex-col gap-4 rounded-[1.5rem] border border-primary-100 bg-primary-50/70 p-6 transition hover:border-primary-200 hover:bg-primary-50 sm:flex-row sm:items-center sm:justify-between"
+          className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
         >
-          <span className="flex items-start gap-4">
-            <span className="rounded-2xl bg-white p-3 text-primary-700">
-              <ShieldCheck className="size-5" />
-            </span>
-            <span>
-              <span className="block text-sm font-bold tracking-[0.18em] text-primary-700 uppercase">
-                Vendor verification
-              </span>
-              <span className="mt-1 block text-sm leading-6 text-secondary-600">
-                Approval details for paid tickets, payouts and cross-border
-                events.
-              </span>
-            </span>
-          </span>
-          <span className="inline-flex h-11 items-center justify-center rounded-2xl bg-secondary-400 px-5 text-sm font-semibold text-white">
-            Open
-          </span>
+          <BadgeCheck className="size-4" aria-hidden />
+          Verified organiser · see details
         </Link>
+      ) : (
+        isVendor && (
+          <Link
+            href={ROUTES.VENDOR_VERIFICATION.href}
+            className="flex flex-col gap-4 rounded-[1.5rem] border border-primary-100 bg-primary-50/70 p-6 transition hover:border-primary-200 hover:bg-primary-50 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <span className="flex items-start gap-4">
+              <span className="rounded-2xl bg-white p-3 text-primary-700">
+                <ShieldCheck className="size-5" />
+              </span>
+              <span>
+                <span className="block text-sm font-bold tracking-[0.18em] text-primary-700 uppercase">
+                  Vendor verification
+                </span>
+                <span className="mt-1 block text-sm leading-6 text-secondary-600">
+                  Approval details for paid tickets, payouts and cross-border
+                  events.
+                </span>
+              </span>
+            </span>
+            <span className="inline-flex h-11 items-center justify-center rounded-2xl bg-secondary-400 px-5 text-sm font-semibold text-white">
+              Open
+            </span>
+          </Link>
+        )
       )}
 
-      {isVendor && <TaxDetailsCard />}
+      {/* Photo, name and contact details: the one place for them in the dashboard. */}
+      <ProfileDetailsForm embedded />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-6">
-          {isVendor && <OrganiserNameCard />}
-          {!isAdmin && <NotificationPreferencesCard />}
-          {!isAdmin && <PrivacyCard />}
-        </div>
-        <div className="space-y-6">
+      {isVendor && <TaxDetailsCard sellsIn={verification.countries} />}
+
+      {isAdmin ? (
+        <div className="grid gap-6 lg:grid-cols-2">
           <DevicesCard />
           <ChangePasswordForm />
         </div>
-      </div>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="space-y-6">
+            {isVendor && <OrganiserNameCard />}
+            <NotificationPreferencesCard organiser={isVendor} />
+          </div>
+          <div className="space-y-6">
+            <DevicesCard />
+            <ChangePasswordForm />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

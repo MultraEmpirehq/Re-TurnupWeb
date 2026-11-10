@@ -121,15 +121,10 @@ export const ROUTES: { [key: string]: RouteProps } = {
     label: "Verifications",
     href: "/app/admin/verifications",
   },
-  PROFILE: {
-    shouldShowIn: [ROUTE_TYPE.APP_ROUTE],
-    label: "Profile",
-    href: "/app/profile",
-  },
   CREATE_EVENT: {
     shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV],
     label: "Create Event",
-    href: "/app/create",
+    href: "/app/events/create",
   },
   VENUES: {
     shouldShowIn: [
@@ -147,7 +142,7 @@ export const ROUTES: { [key: string]: RouteProps } = {
       ROUTE_TYPE.ADMIN_ONLY,
     ],
     label: "Categories",
-    href: "/app/categories",
+    href: "/app/admin/categories",
   },
   // Vendors add performers to line-ups; admins look after all of them.
   PERFORMERS: {
@@ -158,27 +153,27 @@ export const ROUTES: { [key: string]: RouteProps } = {
   CREATE_VENUE: {
     shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.ADMIN_ONLY],
     label: "Create Venue",
-    href: "/app/create-venue",
+    href: "/app/admin/venues/create",
   },
   CREATE_CATEGORY: {
     shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.ADMIN_ONLY],
     label: "Create Category",
-    href: "/app/create-category",
+    href: "/app/admin/categories/create",
   },
   EVENTS: {
     shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV],
-    label: "Manage Posts",
+    label: "My Events",
     href: "/app/events",
   },
   MESSAGES: {
     shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV],
     label: "Chats",
-    href: "/app/messages",
+    href: "/app/chats",
   },
   ANALYSIS: {
     shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV],
-    label: "Analysis",
-    href: "/app/analysis",
+    label: "Analytics",
+    href: "/app/analytics",
   },
   WALLET: {
     shouldShowIn: [ROUTE_TYPE.APP_ROUTE, ROUTE_TYPE.SHOW_ON_APP_SIDE_NAV],

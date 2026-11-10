@@ -19,9 +19,11 @@ import {
   useVendorLedger,
 } from "@/hooks/use-vendor-tickets";
 import { cn } from "@/lib/utils";
-import { ChevronRight, Download, Search } from "lucide-react";
+import { ChevronRight, Download, RotateCcw, Search } from "lucide-react";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "@/lib/toast";
+import { useActingVendor } from "@/stores/workspace-store";
+import OrganiserRefund from "./organiser-refund";
 import { describeTypes, orderWhen } from "./orders-table";
 
 const PAGE = 25;
@@ -59,6 +61,9 @@ const OrderPanel = ({
   const [status, setStatus] = useState<TLedgerStatus | "all">("all");
   const [page, setPage] = useState(1);
   const [exporting, setExporting] = useState(false);
+  const [refunding, setRefunding] = useState(false);
+  // Refunds move money, so only the organiser themself (not their team).
+  const { isTeamMember } = useActingVendor();
 
   useEffect(() => {
     setSearchInput("");
@@ -253,10 +258,20 @@ const OrderPanel = ({
               )}
             </div>
 
-            <div className="border-t border-secondary-100 p-4">
+            <div className="flex gap-2 border-t border-secondary-100 p-4">
+              {!isTeamMember && order.paid.amount > 0 && live > order.checkedIn && (
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-full"
+                  onClick={() => setRefunding(true)}
+                >
+                  <RotateCcw className="size-4" aria-hidden />
+                  Refund
+                </Button>
+              )}
               <Button
                 variant="outline"
-                className="w-full rounded-full"
+                className="flex-1 rounded-full"
                 loading={exporting}
                 onClick={() => void exportOrder()}
               >
@@ -267,6 +282,7 @@ const OrderPanel = ({
           </>
         )}
       </SheetContent>
+      <OrganiserRefund order={order} open={refunding && !!order} onClose={() => setRefunding(false)} />
     </Sheet>
   );
 };

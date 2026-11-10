@@ -97,6 +97,25 @@ const ContactUs = () => {
             we&apos;ll be in touch shortly.
           </p>
         </div>
+        {/* Or straight to the right inbox. */}
+        <dl className="max-w-sm space-y-2 pt-2 text-sm">
+          {[
+            ["Help with tickets or your account", "support@turnupz.com"],
+            ["Organisers and partnerships", "partners@turnupz.com"],
+            ["Payouts and refunds", "finance@turnupz.com"],
+            ["Privacy and your data", "compliance@turnupz.com"],
+            ["Legal", "legal@turnupz.com"],
+          ].map(([label, email]) => (
+            <div key={email}>
+              <dt className="opacity-70">{label}</dt>
+              <dd>
+                <a href={`mailto:${email}`} className="font-semibold text-primary hover:underline">
+                  {email}
+                </a>
+              </dd>
+            </div>
+          ))}
+        </dl>
       </div>
       {sent ? (
         <div className="flex flex-col items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-6">

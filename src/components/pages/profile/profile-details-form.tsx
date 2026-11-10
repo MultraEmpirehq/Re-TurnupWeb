@@ -107,7 +107,8 @@ const cardClassName =
  * The signed-in user's photo and personal details, saved to the api. Shared by the
  * dashboard profile and the attendee account area so both edit the same way.
  */
-const ProfileDetailsForm = () => {
+/** `embedded`: shown on the settings page itself, so no link back to it. */
+const ProfileDetailsForm = ({ embedded = false }: { embedded?: boolean }) => {
   const userDetails = useUserStore((state) => state.userDetails);
   const isAdmin = userDetails?.role === EUserRoles.ADMIN;
   const { performAuthOperation } = useAuth();
@@ -484,6 +485,7 @@ const ProfileDetailsForm = () => {
                 </div>
               </li>
             </ul>
+            {!embedded && (
             <Button
               asChild
               variant="outline"
@@ -494,6 +496,7 @@ const ProfileDetailsForm = () => {
                 {isAdmin ? "Password and devices" : "Password, devices & notifications"}
               </Link>
             </Button>
+            )}
           </section>
 
           {!isAdmin && (

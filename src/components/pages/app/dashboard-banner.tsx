@@ -16,7 +16,7 @@ const pageContent: Record<
     eyebrow: "Listings",
     title: "Here is your event inventory.",
   },
-  "/app/create": {
+  "/app/events/create": {
     eyebrow: "Create Event",
     title: "Here is your event builder.",
   },

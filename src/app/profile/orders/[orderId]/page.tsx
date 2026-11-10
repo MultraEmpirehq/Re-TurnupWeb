@@ -2,6 +2,7 @@
 
 import OrderMoneyBack from "@/components/pages/profile/order-money-back";
 import OrderHelp from "@/components/pages/profile/order-help";
+import OrderRefunds from "@/components/pages/profile/order-refunds";
 import { getData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import ErrorContainer from "@/components/ui/error-container";
@@ -23,7 +24,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import React, { memo, useCallback, useMemo, useState } from "react";
 import { toast } from "@/lib/toast";
-import TicketCard from "@/components/ticket-design/ticket-card";
+import SavedTicket from "@/components/ticket-design/saved-ticket";
+import { downloadSavedTickets, fileSlug } from "@/lib/ticket-download";
 import {
   PASS_COLOUR,
   PassHeader,
@@ -71,83 +73,19 @@ const OrderDetailPage = () => {
 
   const captureAndDownloadAll = useCallback(async () => {
     if (!order?.userTickets?.length) return;
-
     setIsDownloading(true);
     try {
-      const [JSZip, html2canvas, jspdfModule] = await Promise.all([
-        import("jszip").then((m) => m.default),
-        import("html2canvas-pro").then((m) => m.default),
-        import("jspdf"),
-      ]);
-      const jsPDF = jspdfModule.default ?? jspdfModule.jsPDF;
-      const zip = new JSZip();
-
-      const ticketCards =
-        document.querySelectorAll<HTMLDivElement>("[data-ticket-card]");
-
-      if (ticketCards.length === 0) {
-        toast.error("No ticket cards found to capture.");
-        return;
-      }
-
-      let addedCount = 0;
-      for (let i = 0; i < ticketCards.length; i++) {
-        try {
-          await new Promise((r) => setTimeout(r, 50));
-          const canvas = await html2canvas(ticketCards[i], {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: "#ffffff",
-            logging: false,
-          });
-          const imgData = canvas.toDataURL("image/png");
-          const code = order.userTickets[i]?.code ?? `ticket-${i + 1}`;
-
-          const pdf = new jsPDF({
-            orientation:
-              canvas.width > canvas.height ? "landscape" : "portrait",
-            unit: "px",
-            format: [canvas.width, canvas.height],
-          });
-          pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
-          const pdfBlob = pdf.output("blob");
-          zip.file(`${code}.pdf`, pdfBlob);
-          addedCount++;
-        } catch {
-          /* skip failed ticket */
-        }
-      }
-
-      if (addedCount === 0) {
-        toast.error("Could not capture any tickets. Please try again.");
-        return;
-      }
-
-      const eventName = (event?.name ?? "tickets")
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "");
-      const downloadDate = format(new Date(), "yyyy-MM-dd");
-      const zipFilename = `${eventName}-${downloadDate}-${orderId}.zip`;
-      const zipBlob = await zip.generateAsync({ type: "blob" });
-      const url = URL.createObjectURL(zipBlob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = zipFilename;
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
-      URL.revokeObjectURL(url);
-
-      if (addedCount < order.userTickets.length) {
-        toast.warning(
-          `Downloaded ${addedCount} of ${order.userTickets.length} tickets.`,
-        );
+      const name = `${fileSlug(event?.name ?? "tickets")}-${order.reference ?? orderId}.pdf`;
+      const added = await downloadSavedTickets(name);
+      if (added === 0) {
+        toast.error("Couldn't save your tickets. Please try again.");
+      } else if (added < order.userTickets.length) {
+        toast.warning(`Saved ${added} of ${order.userTickets.length} tickets.`);
       } else {
-        toast.success("All tickets downloaded!");
+        toast.success(added === 1 ? "Ticket saved" : "Tickets saved");
       }
     } catch {
-      toast.error("Failed to download tickets");
+      toast.error("Couldn't save your tickets. Please try again.");
     } finally {
       setIsDownloading(false);
     }
@@ -387,6 +325,8 @@ const OrderDetailPage = () => {
           </div>
         )}
 
+      <OrderRefunds order={order} />
+
       <div className="space-y-2">
         {order.reference && (
           <p className="text-sm text-muted-foreground">
@@ -402,18 +342,21 @@ const OrderDetailPage = () => {
         />
       </div>
 
-      {/* Off-screen ticket cards for "Download all" capture (painted but not visible) */}
+      {/* The tickets as saved by "Download", drawn off-screen to be captured. */}
       {order?.userTickets?.length ? (
-        <div
-          aria-hidden="true"
-          className="fixed left-[-9999px] top-0 z-[-1] w-[400px]"
-        >
-          {(order.userTickets ?? []).map((ut, i) => (
-            <TicketCard
+        <div aria-hidden="true" className="fixed top-0 left-[-9999px] z-[-1]">
+          {order.userTickets.map((ut, i) => (
+            <SavedTicket
               key={ut.id ?? i}
               userTicket={ut}
               event={event}
-              index={i}
+              holderName={
+                passes?.tickets.find((t) => t.id === ut.id)?.currentHolderName ??
+                ut.currentHolderName
+              }
+              orderReference={order.reference}
+              position={i + 1}
+              total={order.userTickets.length}
             />
           ))}
         </div>

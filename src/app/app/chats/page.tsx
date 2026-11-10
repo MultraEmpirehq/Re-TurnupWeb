@@ -55,7 +55,7 @@ const MessagesPage = () => {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-secondary-950 md:text-[2rem]">
-          Messages
+          Chats
         </h1>
         <p className="mt-1 text-sm text-secondary-500">
           {isAttendee

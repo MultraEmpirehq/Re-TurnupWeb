@@ -464,6 +464,11 @@ export interface IMoney {
 
 export interface IOrderRefund {
   status: "processing" | "completed" | "failed";
+  kind?: "order" | "event_cancelled" | "dispute";
+  /** Why, as the team wrote it (none for a dispute). */
+  reason?: string | null;
+  /** Turnupz's booking fee that wasn't given back. */
+  feeKept?: IMoney;
   tickets: number;
   /** Back to the card it was paid with. */
   toCard: IMoney;
