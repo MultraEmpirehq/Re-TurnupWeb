@@ -20,15 +20,14 @@ const MAPPED: [from: RegExp, to: (match: RegExpMatchArray) => string][] = [
 ];
 
 const SHARED = [
-  /^\/app\/messages(\/.*)?$/,
+  /^\/app\/chats(\/.*)?$/,
   /^\/app\/notifications\/?$/,
-  /^\/app\/profile\/?$/,
   /^\/app\/settings\/?$/,
 ];
 
 /** The account's own pages, which admins use as they are. */
 export const isSharedWithAdmins = (pathname: string) =>
-  pathname.startsWith("/app/profile") || SHARED.some((pattern) => pattern.test(pathname));
+  SHARED.some((pattern) => pattern.test(pathname));
 
 /** Where an admin on `pathname` belongs, or null if they're already there. */
 export const adminPathFor = (pathname: string): string | null => {

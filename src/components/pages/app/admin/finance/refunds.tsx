@@ -31,6 +31,7 @@ import { AlertTriangle, Search, Undo2 } from "lucide-react";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "@/lib/toast";
 import { useDebounce } from "use-debounce";
+import RefundFlow from "./refund-flow";
 import {
   FilterTabs,
   ListSkeleton,
@@ -93,6 +94,7 @@ const Refunds = () => (
       Credit goes back at once; the card part through the payment provider. Refunding one order keeps Turnupz&apos;s fee;
       cancelling an event returns it. Everything here is audited.
     </PageHeading>
+    <RefundFlow />
     <CancellationRequests />
     <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
       <RefundAnOrder />
@@ -350,7 +352,7 @@ const OrderRefundPanel: React.FC<{
       )}
 
       <label className="block space-y-1 text-sm">
-        <span className="font-medium">Reason (the buyer is told)</span>
+        <span className="font-medium">Reason (shown to the buyer)</span>
         <Textarea
           value={reason}
           onChange={(event) => setReason(event.target.value)}
@@ -459,7 +461,7 @@ const CancelEvent = () => {
         )}
       </label>
       <label className="block space-y-1 text-sm">
-        <span className="font-medium">Reason (every buyer is told)</span>
+        <span className="font-medium">Reason (shown to every buyer)</span>
         <Textarea
           value={reason}
           onChange={(event) => setReason(event.target.value)}
@@ -726,7 +728,13 @@ const RefundHistory = () => {
                     {formatDistanceToNow(new Date(refund.createdAt), {
                       addSuffix: true,
                     })}
-                    <p className="text-xs">by {name(refund.createdBy)}</p>
+                    <p className="text-xs">
+                      {refund.by === "stripe"
+                        ? "by the organiser, in Stripe"
+                        : refund.by === "turnupz"
+                          ? "by Turnupz"
+                          : `by ${name(refund.createdBy)}${refund.by === "organiser" ? " (organiser)" : ""}`}
+                    </p>
                   </td>
                   <td className="p-2">
                     <p className="font-medium">

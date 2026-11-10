@@ -61,9 +61,10 @@ import TicketSaleRulesFields, {
   TTicketSaleRules,
 } from "./create/ticket-sale-rules";
 import { moveItem } from "@/lib/move-item";
+import { format } from "date-fns";
 import SponsorShowToggle from "@/components/pages/app/create/sponsor-show-toggle";
+import Steps from "@/components/pages/app/create/steps";
 import { MediaThumb } from "@/components/pages/explore/event-detail/event-detail-media";
-
 
 const toDatetimeInputValue = (date: Date | string) => {
   const nextDate = new Date(date);
@@ -189,6 +190,17 @@ const TicketDaysField: React.FC<{
   );
 };
 
+/** "1 sponsor", "3 sponsors". */
+const count = (n: number, one: string, many = `${one}s`) =>
+  `${n} ${n === 1 ? one : many}`;
+
+const EDIT_STEPS = [
+  "Event Details",
+  "Tickets",
+  "Media & Sponsors",
+  "Review & Save",
+];
+
 const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
   const { data, isLoading } = useEvent(id);
   const queryClient = useQueryClient();
@@ -201,6 +213,13 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     description: "",
     totalTickets: "0",
   });
+  // The same steps as creating an event; any step can be saved from.
+  const [step, setStep] = useState(1);
+  const goTo = (next: number) => {
+    setStep(Math.max(1, Math.min(next, EDIT_STEPS.length)));
+    if (typeof window !== "undefined")
+      window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   // Dates in this form are held on the event's clock and converted on save.
   const [timezone, setTimezone] = useState(DEFAULT_EVENT_TIMEZONE);
   const [lineup, setLineup] = useState<IPerformerSummary[]>([]);
@@ -284,9 +303,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     setBannerImage(data.image ?? "");
     setBannerImageFile(null);
     setMediaImages(data.medias ?? []);
-    setMediaSources(
-      (data.mediaDetails ?? []).map((media) => media.id ?? ""),
-    );
+    setMediaSources((data.mediaDetails ?? []).map((media) => media.id ?? ""));
     // Names to edit; logos uploaded with them stay alongside.
     setSponsors((data.sponsors ?? []).map(sponsorName));
     setSponsorImages(
@@ -629,7 +646,9 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
       const video = file.type.startsWith("video/");
       if (!video && !file.type.startsWith("image/")) return false;
       if (file.size > (video ? 10 : 5) * 1024 * 1024) {
-        toast.error(`${file.name}: ${video ? "videos must be under 10MB" : "photos must be under 5MB"}`);
+        toast.error(
+          `${file.name}: ${video ? "videos must be under 10MB" : "photos must be under 5MB"}`,
+        );
         return false;
       }
       return true;
@@ -837,7 +856,8 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
           formData.append("requiresApproval", String(requiresApproval));
         }
         if (saleMethod === "on_turnup") {
-          if (taxInclusive !== null) formData.append("taxInclusive", String(taxInclusive));
+          if (taxInclusive !== null)
+            formData.append("taxInclusive", String(taxInclusive));
           formData.append("taxQualifyingAdmission", String(taxQualifying));
         }
         if (saleMethod === "external_link" && ticketUrl.trim()) {
@@ -1152,6 +1172,13 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
         </div>
       </div>
 
+      <Steps
+        currentStep={step}
+        titles={EDIT_STEPS}
+        label="Edit event steps"
+        onStepClick={goTo}
+      />
+
       <section>
         <form
           className="rounded-[1.6rem] border border-secondary-100 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:rounded-[2.2rem] sm:p-8"
@@ -1163,1116 +1190,1315 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
           <div className="space-y-8">
             {hasSales && (
               <div className="flex gap-3 rounded-[1.3rem] border border-primary-100 bg-primary-50/70 p-4 text-sm leading-6 text-secondary-800">
-                <BellRing className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
+                <BellRing
+                  className="mt-0.5 size-5 shrink-0 text-primary"
+                  aria-hidden
+                />
                 <div>
                   <p className="font-semibold text-secondary-950">
-                    {soldTotal.toLocaleString()} ticket{soldTotal === 1 ? "" : "s"} already
-                    sold
+                    {soldTotal.toLocaleString()} ticket
+                    {soldTotal === 1 ? "" : "s"} already sold
                   </p>
                   <p>
-                    Changes to the date, days, venue or line-up are sent to ticket
-                    holders and posted in the event chat when you save. Prices of
-                    sold tickets, the currency, time zone and how tickets are sold
-                    are locked.
+                    Changes to the date, days, venue or line-up are sent to
+                    ticket holders and posted in the event chat when you save.
+                    Prices of sold tickets, the currency, time zone and how
+                    tickets are sold are locked.
                   </p>
                 </div>
               </div>
             )}
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm font-semibold text-secondary-950">
-                  Banner Image
-                </p>
-                <p className="text-sm text-secondary-500">
-                  Replace the event preview banner image.
-                </p>
-              </div>
-              {bannerImage ? (
-                <div
-                  className="h-52 max-w-full rounded-[1.2rem] border border-secondary-100 bg-cover bg-center sm:h-64"
-                  style={{ backgroundImage: `url(${bannerImage})` }}
-                />
-              ) : (
-                <div className="flex h-52 max-w-full items-center justify-center rounded-[1.2rem] border border-dashed border-secondary-200 bg-secondary-50 text-sm text-secondary-500 sm:h-64">
-                  No banner selected yet. Upload the event banner below.
-                </div>
-              )}
-              <Input
-                type="file"
-                accept="image/*"
-                className="h-12 rounded-2xl border-secondary-200"
-                onChange={(event) => {
-                  handleBannerUpload(event.target.files?.[0]);
-                  event.currentTarget.value = "";
-                }}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-medium text-secondary-700">
-                  Event Name
-                </label>
-                <Input
-                  value={formValues.name}
-                  onChange={handleChange("name")}
-                  className="h-12 rounded-2xl border-secondary-200"
-                />
-              </div>
-              {!isMultiDay && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-secondary-700">
-                    Event Date
-                  </label>
+            {step === 3 && (
+              <>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-semibold text-secondary-950">
+                      Banner Image
+                    </p>
+                    <p className="text-sm text-secondary-500">
+                      Replace the event preview banner image.
+                    </p>
+                  </div>
+                  {bannerImage ? (
+                    <div
+                      className="h-52 max-w-full rounded-[1.2rem] border border-secondary-100 bg-cover bg-center sm:h-64"
+                      style={{ backgroundImage: `url(${bannerImage})` }}
+                    />
+                  ) : (
+                    <div className="flex h-52 max-w-full items-center justify-center rounded-[1.2rem] border border-dashed border-secondary-200 bg-secondary-50 text-sm text-secondary-500 sm:h-64">
+                      No banner selected yet. Upload the event banner below.
+                    </div>
+                  )}
                   <Input
-                    type="datetime-local"
-                    value={formValues.date}
-                    onChange={handleChange("date")}
-                    className="h-12 rounded-2xl border-secondary-200"
-                  />
-                </div>
-              )}
-              <fieldset
-                disabled={hasSales}
-                title={hasSales ? "Locked: tickets are already sold" : undefined}
-                className="disabled:opacity-60"
-              >
-                <TimezoneSelect
-                  value={timezone}
-                  onChange={setTimezone}
-                  inputClassName="h-12 rounded-2xl"
-                />
-              </fieldset>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-secondary-700">
-                  Ticket Count
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={formValues.totalTickets}
-                  onChange={handleChange("totalTickets")}
-                  className="h-12 rounded-2xl border-secondary-200"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-secondary-700">
-                  Venue Name
-                </label>
-                <Input
-                  value={formValues.venueName}
-                  onChange={handleChange("venueName")}
-                  className="h-12 rounded-2xl border-secondary-200"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-secondary-700">
-                  Venue Address
-                </label>
-                <Input
-                  value={formValues.venueAddress}
-                  onChange={handleChange("venueAddress")}
-                  className="h-12 rounded-2xl border-secondary-200"
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-medium text-secondary-700">
-                  Description
-                </label>
-                <Textarea
-                  value={formValues.description}
-                  onChange={handleChange("description")}
-                  className="min-h-32 rounded-[1.5rem] border-secondary-200 px-4 py-3"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-secondary-950">
-                    Media
-                  </p>
-                  <p className="text-sm text-secondary-500">
-                    Add or remove photos and short videos.
-                  </p>
-                </div>
-                <label className="inline-flex cursor-pointer items-center rounded-xl border border-secondary-200 px-4 py-2 text-sm font-semibold text-secondary-950 hover:bg-secondary-50">
-                  <Plus className="mr-2 size-4" />
-                  Add photos or videos
-                  <input
                     type="file"
-                    accept="image/*,video/mp4,video/quicktime,video/webm"
-                    multiple
-                    className="hidden"
+                    accept="image/*"
+                    className="h-12 rounded-2xl border-secondary-200"
                     onChange={(event) => {
-                      handleMediaUpload(event.target.files);
+                      handleBannerUpload(event.target.files?.[0]);
                       event.currentTarget.value = "";
                     }}
                   />
-                </label>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {mediaImages.map((image, index) => (
-                  <div
-                    key={`${image}-${index}`}
-                    className="overflow-hidden rounded-[1.2rem] border border-secondary-100 bg-secondary-50"
-                  >
-                    <div className="relative h-32 w-full">
-                      <MediaThumb
-                        item={{
-                          url: image,
-                          type:
-                            mediaSources[index] instanceof File &&
-                            (mediaSources[index] as File).type.startsWith("video/")
-                              ? "VIDEO"
-                              : null,
-                        }}
-                        alt={`Media ${index + 1}`}
-                      />
-                    </div>
-                    <div className="flex items-center gap-2 p-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="shrink-0 rounded-xl border-secondary-200 bg-white"
-                        disabled={index === 0}
-                        onClick={() => moveMedia(index, -1)}
-                        aria-label="Move photo earlier"
-                      >
-                        <ChevronLeft className="size-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="shrink-0 rounded-xl border-secondary-200 bg-white"
-                        disabled={index === mediaImages.length - 1}
-                        onClick={() => moveMedia(index, 1)}
-                        aria-label="Move photo later"
-                      >
-                        <ChevronRight className="size-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="flex-1 rounded-xl border-secondary-200 bg-white"
-                        onClick={() => removeMedia(index)}
-                      >
-                        <Trash2 className="size-4" />
-                        Remove
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-secondary-950">
-                    Tickets
-                  </p>
-                  <p className="text-sm text-secondary-500">
-                    Display, add, edit, or delete ticket categories shown in the
-                    event preview.
-                  </p>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl border-secondary-200"
-                  onClick={() =>
-                    setEventTickets((current) => [
-                      ...current,
-                      createEmptyTicket(),
-                    ])
-                  }
-                >
-                  <Plus className="size-4" />
-                  Add Category
-                </Button>
-              </div>
+              </>
+            )}
 
-              <div className="space-y-4">
-                <div className="grid gap-4 rounded-[1.3rem] bg-secondary-50 p-4 md:grid-cols-2">
-                  <div className="space-y-2">
+            {step === 1 && (
+              <>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div className="space-y-2 md:col-span-2">
                     <label className="text-sm font-medium text-secondary-700">
-                      Ticket Option
+                      Event Name
                     </label>
-                    <select
-                      value={saleMethod}
-                      disabled={hasSales}
-                      title={hasSales ? "Locked: tickets are already sold" : undefined}
-                      onChange={(event) => setSaleMethod(event.target.value)}
-                      className="h-11 w-full rounded-xl border border-secondary-200 bg-white px-3 text-sm disabled:opacity-60"
-                    >
-                      <option value="">Select ticket option</option>
-                      <option value="on_turnup">Sell on Turnupz</option>
-                      <option value="register">Register</option>
-                      <option value="external_link">External Link</option>
-                    </select>
+                    <Input
+                      value={formValues.name}
+                      onChange={handleChange("name")}
+                      className="h-12 rounded-2xl border-secondary-200"
+                    />
                   </div>
-                  {saleMethod === "external_link" && (
-                    <div className="space-y-2 md:col-span-2">
+                  {!isMultiDay && (
+                    <div className="space-y-2">
                       <label className="text-sm font-medium text-secondary-700">
-                        External Ticket Link
+                        Event Date
                       </label>
                       <Input
-                        value={ticketUrl}
-                        onChange={(event) => setTicketUrl(event.target.value)}
-                        placeholder="https://example.com/tickets"
-                        className="h-11 rounded-xl border-secondary-200 bg-white"
+                        type="datetime-local"
+                        value={formValues.date}
+                        onChange={handleChange("date")}
+                        className="h-12 rounded-2xl border-secondary-200"
                       />
                     </div>
                   )}
-                  {saleMethod === "register" && (
-                    <div className="md:col-span-2">
-                      <RegistrationApprovalSwitch
-                        checked={requiresApproval}
-                        onChange={setRequiresApproval}
-                      />
-                    </div>
-                  )}
-                  {saleMethod === "on_turnup" && (
-                    <div className="md:col-span-2">
-                      <EventTaxOptions
-                        countryCode={data?.eventCountryCode}
-                        stateCode={data?.eventStateCode}
-                        taxInclusive={taxInclusive}
-                        qualifying={taxQualifying}
-                        onTaxInclusive={setTaxInclusive}
-                        onQualifying={setTaxQualifying}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {eventTickets.length === 0 && (
-                  <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
-                    No ticket categories yet. Add one to display tickets in the
-                    preview.
-                  </div>
-                )}
-                {eventTickets.map((ticket, index) => {
-                  const sold = ticket.id ? (ticket.soldCount ?? 0) : 0;
-                  return (
-                  <div
-                    key={`ticket-${index}`}
-                    className="rounded-[1.3rem] bg-secondary-50 p-4"
+                  <fieldset
+                    disabled={hasSales}
+                    title={
+                      hasSales ? "Locked: tickets are already sold" : undefined
+                    }
+                    className="disabled:opacity-60"
                   >
-                    <div className="mb-4 flex items-center justify-between gap-3">
+                    <TimezoneSelect
+                      value={timezone}
+                      onChange={setTimezone}
+                      inputClassName="h-12 rounded-2xl"
+                    />
+                  </fieldset>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-secondary-700">
+                      Ticket Count
+                    </label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={formValues.totalTickets}
+                      onChange={handleChange("totalTickets")}
+                      className="h-12 rounded-2xl border-secondary-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-secondary-700">
+                      Venue Name
+                    </label>
+                    <Input
+                      value={formValues.venueName}
+                      onChange={handleChange("venueName")}
+                      className="h-12 rounded-2xl border-secondary-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-secondary-700">
+                      Venue Address
+                    </label>
+                    <Input
+                      value={formValues.venueAddress}
+                      onChange={handleChange("venueAddress")}
+                      className="h-12 rounded-2xl border-secondary-200"
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-sm font-medium text-secondary-700">
+                      Description
+                    </label>
+                    <Textarea
+                      value={formValues.description}
+                      onChange={handleChange("description")}
+                      className="min-h-32 rounded-[1.5rem] border-secondary-200 px-4 py-3"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {step === 3 && (
+              <>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
                       <p className="text-sm font-semibold text-secondary-950">
-                        Ticket {index + 1}
-                        {sold > 0 && (
-                          <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-secondary-600 ring-1 ring-secondary-200">
-                            {sold.toLocaleString()} sold · price locked
-                          </span>
-                        )}
+                        Media
                       </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-xl border-secondary-200 bg-white"
-                        disabled={sold > 0}
-                        title={
-                          sold > 0
-                            ? "People have this ticket. To stop selling it, set its quantity to what's sold or end its sales."
-                            : undefined
-                        }
-                        onClick={() => handleRemoveTicket(index)}
+                      <p className="text-sm text-secondary-500">
+                        Add or remove photos and short videos.
+                      </p>
+                    </div>
+                    <label className="inline-flex cursor-pointer items-center rounded-xl border border-secondary-200 px-4 py-2 text-sm font-semibold text-secondary-950 hover:bg-secondary-50">
+                      <Plus className="mr-2 size-4" />
+                      Add photos or videos
+                      <input
+                        type="file"
+                        accept="image/*,video/mp4,video/quicktime,video/webm"
+                        multiple
+                        className="hidden"
+                        onChange={(event) => {
+                          handleMediaUpload(event.target.files);
+                          event.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {mediaImages.map((image, index) => (
+                      <div
+                        key={`${image}-${index}`}
+                        className="overflow-hidden rounded-[1.2rem] border border-secondary-100 bg-secondary-50"
                       >
-                        <Trash2 className="size-4" />
-                        Delete
-                      </Button>
+                        <div className="relative h-32 w-full">
+                          <MediaThumb
+                            item={{
+                              url: image,
+                              type:
+                                mediaSources[index] instanceof File &&
+                                (mediaSources[index] as File).type.startsWith(
+                                  "video/",
+                                )
+                                  ? "VIDEO"
+                                  : null,
+                            }}
+                            alt={`Media ${index + 1}`}
+                          />
+                        </div>
+                        <div className="flex items-center gap-2 p-3">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="shrink-0 rounded-xl border-secondary-200 bg-white"
+                            disabled={index === 0}
+                            onClick={() => moveMedia(index, -1)}
+                            aria-label="Move photo earlier"
+                          >
+                            <ChevronLeft className="size-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="shrink-0 rounded-xl border-secondary-200 bg-white"
+                            disabled={index === mediaImages.length - 1}
+                            onClick={() => moveMedia(index, 1)}
+                            aria-label="Move photo later"
+                          >
+                            <ChevronRight className="size-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="flex-1 rounded-xl border-secondary-200 bg-white"
+                            onClick={() => removeMedia(index)}
+                          >
+                            <Trash2 className="size-4" />
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {step === 2 && (
+              <>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-secondary-950">
+                        Tickets
+                      </p>
+                      <p className="text-sm text-secondary-500">
+                        Display, add, edit, or delete ticket categories shown in
+                        the event preview.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-xl border-secondary-200"
+                      onClick={() =>
+                        setEventTickets((current) => [
+                          ...current,
+                          createEmptyTicket(),
+                        ])
+                      }
+                    >
+                      <Plus className="size-4" />
+                      Add Category
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="grid gap-4 rounded-[1.3rem] bg-secondary-50 p-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-secondary-700">
+                          Ticket Option
+                        </label>
+                        <select
+                          value={saleMethod}
+                          disabled={hasSales}
+                          title={
+                            hasSales
+                              ? "Locked: tickets are already sold"
+                              : undefined
+                          }
+                          onChange={(event) =>
+                            setSaleMethod(event.target.value)
+                          }
+                          className="h-11 w-full rounded-xl border border-secondary-200 bg-white px-3 text-sm disabled:opacity-60"
+                        >
+                          <option value="">Select ticket option</option>
+                          <option value="on_turnup">Sell on Turnupz</option>
+                          <option value="register">Register</option>
+                          <option value="external_link">External Link</option>
+                        </select>
+                      </div>
+                      {saleMethod === "external_link" && (
+                        <div className="space-y-2 md:col-span-2">
+                          <label className="text-sm font-medium text-secondary-700">
+                            External Ticket Link
+                          </label>
+                          <Input
+                            value={ticketUrl}
+                            onChange={(event) =>
+                              setTicketUrl(event.target.value)
+                            }
+                            placeholder="https://example.com/tickets"
+                            className="h-11 rounded-xl border-secondary-200 bg-white"
+                          />
+                        </div>
+                      )}
+                      {saleMethod === "register" && (
+                        <div className="md:col-span-2">
+                          <RegistrationApprovalSwitch
+                            checked={requiresApproval}
+                            onChange={setRequiresApproval}
+                          />
+                        </div>
+                      )}
+                      {saleMethod === "on_turnup" && (
+                        <div className="md:col-span-2">
+                          <EventTaxOptions
+                            countryCode={data?.eventCountryCode}
+                            stateCode={data?.eventStateCode}
+                            taxInclusive={taxInclusive}
+                            qualifying={taxQualifying}
+                            onTaxInclusive={setTaxInclusive}
+                            onQualifying={setTaxQualifying}
+                          />
+                        </div>
+                      )}
                     </div>
 
-                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-                      <div className="space-y-2 md:col-span-2">
-                        <label className="text-sm font-medium text-secondary-700">
-                          Ticket Name
-                        </label>
-                        <Input
-                          value={ticket.ticketName}
-                          onChange={(event) =>
-                            handleTicketChange(
-                              index,
-                              "ticketName",
-                              event.target.value,
-                            )
-                          }
-                          className="h-11 rounded-xl border-secondary-200 bg-white"
-                          placeholder="Regular ticket"
-                        />
+                    {eventTickets.length === 0 && (
+                      <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
+                        No ticket categories yet. Add one to display tickets in
+                        the preview.
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-secondary-700">
-                          Price
-                        </label>
-                        <Input
-                          type="number"
-                          min="0"
-                          disabled={sold > 0}
-                          value={
-                            typeof ticket.ticketPrice === "number"
-                              ? ticket.ticketPrice
-                              : (ticket.ticketPrice?.amount ?? 0)
-                          }
-                          onChange={(event) =>
-                            handleTicketChange(
-                              index,
-                              "ticketPrice",
-                              event.target.value,
-                            )
-                          }
-                          className="h-11 rounded-xl border-secondary-200 bg-white"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-secondary-700">
-                          Quantity
-                        </label>
-                        <Input
-                          type="number"
-                          min={sold}
-                          value={ticket.ticketQuantity}
-                          onChange={(event) =>
-                            handleTicketChange(
-                              index,
-                              "ticketQuantity",
-                              event.target.value,
-                            )
-                          }
-                          className="h-11 rounded-xl border-secondary-200 bg-white"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-secondary-700">
-                          Visibility
-                        </label>
-                        <select
-                          value={ticket.visibility ?? "public"}
-                          onChange={(event) =>
-                            handleTicketChange(
-                              index,
-                              "visibility",
-                              event.target.value,
-                            )
-                          }
-                          className="h-11 w-full rounded-xl border border-secondary-200 bg-white px-3 text-sm"
+                    )}
+                    {eventTickets.map((ticket, index) => {
+                      const sold = ticket.id ? (ticket.soldCount ?? 0) : 0;
+                      return (
+                        <div
+                          key={`ticket-${index}`}
+                          className="rounded-[1.3rem] bg-secondary-50 p-4"
                         >
-                          <option value="public">Public</option>
-                          <option value="private">Private</option>
-                        </select>
+                          <div className="mb-4 flex items-center justify-between gap-3">
+                            <p className="text-sm font-semibold text-secondary-950">
+                              Ticket {index + 1}
+                              {sold > 0 && (
+                                <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-secondary-600 ring-1 ring-secondary-200">
+                                  {sold.toLocaleString()} sold · price locked
+                                </span>
+                              )}
+                            </p>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="rounded-xl border-secondary-200 bg-white"
+                              disabled={sold > 0}
+                              title={
+                                sold > 0
+                                  ? "People have this ticket. To stop selling it, set its quantity to what's sold or end its sales."
+                                  : undefined
+                              }
+                              onClick={() => handleRemoveTicket(index)}
+                            >
+                              <Trash2 className="size-4" />
+                              Delete
+                            </Button>
+                          </div>
+
+                          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                            <div className="space-y-2 md:col-span-2">
+                              <label className="text-sm font-medium text-secondary-700">
+                                Ticket Name
+                              </label>
+                              <Input
+                                value={ticket.ticketName}
+                                onChange={(event) =>
+                                  handleTicketChange(
+                                    index,
+                                    "ticketName",
+                                    event.target.value,
+                                  )
+                                }
+                                className="h-11 rounded-xl border-secondary-200 bg-white"
+                                placeholder="Regular ticket"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-secondary-700">
+                                Price
+                              </label>
+                              <Input
+                                type="number"
+                                min="0"
+                                disabled={sold > 0}
+                                value={
+                                  typeof ticket.ticketPrice === "number"
+                                    ? ticket.ticketPrice
+                                    : (ticket.ticketPrice?.amount ?? 0)
+                                }
+                                onChange={(event) =>
+                                  handleTicketChange(
+                                    index,
+                                    "ticketPrice",
+                                    event.target.value,
+                                  )
+                                }
+                                className="h-11 rounded-xl border-secondary-200 bg-white"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-secondary-700">
+                                Quantity
+                              </label>
+                              <Input
+                                type="number"
+                                min={sold}
+                                value={ticket.ticketQuantity}
+                                onChange={(event) =>
+                                  handleTicketChange(
+                                    index,
+                                    "ticketQuantity",
+                                    event.target.value,
+                                  )
+                                }
+                                className="h-11 rounded-xl border-secondary-200 bg-white"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-secondary-700">
+                                Visibility
+                              </label>
+                              <select
+                                value={ticket.visibility ?? "public"}
+                                onChange={(event) =>
+                                  handleTicketChange(
+                                    index,
+                                    "visibility",
+                                    event.target.value,
+                                  )
+                                }
+                                className="h-11 w-full rounded-xl border border-secondary-200 bg-white px-3 text-sm"
+                              >
+                                <option value="public">Public</option>
+                                <option value="private">Private</option>
+                              </select>
+                            </div>
+                            <div className="space-y-2 md:col-span-2 xl:col-span-1">
+                              <label className="text-sm font-medium text-secondary-700">
+                                Type
+                              </label>
+                              <select
+                                value={ticket.actionType ?? "paid"}
+                                disabled={sold > 0}
+                                onChange={(event) =>
+                                  handleTicketChange(
+                                    index,
+                                    "actionType",
+                                    event.target.value,
+                                  )
+                                }
+                                className="h-11 w-full rounded-xl border border-secondary-200 bg-white px-3 text-sm"
+                              >
+                                <option value="paid">Paid</option>
+                                <option value="register">Register</option>
+                              </select>
+                            </div>
+                            {ticket.actionType === "register" ||
+                            !(getTicketPriceAmount(ticket.ticketPrice) > 0) ? (
+                              <p className="flex min-h-11 items-center rounded-xl border border-secondary-200 bg-secondary-50 px-3 text-sm text-secondary-500 md:col-span-2 xl:col-span-5">
+                                Free tickets can&apos;t be passed on. Guests get
+                                their own from the event page.
+                              </p>
+                            ) : (
+                              <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-white px-3 text-sm text-secondary-700 md:col-span-2 xl:col-span-5">
+                                <input
+                                  type="checkbox"
+                                  checked={!!ticket.transferable}
+                                  onChange={(event) =>
+                                    handleTicketChange(
+                                      index,
+                                      "transferable",
+                                      event.target.checked,
+                                    )
+                                  }
+                                />
+                                <span>
+                                  Allow attendees to transfer this ticket
+                                  category
+                                </span>
+                              </label>
+                            )}
+                            <TicketSaleRulesFields
+                              className="rounded-xl border border-secondary-200 bg-white p-3 md:col-span-2 xl:col-span-5"
+                              value={ticket}
+                              timezone={timezone}
+                              onChange={(patch) =>
+                                handleTicketRulesChange(index, patch)
+                              }
+                            />
+                            {isMultiDay && eventDays.length > 1 && (
+                              <TicketDaysField
+                                className="md:col-span-2 xl:col-span-5"
+                                dayNames={dayNames}
+                                value={ticket.dayIndexes ?? []}
+                                onChange={(dayIndexes) =>
+                                  setEventTickets((current) =>
+                                    current.map((item, i) =>
+                                      i === index
+                                        ? { ...item, dayIndexes }
+                                        : item,
+                                    ),
+                                  )
+                                }
+                              />
+                            )}
+                            {ticket.visibility === "private" && (
+                              <div className="space-y-2 rounded-xl border border-dashed border-secondary-200 bg-white p-3 md:col-span-2 xl:col-span-5">
+                                <p className="text-sm font-medium text-secondary-700">
+                                  Private Invite Link
+                                </p>
+                                <p className="break-all text-xs text-secondary-500">
+                                  /explore/event/{id}/ticket?access=
+                                  {ticket.privateAccessCode ||
+                                    "generated-after-save"}
+                                </p>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="rounded-xl border-secondary-200"
+                                  onClick={() =>
+                                    handleCopyPrivateTicketLink(ticket)
+                                  }
+                                >
+                                  Copy Private Link
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {step === 2 && (
+              <>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-secondary-950">
+                        Access Passes
+                      </p>
+                      <p className="text-sm text-secondary-500">
+                        View saved passes, add more, and control pass transfer
+                        settings.
+                      </p>
+                      <p className="mt-1 text-xs text-secondary-400">
+                        Invite emails are sent from Turnupz after the event is
+                        published. Draft saves will not email assignees.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-xl border-secondary-200"
+                      onClick={() =>
+                        setPassAssignments((current) => [
+                          ...current,
+                          createEmptyPass(),
+                        ])
+                      }
+                    >
+                      <Plus className="size-4" />
+                      Add Pass
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {passAssignments.length === 0 && (
+                      <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
+                        No access passes yet. Add media, sponsor, worker, or
+                        guest passes.
                       </div>
-                      <div className="space-y-2 md:col-span-2 xl:col-span-1">
-                        <label className="text-sm font-medium text-secondary-700">
-                          Type
-                        </label>
-                        <select
-                          value={ticket.actionType ?? "paid"}
-                          disabled={sold > 0}
-                          onChange={(event) =>
-                            handleTicketChange(
-                              index,
-                              "actionType",
-                              event.target.value,
-                            )
-                          }
-                          className="h-11 w-full rounded-xl border border-secondary-200 bg-white px-3 text-sm"
-                        >
-                          <option value="paid">Paid</option>
-                          <option value="register">Register</option>
-                        </select>
-                      </div>
-                      {ticket.actionType === "register" ||
-                      !(getTicketPriceAmount(ticket.ticketPrice) > 0) ? (
-                        <p className="flex min-h-11 items-center rounded-xl border border-secondary-200 bg-secondary-50 px-3 text-sm text-secondary-500 md:col-span-2 xl:col-span-5">
-                          Free tickets can&apos;t be passed on. Guests get their
-                          own from the event page.
-                        </p>
-                      ) : (
-                        <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-white px-3 text-sm text-secondary-700 md:col-span-2 xl:col-span-5">
-                          <input
-                            type="checkbox"
-                            checked={!!ticket.transferable}
-                            onChange={(event) =>
-                              handleTicketChange(
-                                index,
-                                "transferable",
-                                event.target.checked,
-                              )
-                            }
-                          />
-                          <span>
-                            Allow attendees to transfer this ticket category
-                          </span>
-                        </label>
-                      )}
-                      <TicketSaleRulesFields
-                        className="rounded-xl border border-secondary-200 bg-white p-3 md:col-span-2 xl:col-span-5"
-                        value={ticket}
-                        timezone={timezone}
-                        onChange={(patch) =>
-                          handleTicketRulesChange(index, patch)
-                        }
-                      />
-                      {isMultiDay && eventDays.length > 1 && (
-                        <TicketDaysField
-                          className="md:col-span-2 xl:col-span-5"
-                          dayNames={dayNames}
-                          value={ticket.dayIndexes ?? []}
-                          onChange={(dayIndexes) =>
-                            setEventTickets((current) =>
-                              current.map((item, i) =>
-                                i === index ? { ...item, dayIndexes } : item,
-                              ),
-                            )
-                          }
-                        />
-                      )}
-                      {ticket.visibility === "private" && (
-                        <div className="space-y-2 rounded-xl border border-dashed border-secondary-200 bg-white p-3 md:col-span-2 xl:col-span-5">
-                          <p className="text-sm font-medium text-secondary-700">
-                            Private Invite Link
-                          </p>
-                          <p className="break-all text-xs text-secondary-500">
-                            /explore/event/{id}/ticket?access=
-                            {ticket.privateAccessCode || "generated-after-save"}
+                    )}
+                    {passAssignments.map((pass, index) => (
+                      <div
+                        key={`pass-${index}`}
+                        className="rounded-[1.3rem] bg-secondary-50 p-4"
+                      >
+                        <div className="mb-4 flex items-center justify-between gap-3">
+                          <p className="text-sm font-semibold text-secondary-950">
+                            Pass {index + 1}
                           </p>
                           <Button
                             type="button"
                             variant="outline"
-                            className="rounded-xl border-secondary-200"
-                            onClick={() => handleCopyPrivateTicketLink(ticket)}
+                            className="rounded-xl border-secondary-200 bg-white"
+                            onClick={() => handleRemovePass(index)}
                           >
-                            Copy Private Link
+                            <Trash2 className="size-4" />
+                            Delete
                           </Button>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-secondary-950">
-                    Access Passes
-                  </p>
-                  <p className="text-sm text-secondary-500">
-                    View saved passes, add more, and control pass transfer
-                    settings.
-                  </p>
-                  <p className="mt-1 text-xs text-secondary-400">
-                    Invite emails are sent from Turnupz after the event is
-                    published. Draft saves will not email assignees.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl border-secondary-200"
-                  onClick={() =>
-                    setPassAssignments((current) => [
-                      ...current,
-                      createEmptyPass(),
-                    ])
-                  }
-                >
-                  <Plus className="size-4" />
-                  Add Pass
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                {passAssignments.length === 0 && (
-                  <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
-                    No access passes yet. Add media, sponsor, worker, or guest
-                    passes.
-                  </div>
-                )}
-                {passAssignments.map((pass, index) => (
-                  <div
-                    key={`pass-${index}`}
-                    className="rounded-[1.3rem] bg-secondary-50 p-4"
-                  >
-                    <div className="mb-4 flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-secondary-950">
-                        Pass {index + 1}
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-xl border-secondary-200 bg-white"
-                        onClick={() => handleRemovePass(index)}
-                      >
-                        <Trash2 className="size-4" />
-                        Delete
-                      </Button>
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-secondary-700">
-                          Pass Type
-                        </label>
-                        <Input
-                          value={pass.passName}
-                          onChange={(event) =>
-                            handlePassChange(
-                              index,
-                              "passName",
-                              event.target.value,
-                            )
-                          }
-                          placeholder="Media pass"
-                          className="h-11 rounded-xl border-secondary-200 bg-white"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-secondary-700">
-                          Quantity
-                        </label>
-                        <Input
-                          type="number"
-                          min="0"
-                          value={pass.quantity}
-                          onChange={(event) =>
-                            handlePassChange(
-                              index,
-                              "quantity",
-                              event.target.value,
-                            )
-                          }
-                          className="h-11 rounded-xl border-secondary-200 bg-white"
-                        />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <label className="text-sm font-medium text-secondary-700">
-                          Assigned Emails
-                        </label>
-                        <Textarea
-                          value={pass.assigneeEmails.join(", ")}
-                          onChange={(event) =>
-                            handlePassChange(
-                              index,
-                              "assigneeEmails",
-                              event.target.value,
-                            )
-                          }
-                          placeholder="one email per line or separated by commas"
-                          className="min-h-24 rounded-[1rem] border-secondary-200 bg-white px-4 py-3"
-                        />
-                        {pass.assignments?.length ? (
-                          <div className="rounded-xl border border-secondary-100 bg-white px-3 py-3">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-secondary-400">
-                              Email delivery
-                            </p>
-                            <div className="mt-2 space-y-2">
-                              {pass.assignments.map((assignment) => (
-                                <div
-                                  key={assignment.id}
-                                  className="flex flex-wrap items-center justify-between gap-2 text-xs"
-                                >
-                                  <span className="break-all text-secondary-600">
-                                    {assignment.email}
-                                  </span>
-                                  <span className="rounded-full bg-secondary-50 px-2.5 py-1 font-semibold capitalize text-secondary-500">
-                                    {assignment.passClaimStatus ?? "invited"}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-secondary-700">
+                              Pass Type
+                            </label>
+                            <Input
+                              value={pass.passName}
+                              onChange={(event) =>
+                                handlePassChange(
+                                  index,
+                                  "passName",
+                                  event.target.value,
+                                )
+                              }
+                              placeholder="Media pass"
+                              className="h-11 rounded-xl border-secondary-200 bg-white"
+                            />
                           </div>
-                        ) : pass.emailedAssignees?.length ? (
-                          <p className="text-xs text-secondary-500">
-                            Emails sent to {pass.emailedAssignees.join(", ")}.
-                          </p>
-                        ) : (
-                          <p className="text-xs text-secondary-400">
-                            New assignees will receive pass emails when this
-                            event is published.
-                          </p>
-                        )}
-                      </div>
-                      <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-white px-3 text-sm text-secondary-700 md:col-span-2">
-                        <input
-                          type="checkbox"
-                          checked={!!pass.transferable}
-                          onChange={(event) =>
-                            handlePassChange(
-                              index,
-                              "transferable",
-                              event.target.checked,
-                            )
-                          }
-                        />
-                        <span>Allow recipients to transfer these passes</span>
-                      </label>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <EventDaysInput
-              enabled={isMultiDay}
-              lockedDayIds={hasSales ? savedDayIds : []}
-              onEnabledChange={(enabled) => {
-                if (!enabled && hasSales && savedDayIds.length) {
-                  toast.error(
-                    "Tickets are sold for these days, so it has to stay a multi-day event.",
-                  );
-                  return;
-                }
-                setIsMultiDay(enabled);
-                if (enabled && eventDays.length < 2 && formValues.date) {
-                  const days = firstEventDays(new Date(formValues.date));
-                  days[0].lineup = lineup;
-                  setEventDays(days);
-                }
-              }}
-              days={eventDays}
-              onChange={setEventDays}
-            />
-
-            {!isMultiDay && (
-              <div className="rounded-[1.3rem] bg-secondary-50 p-4">
-                <LineupPicker value={lineup} onChange={setLineup} />
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-secondary-950">
-                    Activities
-                  </p>
-                  <p className="text-sm text-secondary-500">
-                    Modify the stored event schedule or add new highlights.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl border-secondary-200"
-                  onClick={() =>
-                    setActivities((current) => [
-                      ...current,
-                      createEmptyActivity(),
-                    ])
-                  }
-                >
-                  <Plus className="size-4" />
-                  Add
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                {activities.length === 0 && (
-                  <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
-                    No activities yet. Add agenda items for this event.
-                  </div>
-                )}
-                {activities.map((activity, index) => (
-                  <div
-                    key={`activity-${index}`}
-                    className="rounded-[1.3rem] bg-secondary-50 p-4"
-                  >
-                    <div className="mb-4 flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-secondary-950">
-                        Activity {index + 1}
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-xl border-secondary-200 bg-white"
-                        onClick={() => handleRemoveActivity(index)}
-                      >
-                        <Trash2 className="size-4" />
-                        Delete
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-secondary-700">
-                          Activity Name
-                        </label>
-                        <Input
-                          value={activity.name}
-                          onChange={(event) =>
-                            handleActivityChange(
-                              index,
-                              "name",
-                              event.target.value,
-                            )
-                          }
-                          className="h-11 rounded-xl border-secondary-200 bg-white"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-secondary-700">
-                          Activity Date
-                        </label>
-                        <Input
-                          type="datetime-local"
-                          value={toDatetimeInputValue(activity.date)}
-                          onChange={(event) =>
-                            handleActivityChange(
-                              index,
-                              "date",
-                              event.target.value,
-                            )
-                          }
-                          className="h-11 rounded-xl border-secondary-200 bg-white"
-                        />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <label className="text-sm font-medium text-secondary-700">
-                          Activity Description
-                        </label>
-                        <Textarea
-                          value={activity.description ?? ""}
-                          onChange={(event) =>
-                            handleActivityChange(
-                              index,
-                              "description",
-                              event.target.value,
-                            )
-                          }
-                          className="min-h-24 rounded-[1rem] border-secondary-200 bg-white px-4 py-3"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-secondary-950">
-                    Blog Posts
-                  </p>
-                  <p className="text-sm text-secondary-500">
-                    Publish event updates, announcements, and stories.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl border-secondary-200"
-                  onClick={() =>
-                    setBlogPosts((current) => [
-                      ...current,
-                      createEmptyBlogPost(),
-                    ])
-                  }
-                >
-                  <Plus className="size-4" />
-                  Add
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                {blogPosts.length === 0 && (
-                  <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
-                    No blog posts yet. Add one to keep attendees updated.
-                  </div>
-                )}
-                {blogPosts.map((post, index) => (
-                  <div
-                    key={post.id}
-                    className="space-y-4 rounded-[1.3rem] bg-secondary-50 p-4"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-secondary-950">
-                        Blog Post {index + 1}
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-xl border-secondary-200 bg-white"
-                        onClick={() => handleRemoveBlogPost(index)}
-                      >
-                        <Trash2 className="size-4" />
-                        Delete
-                      </Button>
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2 md:col-span-2">
-                        <label className="text-sm font-medium text-secondary-700">
-                          Title
-                        </label>
-                        <Input
-                          value={post.title}
-                          onChange={(event) =>
-                            handleBlogPostChange(
-                              index,
-                              "title",
-                              event.target.value,
-                            )
-                          }
-                          className="h-11 rounded-xl border-secondary-200 bg-white"
-                        />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <label className="text-sm font-medium text-secondary-700">
-                          Excerpt
-                        </label>
-                        <Input
-                          value={post.excerpt ?? ""}
-                          onChange={(event) =>
-                            handleBlogPostChange(
-                              index,
-                              "excerpt",
-                              event.target.value,
-                            )
-                          }
-                          className="h-11 rounded-xl border-secondary-200 bg-white"
-                        />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <label className="text-sm font-medium text-secondary-700">
-                          Details
-                        </label>
-                        <Textarea
-                          value={post.body}
-                          onChange={(event) =>
-                            handleBlogPostChange(
-                              index,
-                              "body",
-                              event.target.value,
-                            )
-                          }
-                          className="min-h-44 rounded-[1rem] border-secondary-200 bg-white px-4 py-3"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-secondary-700">
-                          Add Existing Image
-                        </label>
-                        <select
-                          value=""
-                          onChange={(event) =>
-                            handleBlogExistingImageAdd(
-                              index,
-                              event.target.value,
-                            )
-                          }
-                          className="h-11 w-full rounded-xl border border-secondary-200 bg-white px-3 text-sm"
-                        >
-                          <option value="">Choose an image</option>
-                          {availableImageOptions.map((image, imageIndex) => (
-                            <option
-                              key={`${image}-${imageIndex}`}
-                              value={image}
-                            >
-                              Image {imageIndex + 1}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-secondary-700">
-                          Upload Blog Images
-                        </label>
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          className="h-11 rounded-xl border-secondary-200 bg-white"
-                          onChange={(event) => {
-                            handleBlogImageUploads(index, event.target.files);
-                            event.currentTarget.value = "";
-                          }}
-                        />
-                      </div>
-                    </div>
-                    {!!post.images?.length && (
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {post.images.map((image, imageIndex) => {
-                          const previewUrl = getImagePreviewUrl(image);
-                          return (
-                            <div
-                              key={`${previewUrl}-${imageIndex}`}
-                              className="overflow-hidden rounded-[1rem] border border-secondary-100 bg-white"
-                            >
-                              <div
-                                className="h-36 bg-cover bg-center"
-                                style={{
-                                  backgroundImage: `url(${previewUrl})`,
-                                }}
-                              />
-                              <div className="flex items-center justify-between gap-2 p-3">
-                                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary-400">
-                                  Image {imageIndex + 1}
-                                </span>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  className="h-9 rounded-xl border-secondary-200 bg-white px-3 text-xs"
-                                  onClick={() =>
-                                    handleRemoveBlogImage(index, imageIndex)
-                                  }
-                                >
-                                  Remove
-                                </Button>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-secondary-700">
+                              Quantity
+                            </label>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={pass.quantity}
+                              onChange={(event) =>
+                                handlePassChange(
+                                  index,
+                                  "quantity",
+                                  event.target.value,
+                                )
+                              }
+                              className="h-11 rounded-xl border-secondary-200 bg-white"
+                            />
+                          </div>
+                          <div className="space-y-2 md:col-span-2">
+                            <label className="text-sm font-medium text-secondary-700">
+                              Assigned Emails
+                            </label>
+                            <Textarea
+                              value={pass.assigneeEmails.join(", ")}
+                              onChange={(event) =>
+                                handlePassChange(
+                                  index,
+                                  "assigneeEmails",
+                                  event.target.value,
+                                )
+                              }
+                              placeholder="one email per line or separated by commas"
+                              className="min-h-24 rounded-[1rem] border-secondary-200 bg-white px-4 py-3"
+                            />
+                            {pass.assignments?.length ? (
+                              <div className="rounded-xl border border-secondary-100 bg-white px-3 py-3">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-secondary-400">
+                                  Email delivery
+                                </p>
+                                <div className="mt-2 space-y-2">
+                                  {pass.assignments.map((assignment) => (
+                                    <div
+                                      key={assignment.id}
+                                      className="flex flex-wrap items-center justify-between gap-2 text-xs"
+                                    >
+                                      <span className="break-all text-secondary-600">
+                                        {assignment.email}
+                                      </span>
+                                      <span className="rounded-full bg-secondary-50 px-2.5 py-1 font-semibold capitalize text-secondary-500">
+                                        {assignment.passClaimStatus ??
+                                          "invited"}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-secondary-950">
-                    Sponsors
-                  </p>
-                  <p className="text-sm text-secondary-500">
-                    Edit sponsor names and optional sponsor images.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl border-secondary-200"
-                  onClick={() => {
-                    setSponsors((current) => [...current, ""]);
-                    setSponsorImages((current) => [...current, ""]);
-                    setSponsorLogoIds((current) => [...current, undefined]);
-                    setSponsorShowNames((current) => [...current, false]);
-                  }}
-                >
-                  <Plus className="size-4" />
-                  Add
-                </Button>
-              </div>
-              <div className="space-y-3">
-                {sponsors.length === 0 && (
-                  <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
-                    No sponsors yet.
-                  </div>
-                )}
-                {sponsors.map((sponsor, index) => (
-                  <div
-                    key={`sponsor-${index}`}
-                    className="grid gap-3 rounded-[1.3rem] bg-secondary-50 p-4 md:grid-cols-[1fr_auto]"
-                  >
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <Input
-                        value={sponsor}
-                        onChange={(event) =>
-                          setSponsors((current) =>
-                            current.map((item, itemIndex) =>
-                              itemIndex === index ? event.target.value : item,
-                            ),
-                          )
-                        }
-                        placeholder="Sponsor name"
-                        className="h-11 rounded-xl border-secondary-200 bg-white"
-                      />
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        className="h-11 rounded-xl border-secondary-200 bg-white"
-                        onChange={(event) => {
-                          handleSponsorImageUpload(
-                            index,
-                            event.target.files?.[0],
-                          );
-                          event.currentTarget.value = "";
-                        }}
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="rounded-xl border-secondary-200 bg-white"
-                        disabled={index === 0}
-                        onClick={() => moveSponsor(index, -1)}
-                        aria-label="Move sponsor up"
-                      >
-                        <ChevronUp className="size-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="rounded-xl border-secondary-200 bg-white"
-                        disabled={index === sponsors.length - 1}
-                        onClick={() => moveSponsor(index, 1)}
-                        aria-label="Move sponsor down"
-                      >
-                        <ChevronDown className="size-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-xl border-secondary-200 bg-white"
-                        onClick={() => removeSponsor(index)}
-                      >
-                        <Trash2 className="size-4" />
-                        Delete
-                      </Button>
-                    </div>
-                    {sponsorImages[index] && (
-                      <div className="space-y-2 md:col-span-2">
-                        <div
-                          className="flex h-24 items-center justify-center rounded-[1rem] border border-secondary-100 bg-white bg-contain bg-center bg-no-repeat"
-                          style={{
-                            backgroundImage: `url(${sponsorImages[index]})`,
-                          }}
-                        />
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          On the board, show its
-                          <SponsorShowToggle
-                            showName={!!sponsorShowNames[index]}
-                            onChange={(showName) =>
-                              setSponsorShowNames((current) => {
-                                const next = sponsors.map((_, at) => !!current[at]);
-                                next[index] = showName;
-                                return next;
-                              })
-                            }
-                          />
+                            ) : pass.emailedAssignees?.length ? (
+                              <p className="text-xs text-secondary-500">
+                                Emails sent to{" "}
+                                {pass.emailedAssignees.join(", ")}.
+                              </p>
+                            ) : (
+                              <p className="text-xs text-secondary-400">
+                                New assignees will receive pass emails when this
+                                event is published.
+                              </p>
+                            )}
+                          </div>
+                          <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-white px-3 text-sm text-secondary-700 md:col-span-2">
+                            <input
+                              type="checkbox"
+                              checked={!!pass.transferable}
+                              onChange={(event) =>
+                                handlePassChange(
+                                  index,
+                                  "transferable",
+                                  event.target.checked,
+                                )
+                              }
+                            />
+                            <span>
+                              Allow recipients to transfer these passes
+                            </span>
+                          </label>
                         </div>
                       </div>
-                    )}
+                    ))}
                   </div>
+                </div>
+              </>
+            )}
+
+            {step === 1 && (
+              <>
+                <EventDaysInput
+                  enabled={isMultiDay}
+                  lockedDayIds={hasSales ? savedDayIds : []}
+                  onEnabledChange={(enabled) => {
+                    if (!enabled && hasSales && savedDayIds.length) {
+                      toast.error(
+                        "Tickets are sold for these days, so it has to stay a multi-day event.",
+                      );
+                      return;
+                    }
+                    setIsMultiDay(enabled);
+                    if (enabled && eventDays.length < 2 && formValues.date) {
+                      const days = firstEventDays(new Date(formValues.date));
+                      days[0].lineup = lineup;
+                      setEventDays(days);
+                    }
+                  }}
+                  days={eventDays}
+                  onChange={setEventDays}
+                />
+              </>
+            )}
+
+            {step === 1 && (
+              <>
+                {!isMultiDay && (
+                  <div className="rounded-[1.3rem] bg-secondary-50 p-4">
+                    <LineupPicker value={lineup} onChange={setLineup} />
+                  </div>
+                )}
+              </>
+            )}
+
+            {step === 1 && (
+              <>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-secondary-950">
+                        Activities
+                      </p>
+                      <p className="text-sm text-secondary-500">
+                        Modify the stored event schedule or add new highlights.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-xl border-secondary-200"
+                      onClick={() =>
+                        setActivities((current) => [
+                          ...current,
+                          createEmptyActivity(),
+                        ])
+                      }
+                    >
+                      <Plus className="size-4" />
+                      Add
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {activities.length === 0 && (
+                      <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
+                        No activities yet. Add agenda items for this event.
+                      </div>
+                    )}
+                    {activities.map((activity, index) => (
+                      <div
+                        key={`activity-${index}`}
+                        className="rounded-[1.3rem] bg-secondary-50 p-4"
+                      >
+                        <div className="mb-4 flex items-center justify-between gap-3">
+                          <p className="text-sm font-semibold text-secondary-950">
+                            Activity {index + 1}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="rounded-xl border-secondary-200 bg-white"
+                            onClick={() => handleRemoveActivity(index)}
+                          >
+                            <Trash2 className="size-4" />
+                            Delete
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-secondary-700">
+                              Activity Name
+                            </label>
+                            <Input
+                              value={activity.name}
+                              onChange={(event) =>
+                                handleActivityChange(
+                                  index,
+                                  "name",
+                                  event.target.value,
+                                )
+                              }
+                              className="h-11 rounded-xl border-secondary-200 bg-white"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-secondary-700">
+                              Activity Date
+                            </label>
+                            <Input
+                              type="datetime-local"
+                              value={toDatetimeInputValue(activity.date)}
+                              onChange={(event) =>
+                                handleActivityChange(
+                                  index,
+                                  "date",
+                                  event.target.value,
+                                )
+                              }
+                              className="h-11 rounded-xl border-secondary-200 bg-white"
+                            />
+                          </div>
+                          <div className="space-y-2 md:col-span-2">
+                            <label className="text-sm font-medium text-secondary-700">
+                              Activity Description
+                            </label>
+                            <Textarea
+                              value={activity.description ?? ""}
+                              onChange={(event) =>
+                                handleActivityChange(
+                                  index,
+                                  "description",
+                                  event.target.value,
+                                )
+                              }
+                              className="min-h-24 rounded-[1rem] border-secondary-200 bg-white px-4 py-3"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {step === 3 && (
+              <>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-secondary-950">
+                        Blog Posts
+                      </p>
+                      <p className="text-sm text-secondary-500">
+                        Publish event updates, announcements, and stories.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-xl border-secondary-200"
+                      onClick={() =>
+                        setBlogPosts((current) => [
+                          ...current,
+                          createEmptyBlogPost(),
+                        ])
+                      }
+                    >
+                      <Plus className="size-4" />
+                      Add
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {blogPosts.length === 0 && (
+                      <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
+                        No blog posts yet. Add one to keep attendees updated.
+                      </div>
+                    )}
+                    {blogPosts.map((post, index) => (
+                      <div
+                        key={post.id}
+                        className="space-y-4 rounded-[1.3rem] bg-secondary-50 p-4"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-semibold text-secondary-950">
+                            Blog Post {index + 1}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="rounded-xl border-secondary-200 bg-white"
+                            onClick={() => handleRemoveBlogPost(index)}
+                          >
+                            <Trash2 className="size-4" />
+                            Delete
+                          </Button>
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2 md:col-span-2">
+                            <label className="text-sm font-medium text-secondary-700">
+                              Title
+                            </label>
+                            <Input
+                              value={post.title}
+                              onChange={(event) =>
+                                handleBlogPostChange(
+                                  index,
+                                  "title",
+                                  event.target.value,
+                                )
+                              }
+                              className="h-11 rounded-xl border-secondary-200 bg-white"
+                            />
+                          </div>
+                          <div className="space-y-2 md:col-span-2">
+                            <label className="text-sm font-medium text-secondary-700">
+                              Excerpt
+                            </label>
+                            <Input
+                              value={post.excerpt ?? ""}
+                              onChange={(event) =>
+                                handleBlogPostChange(
+                                  index,
+                                  "excerpt",
+                                  event.target.value,
+                                )
+                              }
+                              className="h-11 rounded-xl border-secondary-200 bg-white"
+                            />
+                          </div>
+                          <div className="space-y-2 md:col-span-2">
+                            <label className="text-sm font-medium text-secondary-700">
+                              Details
+                            </label>
+                            <Textarea
+                              value={post.body}
+                              onChange={(event) =>
+                                handleBlogPostChange(
+                                  index,
+                                  "body",
+                                  event.target.value,
+                                )
+                              }
+                              className="min-h-44 rounded-[1rem] border-secondary-200 bg-white px-4 py-3"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-secondary-700">
+                              Add Existing Image
+                            </label>
+                            <select
+                              value=""
+                              onChange={(event) =>
+                                handleBlogExistingImageAdd(
+                                  index,
+                                  event.target.value,
+                                )
+                              }
+                              className="h-11 w-full rounded-xl border border-secondary-200 bg-white px-3 text-sm"
+                            >
+                              <option value="">Choose an image</option>
+                              {availableImageOptions.map(
+                                (image, imageIndex) => (
+                                  <option
+                                    key={`${image}-${imageIndex}`}
+                                    value={image}
+                                  >
+                                    Image {imageIndex + 1}
+                                  </option>
+                                ),
+                              )}
+                            </select>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-secondary-700">
+                              Upload Blog Images
+                            </label>
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="h-11 rounded-xl border-secondary-200 bg-white"
+                              onChange={(event) => {
+                                handleBlogImageUploads(
+                                  index,
+                                  event.target.files,
+                                );
+                                event.currentTarget.value = "";
+                              }}
+                            />
+                          </div>
+                        </div>
+                        {!!post.images?.length && (
+                          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            {post.images.map((image, imageIndex) => {
+                              const previewUrl = getImagePreviewUrl(image);
+                              return (
+                                <div
+                                  key={`${previewUrl}-${imageIndex}`}
+                                  className="overflow-hidden rounded-[1rem] border border-secondary-100 bg-white"
+                                >
+                                  <div
+                                    className="h-36 bg-cover bg-center"
+                                    style={{
+                                      backgroundImage: `url(${previewUrl})`,
+                                    }}
+                                  />
+                                  <div className="flex items-center justify-between gap-2 p-3">
+                                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary-400">
+                                      Image {imageIndex + 1}
+                                    </span>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      className="h-9 rounded-xl border-secondary-200 bg-white px-3 text-xs"
+                                      onClick={() =>
+                                        handleRemoveBlogImage(index, imageIndex)
+                                      }
+                                    >
+                                      Remove
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {step === 3 && (
+              <>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-secondary-950">
+                        Sponsors
+                      </p>
+                      <p className="text-sm text-secondary-500">
+                        Edit sponsor names and optional sponsor images.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-xl border-secondary-200"
+                      onClick={() => {
+                        setSponsors((current) => [...current, ""]);
+                        setSponsorImages((current) => [...current, ""]);
+                        setSponsorLogoIds((current) => [...current, undefined]);
+                        setSponsorShowNames((current) => [...current, false]);
+                      }}
+                    >
+                      <Plus className="size-4" />
+                      Add
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    {sponsors.length === 0 && (
+                      <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
+                        No sponsors yet.
+                      </div>
+                    )}
+                    {sponsors.map((sponsor, index) => (
+                      <div
+                        key={`sponsor-${index}`}
+                        className="grid gap-3 rounded-[1.3rem] bg-secondary-50 p-4 md:grid-cols-[1fr_auto]"
+                      >
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <Input
+                            value={sponsor}
+                            onChange={(event) =>
+                              setSponsors((current) =>
+                                current.map((item, itemIndex) =>
+                                  itemIndex === index
+                                    ? event.target.value
+                                    : item,
+                                ),
+                              )
+                            }
+                            placeholder="Sponsor name"
+                            className="h-11 rounded-xl border-secondary-200 bg-white"
+                          />
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            className="h-11 rounded-xl border-secondary-200 bg-white"
+                            onChange={(event) => {
+                              handleSponsorImageUpload(
+                                index,
+                                event.target.files?.[0],
+                              );
+                              event.currentTarget.value = "";
+                            }}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="rounded-xl border-secondary-200 bg-white"
+                            disabled={index === 0}
+                            onClick={() => moveSponsor(index, -1)}
+                            aria-label="Move sponsor up"
+                          >
+                            <ChevronUp className="size-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="rounded-xl border-secondary-200 bg-white"
+                            disabled={index === sponsors.length - 1}
+                            onClick={() => moveSponsor(index, 1)}
+                            aria-label="Move sponsor down"
+                          >
+                            <ChevronDown className="size-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="rounded-xl border-secondary-200 bg-white"
+                            onClick={() => removeSponsor(index)}
+                          >
+                            <Trash2 className="size-4" />
+                            Delete
+                          </Button>
+                        </div>
+                        {sponsorImages[index] && (
+                          <div className="space-y-2 md:col-span-2">
+                            <div
+                              className="flex h-24 items-center justify-center rounded-[1rem] border border-secondary-100 bg-white bg-contain bg-center bg-no-repeat"
+                              style={{
+                                backgroundImage: `url(${sponsorImages[index]})`,
+                              }}
+                            />
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              On the board, show its
+                              <SponsorShowToggle
+                                showName={!!sponsorShowNames[index]}
+                                onChange={(showName) =>
+                                  setSponsorShowNames((current) => {
+                                    const next = sponsors.map(
+                                      (_, at) => !!current[at],
+                                    );
+                                    next[index] = showName;
+                                    return next;
+                                  })
+                                }
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+            {step === 4 && (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-secondary-950">
+                    Review
+                  </p>
+                  <p className="text-sm text-secondary-500">
+                    Check everything, then save. Tap a section to change it.
+                  </p>
+                </div>
+                {[
+                  {
+                    step: 1,
+                    title: "Event details",
+                    lines: [
+                      formValues.name,
+                      formValues.date
+                        ? `${format(new Date(formValues.date), "EEE d MMM yyyy, h:mm a")}${timezone ? ` (${timezone})` : ""}`
+                        : "No date",
+                      isMultiDay ? count(eventDays.length, "day") : null,
+                      formValues.venueName || "No venue",
+                      lineup.length ? `${lineup.length} on the line-up` : null,
+                      activities.length
+                        ? count(activities.length, "activity", "activities")
+                        : null,
+                    ],
+                  },
+                  {
+                    step: 2,
+                    title: "Tickets",
+                    lines: [
+                      eventTickets.length
+                        ? eventTickets
+                            .map((ticket) => ticket.ticketName || "Untitled")
+                            .join(", ")
+                        : "No tickets",
+                      passAssignments.length
+                        ? count(
+                            passAssignments.length,
+                            "access pass",
+                            "access passes",
+                          )
+                        : null,
+                    ],
+                  },
+                  {
+                    step: 3,
+                    title: "Media & sponsors",
+                    lines: [
+                      bannerImage || bannerImageFile
+                        ? "Banner set"
+                        : "No banner",
+                      count(
+                        mediaSources.length || mediaImages.length,
+                        "photo or video",
+                        "photos and videos",
+                      ),
+                      sponsors.length
+                        ? count(sponsors.length, "sponsor")
+                        : "No sponsors",
+                      blogPosts.length
+                        ? count(blogPosts.length, "blog post")
+                        : null,
+                    ],
+                  },
+                ].map((section) => (
+                  <button
+                    key={section.step}
+                    type="button"
+                    onClick={() => goTo(section.step)}
+                    className="flex w-full items-start justify-between gap-4 rounded-[1.3rem] border border-secondary-100 p-4 text-left transition-colors hover:border-secondary-300"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-secondary-950">
+                        {section.title}
+                      </span>
+                      {section.lines.filter(Boolean).map((line) => (
+                        <span
+                          key={line as string}
+                          className="block truncate text-sm text-secondary-500"
+                        >
+                          {line}
+                        </span>
+                      ))}
+                    </span>
+                    <span className="shrink-0 text-sm font-semibold text-primary">
+                      Edit
+                    </span>
+                  </button>
                 ))}
               </div>
-            </div>
+            )}
           </div>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <Button
-              type="submit"
-              className="h-12 w-full rounded-2xl bg-secondary-400 px-7 text-base font-semibold text-white hover:bg-secondary-500 sm:w-auto"
-            >
-              Save Changes
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="h-12 w-full rounded-2xl border-secondary-200 px-7 text-base font-semibold text-secondary-950 hover:bg-secondary-50 sm:w-auto"
-            >
-              <Link href={`/app/events/${id}`}>View Event</Link>
-            </Button>
+          <div className="mt-8 flex flex-col gap-3 border-t border-secondary-100 pt-6 sm:flex-row sm:items-center">
+            {step > 1 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => goTo(step - 1)}
+                className="h-12 w-full rounded-2xl border-secondary-200 px-7 text-base font-semibold text-secondary-950 hover:bg-secondary-50 sm:w-auto"
+              >
+                Back
+              </Button>
+            )}
+            <div className="flex flex-col gap-3 sm:ml-auto sm:flex-row">
+              {step < EDIT_STEPS.length ? (
+                <>
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    className="h-12 w-full rounded-2xl border-secondary-200 px-7 text-base font-semibold text-secondary-950 hover:bg-secondary-50 sm:w-auto"
+                  >
+                    Save changes
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => goTo(step + 1)}
+                    className="h-12 w-full rounded-2xl px-7 text-base font-semibold sm:w-auto"
+                  >
+                    Next: {EDIT_STEPS[step]}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="h-12 w-full rounded-2xl border-secondary-200 px-7 text-base font-semibold text-secondary-950 hover:bg-secondary-50 sm:w-auto"
+                  >
+                    <Link href={`/app/events/${id}`}>View event</Link>
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="h-12 w-full rounded-2xl px-7 text-base font-semibold sm:w-auto"
+                  >
+                    Save changes
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </form>
       </section>

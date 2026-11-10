@@ -4,7 +4,7 @@ import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSessions, useSignOutDevice } from "@/hooks/use-account";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { Laptop, Smartphone } from "lucide-react";
 import React, { memo, useState } from "react";
 import { toast } from "@/lib/toast";
@@ -103,11 +103,14 @@ const DevicesCard = () => {
                     )}
                   </p>
                   <p className="truncate text-xs text-secondary-500">
-                    {session.ip && `${session.ip} · `}
+                    {/* An internet address means nothing to most people, so
+                        it's when they signed in and when it was last used. */}
                     Active{" "}
                     {formatDistanceToNow(new Date(session.lastSeenAt), {
                       addSuffix: true,
                     })}
+                    {session.signedInAt &&
+                      ` · signed in ${format(new Date(session.signedInAt), "d MMM")}`}
                   </p>
                 </div>
                 {!session.isCurrent && (

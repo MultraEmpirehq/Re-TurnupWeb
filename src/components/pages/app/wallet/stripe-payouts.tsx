@@ -59,13 +59,31 @@ const StripePayouts = ({
           }
           return session.clientSecret;
         },
+        // Stripe draws inside its own frame, so it can't inherit our font:
+        // load Plus Jakarta Sans there and match our colours and corners.
+        fonts: [
+          {
+            cssSrc:
+              "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap",
+          },
+        ],
         appearance: {
           overlays: "dialog",
           variables: {
+            fontFamily: "'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif",
             colorPrimary: "#0577FA",
+            buttonPrimaryColorBackground: "#0577FA",
+            buttonPrimaryColorText: "#FFFFFF",
+            actionPrimaryColorText: "#0577FA",
             colorText: "#0b1d2a",
+            colorSecondaryText: "#5b6b78",
+            colorBackground: "#FFFFFF",
+            colorBorder: "#E4E7EB",
+            colorDanger: "#DC2626",
             borderRadius: "12px",
-            fontFamily: "inherit",
+            buttonBorderRadius: "8px",
+            formBorderRadius: "10px",
+            overlayBorderRadius: "16px",
           },
         },
       }),

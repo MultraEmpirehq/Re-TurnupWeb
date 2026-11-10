@@ -25,7 +25,21 @@ const CHANNELS: {
   {
     key: "email",
     title: "Email",
-    description: "To the address on your account.",
+    description: "To the address on your account, if you haven't seen it in the app within 30 minutes.",
+  },
+];
+
+/** For organisers in the dashboard: what these mean for their events. */
+const ORGANISER_TOPICS: typeof TOPICS = [
+  {
+    key: "eventUpdates",
+    title: "Your events",
+    description: "Approvals, changes an admin asks for, and sign-up milestones.",
+  },
+  {
+    key: "orderUpdates",
+    title: "Sales and refunds",
+    description: "New sales and refunds, shown in the bell here.",
   },
 ];
 
@@ -56,7 +70,8 @@ const TOPICS: {
  * Notification settings, saved as you flip them. In-app notifications always
  * stay on; these decide what also reaches your phone and inbox.
  */
-const NotificationPreferencesCard = () => {
+const NotificationPreferencesCard = ({ organiser = false }: { organiser?: boolean }) => {
+  const topics = organiser ? ORGANISER_TOPICS : TOPICS;
   const { data: preferences, isLoading, error } = useNotificationPreferences();
   const update = useUpdateNotificationPreferences();
 
@@ -135,7 +150,7 @@ const NotificationPreferencesCard = () => {
             <p className="text-xs font-semibold tracking-wider text-secondary-400 uppercase">
               About
             </p>
-            {TOPICS.map(row)}
+            {topics.map(row)}
           </div>
         </div>
       )}

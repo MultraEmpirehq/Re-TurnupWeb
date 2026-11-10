@@ -40,7 +40,7 @@ export const VENDOR_NAV_ITEMS: TVendorNavItem[] = [
     permissions: ["EVENTS_MANAGE"],
   },
   {
-    label: "Listings",
+    label: ROUTES.EVENTS.label,
     href: ROUTES.EVENTS.href,
     icon: CalendarDays,
     requiresVerification: true,
@@ -83,7 +83,7 @@ export const VENDOR_NAV_ITEMS: TVendorNavItem[] = [
     badge: "chats",
   },
   {
-    label: "Analysis",
+    label: ROUTES.ANALYSIS.label,
     href: ROUTES.ANALYSIS.href,
     icon: ChartNoAxesCombined,
     requiresVerification: true,

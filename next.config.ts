@@ -2,6 +2,20 @@ import type { NextConfig } from "next";
 import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
 const nextConfig: NextConfig = {
+  // Pages that moved so each address matches its menu name. The old ones
+  // keep working: links in emails, notifications and the app land here.
+  async redirects() {
+    return [
+      { source: "/app/profile", destination: "/app/settings", permanent: true },
+      { source: "/app/messages", destination: "/app/chats", permanent: true },
+      { source: "/app/messages/:path*", destination: "/app/chats/:path*", permanent: true },
+      { source: "/app/analysis", destination: "/app/analytics", permanent: true },
+      { source: "/app/create", destination: "/app/events/create", permanent: true },
+      { source: "/app/categories", destination: "/app/admin/categories", permanent: true },
+      { source: "/app/create-category", destination: "/app/admin/categories/create", permanent: true },
+      { source: "/app/create-venue", destination: "/app/admin/venues/create", permanent: true },
+    ];
+  },
   images: {
     remotePatterns: [
       new URL("https://res.cloudinary.com/**"),

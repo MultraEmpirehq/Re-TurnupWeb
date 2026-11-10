@@ -31,6 +31,9 @@ const useVendorVerificationStatus = () => {
         approvalLevel?: string | null;
         canSellTickets?: boolean;
         organiserName?: string | null;
+        countryOfResidence?: string | null;
+        payoutCountry?: string | null;
+        crossBorderCountries?: string[] | null;
       }>("/vendor/verification");
       const status = data?.data?.status ?? "not_started";
       return {
@@ -44,6 +47,12 @@ const useVendorVerificationStatus = () => {
             !["rejected", "not_started"].includes(status)),
         canSellTickets: !!data?.data?.canSellTickets,
         organiserName: data?.data?.organiserName ?? null,
+        // Where they sell: home, payouts, and any cross-border countries.
+        countries: [
+          data?.data?.payoutCountry,
+          data?.data?.countryOfResidence,
+          ...(data?.data?.crossBorderCountries ?? []),
+        ].filter((value): value is string => !!value),
       };
     },
     enabled: !!userId && !isAdmin,
@@ -59,6 +68,7 @@ const useVendorVerificationStatus = () => {
       canSellTickets: true,
       // The organiser's own name is filled in by the api when it's left blank.
       organiserName: null,
+      countries: [] as string[],
       isChecking: false,
     };
   }
@@ -70,6 +80,8 @@ const useVendorVerificationStatus = () => {
     canSellTickets: isAdmin || !!query.data?.canSellTickets,
     /** The name their events go out under ("Organised by"). */
     organiserName: query.data?.organiserName ?? null,
+    /** Country names or codes they sell in, from their verification. */
+    countries: query.data?.countries ?? [],
     // A failed check counts as "not approved" rather than "still checking".
     isChecking: !isAdmin && !!userId && query.isPending,
   };

@@ -47,7 +47,7 @@ const Unsubscribe = () => {
         {state === "done"
           ? "You won't get any more emails from the Turnupz waitlist. Emails about tickets you buy still come, since they're about your orders."
           : state === "failed"
-            ? `${error} Email info@turnupz.com and we'll take you off the list.`
+            ? `${error} Email support@turnupz.com and we'll take you off the list.`
             : "One moment."}
       </p>
       <Button asChild variant="outline" className="rounded-full">

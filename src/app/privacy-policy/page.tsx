@@ -13,7 +13,7 @@ const LEGAL = {
   canadaAddress: "Calgary, Canada",
   nigeriaAddress: "Lagos, Nigeria",
   /** Where people send privacy requests. */
-  privacyEmail: "admin@multraempire.com",
+  privacyEmail: "compliance@turnupz.com",
   /** Who's responsible for personal information (required in Québec): a title is enough. */
   privacyOfficer: "Our Data Protection Officer",
 };

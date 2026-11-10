@@ -128,7 +128,7 @@ const EventListingCard: React.FC<{
         : "Past";
 
   const editHref = forViewer(
-    isDraft ? `/app/create?draftId=${event.id}` : `/app/events/${event.id}/edit`,
+    isDraft ? `/app/events/create?draftId=${event.id}` : `/app/events/${event.id}/edit`,
     isAdmin,
   );
 
@@ -755,7 +755,7 @@ const VendorEventListingsPage = () => {
               asChild
               className="h-12 rounded-2xl bg-secondary-400 px-5 text-sm font-semibold text-white hover:bg-secondary-500"
             >
-              <Link href={forViewer("/app/create", isAdminViewer)}>Create Event</Link>
+              <Link href={forViewer("/app/events/create", isAdminViewer)}>Create Event</Link>
             </Button>
           </div>
         </div>
