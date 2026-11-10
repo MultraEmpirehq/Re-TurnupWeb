@@ -106,7 +106,7 @@ const ChatDetails: React.FC<{
             </Link>
             {(iAmOrganiser || chat.memberListVisibility !== "private") && (
               <Link
-                href={`/app/messages/${chat.id}/members`}
+                href={`/app/chats/${chat.id}/members`}
                 className="inline-flex items-center gap-1 text-sm font-bold text-secondary-700 hover:underline"
               >
                 Who&apos;s going <ArrowRight className="size-3.5" aria-hidden />

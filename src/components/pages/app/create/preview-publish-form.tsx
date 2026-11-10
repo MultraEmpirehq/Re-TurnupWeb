@@ -10,7 +10,7 @@ import {
 import Joi from "joi";
 import React, { memo, useMemo, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
-import type { TFormValues } from "@/app/app/create/page";
+import type { TFormValues } from "@/app/app/events/create/page";
 import Link from "next/link";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
 import { cn } from "@/lib/utils";

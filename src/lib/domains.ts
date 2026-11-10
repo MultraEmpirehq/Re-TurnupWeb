@@ -49,17 +49,16 @@ export const domainFor = (pathname: string): "company" | "app" => {
 };
 
 /**
- * Pages served on both: password reset, and the account's own pages (profile,
- * settings, notifications and messages), so admins use them without leaving
+ * Pages served on both: password reset, and the account's own pages (settings,
+ * notifications and chats), so admins use them without leaving
  * turnupz.com, where they're signed in.
  */
 export const isOnBoth = (pathname: string) =>
   pathname === "/auth/forgot-password" ||
   pathname === "/auth/otp" ||
-  isWithin(pathname, "/app/profile") ||
   pathname === "/app/settings" ||
   pathname === "/app/notifications" ||
-  isWithin(pathname, "/app/messages");
+  isWithin(pathname, "/app/chats");
 
 /**
  * A link to `path` that works from anywhere: relative on its own domain (and

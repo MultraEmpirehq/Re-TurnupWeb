@@ -10,9 +10,10 @@ import { IFollowedItem, TFollowTargetType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
-import { ArrowLeft, Heart, UsersRound } from "lucide-react";
+import { Heart, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import BackToAccount from "@/components/pages/profile/back-to-account";
 import React, { memo, useMemo } from "react";
 
 const GROUPS: { type: TFollowTargetType; title: string; path?: string }[] = [
@@ -190,13 +191,7 @@ const FollowingPage = () => {
   return (
     <div className="@container space-y-6">
       <div className="flex items-center gap-3">
-        <Link
-          href={ROUTES.USER_PROFILE.href}
-          aria-label="Back to your profile"
-          className="flex size-10 items-center justify-center rounded-full border border-secondary-100 bg-white text-secondary-700 hover:bg-secondary-50"
-        >
-          <ArrowLeft className="size-4" />
-        </Link>
+        <BackToAccount />
         <div
           role="tablist"
           aria-label="Connections"

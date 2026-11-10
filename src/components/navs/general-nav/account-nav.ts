@@ -67,11 +67,6 @@ const help: TAccountLink = {
   href: ROUTES.PROFILE_HELP.href,
   icon: CircleHelp,
 };
-const dashboardProfile: TAccountLink = {
-  label: "Profile",
-  href: ROUTES.PROFILE.href,
-  icon: User,
-};
 const createEvent: TAccountLink = {
   label: "Create Event",
   href: ROUTES.CREATE_EVENT.href,
@@ -127,7 +122,7 @@ const VENDOR_NAV: TAccountNav = {
       },
       { label: ROUTES.WALLET.label, href: ROUTES.WALLET.href, icon: Wallet },
     ],
-    [myTickets, myOrders, following, dashboardProfile, dashboardSettings],
+    [myTickets, myOrders, following, dashboardSettings],
     [help],
   ],
 };
@@ -153,7 +148,7 @@ const ADMIN_NAV: TAccountNav = {
         icon: ShieldCheck,
       },
     ],
-    [dashboardProfile, dashboardSettings],
+    [dashboardSettings],
   ],
 };
 

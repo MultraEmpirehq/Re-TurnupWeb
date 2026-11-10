@@ -179,10 +179,26 @@ const ExemptionForm: React.FC<{ onDone: () => void }> = ({ onDone }) => {
 };
 
 /** What the organiser declares about tax. Where it applies, buyers pay it at checkout. */
-const TaxDetailsCard = () => {
+const CODE_OF: Record<string, string> = { nigeria: "NG", ng: "NG", canada: "CA", ca: "CA" };
+
+const TaxDetailsCard = ({ sellsIn = [] }: { sellsIn?: string[] }) => {
   const { data } = useVendorTax();
   const [asking, setAsking] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   if (!data) return null;
+  // Only where they sell, unless they ask (or we can't tell, or they've saved one elsewhere).
+  const home = new Set(sellsIn.map((value) => CODE_OF[value.trim().toLowerCase()]).filter(Boolean));
+  const saved = new Set(
+    data.countries
+      .filter((country) =>
+        country.kinds.some((item) => data.registrations.some((row) => row.kind === item.kind)),
+      )
+      .map((country) => country.countryCode),
+  );
+  const shown = data.countries.filter(
+    (country) => showAll || !home.size || home.has(country.countryCode) || saved.has(country.countryCode),
+  );
+  const hidden = data.countries.length - shown.length;
   return (
     <section className="space-y-5 rounded-[1.5rem] border border-secondary-100 bg-white p-6">
       <div className="flex items-start gap-3">
@@ -197,7 +213,7 @@ const TaxDetailsCard = () => {
           </p>
         </div>
       </div>
-      {data.countries.map((country) => (
+      {shown.map((country) => (
         <div key={country.countryCode} className="space-y-3">
           <p className="text-sm font-semibold text-secondary-800">{COUNTRY[country.countryCode]}</p>
           <div className="grid gap-3 md:grid-cols-2">
@@ -218,6 +234,15 @@ const TaxDetailsCard = () => {
           </div>
         </div>
       ))}
+      {hidden > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowAll(true)}
+          className="text-sm font-semibold text-primary hover:underline"
+        >
+          Selling in another country?
+        </button>
+      )}
       <div className="space-y-3 border-t border-secondary-100 pt-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>

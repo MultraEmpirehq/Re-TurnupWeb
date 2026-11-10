@@ -323,7 +323,7 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
           icon={<CalendarDays className="size-10" />}
           title="No events found"
           description="Create your first event and it will show up in this management board."
-          action={() => router.push("/app/create")}
+          action={() => router.push("/app/events/create")}
           actionText="Create Event"
         />
       )}

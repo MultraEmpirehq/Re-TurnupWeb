@@ -18,6 +18,8 @@ const StepDetails: React.FC<{
   isLast?: boolean;
   isLeftConnectorComplete?: boolean;
   isRightConnectorComplete?: boolean;
+  /** When set, the step can be jumped to (editing: everything's filled in). */
+  onClick?: () => void;
 }> = memo(
   ({
     step,
@@ -27,7 +29,9 @@ const StepDetails: React.FC<{
     isLast,
     isLeftConnectorComplete,
     isRightConnectorComplete,
+    onClick,
   }) => {
+    const Circle = onClick ? "button" : "div";
     return (
       <li
         className="flex flex-col items-center shrink-0 flex-1 min-w-0 list-none"
@@ -43,8 +47,12 @@ const StepDetails: React.FC<{
             )}
             aria-hidden
           />
-          <div
+          <Circle
+            {...(onClick
+              ? { type: "button" as const, onClick, "aria-label": `Go to ${title}` }
+              : {})}
             className={cn(
+              onClick && "cursor-pointer hover:opacity-90",
               "relative z-10 shrink-0 rounded-full flex items-center justify-center text-sm font-semibold transition-colors size-8 ring-2 ring-offset-2 ring-offset-background",
               status === "completed" &&
                 "bg-primary text-primary-foreground ring-primary",
@@ -72,7 +80,7 @@ const StepDetails: React.FC<{
             ) : (
               <span>{step}</span>
             )}
-          </div>
+          </Circle>
           <div
             className={cn(
               "flex-1 h-0.5 min-w-[6px] sm:min-w-[12px] transition-colors self-center shrink-0",
@@ -100,12 +108,18 @@ const StepDetails: React.FC<{
 
 StepDetails.displayName = "StepDetails";
 
-const Steps: React.FC<{ currentStep?: number }> = memo(
-  ({ currentStep = 1 }) => {
+const Steps: React.FC<{
+  currentStep?: number;
+  /** Other names for the steps, in order (editing ends in "Review & Save"). */
+  titles?: readonly string[];
+  label?: string;
+  onStepClick?: (step: number) => void;
+}> = memo(
+  ({ currentStep = 1, titles, label = "Create event progress", onStepClick }) => {
     const active = Math.max(1, Math.min(currentStep, STEP_CONFIG.length));
 
     return (
-      <nav className="w-full" aria-label="Create event progress">
+      <nav className="w-full" aria-label={label}>
         <ol
           role="list"
           className="flex items-start justify-between w-full list-none p-0 m-0"
@@ -123,8 +137,9 @@ const Steps: React.FC<{ currentStep?: number }> = memo(
               <StepDetails
                 key={step}
                 step={step}
-                title={title}
+                title={titles?.[index] ?? title}
                 status={status}
+                onClick={onStepClick ? () => onStepClick(step) : undefined}
                 isFirst={index === 0}
                 isLast={index === STEP_CONFIG.length - 1}
                 isLeftConnectorComplete={isLeftConnectorComplete}

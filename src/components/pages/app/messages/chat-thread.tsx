@@ -302,7 +302,7 @@ const ChatThread: React.FC<{
                 {isGroup && (
                   <MenuItem
                     icon={UsersIcon}
-                    href={`/app/messages/${chat.id}/members`}
+                    href={`/app/chats/${chat.id}/members`}
                   >
                     View members
                   </MenuItem>

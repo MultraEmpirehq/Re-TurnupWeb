@@ -15,17 +15,15 @@ import {
   useSavedCards,
 } from "@/hooks/use-profile";
 import { cn } from "@/lib/utils";
-import { ROUTES } from "@/lib/variables";
 import { format } from "date-fns";
 import {
-  ArrowLeft,
   CreditCard,
   Eye,
   EyeOff,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import Link from "next/link";
+import BackToAccount from "@/components/pages/profile/back-to-account";
 import React, { memo, useState } from "react";
 import { toast } from "@/lib/toast";
 import { useFeatures } from "@/hooks/use-features";
@@ -334,13 +332,7 @@ const SavedCards: React.FC = () => {
 const WalletPage = () => (
   <div className="@container space-y-6">
     <div className="flex items-center gap-3">
-      <Link
-        href={ROUTES.USER_PROFILE.href}
-        aria-label="Back to your profile"
-        className="flex size-10 items-center justify-center rounded-full border border-secondary-100 bg-white text-secondary-700 hover:bg-secondary-50"
-      >
-        <ArrowLeft className="size-4" />
-      </Link>
+      <BackToAccount />
       <h1 className="text-2xl font-bold tracking-tight text-secondary-950">
         Wallet
       </h1>
