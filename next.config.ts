@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs/config";
 import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
 const nextConfig: NextConfig = {
@@ -33,7 +34,20 @@ const nextConfig: NextConfig = {
 
 // Keep the dev server's output out of `.next` so it never clashes with a
 // production build. `next build` must emit to `.next` — Vercel looks there.
+const withSentry = (config: NextConfig) =>
+  withSentryConfig(config, {
+    org: "turnupz-ux",
+    project: "turnupz-web",
+    silent: true,
+    telemetry: false,
+    // Readable stack traces need SENTRY_AUTH_TOKEN at build time; without it
+    // the build carries on and errors still arrive, just minified.
+    sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+  });
+
 export default (phase: string): NextConfig =>
-  phase === PHASE_DEVELOPMENT_SERVER
-    ? { ...nextConfig, distDir: ".next-dev-cache" }
-    : nextConfig;
+  withSentry(
+    phase === PHASE_DEVELOPMENT_SERVER
+      ? { ...nextConfig, distDir: ".next-dev-cache" }
+      : nextConfig,
+  );
