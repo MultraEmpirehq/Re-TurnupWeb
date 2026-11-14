@@ -40,7 +40,7 @@ const ExploreContentComponent = () => {
           <div
             role="tablist"
             aria-label="Search for"
-            className="inline-flex gap-1 rounded-full bg-white p-1 shadow-[0_1px_2px_rgba(15,23,42,0.06)] ring-1 ring-black/5"
+            className="inline-flex gap-1 rounded-full bg-card p-1 shadow-[0_1px_2px_rgba(15,23,42,0.06)] ring-1 ring-black/5"
           >
             {EXPLORE_TABS.map((option) => {
               const Icon = TAB_ICONS[option.value];

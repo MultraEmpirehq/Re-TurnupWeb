@@ -119,7 +119,7 @@ const HappeningBento: React.FC<{ events: IEventDetailsType[] }> = ({
       <Link
         href={eventHref(lead)}
         className={cn(
-          "group relative isolate flex min-h-[340px] flex-col justify-end overflow-hidden rounded-[2rem] bg-secondary-900 p-6 text-white md:p-8",
+          "group relative isolate flex min-h-[340px] flex-col justify-end overflow-hidden rounded-3xl bg-secondary-900 p-6 text-white md:p-8",
           others.length && "md:col-span-2 md:row-span-2 md:min-h-[460px]",
         )}
       >
@@ -146,7 +146,7 @@ const HappeningBento: React.FC<{ events: IEventDetailsType[] }> = ({
             {placeOf(lead)}
           </span>
         </p>
-        <span className="mt-5 inline-flex w-fit items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-secondary-950 transition-transform group-hover:translate-x-1">
+        <span className="mt-5 inline-flex w-fit items-center gap-2 rounded-full bg-card px-5 py-2.5 text-sm font-semibold text-secondary-950 transition-transform group-hover:translate-x-1">
           Get tickets
           <ArrowRight className="size-4" aria-hidden />
         </span>
@@ -191,7 +191,7 @@ const TrendingChart: React.FC<{ events: IEventDetailsType[] }> = ({
       <li key={event.id} className="min-w-0">
         <Link
           href={eventHref(event)}
-          className="group flex items-center gap-3 rounded-3xl p-2 pr-4 transition-colors hover:bg-white sm:gap-4"
+          className="group flex items-center gap-3 rounded-3xl p-2 pr-4 transition-colors hover:bg-card sm:gap-4"
         >
           <span
             aria-hidden
@@ -286,7 +286,7 @@ const PerformerPodium: React.FC<{ performers: IPerformer[] }> = ({
             <li key={performer.id} className="min-w-0">
               <Link
                 href={performerHref(performer.id)}
-                className="group flex items-center gap-3 rounded-2xl bg-white p-2.5 ring-1 ring-black/5 hover:shadow-md"
+                className="group flex items-center gap-3 rounded-2xl bg-card p-2.5 ring-1 ring-black/5 hover:shadow-md"
               >
                 <span className="w-6 text-center text-sm font-bold text-secondary-400 tabular-nums">
                   {index + 4}
@@ -359,7 +359,7 @@ const VenueCollage: React.FC<{ venues: IVenueDetailsType[] }> = ({
 
 const BentoSkeleton = () => (
   <div className="grid gap-4 md:grid-cols-4 md:grid-rows-2">
-    <Skeleton className="h-[340px] rounded-[2rem] md:col-span-2 md:row-span-2 md:h-[460px]" />
+    <Skeleton className="h-[340px] rounded-3xl md:col-span-2 md:row-span-2 md:h-[460px]" />
     {Array.from({ length: 4 }).map((_, index) => (
       <Skeleton key={index} className="h-[200px] rounded-3xl" />
     ))}
@@ -473,7 +473,7 @@ const ExploreBrowse = () => {
       </section>
 
       {performers.length > 0 && (
-        <section className="space-y-8 rounded-[2rem] bg-linear-to-br from-white via-white to-secondary-50 p-4 ring-1 ring-black/5 sm:rounded-[2.5rem] sm:p-6 md:p-10">
+        <section className="space-y-8 rounded-3xl bg-linear-to-br from-white via-white to-secondary-50 p-4 ring-1 ring-black/5 sm:rounded-[2.5rem] sm:p-6 md:p-10">
           <SectionHeader
             icon={Mic2}
             eyebrow="By tickets sold this year"
@@ -522,7 +522,7 @@ const ExploreBrowse = () => {
             {planners.map((planner) => (
               <div
                 key={planner.id}
-                className="flex items-center gap-4 rounded-3xl bg-white p-4 ring-1 ring-black/5"
+                className="flex items-center gap-4 rounded-3xl bg-card p-4 ring-1 ring-black/5"
               >
                 <PerformerAvatar
                   name={planner.name}

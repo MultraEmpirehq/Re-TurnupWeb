@@ -36,7 +36,7 @@ const ChartsPage = () => {
       </header>
 
       <ScrollRow>
-        <div className="inline-flex gap-1 rounded-full bg-white p-1 ring-1 ring-black/5">
+        <div className="inline-flex gap-1 rounded-full bg-card p-1 ring-1 ring-black/5">
           {CHART_REGIONS.map((option) => (
             <Button
               key={option.value}

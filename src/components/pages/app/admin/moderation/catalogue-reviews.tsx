@@ -204,7 +204,7 @@ const VenueCard: React.FC<{ suggestion: IVenueSuggestion }> = ({
           </p>
         </div>
         {suggestion.venue && (
-          <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+          <span className="rounded-full bg-success-soft px-2.5 py-0.5 text-xs font-medium text-success">
             Linked to {suggestion.venue.name}
           </span>
         )}
@@ -598,7 +598,7 @@ const PerformerCard: React.FC<{ performer: IPerformerForReview }> = ({
             })}
           </p>
           {performer.reviewStatus === "REJECTED" && performer.reviewNote && (
-            <p className="mt-1 text-xs text-red-700">
+            <p className="mt-1 text-xs text-danger">
               Sent back: {performer.reviewNote}
             </p>
           )}

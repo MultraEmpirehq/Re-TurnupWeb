@@ -68,7 +68,7 @@ const AdditionalInformation: React.FC<IAdditionalInformationProps> = ({
                 type="button"
                 onClick={() => handleRemoveAdditionalInformation(index)}
                 variant="ghost"
-                className="text-xs inline-flex items-center gap-2 text-red-500"
+                className="text-xs inline-flex items-center gap-2 text-danger"
               >
                 <TrashIcon className="size-4" />
               </Button>
@@ -92,7 +92,7 @@ const AdditionalInformation: React.FC<IAdditionalInformationProps> = ({
                 variant="outline"
                 type="button"
                 onClick={() => setShowTextArea(false)}
-                className="text-xs inline-flex items-center gap-2 text-red-500 border-red-300"
+                className="text-xs inline-flex items-center gap-2 text-danger border-danger-line"
               >
                 Cancel
               </Button>

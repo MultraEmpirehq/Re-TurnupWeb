@@ -20,7 +20,7 @@ export default function BlogPostPage() {
     return (
       <div className="min-h-screen bg-[#F7F8FB] pt-28">
         <SectionContainer>
-          <div className="h-96 animate-pulse rounded-3xl bg-white" />
+          <div className="h-96 animate-pulse rounded-3xl bg-card" />
         </SectionContainer>
       </div>
     );
@@ -28,12 +28,12 @@ export default function BlogPostPage() {
   if (!post) {
     return (
       <div className="min-h-screen bg-[#F7F8FB] pt-32 text-center">
-        <p className="text-lg font-bold text-zinc-950">
+        <p className="text-lg font-bold text-foreground">
           We couldn&apos;t find that blog post
         </p>
         <Link
           href="/blogs"
-          className="mt-3 inline-block font-bold text-[#0577FA]"
+          className="mt-3 inline-block font-bold text-secondary-500"
         >
           See all blogs
         </Link>
@@ -46,95 +46,100 @@ export default function BlogPostPage() {
 
   return (
     <div className="min-h-screen bg-[#F7F8FB] pb-20 pt-24">
-      <SectionContainer className="max-w-[760px]">
+      <SectionContainer>
         <Link
           href="/blogs"
-          className="inline-flex items-center gap-1 text-sm font-bold text-zinc-500 hover:text-zinc-900"
+          className="inline-flex items-center gap-1 text-sm font-bold text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft className="size-4" /> All blogs
         </Link>
-        <article className="mt-4 overflow-hidden rounded-3xl bg-white">
-          {cover && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={cover}
-              alt=""
-              className="aspect-[16/8] w-full object-cover"
-            />
-          )}
-          <div className="p-6 md:p-10">
-            <div className="flex items-center gap-3">
-              <span className="flex size-10 items-center justify-center rounded-xl bg-[#0B1D2A] text-xs font-extrabold text-[#00B2FF]">
-                {by
-                  .split(/\s+/)
-                  .slice(0, 2)
-                  .map((part) => part[0]?.toUpperCase())
-                  .join("")}
-              </span>
-              <div>
-                <p className="text-sm font-bold text-zinc-950">{by}</p>
-                <p className="text-xs text-zinc-500">
-                  {postedAgo(post.createdAt)} · {readingTime(post.body)} min
-                  read
-                </p>
-              </div>
-            </div>
-            <h1 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight text-zinc-950 md:text-4xl">
-              {post.title}
-            </h1>
-            {post.excerpt && (
-              <p className="mt-3 text-lg font-semibold text-zinc-700">
-                {post.excerpt}
-              </p>
-            )}
-            <div className="mt-5 whitespace-pre-line text-[17px] leading-8 text-zinc-800">
-              {post.body}
-            </div>
-            {more.map((url) => (
+        {/* Wide screens: the article at a reading width, the event beside it. */}
+        <div className="mt-4 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8">
+          <article className="overflow-hidden rounded-3xl bg-card">
+            {cover && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                key={url}
-                src={url}
+                src={cover}
                 alt=""
-                className="mt-5 w-full rounded-2xl object-cover"
+                className="aspect-[16/8] w-full object-cover"
               />
-            ))}
-          </div>
-        </article>
-
-        <Link
-          href={`/explore/event/${post.event.id}`}
-          className="mt-5 flex items-center gap-4 rounded-2xl bg-white p-4 transition hover:shadow-md"
-        >
-          {post.event.image && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={post.event.image}
-              alt=""
-              className="size-16 rounded-xl object-cover"
-            />
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-extrabold text-zinc-950">
-              {post.event.name}
-            </p>
-            <p className="text-sm text-zinc-500">
-              {formatEventTime(
-                post.event.date,
-                post.event.timezone ?? undefined,
+            )}
+            <div className="p-6 md:p-10">
+              <div className="flex items-center gap-3">
+                <span className="flex size-10 items-center justify-center rounded-xl bg-[#0B1D2A] text-xs font-extrabold text-[#00B2FF]">
+                  {by
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((part) => part[0]?.toUpperCase())
+                    .join("")}
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-foreground">{by}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {postedAgo(post.createdAt)} · {readingTime(post.body)} min
+                    read
+                  </p>
+                </div>
+              </div>
+              <h1 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight text-foreground md:text-4xl">
+                {post.title}
+              </h1>
+              {post.excerpt && (
+                <p className="mt-3 text-lg font-semibold text-foreground/80">
+                  {post.excerpt}
+                </p>
               )}
-              {post.event.city ? ` · ${post.event.city}` : ""}
-            </p>
-          </div>
-          <span className="rounded-full bg-[#0577FA] px-4 py-2.5 text-sm font-extrabold text-white">
-            See event
-          </span>
-        </Link>
+              <div className="mt-5 max-w-[68ch] whitespace-pre-line text-[17px] leading-8 text-foreground/80">
+                {post.body}
+              </div>
+              {more.map((url) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={url}
+                  src={url}
+                  alt=""
+                  className="mt-5 w-full rounded-2xl object-cover"
+                />
+              ))}
+            </div>
+          </article>
+
+          <aside className="lg:sticky lg:top-24">
+            <Link
+              href={`/explore/event/${post.event.id}`}
+              className="flex items-center gap-4 rounded-2xl bg-card p-4 transition hover:shadow-md lg:flex-col lg:items-stretch lg:gap-3"
+            >
+              {post.event.image && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={post.event.image}
+                  alt=""
+                  className="size-16 rounded-xl object-cover lg:aspect-[16/10] lg:h-auto lg:w-full"
+                />
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-extrabold text-foreground">
+                  {post.event.name}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {formatEventTime(
+                    post.event.date,
+                    post.event.timezone ?? undefined,
+                  )}
+                  {post.event.city ? ` · ${post.event.city}` : ""}
+                </p>
+              </div>
+              <span className="rounded-full bg-[#0577FA] px-4 py-2.5 text-center text-sm font-extrabold text-white">
+                See event
+              </span>
+            </Link>
+          </aside>
+        </div>
       </SectionContainer>
 
       {post.moreFromEvent.length > 0 && (
         <SectionContainer className="mt-12">
-          <h2 className="text-xl font-extrabold text-zinc-950">
+          <h2 className="text-xl font-extrabold text-foreground">
             More from {post.event.name}
           </h2>
           <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

@@ -19,7 +19,7 @@ const ScanProgress: React.FC<{
   const percent = expected ? Math.min(100, Math.round((checkedIn / expected) * 100)) : 0;
 
   return (
-    <div className="space-y-4 rounded-2xl border border-border bg-white p-5">
+    <div className="space-y-4 rounded-2xl border border-border bg-card p-5">
       {summary.days.length > 0 && (
         <div>
           <p className="mb-2 text-sm font-semibold">Scanning for</p>
@@ -40,7 +40,7 @@ const ScanProgress: React.FC<{
               >
                 {item.name}
                 {item.id === summary.todayDayId && (
-                  <span className="ml-1.5 text-[11px] font-bold uppercase opacity-80">Today</span>
+                  <span className="ml-1.5 text-2xs font-bold uppercase opacity-80">Today</span>
                 )}
               </button>
             ))}
@@ -70,7 +70,7 @@ const ScanProgress: React.FC<{
           aria-valuenow={checkedIn}
           aria-label="Tickets checked in"
         >
-          <div className="h-full rounded-full bg-emerald-500 transition-[width]" style={{ width: `${percent}%` }} />
+          <div className="h-full rounded-full bg-success-solid transition-[width]" style={{ width: `${percent}%` }} />
         </div>
       </div>
     </div>

@@ -152,6 +152,10 @@ export type VendorVerificationApiResponse = SavedPayoutDigits & {
   legalFirstName?: string | null;
   legalLastName?: string | null;
   dateOfBirth?: string | null;
+  /** When the ID on file stops being valid (yyyy-mm-dd). */
+  idExpiresOn?: string | null;
+  /** A new ID is waiting for the team to check it. */
+  idRenewalSubmittedAt?: string | null;
   countryOfResidence?: string | null;
   address?: string | null;
   phoneNumber?: string | null;
@@ -174,7 +178,18 @@ export type VendorVerificationApiResponse = SavedPayoutDigits & {
   rejectionReason?: string | null;
   idDocumentDetails?: IVerificationDocument | null;
   supportingDocumentDetails?: IVerificationDocument | null;
+  /** The application's history, oldest first. Only on GET /vendor/verification. */
+  stages?: IVerificationStage[];
 };
+
+export interface IVerificationStage {
+  status: VerificationStatus;
+  /** What the team said, when they said something. */
+  note: string | null;
+  /** Done by the Turnupz team rather than the vendor. */
+  byTeam: boolean;
+  at: string;
+}
 
 /** The form, one object across every step. */
 export interface VerificationFormValues {
@@ -186,6 +201,7 @@ export interface VerificationFormValues {
   legalFirstName: string;
   legalLastName: string;
   dateOfBirth?: Date;
+  idExpiresOn?: Date;
   countryOfResidence: string;
   address: string;
   phoneNumber: string;
@@ -220,6 +236,7 @@ export const DEFAULT_VALUES: VerificationFormValues = {
   legalFirstName: "",
   legalLastName: "",
   dateOfBirth: undefined,
+  idExpiresOn: undefined,
   countryOfResidence: "",
   address: "",
   phoneNumber: "",
@@ -273,6 +290,7 @@ export const formFromApi = (
       dateOfBirth && !Number.isNaN(dateOfBirth.getTime())
         ? dateOfBirth
         : undefined,
+    idExpiresOn: data.idExpiresOn ? new Date(data.idExpiresOn) : undefined,
     countryOfResidence: data.countryOfResidence ?? "",
     address: data.address ?? "",
     phoneNumber: data.phoneNumber ?? "",
@@ -302,6 +320,7 @@ export const STEP_FIELDS: Record<VerificationStepKey, (keyof ApiPayload)[]> = {
     "legalFirstName",
     "legalLastName",
     "dateOfBirth",
+    "idExpiresOn",
     "countryOfResidence",
     "address",
     "phoneNumber",
@@ -342,6 +361,7 @@ export interface ApiPayload {
   legalFirstName?: string;
   legalLastName?: string;
   dateOfBirth?: string;
+  idExpiresOn?: string;
   countryOfResidence?: string;
   address?: string;
   phoneNumber?: string;
@@ -393,6 +413,9 @@ export const toApiPayload = (
     legalLastName: clean(values.legalLastName),
     dateOfBirth: values.dateOfBirth
       ? format(values.dateOfBirth, "yyyy-MM-dd")
+      : undefined,
+    idExpiresOn: values.idExpiresOn
+      ? format(values.idExpiresOn, "yyyy-MM-dd")
       : undefined,
     countryOfResidence: clean(values.countryOfResidence),
     address: clean(values.address),

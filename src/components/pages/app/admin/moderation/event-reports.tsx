@@ -32,7 +32,7 @@ import {
 
 const STATUS_TONES: Record<TReportStatus, string> = {
   open: "bg-secondary-50 text-secondary-800",
-  resolved: "bg-emerald-50 text-emerald-700",
+  resolved: "bg-success-soft text-success",
   dismissed: "bg-muted text-muted-foreground",
 };
 
@@ -126,7 +126,7 @@ const EventReports = () => {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700">
+                  <span className="rounded-full bg-danger-soft px-2.5 py-0.5 text-xs font-semibold text-danger">
                     {REPORT_REASON_LABELS[report.reason] ?? report.reason}
                   </span>
                   <span
@@ -138,7 +138,7 @@ const EventReports = () => {
                     {report.status}
                   </span>
                   {report.event.openReports > 1 && (
-                    <span className="text-xs font-medium text-red-700">
+                    <span className="text-xs font-medium text-danger">
                       {report.event.openReports} open reports on this event
                     </span>
                   )}

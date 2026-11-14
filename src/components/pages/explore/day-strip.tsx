@@ -32,7 +32,7 @@ const DayStrip = () => {
     setFilters({ when: when === value ? undefined : value });
 
   return (
-    <div className="rounded-[2rem] bg-white p-3 shadow-[0_30px_60px_-30px_rgba(2,6,23,0.35)] ring-1 ring-black/5 sm:p-4">
+    <div className="rounded-3xl bg-card p-3 shadow-[0_30px_60px_-30px_rgba(2,6,23,0.35)] ring-1 ring-black/5 sm:p-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div
           role="group"
@@ -65,7 +65,7 @@ const DayStrip = () => {
               >
                 <span
                   className={cn(
-                    "text-[11px] font-semibold tracking-wide uppercase",
+                    "text-2xs font-semibold tracking-wide uppercase",
                     isActive
                       ? "text-white/70"
                       : isWeekend(day)
@@ -80,7 +80,7 @@ const DayStrip = () => {
                 </span>
                 <span
                   className={cn(
-                    "text-[10px]",
+                    "text-2xs",
                     isActive ? "text-white/60" : "text-secondary-950/40",
                   )}
                 >

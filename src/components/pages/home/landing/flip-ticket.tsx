@@ -27,7 +27,7 @@ const FlipTicket = () => {
       onClick={() => setIsFlipped((current) => !current)}
       aria-pressed={isFlipped}
       aria-label={isFlipped ? "Turn the ticket back over" : "Turn the ticket over"}
-      className="group relative h-[150px] w-[300px] cursor-pointer rounded-[1.4rem] [perspective:1000px] focus-visible:outline-2 focus-visible:outline-offset-8 focus-visible:outline-primary sm:h-[170px] sm:w-[340px]"
+      className="group relative h-[150px] w-[300px] cursor-pointer rounded-3xl [perspective:1000px] focus-visible:outline-2 focus-visible:outline-offset-8 focus-visible:outline-primary sm:h-[170px] sm:w-[340px]"
     >
       <div
         ref={tiltRef}
@@ -46,11 +46,11 @@ const FlipTicket = () => {
             )}
           >
             {/* Front */}
-            <div className="absolute inset-0 flex overflow-hidden rounded-[1.4rem] bg-linear-to-br from-secondary via-secondary-500 to-primary text-left text-white shadow-[0_30px_60px_-24px_rgba(5,119,250,0.6)] [backface-visibility:hidden]">
+            <div className="absolute inset-0 flex overflow-hidden rounded-3xl bg-linear-to-br from-secondary via-secondary-500 to-primary text-left text-white shadow-[0_30px_60px_-24px_rgba(5,119,250,0.6)] [backface-visibility:hidden]">
               <div className="flex flex-1 flex-col justify-between p-5">
                 <Image src={LogoWhiteSVG} alt="" className="h-6 w-auto self-start" />
                 <div>
-                  <p className="text-[11px] font-semibold tracking-[0.22em] text-white/75 uppercase">
+                  <p className="text-2xs font-semibold tracking-[0.22em] text-white/75 uppercase">
                     Admit one
                   </p>
                   <p className="text-lg font-bold">Your next turn-up</p>
@@ -59,24 +59,24 @@ const FlipTicket = () => {
               <div className="relative flex w-[78px] flex-col items-center justify-center border-l-2 border-dashed border-white/40">
                 <span className="absolute -top-3 -left-3 size-6 rounded-full bg-[var(--ticket-notch,white)]" />
                 <span className="absolute -bottom-3 -left-3 size-6 rounded-full bg-[var(--ticket-notch,white)]" />
-                <span className="rotate-90 text-[11px] font-semibold tracking-[0.3em] whitespace-nowrap text-white/80 uppercase">
+                <span className="rotate-90 text-2xs font-semibold tracking-[0.3em] whitespace-nowrap text-white/80 uppercase">
                   No. 0001
                 </span>
               </div>
             </div>
 
             {/* Back */}
-            <div className="absolute inset-0 flex items-center gap-5 overflow-hidden rounded-[1.4rem] bg-secondary-950 p-5 text-left text-white shadow-[0_30px_60px_-24px_rgba(2,6,23,0.6)] [backface-visibility:hidden] [transform:rotateY(180deg)]">
-              <div className="grid shrink-0 grid-cols-7 gap-[3px] rounded-xl bg-white p-2.5">
+            <div className="absolute inset-0 flex items-center gap-5 overflow-hidden rounded-3xl bg-secondary-950 p-5 text-left text-white shadow-[0_30px_60px_-24px_rgba(2,6,23,0.6)] [backface-visibility:hidden] [transform:rotateY(180deg)]">
+              <div className="grid shrink-0 grid-cols-7 gap-1 rounded-xl bg-card p-2.5">
                 {CODE.map((on, index) => (
                   <span
                     key={index}
-                    className={cn("size-2.5 rounded-[2px]", on ? "bg-secondary-950" : "bg-transparent")}
+                    className={cn("size-2.5 rounded-xs", on ? "bg-secondary-950" : "bg-transparent")}
                   />
                 ))}
               </div>
               <div>
-                <p className="text-[11px] font-semibold tracking-[0.22em] text-emerald-300 uppercase">
+                <p className="text-2xs font-semibold tracking-[0.22em] text-emerald-300 uppercase">
                   Ready to scan
                 </p>
                 <p className="mt-1 text-lg font-bold">See you there.</p>

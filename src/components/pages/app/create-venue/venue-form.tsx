@@ -1,24 +1,15 @@
 "use client";
 
-import React, { memo, useCallback, useMemo } from "react";
-import dynamic from "next/dynamic";
+import React, { memo, useCallback } from "react";
 import Joi from "joi";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import InputField from "@/components/ui/input-field";
 import TextareaField from "@/components/ui/textarea-field";
-import { Skeleton } from "@/components/ui/skeleton";
 import VenueImagesInput from "./venue-images-input";
-import type { IPlaceResolved } from "@/components/ui/google-places-autocomplete";
-import { useMarkets } from "@/hooks/use-markets";
+import AddressField, { type IPlaceResolved } from "@/components/ui/address-field";
 
-const GooglePlacesAutocomplete = dynamic(
-  () => import("@/components/ui/google-places-autocomplete"),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="h-10 w-full rounded-md" />,
-  },
-);
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
@@ -82,21 +73,16 @@ export const venueFormSchema = Joi.object({
     "string.empty": "Country is required",
     "any.required": "Country is required",
   }),
-  postalCode: Joi.string().trim().required().messages({
-    "string.empty": "Postal code is required",
-    "any.required": "Postal code is required",
-  }),
+  // Plenty of addresses (most in Nigeria) have none.
+  postalCode: Joi.string().trim().allow("").optional(),
+  // Filled from the search, never typed: placing the venue on the map.
   latitude: Joi.number().min(-90).max(90).required().messages({
-    "number.base": "Latitude is required",
-    "number.min": "Latitude must be between -90 and 90",
-    "number.max": "Latitude must be between -90 and 90",
-    "any.required": "Latitude is required",
+    "number.base": "Pick the venue from the search results",
+    "any.required": "Pick the venue from the search results",
   }),
   longitude: Joi.number().min(-180).max(180).required().messages({
-    "number.base": "Longitude is required",
-    "number.min": "Longitude must be between -180 and 180",
-    "number.max": "Longitude must be between -180 and 180",
-    "any.required": "Longitude is required",
+    "number.base": "Pick the venue from the search results",
+    "any.required": "Pick the venue from the search results",
   }),
   totalAvailableSeat: Joi.number().integer().min(1).required().messages({
     "number.base": "Total available seats is required",
@@ -127,9 +113,12 @@ const VenueForm: React.FC<{
     setValue,
     formState: { errors, isValid, isSubmitting },
   } = useFormContext<IVenueFormValues>();
-  // Venues can only be where Turnupz is open (the backend's list).
-  const markets = useMarkets();
-  const marketCodes = useMemo(() => markets.map((market) => market.code), [markets]);
+
+  // What the search found, shown as a one-line summary instead of boxes.
+  const city = useWatch({ control, name: "city" });
+  const state = useWatch({ control, name: "state" });
+  const country = useWatch({ control, name: "country" });
+  const place = city || state || country ? { city, state, country } : null;
 
   const handlePlaceSelected = useCallback(
     (place: IPlaceResolved) => {
@@ -176,84 +165,53 @@ const VenueForm: React.FC<{
           control={control}
           name="locationSearch"
           render={({ field }) => (
-            <GooglePlacesAutocomplete
+            <AddressField
               label="Search Location"
               required
               value={field.value ?? ""}
               onChange={field.onChange}
-              onPlaceSelected={handlePlaceSelected}
-              countryRestriction={marketCodes}
-              placeholder="Search for the venue location..."
-              error={errors?.address?.message}
+              onPlace={handlePlaceSelected}
+              placeholder="Search the venue's name or address"
+              error={
+                errors?.latitude?.message ??
+                (place ? undefined : errors?.address?.message)
+              }
               className="lg:col-span-2"
             />
           )}
         />
 
+        <p className="-mt-4 text-xs text-muted-foreground lg:col-span-2">
+          Can&apos;t find it? Search the street or a landmark next to it, then
+          correct the street address below.
+        </p>
+
+        {place && (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground lg:col-span-2">
+            <MapPin className="size-4 shrink-0 text-primary" aria-hidden />
+            {[place.city, place.state, place.country].filter(Boolean).join(", ")}
+          </p>
+        )}
+
+        {/* Hidden fields filled by the search: say so if one came back empty. */}
+        {place && (errors?.city || errors?.state || errors?.country) && (
+          <p role="alert" className="-mt-4 text-sm text-danger lg:col-span-2">
+            That result has no {errors?.city ? "city" : errors?.state ? "state" : "country"}.
+            Search a street or landmark nearby instead.
+          </p>
+        )}
+
         <InputField
-          label="Address"
+          label="Street address"
           required
-          readOnly
           error={errors?.address?.message}
           {...register("address")}
         />
 
         <InputField
-          label="City"
-          required
-          readOnly
-          error={errors?.city?.message}
-          {...register("city")}
-        />
-
-        <InputField
-          label="State"
-          required
-          readOnly
-          error={errors?.state?.message}
-          {...register("state")}
-        />
-
-        <InputField
-          label="Country"
-          required
-          readOnly
-          error={errors?.country?.message}
-          {...register("country")}
-        />
-
-        <InputField
-          label="Postal Code"
-          required
-          readOnly
+          label="Postal code (optional)"
           error={errors?.postalCode?.message}
           {...register("postalCode")}
-        />
-
-        <InputField
-          label="Latitude"
-          type="number"
-          step="any"
-          required
-          readOnly
-          error={errors?.latitude?.message}
-          {...register("latitude", {
-            setValueAs: (v) =>
-              v === "" || v === null || v === undefined ? "" : Number(v),
-          })}
-        />
-
-        <InputField
-          label="Longitude"
-          type="number"
-          step="any"
-          required
-          readOnly
-          error={errors?.longitude?.message}
-          {...register("longitude", {
-            setValueAs: (v) =>
-              v === "" || v === null || v === undefined ? "" : Number(v),
-          })}
         />
 
         <TextareaField

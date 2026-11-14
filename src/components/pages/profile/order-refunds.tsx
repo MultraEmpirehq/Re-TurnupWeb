@@ -37,10 +37,10 @@ const stagesOf = (refund: IOrderRefund): TStage[] => {
 };
 
 const DOT: Record<TStage["state"], string> = {
-  done: "bg-emerald-600 text-white",
+  done: "bg-success-solid text-white",
   now: "bg-primary text-white",
   next: "border-2 border-border bg-background",
-  delayed: "bg-amber-500 text-white",
+  delayed: "bg-warning-solid text-white",
 };
 
 const Tracker = ({ stages }: { stages: TStage[] }) => (
@@ -52,7 +52,7 @@ const Tracker = ({ stages }: { stages: TStage[] }) => (
             aria-hidden
             className={cn(
               "absolute top-3 right-1/2 left-[-50%] h-0.5",
-              stage.state === "next" ? "bg-border" : "bg-emerald-600",
+              stage.state === "next" ? "bg-border" : "bg-success-solid",
             )}
           />
         )}
@@ -60,7 +60,7 @@ const Tracker = ({ stages }: { stages: TStage[] }) => (
           {stage.state === "done" && <Check className="size-3.5" />}
         </span>
         <span className="mt-1.5 px-1 text-xs font-medium">{stage.label}</span>
-        {stage.date && <span className="text-[11px] text-muted-foreground">{stage.date}</span>}
+        {stage.date && <span className="text-2xs text-muted-foreground">{stage.date}</span>}
       </li>
     ))}
   </ol>

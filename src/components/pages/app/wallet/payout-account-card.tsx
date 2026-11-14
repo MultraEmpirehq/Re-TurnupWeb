@@ -20,7 +20,7 @@ const PROVIDER_LABELS: Record<VendorPayoutAccount["provider"], string> = {
 };
 
 const cardClassName =
-  "flex h-full flex-col rounded-[1.75rem] border border-secondary-100 bg-white p-6";
+  "flex h-full flex-col rounded-3xl border border-secondary-100 bg-card p-6";
 
 /** Where the organiser's share of each sale goes, or why it can't yet. */
 const PayoutAccountCard: React.FC<{
@@ -78,8 +78,8 @@ const PayoutAccountCard: React.FC<{
       <section className={cardClassName}>
         <div className="flex items-start justify-between gap-3">
           <p className="text-sm font-semibold text-muted-foreground">Paid to</p>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-            <span className="size-1.5 rounded-full bg-emerald-500" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-1 text-xs font-semibold text-success">
+            <span className="size-1.5 rounded-full bg-success-solid" />
             Direct payouts on
           </span>
         </div>
@@ -102,7 +102,7 @@ const PayoutAccountCard: React.FC<{
           never holds it.
         </p>
         {!account.livemode && (
-          <span className="mt-3 inline-flex w-fit rounded-full bg-secondary-50 px-2.5 py-0.5 text-[11px] font-semibold tracking-[0.14em] text-secondary-700 uppercase">
+          <span className="mt-3 inline-flex w-fit rounded-full bg-secondary-50 px-2.5 py-0.5 text-2xs font-semibold tracking-[0.14em] text-secondary-700 uppercase">
             Test mode
           </span>
         )}
@@ -134,7 +134,7 @@ const PayoutAccountCard: React.FC<{
       {message && (
         <p
           role="status"
-          className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900"
+          className="mt-3 rounded-xl bg-warning-soft px-3 py-2 text-sm font-medium text-warning"
         >
           {message}
         </p>

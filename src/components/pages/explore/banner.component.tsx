@@ -71,7 +71,7 @@ const ExploreBannerComponent = () => {
               lastSent.current = search.trim();
               setFilters({ q: search.trim() || undefined });
             }}
-            className="group flex w-full max-w-[560px] items-center gap-3 rounded-full bg-white py-2 pr-2 pl-5 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.35)] ring-1 ring-black/5 transition-all duration-300 focus-within:ring-secondary/40"
+            className="group flex w-full max-w-[560px] items-center gap-3 rounded-full bg-card py-2 pr-2 pl-5 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.35)] ring-1 ring-black/5 transition-all duration-300 focus-within:ring-secondary/40"
           >
             <Search
               className="size-5 shrink-0 text-secondary-950/45"

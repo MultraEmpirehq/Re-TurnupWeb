@@ -40,7 +40,7 @@ export const REFERRAL_STATUS: Record<
   },
   REWARDED: {
     label: "Rewarded",
-    className: "bg-emerald-50 text-emerald-700",
+    className: "bg-success-soft text-success",
     hint: "Credit released to both.",
   },
   NOT_ELIGIBLE: {
@@ -50,7 +50,7 @@ export const REFERRAL_STATUS: Record<
   },
   CANCELLED: {
     label: "Cancelled",
-    className: "bg-red-50 text-red-700",
+    className: "bg-danger-soft text-danger",
     hint: "The qualifying order was refunded or disputed.",
   },
 };

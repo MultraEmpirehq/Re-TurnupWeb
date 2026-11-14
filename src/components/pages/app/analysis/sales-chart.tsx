@@ -83,7 +83,7 @@ const SalesChart: React.FC<{
             const point = payload?.[0]?.payload as (TSalesPoint & { label: string }) | undefined;
             if (!active || !point) return null;
             return (
-              <div className="rounded-xl border border-secondary-100 bg-white px-3 py-2 text-sm shadow-lg">
+              <div className="rounded-xl border border-secondary-100 bg-card px-3 py-2 text-sm shadow-lg">
                 <p className="text-xs text-secondary-500">{fullDate(point.start, bucket)}</p>
                 <p className="mt-0.5 font-bold text-secondary-950">{formatValue(point.value)}</p>
               </div>

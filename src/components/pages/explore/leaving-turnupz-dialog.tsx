@@ -36,21 +36,21 @@ export default function LeavingTurnupzDialog({
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-w-md rounded-3xl p-6">
         <div className="flex size-12 items-center justify-center rounded-2xl bg-[#E5F7FF]">
-          <ExternalLink className="size-5 text-[#0577FA]" />
+          <ExternalLink className="size-5 text-secondary-500" />
         </div>
         <DialogTitle className="mt-1 text-xl font-extrabold">
           You&apos;re leaving Turnupz
         </DialogTitle>
-        <DialogDescription className="text-sm text-zinc-600">
+        <DialogDescription className="text-sm text-muted-foreground">
           {eventName
             ? `Tickets for ${eventName} are sold on `
             : "These tickets are sold on "}
-          <span className="font-bold text-zinc-950">
+          <span className="font-bold text-foreground">
             {host ?? "another website"}
           </span>
           .
         </DialogDescription>
-        <ul className="mt-1 space-y-2 rounded-2xl bg-[#F7F8FB] p-4 text-[13px] text-zinc-700">
+        <ul className="mt-1 space-y-2 rounded-2xl bg-[#F7F8FB] p-4 text-sm text-foreground/80">
           {POINTS.map((point) => (
             <li key={point} className="flex gap-2.5">
               <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-[#0577FA]" />
@@ -62,14 +62,14 @@ export default function LeavingTurnupzDialog({
           type="button"
           onClick={onContinue}
           disabled={!host}
-          className="mt-3 flex h-12 w-full items-center justify-center rounded-full bg-[#0B1D2A] text-[15px] font-bold text-white disabled:cursor-not-allowed disabled:bg-secondary-300"
+          className="mt-3 flex h-12 w-full items-center justify-center rounded-full bg-[#0B1D2A] text-base font-bold text-white disabled:cursor-not-allowed disabled:bg-secondary-300"
         >
           {host ? `Continue to ${host}` : "This link doesn't work"}
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="h-10 w-full text-sm font-bold text-[#0577FA]"
+          className="h-10 w-full text-sm font-bold text-secondary-500"
         >
           Stay on Turnupz
         </button>

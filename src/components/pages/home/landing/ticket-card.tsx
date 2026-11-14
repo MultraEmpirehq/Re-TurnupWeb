@@ -54,7 +54,7 @@ const TicketCard: React.FC<{
       onPointerMove={handleMove}
       onPointerLeave={reset}
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-3xl bg-white shadow-[0_1px_2px_rgba(15,23,42,0.06),0_12px_32px_-16px_rgba(15,23,42,0.25)] ring-1 ring-black/5 transition-[transform,box-shadow] duration-300 ease-out will-change-transform hover:shadow-[0_1px_2px_rgba(15,23,42,0.06),0_24px_48px_-20px_rgba(15,23,42,0.35)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary",
+        "group relative flex h-full flex-col overflow-hidden rounded-3xl bg-card shadow-[0_1px_2px_rgba(15,23,42,0.06),0_12px_32px_-16px_rgba(15,23,42,0.25)] ring-1 ring-black/5 transition-[transform,box-shadow] duration-300 ease-out will-change-transform hover:shadow-[0_1px_2px_rgba(15,23,42,0.06),0_24px_48px_-20px_rgba(15,23,42,0.35)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary",
         className,
       )}
     >
@@ -78,15 +78,15 @@ const TicketCard: React.FC<{
         )}
         {/* How it's selling, worked out by Turnupz. */}
         {event.momentum?.soldOut ? (
-          <span className="absolute top-3 right-3 rounded-full bg-amber-300 px-3 py-1 text-xs font-extrabold text-secondary-950">
+          <span className="absolute top-3 right-3 rounded-full bg-warning-solid/70 px-3 py-1 text-xs font-extrabold text-secondary-950">
             🏆 Sold out
           </span>
         ) : event.momentum?.almostGone ? (
-          <span className="absolute top-3 right-3 rounded-full bg-amber-400 px-3 py-1 text-xs font-extrabold text-secondary-950">
+          <span className="absolute top-3 right-3 rounded-full bg-warning-solid/70 px-3 py-1 text-xs font-extrabold text-secondary-950">
             Almost gone
           </span>
         ) : event.momentum?.sellingFast ? (
-          <span className="absolute top-3 right-3 rounded-full bg-orange-500 px-3 py-1 text-xs font-extrabold text-white">
+          <span className="absolute top-3 right-3 rounded-full bg-warning-solid px-3 py-1 text-xs font-extrabold text-white">
             🔥 Selling fast
           </span>
         ) : null}
@@ -101,7 +101,7 @@ const TicketCard: React.FC<{
 
       <div className="flex items-center gap-4 px-5 pt-5 pb-5">
         <div className="flex w-12 shrink-0 flex-col items-center rounded-2xl bg-secondary-50 py-2 text-secondary-900">
-          <span className="text-[11px] font-semibold tracking-wider uppercase">
+          <span className="text-2xs font-semibold tracking-wider uppercase">
             {hasDate ? formatDate(date, "MMM") : "TBA"}
           </span>
           <span className="text-xl leading-none font-bold">
@@ -132,7 +132,7 @@ export const TicketCardSkeleton: React.FC<{ className?: string }> = ({
 }) => (
   <div
     className={cn(
-      "flex flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-black/5",
+      "flex flex-col overflow-hidden rounded-3xl bg-card ring-1 ring-black/5",
       className,
     )}
   >

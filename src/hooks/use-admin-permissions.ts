@@ -19,7 +19,9 @@ export type TAdminPermission =
   | "TICKETS_SCAN"
   | "ORGANISERS_CONTACT"
   | "FINANCE_MANAGE"
-  | "ANALYTICS_VIEW";
+  | "ANALYTICS_VIEW"
+  | "ACTIONS_UNDO"
+  | "EVENTS_HOST";
 
 /** Every permission, in the order the admin screens list them. */
 export const ADMIN_PERMISSIONS: {
@@ -60,7 +62,8 @@ export const ADMIN_PERMISSIONS: {
   {
     value: "USERS_MANAGE",
     label: "Suspend users",
-    description: "Suspend and reactivate attendee and vendor accounts.",
+    description:
+      "Suspend (no sign-in) or restrict (no publishing, buying, sending tickets or messaging, and payouts held) attendee and vendor accounts, and undo either.",
   },
   {
     value: "SUPPORT_MANAGE",
@@ -107,6 +110,18 @@ export const ADMIN_PERMISSIONS: {
     label: "Handle refunds",
     description:
       "Refund orders, cancel events with refunds for everyone, and mark payment disputes. Moves money: give it only to people you trust with that.",
+  },
+  {
+    value: "ACTIONS_UNDO",
+    label: "Undo admin actions",
+    description:
+      "Take back actions from the audit log: reopen an application decision, restore a suspended event, reactivate a suspended account. Also needs the permission for that area. Give it only to people you trust to overrule others.",
+  },
+  {
+    value: "EVENTS_HOST",
+    label: "Create events",
+    description:
+      "Create events hosted by Turnupz, with sales paid to the Turnupz account, and set up draft events for organisers to check and publish.",
   },
   {
     value: "ADMINS_MANAGE",

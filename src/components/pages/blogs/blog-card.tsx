@@ -7,7 +7,7 @@ export default function BlogCard({ post }: { post: TBlogCard }) {
   return (
     <Link
       href={`/blogs/${post.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-100 bg-white transition hover:-translate-y-0.5 hover:shadow-lg"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition hover:-translate-y-0.5 hover:shadow-lg"
     >
       <div className="aspect-[16/9] w-full overflow-hidden bg-[#E5F7FF]">
         {cover && (
@@ -20,16 +20,16 @@ export default function BlogCard({ post }: { post: TBlogCard }) {
         )}
       </div>
       <div className="flex flex-1 flex-col p-4">
-        <p className="truncate text-xs font-semibold text-zinc-500">
+        <p className="truncate text-xs font-semibold text-muted-foreground">
           {post.event.name} · {postedAgo(post.createdAt)}
         </p>
-        <h3 className="mt-1.5 line-clamp-2 text-base font-extrabold leading-snug text-zinc-950">
+        <h3 className="mt-1.5 line-clamp-2 text-base font-extrabold leading-snug text-foreground">
           {post.title}
         </h3>
-        <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-zinc-600">
+        <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
           {post.excerpt || post.preview}
         </p>
-        <span className="mt-auto pt-3 text-sm font-extrabold text-[#0577FA]">
+        <span className="mt-auto pt-3 text-sm font-extrabold text-secondary-500">
           Read more ›
         </span>
       </div>

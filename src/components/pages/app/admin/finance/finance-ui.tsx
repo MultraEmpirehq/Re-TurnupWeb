@@ -136,7 +136,7 @@ export const FinanceHeader: React.FC<{
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div className="space-y-1">
-        <h1 className="text-xl font-bold text-secondary-800 dark:text-foreground">{title}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{title}</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -216,13 +216,13 @@ export const Stat: React.FC<{
   <div
     className={cn(
       "rounded-xl border bg-card p-4",
-      tone === "warn" ? "border-amber-200 bg-amber-50/60 dark:border-amber-500/30 dark:bg-amber-500/10" : "border-border",
+      tone === "warn" ? "border-warning-line bg-warning-soft/60 dark:border-warning/30 dark:bg-warning-solid/10" : "border-border",
     )}
   >
     <p
       className={cn(
-        "text-[11px] font-semibold tracking-wider uppercase",
-        tone === "warn" ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground",
+        "text-2xs font-semibold tracking-wider uppercase",
+        tone === "warn" ? "text-warning dark:text-amber-300" : "text-muted-foreground",
       )}
     >
       {label}
@@ -236,7 +236,7 @@ export const Stat: React.FC<{
       <p
         className={cn(
           "mt-1 inline-flex items-center gap-0.5 text-xs font-semibold",
-          change >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
+          change >= 0 ? "text-success dark:text-emerald-400" : "text-danger dark:text-red-400",
         )}
       >
         {change >= 0 ? <ArrowUpRight className="size-3.5" aria-hidden /> : <ArrowDownRight className="size-3.5" aria-hidden />}
@@ -256,9 +256,9 @@ export const Pill: React.FC<{ tone: "good" | "warn" | "bad" | "muted" | "info"; 
   <span
     className={cn(
       "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap",
-      tone === "good" && "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-      tone === "warn" && "bg-amber-50 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300",
-      tone === "bad" && "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300",
+      tone === "good" && "bg-success-soft text-success dark:bg-success-solid/15 dark:text-emerald-300",
+      tone === "warn" && "bg-warning-soft text-warning dark:bg-warning-solid/15 dark:text-amber-300",
+      tone === "bad" && "bg-danger-soft text-danger dark:bg-danger-solid/15 dark:text-red-300",
       tone === "info" && "bg-secondary-50 text-secondary-700 dark:bg-white/10 dark:text-foreground",
       tone === "muted" && "bg-muted text-muted-foreground",
     )}

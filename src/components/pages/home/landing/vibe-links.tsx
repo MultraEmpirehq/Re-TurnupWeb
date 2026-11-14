@@ -80,7 +80,7 @@ const VibeLinks = () => {
           <Reveal delay={tiles.length * 60}>
             <Link
               href={ROUTES.EXPLORE.href}
-              className="group flex h-36 flex-col justify-between rounded-3xl border-2 border-dashed border-secondary-200 bg-white p-5 text-secondary-950 transition-all duration-300 hover:-translate-y-1 hover:border-secondary-400"
+              className="group flex h-36 flex-col justify-between rounded-3xl border-2 border-dashed border-secondary-200 bg-card p-5 text-secondary-950 transition-all duration-300 hover:-translate-y-1 hover:border-secondary-400"
             >
               <span className="flex size-10 items-center justify-center rounded-2xl bg-secondary-50 text-secondary-800">
                 <Compass className="size-5" aria-hidden />

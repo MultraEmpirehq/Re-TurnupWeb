@@ -56,17 +56,17 @@ const Count = ({
   <div
     className={cn(
       "rounded-2xl border p-5",
-      tone === "default" && "border-secondary-100 bg-white",
-      tone === "warn" && "border-amber-200 bg-amber-50/60",
-      tone === "bad" && "border-red-200 bg-red-50/60",
+      tone === "default" && "border-secondary-100 bg-card",
+      tone === "warn" && "border-warning-line bg-warning-soft/60",
+      tone === "bad" && "border-danger-line bg-danger-soft/60",
     )}
   >
     <p
       className={cn(
         "text-xs font-semibold tracking-wider uppercase",
         tone === "default" && "text-muted-foreground",
-        tone === "warn" && "text-amber-700",
-        tone === "bad" && "text-red-700",
+        tone === "warn" && "text-warning",
+        tone === "bad" && "text-danger",
       )}
     >
       {label}
@@ -75,8 +75,8 @@ const Count = ({
       className={cn(
         "mt-2 text-2xl font-bold",
         tone === "default" && "text-secondary-950",
-        tone === "warn" && "text-amber-800",
-        tone === "bad" && "text-red-800",
+        tone === "warn" && "text-warning",
+        tone === "bad" && "text-danger",
       )}
     >
       {value}
@@ -90,7 +90,7 @@ const Pill = ({ children, tone = "blue" }: { children: React.ReactNode; tone?: "
       "rounded-full px-2.5 py-1 text-xs font-semibold",
       tone === "blue" && "bg-secondary-50 text-secondary-700",
       tone === "grey" && "bg-muted text-muted-foreground",
-      tone === "amber" && "bg-amber-50 text-amber-800",
+      tone === "amber" && "bg-warning-soft text-warning",
     )}
   >
     {children}
@@ -98,9 +98,9 @@ const Pill = ({ children, tone = "blue" }: { children: React.ReactNode; tone?: "
 );
 
 const STATUS = {
-  live: { label: "In the directory", className: "text-emerald-700", dot: true },
-  pending: { label: "In review", className: "text-amber-700", dot: false },
-  rejected: { label: "Needs changes", className: "text-red-700", dot: false },
+  live: { label: "In the directory", className: "text-success", dot: true },
+  pending: { label: "In review", className: "text-warning", dot: false },
+  rejected: { label: "Needs changes", className: "text-danger", dot: false },
 };
 
 /** The photo on top, or a plain placeholder when there isn't one. */
@@ -121,11 +121,11 @@ const Photo = ({ image, status }: { image: string | null; status: keyof typeof S
       )}
       <span
         className={cn(
-          "absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold",
+          "absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-2xs font-bold",
           badge.className,
         )}
       >
-        {badge.dot && <span className="size-1.5 rounded-full bg-emerald-500" />}
+        {badge.dot && <span className="size-1.5 rounded-full bg-success-solid" />}
         {badge.label}
       </span>
     </div>
@@ -139,7 +139,7 @@ const Card = ({
   border?: string;
   children: React.ReactNode;
 }) => (
-  <div className={cn("flex flex-col overflow-hidden rounded-[1.5rem] border bg-white", border)}>
+  <div className={cn("flex flex-col overflow-hidden rounded-3xl border bg-card", border)}>
     {children}
   </div>
 );
@@ -191,7 +191,7 @@ const SuggestionCard = ({
 }) => {
   const rejected = suggestion.status === "rejected";
   return (
-    <Card border={rejected ? "border-red-200" : "border-amber-200"}>
+    <Card border={rejected ? "border-danger-line" : "border-warning-line"}>
       <Photo image={null} status={suggestion.status} />
       <div className="flex flex-1 flex-col p-5">
         <p className="font-bold text-secondary-950">{suggestion.name}</p>
@@ -206,11 +206,11 @@ const SuggestionCard = ({
           {` · Added by you on ${format(new Date(suggestion.createdAt), "d MMM")}`}
         </p>
         {rejected ? (
-          <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs leading-5 text-red-800">
+          <p className="mt-3 rounded-xl bg-danger-soft px-3 py-2 text-xs leading-5 text-danger">
             <b>Admin note:</b> {suggestion.reviewNote || "Please check the details and send it again."}
           </p>
         ) : (
-          <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+          <p className="mt-3 rounded-xl bg-warning-soft px-3 py-2 text-xs leading-5 text-warning">
             {suggestion.event
               ? "Your event shows this venue already. It joins the directory once approved."
               : "It joins the directory once approved."}
@@ -247,7 +247,7 @@ const SuggestionCard = ({
                 </a>
               </DropdownMenuItem>
               {!suggestion.event && (
-                <DropdownMenuItem className="text-red-600" onSelect={onWithdraw}>
+                <DropdownMenuItem className="text-danger" onSelect={onWithdraw}>
                   Withdraw suggestion
                 </DropdownMenuItem>
               )}
@@ -351,7 +351,7 @@ const VendorVenues = () => {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-[1.75rem] font-bold tracking-tight text-secondary-950">Venues</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Venues</h1>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
             The places you hold events. Pick one from the directory, or suggest a new one and use it
             straight away.
@@ -389,7 +389,7 @@ const VendorVenues = () => {
         <div
           role="tablist"
           aria-label="Venues"
-          className="flex w-fit rounded-full border border-secondary-100 bg-white p-1 text-sm font-semibold"
+          className="flex w-fit rounded-full border border-secondary-100 bg-card p-1 text-sm font-semibold"
         >
           {(
             [
@@ -424,7 +424,7 @@ const VendorVenues = () => {
                   "rounded-full px-3 py-1.5 transition-colors",
                   city === name
                     ? "bg-secondary-50 text-secondary-700"
-                    : "border border-secondary-100 bg-white text-muted-foreground hover:text-secondary-800",
+                    : "border border-secondary-100 bg-card text-muted-foreground hover:text-secondary-800",
                 )}
               >
                 {name ?? "All cities"}
@@ -438,7 +438,7 @@ const VendorVenues = () => {
               onChange={(event) => setSearchInput(event.target.value)}
               placeholder="Search venues"
               aria-label="Search venues"
-              className="h-10 w-full rounded-full border border-secondary-100 bg-white pr-4 pl-10 text-sm outline-none focus:border-secondary-300"
+              className="h-10 w-full rounded-full border border-secondary-100 bg-card pr-4 pl-10 text-sm outline-none focus:border-secondary-300"
             />
           </label>
         </div>
@@ -475,7 +475,7 @@ const VendorVenues = () => {
       ) : directory.isLoading ? (
         <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} className="h-80 rounded-[1.5rem]" />
+            <Skeleton key={index} className="h-80 rounded-3xl" />
           ))}
         </section>
       ) : directoryVenues.length === 0 ? (

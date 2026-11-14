@@ -115,7 +115,7 @@ const PaymentPanel: React.FC<{ row: IFinanceTransaction | null; currency: string
                 </div>
               </dl>
               {row.reference && (row.status === "completed" || row.status === "partly_refunded" || row.status === "held") && (
-                <Button asChild variant="outline" className="w-full rounded-full border-red-200 text-red-600 hover:bg-red-50">
+                <Button asChild variant="outline" className="w-full rounded-full border-danger-line text-danger hover:bg-danger-soft">
                   <Link href={`/app/admin/finance/refunds?order=${encodeURIComponent(row.reference)}`}>Refund…</Link>
                 </Button>
               )}
@@ -209,7 +209,7 @@ const Transactions = () => {
                 active
                   ? "border-secondary-800 bg-secondary-800 text-white dark:border-foreground dark:bg-foreground dark:text-background"
                   : filter.value === "held" && count
-                    ? "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                    ? "border-warning-line bg-warning-soft text-warning hover:bg-warning-soft dark:border-warning/30 dark:bg-warning-solid/10 dark:text-amber-300 dark:hover:bg-warning-solid/20"
                     : "border-border bg-card text-secondary-800 hover:bg-muted dark:text-foreground",
               )}
             >
@@ -234,7 +234,7 @@ const Transactions = () => {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1000px] text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-[11px] tracking-wider text-muted-foreground uppercase">
+                <tr className="border-b border-border text-left text-2xs tracking-wider text-muted-foreground uppercase">
                   <th className="px-4 py-3 font-semibold">When</th>
                   <th className="px-4 py-3 font-semibold">Order · buyer</th>
                   <th className="px-4 py-3 font-semibold">Event · organiser</th>

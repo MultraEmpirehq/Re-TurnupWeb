@@ -1,4 +1,5 @@
 ﻿"use client";
+import PaidSalesBlockers from "./paid-sales-blockers";
 import EventTaxOptions from "./event-tax-options";
 import RegistrationApprovalSwitch from "./registration-approval-switch";
 import SelectField, { ISelectFieldOption } from "@/components/ui/select-field";
@@ -451,6 +452,11 @@ const TicketForm: React.FC<{
             />
           </>
         )}
+
+        {/* Said here, before they price anything, not at the end. */}
+        {(saleMethod === ESaleMethods.SELL_ON_TURNUP ||
+          saleMethod === ESaleMethods.EXTERNAL_LINK) &&
+          !isFreeHost && <PaidSalesBlockers stage="tickets" />}
 
         {saleMethod === ESaleMethods.SELL_ON_TURNUP && !isFreeHost && (
           <EventTaxOptions

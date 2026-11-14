@@ -80,13 +80,13 @@ const EventZoneField: React.FC<{
         </button>
       </div>
       {elsewhere && !needsMoreDetail && mine && (
-        <p className="flex items-start gap-1.5 text-xs text-amber-700">
+        <p className="flex items-start gap-1.5 text-xs text-warning">
           <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
           You&apos;re on {describeZone(mine)}. Enter times as the venue&apos;s clock
           shows them: they&apos;re {describeZone(value)}.
         </p>
       )}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
     </div>
   );
 };

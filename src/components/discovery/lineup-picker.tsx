@@ -137,7 +137,7 @@ const LineupPicker: React.FC<{
           {value.map((performer, index) => (
             <li
               key={performer.id}
-              className="flex items-center gap-3 rounded-xl bg-white px-3 py-2 ring-1 ring-black/5"
+              className="flex items-center gap-3 rounded-xl bg-card px-3 py-2 ring-1 ring-black/5"
             >
               <span className="w-5 text-center text-sm font-bold text-secondary-400 tabular-nums">
                 {index + 1}
@@ -178,7 +178,7 @@ const LineupPicker: React.FC<{
                   className={cn(
                     "size-4",
                     performer.isHeadliner
-                      ? "fill-amber-400 text-amber-500"
+                      ? "fill-warning text-warning"
                       : "text-secondary-400",
                   )}
                 />
@@ -231,7 +231,7 @@ const LineupPicker: React.FC<{
       </div>
 
       {search && (
-        <div className="overflow-hidden rounded-xl border border-secondary-100 bg-white">
+        <div className="overflow-hidden rounded-xl border border-secondary-100 bg-card">
           {results.map((performer) => (
             <button
               key={performer.id}

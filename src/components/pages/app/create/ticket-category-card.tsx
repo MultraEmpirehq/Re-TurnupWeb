@@ -45,13 +45,13 @@ const Chip: React.FC<{ tone?: "blue" | "green" | "amber"; children: React.ReactN
 }) => (
   <span
     className={cn(
-      "rounded-full px-2 py-0.5 text-[11px] font-bold",
+      "rounded-full px-2 py-0.5 text-2xs font-bold",
       tone === "blue"
-        ? "bg-sky-50 text-sky-700"
+        ? "bg-info-soft text-info"
         : tone === "green"
-          ? "bg-emerald-50 text-emerald-700"
+          ? "bg-success-soft text-success"
           : tone === "amber"
-            ? "bg-amber-50 text-amber-700"
+            ? "bg-warning-soft text-warning"
             : "bg-secondary-100 text-secondary-600",
     )}
   >
@@ -95,13 +95,13 @@ const TicketCategoryCard: React.FC<{
   return (
     <div
       className={cn(
-        "relative flex overflow-hidden rounded-2xl border border-secondary-100 bg-white shadow-[0_8px_22px_-14px_rgba(7,20,29,0.35)]",
+        "relative flex overflow-hidden rounded-2xl border border-secondary-100 bg-card shadow-[0_8px_22px_-14px_rgba(7,20,29,0.35)]",
         editing && "ring-2 ring-primary",
       )}
     >
       <div className="min-w-0 flex-1 px-4 py-3.5">
         <div className="flex items-start gap-2 pr-16">
-          <p className="truncate text-[15px] font-extrabold text-secondary-950">
+          <p className="truncate text-base font-extrabold text-secondary-950">
             {ticket.ticketName}
           </p>
           {isPrivate && <Lock className="mt-0.5 size-3.5 shrink-0 text-secondary-500" aria-label="Private" />}
@@ -132,7 +132,7 @@ const TicketCategoryCard: React.FC<{
           <button
             type="button"
             onClick={() => void copyCode()}
-            className="mt-2.5 inline-flex items-center gap-2 rounded-lg bg-[#0b1d2a] px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white tabular-nums transition hover:bg-[#13304a]"
+            className="mt-2.5 inline-flex items-center gap-2 rounded-lg bg-[#0b1d2a] px-2.5 py-1 text-2xs font-semibold tracking-wide text-white tabular-nums transition hover:bg-[#13304a]"
             aria-label={`Copy access code ${ticket.privateAccessCode}`}
           >
             <span className="font-bold opacity-70">Code</span>
@@ -156,7 +156,7 @@ const TicketCategoryCard: React.FC<{
           type="button"
           onClick={onDelete}
           aria-label={`Delete ${ticket.ticketName}`}
-          className="flex size-7 items-center justify-center rounded-lg bg-secondary-50 text-red-600 transition hover:bg-red-50"
+          className="flex size-7 items-center justify-center rounded-lg bg-secondary-50 text-danger transition hover:bg-danger-soft"
         >
           <Trash2 className="size-3.5" />
         </button>
@@ -164,8 +164,8 @@ const TicketCategoryCard: React.FC<{
 
       {/* The tear, with a notch bitten out top and bottom. */}
       <div className="relative my-2.5 border-l-2 border-dashed border-secondary-200" aria-hidden>
-        <span className="absolute -top-[23px] -left-[12px] size-[22px] rounded-full border border-secondary-100 bg-white" />
-        <span className="absolute -bottom-[23px] -left-[12px] size-[22px] rounded-full border border-secondary-100 bg-white" />
+        <span className="absolute -top-[23px] -left-[12px] size-5.5 rounded-full border border-secondary-100 bg-card" />
+        <span className="absolute -bottom-[23px] -left-[12px] size-5.5 rounded-full border border-secondary-100 bg-card" />
       </div>
 
       <div
@@ -177,16 +177,16 @@ const TicketCategoryCard: React.FC<{
         <p className="text-lg font-extrabold tracking-tight text-secondary-950">
           {free ? "Free" : formatAppMoney(ticket.ticketPrice, currency)}
         </p>
-        <p className="mt-0.5 text-[11px] text-secondary-600">
+        <p className="mt-0.5 text-2xs text-secondary-600">
           {ticket.ticketQuantity.toLocaleString()} {registration ? "spots" : "tickets"}
         </p>
-        <div className={cn("mt-2 h-1.5 w-20 overflow-hidden rounded-full", free ? "bg-emerald-100" : "bg-blue-100")}>
+        <div className={cn("mt-2 h-1.5 w-20 overflow-hidden rounded-full", free ? "bg-success-soft" : "bg-info-soft")}>
           <div
-            className={cn("h-full rounded-full", free ? "bg-emerald-600" : "bg-[#0577FA]")}
+            className={cn("h-full rounded-full", free ? "bg-success-solid" : "bg-[#0577FA]")}
             style={{ width: `${soldShare * 100}%` }}
           />
         </div>
-        {sold > 0 && <p className="mt-1 text-[11px] text-secondary-600">{sold.toLocaleString()} sold</p>}
+        {sold > 0 && <p className="mt-1 text-2xs text-secondary-600">{sold.toLocaleString()} sold</p>}
       </div>
     </div>
   );

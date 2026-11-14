@@ -178,7 +178,7 @@ const PrivacyCard = () => {
   );
 
   return (
-    <section className="space-y-5 rounded-[1.5rem] border border-secondary-100 bg-white p-6">
+    <section className="space-y-5 rounded-3xl border border-secondary-100 bg-card p-6">
       <div className="flex items-start gap-3">
         <span className="rounded-xl bg-secondary-50 p-2.5 text-secondary">
           <Lock className="size-5" aria-hidden />
@@ -248,7 +248,7 @@ const PrivacyCard = () => {
                         disabled={answer.isPending}
                         className={cn(
                           pill,
-                          "border border-secondary-200 bg-white text-secondary-950 hover:bg-secondary-50",
+                          "border border-secondary-200 bg-card text-secondary-950 hover:bg-secondary-50",
                         )}
                       >
                         Decline
@@ -353,7 +353,7 @@ const PrivacyCard = () => {
                       onClick={() => setToUnblock(person)}
                       className={cn(
                         pill,
-                        "border border-secondary-200 bg-white text-secondary-950 hover:bg-secondary-50",
+                        "border border-secondary-200 bg-card text-secondary-950 hover:bg-secondary-50",
                       )}
                     >
                       Unblock

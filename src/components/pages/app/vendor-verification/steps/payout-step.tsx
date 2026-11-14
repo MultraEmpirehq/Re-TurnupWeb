@@ -237,7 +237,7 @@ const PayoutStep: React.FC<{ saved: SavedPayoutDigits }> = ({ saved }) => {
                 </p>
               )}
               {accountName.data && (
-                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-success">
                   <CheckCircle2 className="size-3.5" />
                   {accountName.data}
                 </p>

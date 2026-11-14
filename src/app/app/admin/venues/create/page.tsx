@@ -49,7 +49,7 @@ const CreateVenue = () => {
       formData.append("city", body.city);
       formData.append("state", body.state);
       formData.append("country", body.country);
-      formData.append("postalCode", body.postalCode);
+      if (body.postalCode?.trim()) formData.append("postalCode", body.postalCode.trim());
       formData.append("latitude", String(body.latitude));
       formData.append("longitude", String(body.longitude));
       formData.append("totalAvailableSeat", String(body.totalAvailableSeat));

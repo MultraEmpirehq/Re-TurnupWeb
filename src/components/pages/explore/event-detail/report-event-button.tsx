@@ -94,14 +94,14 @@ const ReportEventButton: React.FC<{
       <button
         type="button"
         onClick={openDialog}
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-red-600 hover:underline"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-danger hover:underline"
       >
         <Flag className="size-4" aria-hidden />
         Report this event
       </button>
 
       <Dialog open={open} onOpenChange={(next) => !sending && setOpen(next)}>
-        <DialogContent className="rounded-[1.6rem] border-secondary-100 p-6 sm:max-w-lg">
+        <DialogContent className="rounded-3xl border-secondary-100 p-6 sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-secondary-950">
               Report {eventName ? `"${eventName}"` : "this event"}
@@ -127,7 +127,7 @@ const ReportEventButton: React.FC<{
                 className={cn(
                   "rounded-xl border px-4 py-3 text-left transition-colors",
                   reason === value
-                    ? "border-red-300 bg-red-50"
+                    ? "border-danger-line bg-danger-soft"
                     : "border-secondary-100 hover:border-secondary-200 hover:bg-secondary-50",
                 )}
               >
@@ -167,7 +167,7 @@ const ReportEventButton: React.FC<{
               disabled={!canSend || sending}
               loading={sending}
               onClick={() => void handleSend()}
-              className="rounded-2xl bg-red-600 text-white hover:bg-red-700"
+              className="rounded-2xl bg-danger-solid text-white hover:bg-danger-solid"
             >
               Send report
             </Button>

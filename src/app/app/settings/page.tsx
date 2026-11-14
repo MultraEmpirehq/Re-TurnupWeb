@@ -26,15 +26,13 @@ const SettingsPage = () => {
   const verification = useVendorVerificationStatus();
 
   return (
-    <div className="space-y-8 pb-20">
-      <div className="space-y-2">
-        <span className="text-[0.75rem] font-bold tracking-[0.2em] text-secondary-400 uppercase">
-          Settings
-        </span>
-        <h1 className="text-3xl font-bold tracking-tight text-secondary-950">
+    <div className="space-y-6 pb-20">
+      {/* Kept short so the details themselves start near the top. */}
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           Your account
         </h1>
-        <p className="max-w-2xl text-secondary-500">
+        <p className="hidden max-w-2xl text-sm text-muted-foreground sm:block">
           {isAdmin
             ? "Your details, where you're signed in, and your password."
             : "Your details, tax and organiser name, what you're notified about, where you're signed in, and your password."}
@@ -44,7 +42,7 @@ const SettingsPage = () => {
       {isVendor && verification.status === "approved" ? (
         <Link
           href={ROUTES.VENDOR_VERIFICATION.href}
-          className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
+          className="inline-flex items-center gap-2 rounded-full bg-success-soft px-4 py-2 text-sm font-semibold text-success hover:bg-success-soft"
         >
           <BadgeCheck className="size-4" aria-hidden />
           Verified organiser · see details
@@ -53,10 +51,10 @@ const SettingsPage = () => {
         isVendor && (
           <Link
             href={ROUTES.VENDOR_VERIFICATION.href}
-            className="flex flex-col gap-4 rounded-[1.5rem] border border-primary-100 bg-primary-50/70 p-6 transition hover:border-primary-200 hover:bg-primary-50 sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-4 rounded-3xl border border-primary-100 bg-primary-50/70 p-6 transition hover:border-primary-200 hover:bg-primary-50 sm:flex-row sm:items-center sm:justify-between"
           >
             <span className="flex items-start gap-4">
-              <span className="rounded-2xl bg-white p-3 text-primary-700">
+              <span className="rounded-2xl bg-card p-3 text-primary-700">
                 <ShieldCheck className="size-5" />
               </span>
               <span>

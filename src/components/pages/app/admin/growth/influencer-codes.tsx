@@ -169,7 +169,7 @@ const InfluencerCodes = () => {
                       className={cn(
                         "rounded-full px-2.5 py-0.5 text-xs font-medium",
                         code.isActive
-                          ? "bg-emerald-50 text-emerald-700"
+                          ? "bg-success-soft text-success"
                           : "bg-muted text-muted-foreground",
                       )}
                     >
@@ -284,7 +284,7 @@ const CreateCodeDialog: React.FC<{ open: boolean; onClose: () => void }> = ({
             <span
               className={cn(
                 "block text-xs",
-                code && !codeOk ? "text-red-600" : "text-muted-foreground",
+                code && !codeOk ? "text-danger" : "text-muted-foreground",
               )}
             >
               4–20 letters or numbers, no spaces. It can&apos;t be anyone&apos;s

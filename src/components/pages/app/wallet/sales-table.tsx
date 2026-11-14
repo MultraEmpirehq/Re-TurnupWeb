@@ -98,7 +98,7 @@ const SalesTable = ({
   };
 
   return (
-    <section className="min-w-0 rounded-[1.5rem] border border-secondary-100 bg-white p-5 md:p-6">
+    <section className="min-w-0 rounded-3xl border border-secondary-100 bg-card p-5 md:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-base font-bold text-secondary-950">Sales</h2>
         <div className="flex flex-wrap items-center gap-2">
@@ -106,7 +106,7 @@ const SalesTable = ({
             value={filter.eventId ?? ""}
             onChange={(event) => onEventChange(event.target.value || undefined)}
             aria-label="Event"
-            className="h-9 max-w-[14rem] truncate rounded-full border border-secondary-100 bg-white px-3 text-xs font-semibold text-secondary-700"
+            className="h-9 max-w-[14rem] truncate rounded-full border border-secondary-100 bg-card px-3 text-xs font-semibold text-secondary-700"
           >
             <option value="">All events</option>
             {events.map((event) => (
@@ -176,7 +176,7 @@ const SalesTable = ({
                           <span className="text-secondary-600"> · Promo {sale.promoCode}</span>
                         )}
                         {sale.settlement === "held" && !refunded && (
-                          <span className="text-amber-700"> · Owed by Turnupz</span>
+                          <span className="text-warning"> · Owed by Turnupz</span>
                         )}
                       </p>
                     </TableCell>
@@ -195,7 +195,7 @@ const SalesTable = ({
                           Refunded
                         </span>
                       ) : (
-                        <span className="font-bold text-emerald-700">
+                        <span className="font-bold text-success">
                           <Amount value={sale.earnings.formatted.withCurrency} />
                         </span>
                       )}

@@ -131,7 +131,7 @@ const ResetPasswordForm = () => {
   if (stage === "done") {
     return (
       <div className="flex w-full flex-col items-center gap-5 text-center">
-        <CheckCircle2 className="size-12 text-emerald-500" aria-hidden />
+        <CheckCircle2 className="size-12 text-success" aria-hidden />
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight text-secondary-950">Password changed</h1>
           <p className="text-secondary-950/60">Log in with your new password.</p>

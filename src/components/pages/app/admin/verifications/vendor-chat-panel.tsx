@@ -176,7 +176,7 @@ const VendorChatPanel: React.FC<{ verification: IVendorVerification }> = ({
                           : "border border-border bg-background",
                       )}
                     >
-                      <p className="text-[11px] font-semibold opacity-70">
+                      <p className="text-2xs font-semibold opacity-70">
                         {fromTeam
                           ? `${message.senderName} · Team`
                           : message.senderName}
@@ -184,7 +184,7 @@ const VendorChatPanel: React.FC<{ verification: IVendorVerification }> = ({
                       <p className="mt-0.5 whitespace-pre-line break-words">
                         {message.body}
                       </p>
-                      <p className="mt-1 text-[10px] opacity-60">
+                      <p className="mt-1 text-2xs opacity-60">
                         {format(new Date(message.createdAt), "d MMM, HH:mm")}
                       </p>
                     </div>
@@ -216,7 +216,7 @@ const VendorChatPanel: React.FC<{ verification: IVendorVerification }> = ({
               disabled={!chatId}
             />
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-2xs text-muted-foreground">
                 Enter to send, Shift + Enter for a new line
               </span>
               <Button

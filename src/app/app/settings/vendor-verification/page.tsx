@@ -7,16 +7,13 @@ import React, { memo } from "react";
 
 const VendorVerificationPage = () => {
   return (
-    <div className="space-y-8 pb-20">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <span className="text-[0.75rem] font-bold uppercase tracking-[0.2em] text-secondary-400">
-            Vendor Verification
-          </span>
-          <h1 className="mt-4 text-4xl font-bold tracking-tight text-secondary-950 md:text-5xl">
+    <div className="space-y-6 pb-20">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Host events on Turnupz
           </h1>
-          <p className="mt-3 max-w-2xl text-secondary-500">
+          <p className="hidden max-w-2xl text-sm text-muted-foreground sm:block">
             Host free events with a few details and start straight away, or
             verify your ID and bank to sell tickets and get paid.
           </p>
@@ -25,7 +22,7 @@ const VendorVerificationPage = () => {
         <Button
           asChild
           variant="outline"
-          className="h-12 rounded-2xl border-secondary-200 px-5 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
+          className="h-10 shrink-0 rounded-full border-secondary-200 px-4 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
         >
           <Link href="/app/settings">Back to Settings</Link>
         </Button>

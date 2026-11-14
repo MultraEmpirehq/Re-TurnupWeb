@@ -51,13 +51,13 @@ const AdminChangePassword = () => {
   return (
     <form
       onSubmit={save}
-      className="w-full max-w-md space-y-5 rounded-[1.6rem] border border-secondary-100 bg-white p-7 shadow-[0_24px_60px_-30px_rgba(15,23,42,0.35)]"
+      className="w-full max-w-md space-y-5 rounded-3xl border border-secondary-100 bg-card p-7 shadow-[0_24px_60px_-30px_rgba(15,23,42,0.35)]"
     >
       <div className="space-y-2">
         <span className="flex size-11 items-center justify-center rounded-2xl bg-secondary-50 text-secondary-800">
           <KeyRound className="size-5" aria-hidden />
         </span>
-        <h1 className="text-2xl font-bold tracking-tight text-secondary-950">Choose your password</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Choose your password</h1>
         <p className="text-sm leading-6 text-secondary-950/60">
           You signed in with a temporary password. Choose your own to open the admin console.{" "}
           {PASSWORD_HINT}

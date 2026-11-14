@@ -67,7 +67,7 @@ const Phone: React.FC<{
     <div className="absolute inset-0 rounded-[2.4rem] bg-secondary-900 shadow-[0_50px_90px_-35px_rgba(2,6,23,0.65)] [transform:translateZ(-14px)]" />
     <div className="absolute inset-0 rounded-[2.4rem] bg-linear-to-r from-secondary-800 via-secondary-950 to-secondary-800 [transform:translateZ(-7px)]" />
     <div className="absolute inset-0 rounded-[2.4rem] bg-secondary-950 p-2">
-      <div className="relative flex h-full flex-col overflow-hidden rounded-[1.9rem] bg-white">
+      <div className="relative flex h-full flex-col overflow-hidden rounded-[1.9rem] bg-card">
         <div className="flex-1 overflow-hidden">{children}</div>
         <div className="flex items-center justify-around border-t border-secondary-50 px-3 py-2.5">
           {TABS.map((Icon, index) => (
@@ -94,11 +94,11 @@ const HomeScreen: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => (
       </div>
       <Bell className="size-4 text-secondary-400" aria-hidden />
     </div>
-    <div className="flex h-8 items-center gap-2 rounded-full bg-secondary-50 px-3 text-[10px] text-secondary-400">
+    <div className="flex h-8 items-center gap-2 rounded-full bg-secondary-50 px-3 text-2xs text-secondary-400">
       <Search className="size-3" aria-hidden />
       Search events
     </div>
-    <p className="text-[11px] font-bold text-secondary-950">Happening today</p>
+    <p className="text-2xs font-bold text-secondary-950">Happening today</p>
     <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-linear-to-br from-primary-200 to-primary-500">
       {events[0]?.image && (
         <CustomImageComponent
@@ -110,11 +110,11 @@ const HomeScreen: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => (
         />
       )}
       <div className="absolute inset-0 bg-linear-to-t from-black/70 to-transparent" />
-      <p className="absolute inset-x-3 bottom-2.5 truncate text-[11px] font-semibold text-white">
+      <p className="absolute inset-x-3 bottom-2.5 truncate text-2xs font-semibold text-white">
         {events[0]?.name ?? "Today's pick"}
       </p>
     </div>
-    <p className="text-[11px] font-bold text-secondary-950">Trending</p>
+    <p className="text-2xs font-bold text-secondary-950">Trending</p>
     {[1, 2].map((index) => (
       <div key={index} className="flex items-center gap-2.5">
         <div className="relative size-11 shrink-0 overflow-hidden rounded-xl bg-linear-to-br from-secondary-200 to-secondary-500">
@@ -129,10 +129,10 @@ const HomeScreen: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => (
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[10px] font-semibold text-secondary-950">
+          <p className="truncate text-2xs font-semibold text-secondary-950">
             {events[index]?.name ?? "Trending event"}
           </p>
-          <p className="text-[9px] text-secondary-950/50">{dateLabel(events[index])}</p>
+          <p className="text-2xs text-secondary-950/50">{dateLabel(events[index])}</p>
         </div>
       </div>
     ))}
@@ -141,8 +141,8 @@ const HomeScreen: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => (
 
 const TicketsScreen: React.FC<{ event?: IEventDetailsType }> = ({ event }) => (
   <div className="flex h-full flex-col gap-3 bg-linear-to-b from-secondary-950 to-secondary-900 p-3.5 text-white">
-    <p className="text-[11px] font-bold">My tickets</p>
-    <div className="overflow-hidden rounded-2xl bg-white text-secondary-950">
+    <p className="text-2xs font-bold">My tickets</p>
+    <div className="overflow-hidden rounded-2xl bg-card text-secondary-950">
       <div className="relative aspect-[16/9] bg-linear-to-br from-secondary-300 to-primary-400">
         {event?.image && (
           <CustomImageComponent
@@ -157,12 +157,12 @@ const TicketsScreen: React.FC<{ event?: IEventDetailsType }> = ({ event }) => (
       <div className="relative border-t-2 border-dashed border-secondary-100 px-3 py-2.5">
         <span className="absolute -top-2 -left-2 size-4 rounded-full bg-secondary-950" />
         <span className="absolute -top-2 -right-2 size-4 rounded-full bg-secondary-950" />
-        <p className="truncate text-[10px] font-semibold">{event?.name ?? "Your next event"}</p>
-        <p className="text-[9px] text-secondary-950/50">{dateLabel(event)} · Admit one</p>
+        <p className="truncate text-2xs font-semibold">{event?.name ?? "Your next event"}</p>
+        <p className="text-2xs text-secondary-950/50">{dateLabel(event)} · Admit one</p>
       </div>
     </div>
     <div className="mt-auto flex items-center gap-2 rounded-2xl bg-white/10 p-2.5">
-      <div className="grid grid-cols-5 gap-[2px] rounded-md bg-white p-1.5">
+      <div className="grid grid-cols-5 gap-0.5 rounded-md bg-card p-1.5">
         {Array.from({ length: 25 }, (_, index) => (
           <span
             key={index}
@@ -171,8 +171,8 @@ const TicketsScreen: React.FC<{ event?: IEventDetailsType }> = ({ event }) => (
         ))}
       </div>
       <div>
-        <p className="text-[10px] font-semibold text-emerald-300">Ready to scan</p>
-        <p className="text-[9px] text-white/55">Show this at the door</p>
+        <p className="text-2xs font-semibold text-emerald-300">Ready to scan</p>
+        <p className="text-2xs text-white/55">Show this at the door</p>
       </div>
     </div>
   </div>
@@ -193,7 +193,7 @@ const AppShowcase = () => {
     <section
       ref={sectionRef}
       id="get-the-app"
-      className="scroll-mt-[70px] overflow-hidden bg-white py-20 md:py-28"
+      className="scroll-mt-[70px] overflow-hidden bg-card py-20 md:py-28"
     >
       <SectionContainer className="grid items-center gap-16 lg:grid-cols-2">
         <div className="space-y-8">
@@ -216,7 +216,7 @@ const AppShowcase = () => {
               <Reveal as="li" key={title} delay={index * 80}>
                 <div className="h-full rounded-3xl border border-secondary-100 bg-[#f7f9fc] p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_-24px_rgba(15,23,42,0.35)]">
                   <span className="flex size-10 items-center justify-center rounded-2xl bg-linear-to-br from-secondary to-primary text-white">
-                    <Icon className="size-[18px]" aria-hidden />
+                    <Icon className="size-4.5" aria-hidden />
                   </span>
                   <p className="mt-4 font-semibold text-secondary-950">{title}</p>
                   <p className="mt-1 text-sm leading-6 text-secondary-950/60">{body}</p>

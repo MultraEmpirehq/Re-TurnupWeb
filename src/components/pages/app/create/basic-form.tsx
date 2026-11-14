@@ -41,8 +41,10 @@ import { saveCustomCategory } from "@/lib/custom-event-options";
 import { toast } from "@/lib/toast";
 import { useMarketOptions } from "@/hooks/use-markets";
 import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status";
+import HostPicker, { IHostFormValues } from "./host-picker";
+import useUserStore, { EUserRoles } from "@/stores/user-store";
 
-export interface IBasicFormValues {
+export interface IBasicFormValues extends IHostFormValues {
   coverImage: File | string | null;
   eventName: string;
   organizerName: string;
@@ -215,6 +217,8 @@ const BasicForm: React.FC<{
     getValues,
     formState: { errors, isValid, isSubmitting },
   } = useFormContext<IBasicFormValues>();
+  // Admins say who the event is for; fixed once the draft is saved.
+  const isAdmin = useUserStore((state) => state.userDetails?.role === EUserRoles.ADMIN);
   // A new event starts with the name they host under; they can change it here.
   const { organiserName } = useVendorVerificationStatus();
   useEffect(() => {
@@ -276,6 +280,7 @@ const BasicForm: React.FC<{
   // From the Venues page ("Use for an event"): start with that venue, and the
   // country, state and city it's in.
   const searchParams = useSearchParams();
+  const hostLocked = !!searchParams.get("draftId");
   const router = useRouter();
   const pathname = usePathname();
   const linkedVenueId = searchParams.get("venueId");
@@ -385,6 +390,7 @@ const BasicForm: React.FC<{
 
   return (
     <form className="space-y-6 md:space-y-10">
+      {isAdmin && <HostPicker locked={hostLocked} />}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
         <div className="space-y-4 lg:col-span-2">
           <div>
@@ -396,7 +402,7 @@ const BasicForm: React.FC<{
               preview.
             </p>
           </div>
-          <div className="relative flex min-h-[14rem] items-center justify-center overflow-hidden rounded-[1.5rem] border border-dashed border-secondary-200 bg-secondary-50">
+          <div className="relative flex min-h-[14rem] items-center justify-center overflow-hidden rounded-3xl border border-dashed border-secondary-200 bg-secondary-50">
             <Controller
               control={control}
               name="coverImage"
@@ -441,7 +447,7 @@ const BasicForm: React.FC<{
                 />
                 <button
                   type="button"
-                  className="absolute inset-0 z-20 flex items-center justify-center bg-white/30 text-red-500 opacity-0 transition-opacity hover:opacity-100"
+                  className="absolute inset-0 z-20 flex items-center justify-center bg-white/30 text-danger opacity-0 transition-opacity hover:opacity-100"
                   onClick={() =>
                     setValue("coverImage", null, { shouldValidate: true })
                   }

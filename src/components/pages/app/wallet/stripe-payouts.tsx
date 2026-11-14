@@ -23,7 +23,7 @@ const TABS = [
 type TTab = (typeof TABS)[number]["id"];
 
 const cardClassName =
-  "rounded-[1.5rem] border border-secondary-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]";
+  "rounded-3xl border border-secondary-100 bg-card p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]";
 
 /**
  * Stripe's own screens inside the Wallet, for organisers paid through Stripe
@@ -102,7 +102,7 @@ const StripePayouts = ({
         <span
           className={cn(
             "rounded-2xl p-3",
-            active ? "bg-emerald-50 text-emerald-700" : "bg-secondary-50 text-secondary-700",
+            active ? "bg-success-soft text-success" : "bg-secondary-50 text-secondary-700",
           )}
         >
           <Landmark className="size-5" />

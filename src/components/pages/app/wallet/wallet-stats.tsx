@@ -15,7 +15,7 @@ const Stat = ({
   value: React.ReactNode;
   note?: React.ReactNode;
 }) => (
-  <div className="min-w-0 rounded-2xl border border-secondary-100 bg-white p-5">
+  <div className="min-w-0 rounded-2xl border border-secondary-100 bg-card p-5">
     <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">{label}</p>
     <p className="mt-2 truncate text-2xl font-bold text-secondary-950">{value}</p>
     {note && <div className="mt-1 text-xs text-muted-foreground">{note}</div>}
@@ -36,7 +36,7 @@ const Change = ({ totals, days }: { totals: VendorCurrencyEarnings; days: number
     <span
       className={cn(
         "inline-flex items-center gap-1 font-semibold",
-        up ? "text-emerald-600" : "text-red-600",
+        up ? "text-success" : "text-danger",
       )}
     >
       <Icon className="size-3.5" aria-hidden />

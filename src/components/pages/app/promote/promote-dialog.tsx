@@ -128,9 +128,9 @@ const Checklist: React.FC<{ eventId: string; promotion: IEventPromotion }> = ({
       >
         <span className="flex items-center gap-2">
           {item.done ? (
-            <Check className="size-4 text-emerald-600" aria-hidden />
+            <Check className="size-4 text-success" aria-hidden />
           ) : (
-            <Circle className="size-4 text-amber-500" aria-hidden />
+            <Circle className="size-4 text-warning" aria-hidden />
           )}
           <span
             className={
@@ -241,7 +241,7 @@ const PromoteDialog: React.FC<{
     {
       label: "WhatsApp",
       href: `https://wa.me/?text=${shareText}`,
-      className: "bg-emerald-50 text-emerald-800",
+      className: "bg-success-soft text-success",
     },
     {
       label: "X",
@@ -251,7 +251,7 @@ const PromoteDialog: React.FC<{
     {
       label: "Facebook",
       href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`,
-      className: "bg-blue-50 text-blue-800",
+      className: "bg-info-soft text-info",
     },
     {
       label: "Email",
@@ -270,7 +270,7 @@ const PromoteDialog: React.FC<{
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92svh] overflow-y-auto rounded-[1.6rem] p-0 sm:max-w-4xl">
+      <DialogContent className="max-h-[92svh] overflow-y-auto rounded-3xl p-0 sm:max-w-4xl">
         <DialogHeader className="flex flex-row flex-wrap items-start justify-between gap-3 border-b border-secondary-100 px-6 py-4 text-left">
           <div>
             <DialogTitle className="text-xl font-extrabold text-secondary-950">
@@ -285,8 +285,8 @@ const PromoteDialog: React.FC<{
               className={cn(
                 "rounded-full px-3 py-1 text-xs font-bold",
                 promotion.ready
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-amber-50 text-amber-800",
+                  ? "bg-success-soft text-success"
+                  : "bg-warning-soft text-warning",
               )}
             >
               {promotion.ready ? "✓ " : ""}
@@ -315,7 +315,7 @@ const PromoteDialog: React.FC<{
                 <Button
                   type="button"
                   onClick={() => setBoosting(true)}
-                  className="rounded-xl bg-white font-bold text-secondary-900 hover:bg-white/90"
+                  className="rounded-xl bg-card font-bold text-secondary-900 hover:bg-white/90"
                 >
                   <Rocket className="size-4" aria-hidden />
                   Boost
@@ -324,7 +324,7 @@ const PromoteDialog: React.FC<{
             )}
 
             {!promotion.ready && (
-              <section className="space-y-2 rounded-2xl border border-amber-200 bg-amber-50/50 p-4">
+              <section className="space-y-2 rounded-2xl border border-warning-line bg-warning-soft/50 p-4">
                 <p className="text-sm font-semibold text-secondary-900">
                   {promotion.isUpcoming
                     ? "A few things make people far more likely to buy. Fix them first, or promote anyway."
@@ -527,7 +527,7 @@ const PromoteDialog: React.FC<{
                             className={cn(
                               "shrink-0 text-right text-xs font-bold",
                               item.status === "sent"
-                                ? "text-emerald-700"
+                                ? "text-success"
                                 : "text-secondary-500",
                             )}
                           >
@@ -547,17 +547,17 @@ const PromoteDialog: React.FC<{
                     </p>
                     <span className="flex gap-1.5">
                       {promotion.labels.sellingFast && (
-                        <span className="rounded-full bg-orange-500 px-2 py-0.5 text-[11px] font-extrabold text-white">
+                        <span className="rounded-full bg-warning-solid px-2 py-0.5 text-2xs font-extrabold text-white">
                           🔥 Selling fast
                         </span>
                       )}
                       {promotion.labels.almostGone && (
-                        <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-extrabold text-secondary-950">
+                        <span className="rounded-full bg-warning-solid/70 px-2 py-0.5 text-2xs font-extrabold text-secondary-950">
                           Almost gone
                         </span>
                       )}
                       {promotion.labels.soldOut && (
-                        <span className="rounded-full bg-amber-300 px-2 py-0.5 text-[11px] font-extrabold text-secondary-950">
+                        <span className="rounded-full bg-warning-solid/70 px-2 py-0.5 text-2xs font-extrabold text-secondary-950">
                           🏆 Sold out
                         </span>
                       )}
@@ -588,7 +588,7 @@ const PromoteDialog: React.FC<{
                         <p className="text-lg font-extrabold text-secondary-950 tabular-nums">
                           {stat.value}
                         </p>
-                        <p className="text-[11px] text-secondary-500">
+                        <p className="text-2xs text-secondary-500">
                           {stat.label}
                         </p>
                       </div>
@@ -630,7 +630,7 @@ const PromoteDialog: React.FC<{
                             <span className="w-44 shrink-0 text-secondary-700">
                               {row.label}
                             </span>
-                            <span className="h-2 flex-1 rounded-full bg-white">
+                            <span className="h-2 flex-1 rounded-full bg-card">
                               <span
                                 className="block h-2 rounded-full bg-secondary-500"
                                 style={{

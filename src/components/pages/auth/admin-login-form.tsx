@@ -97,7 +97,7 @@ const AdminLoginForm = () => {
         <form
           onSubmit={handleSubmit(onSubmit)}
           noValidate
-          className="space-y-5 rounded-2xl bg-white p-6 shadow-xl"
+          className="space-y-5 rounded-2xl bg-card p-6 shadow-xl"
         >
           <div className="space-y-1">
             <h1 className="text-lg font-bold text-secondary-950">Sign in</h1>

@@ -54,7 +54,7 @@ const MessagesPage = () => {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-secondary-950 md:text-[2rem]">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           Chats
         </h1>
         <p className="mt-1 text-sm text-secondary-500">
@@ -69,7 +69,7 @@ const MessagesPage = () => {
       <div className="@container">
         <div
           className={cn(
-            "grid h-[calc(100svh-13rem)] min-h-[520px] overflow-hidden rounded-[1.75rem] border border-secondary-100 bg-white shadow-[0_24px_60px_-40px_rgba(15,35,95,0.18)]",
+            "grid h-[calc(100svh-13rem)] min-h-[520px] overflow-hidden rounded-3xl border border-secondary-100 bg-card shadow-[0_24px_60px_-40px_rgba(15,35,95,0.18)]",
             "@3xl:grid-cols-[300px_minmax(0,1fr)] @5xl:grid-cols-[350px_minmax(0,1fr)] @7xl:grid-cols-[360px_minmax(0,1fr)_320px] @[100rem]:grid-cols-[380px_minmax(0,1fr)_360px]",
           )}
         >
@@ -130,7 +130,7 @@ const MessagesPage = () => {
           </section>
 
           {selected && (
-            <aside className="hidden min-h-0 border-l border-secondary-100 bg-white @7xl:block">
+            <aside className="hidden min-h-0 border-l border-secondary-100 bg-card @7xl:block">
               <ChatDetails
                 chat={selected}
                 myId={myId}

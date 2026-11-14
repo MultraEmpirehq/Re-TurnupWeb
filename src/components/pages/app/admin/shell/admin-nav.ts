@@ -98,7 +98,7 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         label: ROUTES.CREATE_EVENT.label,
         href: `${ADMIN_BASE}/events/create`,
         icon: CalendarPlus,
-        permission: "EVENTS_MODERATE",
+        permission: "EVENTS_HOST",
       },
       {
         label: "Event Approvals",

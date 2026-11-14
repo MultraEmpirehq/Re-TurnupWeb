@@ -26,7 +26,7 @@ const STATUS: Record<TTransferStatus, { label: string; className: string }> = {
     label: "Waiting to be claimed",
     className: "bg-secondary-50 text-secondary-800",
   },
-  CLAIMED: { label: "Claimed", className: "bg-emerald-50 text-emerald-700" },
+  CLAIMED: { label: "Claimed", className: "bg-success-soft text-success" },
   CANCELLED: {
     label: "Cancelled",
     className: "bg-muted text-muted-foreground",
@@ -147,7 +147,7 @@ const SentTransfers = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-red-600 hover:text-red-700"
+                      className="text-danger hover:text-danger"
                       onClick={() => setCancelling(transfer)}
                     >
                       Take it back

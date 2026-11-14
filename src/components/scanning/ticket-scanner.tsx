@@ -31,23 +31,23 @@ const TONE = {
   approved: {
     icon: CheckCircle2,
     title: "Let them in",
-    card: "border-emerald-200 bg-emerald-50 text-emerald-900",
-    iconClass: "text-emerald-600",
-    dot: "bg-emerald-500",
+    card: "border-success-line bg-success-soft text-success",
+    iconClass: "text-success",
+    dot: "bg-success-solid",
   },
   already_checked_in: {
     icon: CircleAlert,
     title: "Already checked in",
-    card: "border-amber-200 bg-amber-50 text-amber-900",
-    iconClass: "text-amber-600",
-    dot: "bg-amber-500",
+    card: "border-warning-line bg-warning-soft text-warning",
+    iconClass: "text-warning",
+    dot: "bg-warning-solid",
   },
   denied: {
     icon: XCircle,
     title: "Not valid",
-    card: "border-red-200 bg-red-50 text-red-900",
-    iconClass: "text-red-600",
-    dot: "bg-red-500",
+    card: "border-danger-line bg-danger-soft text-danger",
+    iconClass: "text-danger",
+    dot: "bg-danger-solid",
   },
 } as const;
 
@@ -167,7 +167,7 @@ const TicketScanner: React.FC<{
               "flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors",
               mode === option.value
                 ? "border-secondary-800 bg-secondary-800 text-white"
-                : "border-border bg-white text-muted-foreground hover:text-foreground",
+                : "border-border bg-card text-muted-foreground hover:text-foreground",
             )}
           >
             <option.icon className="size-4" aria-hidden />
@@ -194,7 +194,7 @@ const TicketScanner: React.FC<{
                 event.preventDefault();
                 void submit(code, true);
               }}
-              className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-5 sm:flex-row"
+              className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 sm:flex-row"
             >
               <label htmlFor="ticket-code" className="sr-only">
                 Ticket code
@@ -292,7 +292,7 @@ const TicketScanner: React.FC<{
                           placeholder="Or say why"
                           maxLength={200}
                           aria-label="Reason for letting them in again"
-                          className="h-9 bg-white"
+                          className="h-9 bg-card"
                         />
                         <Button
                           type="submit"
@@ -330,7 +330,7 @@ const TicketScanner: React.FC<{
           <h2 id="recent-scans" className="mb-2 text-sm font-semibold text-muted-foreground">
             Recent scans on this device
           </h2>
-          <ul className="divide-y divide-border rounded-2xl border border-border bg-white">
+          <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
             {log.map((entry) => (
               <li key={entry.at} className="flex items-center gap-3 px-4 py-2.5 text-sm">
                 <span className={cn("size-2.5 shrink-0 rounded-full", TONE[entry.status].dot)} aria-hidden />

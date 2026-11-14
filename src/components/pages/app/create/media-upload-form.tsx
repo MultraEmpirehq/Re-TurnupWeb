@@ -319,7 +319,7 @@ const MediaUploadForm: React.FC<{
 
   return (
     <div className="flex w-full flex-col gap-6 py-4 md:py-6">
-      <div className="w-full space-y-4 rounded-2xl border border-secondary-100 bg-white p-5">
+      <div className="w-full space-y-4 rounded-2xl border border-secondary-100 bg-card p-5">
         <div>
           <p className="text-sm font-semibold text-secondary-950">
             Event photos and videos
@@ -355,7 +355,7 @@ const MediaUploadForm: React.FC<{
               <button
                 type="button"
                 aria-label={`Remove photo ${index + 1}`}
-                className="absolute top-1.5 right-1.5 z-10 flex size-7 items-center justify-center rounded-full bg-white/90 text-red-500 shadow hover:bg-red-50"
+                className="absolute top-1.5 right-1.5 z-10 flex size-7 items-center justify-center rounded-full bg-white/90 text-danger shadow hover:bg-danger-soft"
                 onClick={() => removeFile(index)}
               >
                 <X className="size-4" />
@@ -381,7 +381,7 @@ const MediaUploadForm: React.FC<{
                 </button>
               </div>
               {index === 0 && (
-                <span className="absolute top-1.5 left-1.5 z-10 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-secondary-800 shadow">
+                <span className="absolute top-1.5 left-1.5 z-10 rounded-full bg-white/90 px-2 py-0.5 text-2xs font-semibold text-secondary-800 shadow">
                   First
                 </span>
               )}
@@ -428,7 +428,7 @@ const MediaUploadForm: React.FC<{
         )}
       </div>
 
-      <div className="w-full space-y-4 rounded-2xl border border-secondary-100 bg-white p-5">
+      <div className="w-full space-y-4 rounded-2xl border border-secondary-100 bg-card p-5">
         <div>
           <p className="text-sm font-semibold text-secondary-950">Sponsors</p>
           <p className="text-xs leading-5 text-secondary-500">
@@ -469,7 +469,7 @@ const MediaUploadForm: React.FC<{
                   type="button"
                   onClick={() => removeSponsor(index)}
                   aria-label={`Remove ${name || "sponsor"}`}
-                  className="flex size-6 items-center justify-center rounded-md text-secondary-400 hover:bg-red-50 hover:text-red-500"
+                  className="flex size-6 items-center justify-center rounded-md text-secondary-400 hover:bg-danger-soft hover:text-danger"
                 >
                   <X className="size-3.5" />
                 </button>

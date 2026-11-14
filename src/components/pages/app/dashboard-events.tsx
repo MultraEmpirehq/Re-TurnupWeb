@@ -59,7 +59,7 @@ const EventManagementCard: React.FC<{
     event.description || "Complete this event listing so attendees know what to expect.";
 
   return (
-    <article className="overflow-hidden rounded-[1.35rem] border border-secondary-100 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition-transform hover:-translate-y-1 sm:rounded-[1.6rem]">
+    <article className="overflow-hidden rounded-[1.35rem] border border-secondary-100 bg-card shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition-transform hover:-translate-y-1 sm:rounded-3xl">
       <div
         className="h-40 bg-secondary-50 bg-cover bg-center"
         style={{
@@ -80,7 +80,7 @@ const EventManagementCard: React.FC<{
         </div>
       </div>
 
-      <div className="mb-5 overflow-hidden rounded-[1rem] border border-secondary-100 bg-secondary-50/70">
+      <div className="mb-5 overflow-hidden rounded-2xl border border-secondary-100 bg-secondary-50/70">
         <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-0 text-sm">
           <div className="border-b border-secondary-100 px-4 py-3 font-semibold text-secondary-950">
             Event Date
@@ -134,7 +134,7 @@ const EventManagementCard: React.FC<{
         <Button
           asChild
           variant="outline"
-          className="h-10 rounded-xl border-secondary-200 bg-white px-3 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
+          className="h-10 rounded-xl border-secondary-200 bg-card px-3 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
         >
           <Link href={`/app/events/${event.id}`}>View</Link>
         </Button>
@@ -166,7 +166,7 @@ const EventManagementCard: React.FC<{
 
 const EventManagementSkeleton = () => {
   return (
-    <div className="rounded-[1.35rem] border border-secondary-100 bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:rounded-[1.6rem] sm:p-5">
+    <div className="rounded-[1.35rem] border border-secondary-100 bg-card p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:rounded-3xl sm:p-5">
       <div className="space-y-4">
         <div className="flex flex-col gap-3">
           <div className="space-y-3">
@@ -177,7 +177,7 @@ const EventManagementSkeleton = () => {
           <Skeleton className="h-7 w-24 rounded-full" />
         </div>
         <Skeleton className="h-4 w-16 rounded-xl" />
-        <div className="overflow-hidden rounded-[1rem] border border-secondary-100 bg-secondary-50/70">
+        <div className="overflow-hidden rounded-2xl border border-secondary-100 bg-secondary-50/70">
           <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-0">
             <Skeleton className="m-3 h-4 w-20 rounded-xl" />
             <Skeleton className="m-3 h-4 rounded-xl" />
@@ -349,7 +349,7 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
           }
         }}
       >
-        <DialogContent className="rounded-[1.6rem] border-secondary-100 p-6 sm:max-w-md">
+        <DialogContent className="rounded-3xl border-secondary-100 p-6 sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-secondary-950">
               Delete this event?
@@ -372,7 +372,7 @@ const DashboardEvents: React.FC<{ isEventPage?: boolean }> = ({
             </Button>
             <Button
               type="button"
-              className="rounded-2xl bg-red-600 text-white hover:bg-red-700"
+              className="rounded-2xl bg-danger-solid text-white hover:bg-danger-solid"
               disabled={isDeleting}
               onClick={handleDeleteEvent}
             >

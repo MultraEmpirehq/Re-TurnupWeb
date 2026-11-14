@@ -37,7 +37,7 @@ const Badge: React.FC<{
     "group flex min-w-[150px] items-center gap-2.5 rounded-2xl px-3.5 py-2.5 transition-all duration-300",
     tone === "dark"
       ? "bg-secondary-950 text-white ring-1 ring-white/10"
-      : "bg-white text-secondary-950 ring-1 ring-black/5",
+      : "bg-card text-secondary-950 ring-1 ring-black/5",
     href
       ? "hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-14px_rgba(2,6,23,0.6)]"
       : "cursor-default opacity-90",
@@ -46,7 +46,7 @@ const Badge: React.FC<{
     <>
       {icon}
       <span className="text-left leading-tight">
-        <span className="block text-[10px] tracking-wide uppercase opacity-70">
+        <span className="block text-2xs tracking-wide uppercase opacity-70">
           {caption}
         </span>
         <span className="block text-sm font-semibold">{label}</span>

@@ -80,7 +80,7 @@ const PricingPage = () => (
         {STARS.map((star, index) => (
           <span
             key={index}
-            className="animate-landing-twinkle absolute rounded-full bg-white"
+            className="animate-landing-twinkle absolute rounded-full bg-card"
             style={{
               top: star.top,
               left: star.left,
@@ -122,10 +122,10 @@ const PricingPage = () => (
             <Reveal key={plan.name} delay={index * 90}>
               <div
                 className={cn(
-                  "relative flex h-full flex-col gap-6 overflow-hidden rounded-[2rem] p-8 ring-1 transition-transform duration-300 hover:-translate-y-1",
+                  "relative flex h-full flex-col gap-6 overflow-hidden rounded-3xl p-8 ring-1 transition-transform duration-300 hover:-translate-y-1",
                   plan.featured
                     ? "bg-secondary-950 text-white ring-white/10 shadow-[0_40px_80px_-40px_rgba(5,119,250,0.55)]"
-                    : "bg-white text-secondary-950 ring-black/5",
+                    : "bg-card text-secondary-950 ring-black/5",
                 )}
               >
                 {plan.featured && (
@@ -178,9 +178,9 @@ const PricingPage = () => (
             {INCLUDED.map((item) => (
               <li
                 key={item}
-                className="flex items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-black/5"
+                className="flex items-center gap-3 rounded-2xl bg-card p-4 ring-1 ring-black/5"
               >
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-success-soft text-success">
                   <Check className="size-4" aria-hidden />
                 </span>
                 <span className="font-medium text-secondary-950">{item}</span>
@@ -193,7 +193,7 @@ const PricingPage = () => (
           <h2 className="text-center text-3xl font-bold tracking-tight text-secondary-950 md:text-4xl">
             Questions, answered
           </h2>
-          <div className="divide-y divide-secondary-100 overflow-hidden rounded-[2rem] bg-white ring-1 ring-black/5">
+          <div className="divide-y divide-secondary-100 overflow-hidden rounded-3xl bg-card ring-1 ring-black/5">
             {FAQS.map(({ q, a }) => (
               <details key={q} className="group px-6 py-5 [&_summary::-webkit-details-marker]:hidden">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-secondary-950">

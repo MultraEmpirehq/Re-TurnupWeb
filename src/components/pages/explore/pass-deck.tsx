@@ -132,7 +132,7 @@ const PassDeck = () => {
                 <span className="absolute inset-0 bg-[radial-gradient(circle_at_85%_8%,rgba(255,255,255,0.3),transparent_45%)]" />
               </span>
               <span className="relative flex h-full flex-col p-6">
-                <span className="flex items-center justify-between text-[10px] font-bold tracking-[0.24em] uppercase">
+                <span className="flex items-center justify-between text-2xs font-bold tracking-[0.24em] uppercase">
                   <span className="rounded-full border border-white/40 px-2.5 py-0.5">
                     {pass.eyebrow}
                   </span>

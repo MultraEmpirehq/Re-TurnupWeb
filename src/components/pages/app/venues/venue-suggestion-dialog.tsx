@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import AddressField from "@/components/ui/address-field";
 import InputField from "@/components/ui/input-field";
 import SelectField from "@/components/ui/select-field";
 import {
@@ -87,7 +88,7 @@ const VenueSuggestionDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !save.isPending && onClose()}>
-      <DialogContent className="rounded-[1.6rem] p-6 sm:max-w-lg">
+      <DialogContent className="rounded-3xl p-6 sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-secondary-950">
             {fixing ? `Fix ${suggestion.name}` : "Suggest a venue"}
@@ -107,13 +108,22 @@ const VenueSuggestionDialog = ({
             onChange={set("name")}
             placeholder="e.g. The Rooftop Ikoyi"
           />
-          <InputField
+          <AddressField
             label="Address"
             required
-            maxLength={300}
             value={form.address}
-            onChange={set("address")}
-            placeholder="Street and number"
+            onChange={(address) => setForm((current) => ({ ...current, address: address.slice(0, 300) }))}
+            onPlace={(place) =>
+              // Picking a suggestion fills the rest; they can still change it.
+              setForm((current) => ({
+                ...current,
+                address: (place.address || place.formattedAddress).slice(0, 300),
+                city: place.city || current.city,
+                state: place.state || current.state,
+                country: place.country || current.country,
+              }))
+            }
+            placeholder="Search the venue's name or street"
           />
           <div className="grid gap-4 sm:grid-cols-2">
             <InputField

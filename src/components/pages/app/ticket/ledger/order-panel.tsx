@@ -36,10 +36,10 @@ const FILTERS: { value: TLedgerStatus | "all"; label: string }[] = [
 ];
 
 const STATE: Record<ILedgerRecord["status"], { label: string; className: string }> = {
-  checked_in: { label: "In", className: "bg-emerald-50 text-emerald-700" },
+  checked_in: { label: "In", className: "bg-success-soft text-success" },
   not_checked_in: { label: "Not in", className: "bg-secondary-50 text-secondary-700" },
-  pending: { label: "Waiting", className: "bg-amber-50 text-amber-800" },
-  refunded: { label: "Refunded", className: "bg-red-50 text-red-700" },
+  pending: { label: "Waiting", className: "bg-warning-soft text-warning" },
+  refunded: { label: "Refunded", className: "bg-danger-soft text-danger" },
   declined: { label: "Declined", className: "bg-muted text-muted-foreground" },
 };
 
@@ -133,7 +133,7 @@ const OrderPanel = ({
                 ].map(([value, label]) => (
                   <div key={label as string} className="min-w-0 rounded-xl bg-secondary-50/70 px-2 py-2">
                     <p className="truncate text-sm font-bold text-secondary-950">{value}</p>
-                    <p className="text-[11px] text-muted-foreground">{label}</p>
+                    <p className="text-2xs text-muted-foreground">{label}</p>
                   </div>
                 ))}
               </div>
@@ -149,7 +149,7 @@ const OrderPanel = ({
                       onChange={(event) => setSearchInput(event.target.value)}
                       placeholder="Find a ticket code or holder"
                       aria-label="Find a ticket in this order"
-                      className="h-10 w-full rounded-full border border-secondary-100 bg-white pr-4 pl-10 text-sm outline-none focus:border-secondary-300"
+                      className="h-10 w-full rounded-full border border-secondary-100 bg-card pr-4 pl-10 text-sm outline-none focus:border-secondary-300"
                     />
                   </label>
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -206,12 +206,12 @@ const OrderPanel = ({
                                 : `Holder: ${record.holderName}`}
                             </span>
                           </span>
-                          <span className="hidden font-mono text-[11px] text-secondary-600 sm:block">
+                          <span className="hidden font-mono text-2xs text-secondary-600 sm:block">
                             {record.ticketCode}
                           </span>
                           <span
                             className={cn(
-                              "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                              "shrink-0 rounded-full px-2 py-0.5 text-2xs font-semibold",
                               record.transfer?.status === "claimed" && record.status === "not_checked_in"
                                 ? "bg-violet-50 text-violet-700"
                                 : state.className,

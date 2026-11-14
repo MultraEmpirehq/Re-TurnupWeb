@@ -20,9 +20,9 @@ const STATUS: Record<
   TReviewCheckStatus,
   { icon: LucideIcon; className: string; label: string }
 > = {
-  fail: { icon: CircleX, className: "text-red-600", label: "Problem" },
+  fail: { icon: CircleX, className: "text-danger", label: "Problem" },
   warn: { icon: CircleAlert, className: "text-secondary-600", label: "Check" },
-  pass: { icon: CircleCheck, className: "text-emerald-600", label: "Passed" },
+  pass: { icon: CircleCheck, className: "text-success", label: "Passed" },
   info: { icon: Info, className: "text-muted-foreground", label: "Note" },
 };
 
@@ -66,10 +66,10 @@ const ReviewChecks: React.FC<{
             className={cn(
               "text-sm",
               summary.fail
-                ? "text-red-700"
+                ? "text-danger"
                 : summary.warn
                   ? "text-secondary-700"
-                  : "text-emerald-700",
+                  : "text-success",
             )}
           >
             {headline}

@@ -12,7 +12,7 @@ const EventDetailLineup: React.FC<{ performers: IPerformerSummary[] }> = ({
       {performers.map((performer) => (
         <div key={performer.id} className="relative">
           {performer.isHeadliner && performers.length > 1 && (
-            <span className="absolute -top-2 right-3 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase">
+            <span className="absolute -top-2 right-3 z-10 rounded-full bg-primary px-2 py-0.5 text-2xs font-bold tracking-wider text-white uppercase">
               Headliner
             </span>
           )}

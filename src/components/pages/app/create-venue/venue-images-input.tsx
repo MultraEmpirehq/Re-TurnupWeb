@@ -90,7 +90,7 @@ const VenueImagesInput: React.FC<IVenueImagesInputProps> = ({
                 type="button"
                 title="Remove"
                 onClick={() => removeImage(index)}
-                className="absolute top-1 right-1 size-8 rounded-full bg-red-500/90 text-white flex items-center justify-center hover:bg-red-600 z-10"
+                className="absolute top-1 right-1 size-8 rounded-full bg-danger-solid/90 text-white flex items-center justify-center hover:bg-danger-solid z-10"
               >
                 <TrashIcon className="size-4" />
               </button>
