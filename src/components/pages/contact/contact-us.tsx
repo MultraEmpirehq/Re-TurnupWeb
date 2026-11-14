@@ -118,10 +118,10 @@ const ContactUs = () => {
         </dl>
       </div>
       {sent ? (
-        <div className="flex flex-col items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-6">
-          <CheckCircle2 className="size-8 text-emerald-600" aria-hidden />
-          <p className="text-lg font-semibold text-emerald-900">Message sent</p>
-          <p className="text-sm text-emerald-800">
+        <div className="flex flex-col items-start gap-3 rounded-2xl border border-success-line bg-success-soft p-6">
+          <CheckCircle2 className="size-8 text-success" aria-hidden />
+          <p className="text-lg font-semibold text-success">Message sent</p>
+          <p className="text-sm text-success">
             Thanks for reaching out. We&apos;ll reply to {form.email} as soon as
             we can.
           </p>

@@ -158,7 +158,7 @@ const DateTimePicker: React.FC<{
             <button
               type="button"
               className={cn(
-                "flex h-11 w-full items-center gap-2 rounded-xl border bg-white px-3 pr-9 text-left text-sm transition",
+                "flex h-11 w-full items-center gap-2 rounded-xl border bg-card px-3 pr-9 text-left text-sm transition",
                 "hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none",
                 error ? "border-destructive" : "border-secondary-200",
                 open && "border-primary ring-2 ring-primary/20",
@@ -196,7 +196,7 @@ const DateTimePicker: React.FC<{
                   key={pick.label}
                   type="button"
                   onClick={() => pickTime(pick.value)}
-                  className="rounded-full border border-secondary-200 bg-white px-3 py-1 text-xs font-semibold text-secondary-700 transition hover:border-primary hover:text-primary-700"
+                  className="rounded-full border border-secondary-200 bg-card px-3 py-1 text-xs font-semibold text-secondary-700 transition hover:border-primary hover:text-primary-700"
                 >
                   {pick.label}
                 </button>
@@ -205,7 +205,7 @@ const DateTimePicker: React.FC<{
           )}
           <div className="flex flex-col sm:flex-row">
             <div>
-              <p className="px-4 pt-3 text-[11px] font-bold tracking-[0.16em] text-secondary-400 uppercase">
+              <p className="px-4 pt-3 text-2xs font-bold tracking-[0.16em] text-secondary-400 uppercase">
                 1. Day
               </p>
               <Calendar
@@ -223,7 +223,7 @@ const DateTimePicker: React.FC<{
               />
             </div>
             <div className="flex w-full flex-col border-t border-secondary-100 sm:w-44 sm:border-t-0 sm:border-l">
-              <p className="px-4 pt-3 text-[11px] font-bold tracking-[0.16em] text-secondary-400 uppercase">
+              <p className="px-4 pt-3 text-2xs font-bold tracking-[0.16em] text-secondary-400 uppercase">
                 2. Time
               </p>
               <p className="px-4 pb-2 text-xs font-semibold text-secondary-700">
@@ -245,7 +245,7 @@ const DateTimePicker: React.FC<{
                     aria-label="Type a time"
                     inputMode="text"
                     className={cn(
-                      "h-9 w-full min-w-0 rounded-lg border bg-white px-2.5 text-sm outline-none transition",
+                      "h-9 w-full min-w-0 rounded-lg border bg-card px-2.5 text-sm outline-none transition",
                       "focus:border-primary focus:ring-2 focus:ring-primary/20",
                       typedProblem ? "border-destructive" : "border-secondary-200",
                     )}
@@ -261,7 +261,7 @@ const DateTimePicker: React.FC<{
                 {typed.trim() && (
                   <p
                     className={cn(
-                      "mt-1 px-0.5 text-[11px]",
+                      "mt-1 px-0.5 text-2xs",
                       typedProblem ? "text-destructive" : "text-secondary-500",
                     )}
                   >
@@ -307,7 +307,7 @@ const DateTimePicker: React.FC<{
             </div>
           </div>
           {(min || max) && (
-            <p className="border-t border-secondary-100 bg-secondary-50/60 px-4 py-2 text-[11px] text-secondary-500">
+            <p className="border-t border-secondary-100 bg-secondary-50/60 px-4 py-2 text-2xs text-secondary-500">
               {min && max
                 ? `Any time from ${format(min, "d MMM, h:mm a")} to ${format(max, "d MMM, h:mm a")}.`
                 : min

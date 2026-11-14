@@ -17,11 +17,11 @@ const STATUS: Record<
   IPromoCode["status"],
   { label: string; className: string }
 > = {
-  live: { label: "Live", className: "bg-emerald-50 text-emerald-700" },
+  live: { label: "Live", className: "bg-success-soft text-success" },
   paused: { label: "Paused", className: "bg-secondary-50 text-secondary-600" },
   ended: { label: "Ended", className: "bg-secondary-50 text-secondary-500" },
-  scheduled: { label: "Starts later", className: "bg-amber-50 text-amber-800" },
-  used_up: { label: "Used up", className: "bg-amber-50 text-amber-800" },
+  scheduled: { label: "Starts later", className: "bg-warning-soft text-warning" },
+  used_up: { label: "Used up", className: "bg-warning-soft text-warning" },
 };
 
 /** The promoter's own link: the event, with their code filled in at checkout. */
@@ -128,7 +128,7 @@ const PromoterCodes: React.FC<{ eventId: string; currency: string }> = ({
               placeholder="TUNDE10"
               maxLength={20}
               required
-              className="h-10 rounded-lg border border-secondary-200 bg-white px-3 font-mono text-sm text-secondary-950"
+              className="h-10 rounded-lg border border-secondary-200 bg-card px-3 font-mono text-sm text-secondary-950"
             />
           </label>
           <label className="grid gap-1 text-xs font-semibold text-secondary-600">
@@ -139,7 +139,7 @@ const PromoterCodes: React.FC<{ eventId: string; currency: string }> = ({
               placeholder="Tunde (DJ Waves crew)"
               maxLength={80}
               required
-              className="h-10 rounded-lg border border-secondary-200 bg-white px-3 text-sm text-secondary-950"
+              className="h-10 rounded-lg border border-secondary-200 bg-card px-3 text-sm text-secondary-950"
             />
           </label>
           <label className="grid gap-1 text-xs font-semibold text-secondary-600">
@@ -148,7 +148,7 @@ const PromoterCodes: React.FC<{ eventId: string; currency: string }> = ({
               <select
                 value={kind}
                 onChange={(event) => setKind(event.target.value as typeof kind)}
-                className="h-10 rounded-lg border border-secondary-200 bg-white px-2 text-sm text-secondary-950"
+                className="h-10 rounded-lg border border-secondary-200 bg-card px-2 text-sm text-secondary-950"
               >
                 <option value="percent">% off</option>
                 <option value="amount">{currency} off</option>
@@ -166,7 +166,7 @@ const PromoterCodes: React.FC<{ eventId: string; currency: string }> = ({
                       ? "Percent off each ticket"
                       : "Amount off each ticket"
                   }
-                  className="h-10 w-24 rounded-lg border border-secondary-200 bg-white px-3 text-sm text-secondary-950"
+                  className="h-10 w-24 rounded-lg border border-secondary-200 bg-card px-3 text-sm text-secondary-950"
                 />
               )}
             </span>
@@ -179,7 +179,7 @@ const PromoterCodes: React.FC<{ eventId: string; currency: string }> = ({
               value={maxUses}
               onChange={(event) => setMaxUses(event.target.value)}
               placeholder="No limit"
-              className="h-10 rounded-lg border border-secondary-200 bg-white px-3 text-sm text-secondary-950"
+              className="h-10 rounded-lg border border-secondary-200 bg-card px-3 text-sm text-secondary-950"
             />
           </label>
           <div className="flex gap-2 sm:col-span-2">
@@ -224,14 +224,14 @@ const PromoterCodes: React.FC<{ eventId: string; currency: string }> = ({
                   </span>
                   <span
                     className={cn(
-                      "rounded-full px-2 py-0.5 text-[11px] font-bold",
+                      "rounded-full px-2 py-0.5 text-2xs font-bold",
                       STATUS[item.status].className,
                     )}
                   >
                     {STATUS[item.status].label}
                   </span>
                   {!item.event && (
-                    <span className="text-[11px] text-secondary-400">
+                    <span className="text-2xs text-secondary-400">
                       All your events
                     </span>
                   )}

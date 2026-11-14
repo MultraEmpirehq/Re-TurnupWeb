@@ -114,7 +114,7 @@ const Inquiries = () => {
                 className={cn(
                   "rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize",
                   inquiry.status === "new"
-                    ? "bg-sky-50 text-sky-700"
+                    ? "bg-info-soft text-info"
                     : "bg-muted text-muted-foreground",
                 )}
               >

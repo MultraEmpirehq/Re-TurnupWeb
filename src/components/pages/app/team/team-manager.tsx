@@ -172,14 +172,11 @@ const TeamManager = () => {
   return (
     <div className="space-y-8 pb-20">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-2">
-          <span className="text-[0.75rem] font-bold tracking-[0.2em] text-secondary-400 uppercase">
-            Team
-          </span>
-          <h1 className="text-3xl font-bold tracking-tight text-secondary-950">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Who helps run your events
           </h1>
-          <p className="max-w-2xl text-secondary-500">
+          <p className="hidden max-w-2xl text-sm text-muted-foreground sm:block">
             Add people by email and choose exactly what each one can do, from
             scanning tickets at the door to seeing your sales.
           </p>
@@ -205,7 +202,7 @@ const TeamManager = () => {
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-white">
+        <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
           {members.map((member) => (
             <li
               key={member.id}
@@ -222,7 +219,7 @@ const TeamManager = () => {
                   <p className="truncate text-sm font-semibold">
                     {member.name || member.email}
                     {!member.hasAccount && (
-                      <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                      <span className="ml-2 rounded-full bg-warning-soft px-2 py-0.5 text-2xs font-semibold text-warning">
                         Not signed up yet
                       </span>
                     )}
@@ -234,7 +231,7 @@ const TeamManager = () => {
                     {member.permissions.map((permission) => (
                       <span
                         key={permission}
-                        className="rounded-full bg-secondary-50 px-2 py-0.5 text-[11px] font-semibold text-secondary-700"
+                        className="rounded-full bg-secondary-50 px-2 py-0.5 text-2xs font-semibold text-secondary-700"
                       >
                         {permissionLabel(permission)}
                       </span>

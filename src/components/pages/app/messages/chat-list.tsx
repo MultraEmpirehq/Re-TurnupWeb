@@ -98,12 +98,12 @@ const WaitingTicket: React.FC = () => {
   if (!waiting) return null;
   const ticket = waiting.userTicket?.ticket;
   return (
-    <div className="mx-3 mb-2 flex items-center gap-3 rounded-[18px] bg-secondary-950 p-3">
+    <div className="mx-3 mb-2 flex items-center gap-3 rounded-2xl bg-secondary-950 p-3">
       <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/20">
         <TicketIcon className="size-5 text-primary" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[13.5px] font-extrabold text-white">
+        <span className="block text-sm font-extrabold text-white">
           {waiting.senderName} sent you a ticket
         </span>
         <span className="block truncate text-xs text-white/75">
@@ -129,7 +129,7 @@ const WaitingTicket: React.FC = () => {
             );
           }
         }}
-        className="shrink-0 rounded-full bg-primary px-3.5 py-2 text-[12.5px] font-extrabold text-white hover:bg-primary/90 disabled:opacity-60"
+        className="shrink-0 rounded-full bg-primary px-3.5 py-2 text-xs font-extrabold text-white hover:bg-primary/90 disabled:opacity-60"
       >
         {accept.isPending ? (
           <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -173,7 +173,7 @@ const MessageRequests: React.FC<{
   };
 
   return (
-    <div className="mx-3 mb-2 rounded-[18px] border border-secondary-100 bg-white">
+    <div className="mx-3 mb-2 rounded-2xl border border-secondary-100 bg-card">
       <button
         type="button"
         onClick={() => setOpen((on) => !on)}
@@ -184,7 +184,7 @@ const MessageRequests: React.FC<{
           <MessageSquareIcon className="size-5 text-secondary-700" aria-hidden />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[13.5px] font-extrabold text-secondary-950">
+          <span className="block text-sm font-extrabold text-secondary-950">
             Message requests
           </span>
           <span className="block truncate text-xs text-secondary-500">
@@ -193,7 +193,7 @@ const MessageRequests: React.FC<{
               : `${requests.length} people want to message you`}
           </span>
         </span>
-        <span className="text-[12.5px] font-bold text-primary">
+        <span className="text-xs font-bold text-primary">
           {open ? "Hide" : "View"}
         </span>
       </button>
@@ -217,7 +217,7 @@ const MessageRequests: React.FC<{
                   <span className="block truncate text-[14px] font-bold text-secondary-950">
                     {chat.eventName}
                   </span>
-                  <span className="block truncate text-[12.5px] text-secondary-500">
+                  <span className="block truncate text-xs text-secondary-500">
                     {chat.preview || "Wants to message you"}
                   </span>
                 </span>
@@ -230,14 +230,14 @@ const MessageRequests: React.FC<{
                     <button
                       type="button"
                       onClick={() => void answer(chat, true)}
-                      className="h-8 flex-1 rounded-xl bg-primary text-[12.5px] font-bold text-white hover:bg-primary/90"
+                      className="h-8 flex-1 rounded-xl bg-primary text-xs font-bold text-white hover:bg-primary/90"
                     >
                       Accept
                     </button>
                     <button
                       type="button"
                       onClick={() => void answer(chat, false)}
-                      className="h-8 flex-1 rounded-xl border border-secondary-200 text-[12.5px] font-bold text-secondary-950 hover:bg-secondary-50"
+                      className="h-8 flex-1 rounded-xl border border-secondary-200 text-xs font-bold text-secondary-950 hover:bg-secondary-50"
                     >
                       Decline
                     </button>
@@ -246,7 +246,7 @@ const MessageRequests: React.FC<{
               </span>
             </li>
           ))}
-          <li className="px-2 pt-1 text-[11.5px] text-secondary-400">
+          <li className="px-2 pt-1 text-2xs text-secondary-400">
             Replying accepts it. Declining removes it, and they aren&apos;t
             told.
           </li>
@@ -319,10 +319,10 @@ const ChatList: React.FC<{
                 aria-selected={on}
                 onClick={() => setFilter(chip.id)}
                 className={cn(
-                  "flex shrink-0 items-center gap-1 rounded-full border px-3.5 py-1.5 text-[12.5px] font-bold transition-colors",
+                  "flex shrink-0 items-center gap-1 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-colors",
                   on
                     ? "border-secondary-950 bg-secondary-950 text-white"
-                    : "border-secondary-100 bg-white text-secondary-600 hover:border-secondary-300",
+                    : "border-secondary-100 bg-card text-secondary-600 hover:border-secondary-300",
                 )}
               >
                 {chip.label}
@@ -377,7 +377,7 @@ const ChatList: React.FC<{
                       active
                         ? "bg-secondary-50"
                         : unread
-                          ? "bg-white hover:bg-secondary-50/70"
+                          ? "bg-card hover:bg-secondary-50/70"
                           : "hover:bg-secondary-50/70",
                     )}
                   >
@@ -407,7 +407,7 @@ const ChatList: React.FC<{
                       </span>
                       <span
                         className={cn(
-                          "mt-0.5 block truncate text-[13px]",
+                          "mt-0.5 block truncate text-sm",
                           unread ? "text-secondary-800" : "text-secondary-500",
                         )}
                       >
@@ -418,13 +418,13 @@ const ChatList: React.FC<{
                       </span>
                     </span>
                     <span className="flex shrink-0 flex-col items-end gap-1.5">
-                      <span className="text-[11.5px] font-semibold text-secondary-400">
+                      <span className="text-2xs font-semibold text-secondary-400">
                         {listTime(chat.lastActivityAt)}
                       </span>
                       {unread > 0 ? (
                         <span
                           className={cn(
-                            "min-w-5 rounded-full px-1.5 text-center text-[11px] leading-5 font-extrabold text-white",
+                            "min-w-5 rounded-full px-1.5 text-center text-2xs leading-5 font-extrabold text-white",
                             chat.muted
                               ? "bg-secondary-300"
                               : "bg-secondary-700",
@@ -433,7 +433,7 @@ const ChatList: React.FC<{
                           {unread > 99 ? "99+" : unread}
                         </span>
                       ) : chat.muted ? (
-                        <span className="text-[10px] font-bold text-secondary-400">
+                        <span className="text-2xs font-bold text-secondary-400">
                           Muted
                         </span>
                       ) : (

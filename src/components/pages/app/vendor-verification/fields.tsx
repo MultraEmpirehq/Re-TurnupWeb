@@ -117,7 +117,7 @@ export const DocumentField: React.FC<{
       {name ? (
         <div
           className={cn(
-            "flex items-center gap-3 rounded-xl border bg-white px-3 py-3",
+            "flex items-center gap-3 rounded-xl border bg-card px-3 py-3",
             error ? "border-destructive" : "border-input",
           )}
         >

@@ -104,7 +104,7 @@ const FaqSection: React.FC<{
     <h2 className="text-xs font-semibold tracking-[0.28em] text-secondary-400 uppercase">
       {title}
     </h2>
-    <div className="overflow-hidden rounded-[1.75rem] border border-secondary-100 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+    <div className="overflow-hidden rounded-3xl border border-secondary-100 bg-card shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
       {items.map((item) => {
         const isOpen = openId === item.id;
         const panelId = `faq-panel-${item.id}`;
@@ -177,7 +177,7 @@ const FaqList = () => {
       )}
 
       {error && (
-        <div className="flex flex-col gap-3 rounded-[1.5rem] border border-secondary-100 bg-secondary-50 p-5 text-sm text-secondary-600 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-3xl border border-secondary-100 bg-secondary-50 p-5 text-sm text-secondary-600 sm:flex-row sm:items-center sm:justify-between">
           <p>We couldn&apos;t load the general FAQs right now.</p>
           <Button
             variant="outline"

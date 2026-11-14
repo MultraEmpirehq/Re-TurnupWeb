@@ -39,9 +39,9 @@ const OrderMoneyBack: React.FC<{
             <span
               className={cn(
                 refund.status === "completed"
-                  ? "text-emerald-700"
+                  ? "text-success"
                   : refund.status === "failed"
-                    ? "text-red-700"
+                    ? "text-danger"
                     : "text-muted-foreground",
               )}
             >

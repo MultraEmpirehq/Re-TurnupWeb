@@ -172,7 +172,7 @@ const PerformerFormDialog: React.FC<{
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !saving && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto rounded-[1.6rem] p-6 sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto rounded-3xl p-6 sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-secondary-950">
             {isEditing ? `Edit ${performer.name}` : "Add a performer"}

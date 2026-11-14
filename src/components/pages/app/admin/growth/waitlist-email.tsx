@@ -50,13 +50,13 @@ const Stat: React.FC<{ label: string; value?: number; note: string; tone?: "good
   <div
     className={cn(
       "rounded-2xl border p-4",
-      tone === "good" ? "border-emerald-200 bg-emerald-50/50" : tone === "warn" ? "border-amber-200 bg-amber-50/60" : "border-border bg-card",
+      tone === "good" ? "border-success-line bg-success-soft/50" : tone === "warn" ? "border-warning-line bg-warning-soft/60" : "border-border bg-card",
     )}
   >
     <p
       className={cn(
-        "text-[11px] font-semibold tracking-wider uppercase",
-        tone === "good" ? "text-emerald-700" : tone === "warn" ? "text-amber-700" : "text-muted-foreground",
+        "text-2xs font-semibold tracking-wider uppercase",
+        tone === "good" ? "text-success" : tone === "warn" ? "text-warning" : "text-muted-foreground",
       )}
     >
       {label}
@@ -158,7 +158,7 @@ const WaitlistEmail = () => {
         <Link href="/app/admin/marketing/waitlist" className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground">
           <ChevronLeft className="size-3.5" aria-hidden /> Waitlist
         </Link>
-        <h1 className="text-xl font-bold text-secondary-800">Email the waitlist</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Email the waitlist</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
           Only confirmed sign-ups who agreed get it, and every email has an unsubscribe link.
         </p>
@@ -259,7 +259,7 @@ const WaitlistEmail = () => {
 
         <section className="rounded-2xl border border-border bg-[#eef2f7] p-4">
           <p className="mb-3 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Preview</p>
-          <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+          <div className="overflow-hidden rounded-2xl bg-card shadow-sm">
             <div className="bg-linear-to-br from-secondary to-primary px-6 py-4 text-lg font-extrabold text-white italic">turnupz</div>
             <div className="space-y-3 p-6 text-sm leading-6 text-secondary-600">
               <p className="text-xl font-extrabold text-secondary-950">{subject.trim() || "Your subject"}</p>
@@ -275,7 +275,7 @@ const WaitlistEmail = () => {
             </div>
             <div className="border-t border-border bg-[#f7f9fc] px-6 py-3 text-xs text-muted-foreground">Questions? Email us any time.</div>
           </div>
-          <p className="mt-3 text-center text-[11px] text-muted-foreground">
+          <p className="mt-3 text-center text-2xs text-muted-foreground">
             You&apos;re getting this because you joined the Turnupz waitlist. <u>Unsubscribe</u>
           </p>
         </section>
@@ -291,7 +291,7 @@ const WaitlistEmail = () => {
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="text-left text-[11px] tracking-wider text-muted-foreground uppercase">
+                <tr className="text-left text-2xs tracking-wider text-muted-foreground uppercase">
                   <th className="pb-2 font-semibold">Email</th>
                   <th className="pb-2 font-semibold">Sent</th>
                   <th className="pb-2 text-right font-semibold">Delivered</th>

@@ -41,21 +41,21 @@ export const YourTicketsCard: React.FC<{
     <Link
       href={ROUTES.PROFILE_TICKETS.href}
       className={cn(
-        "flex items-center gap-3 rounded-2xl border border-secondary-100 bg-white p-2.5 transition-colors hover:border-primary/40",
+        "flex items-center gap-3 rounded-2xl border border-secondary-100 bg-card p-2.5 transition-colors hover:border-primary/40",
         className,
       )}
     >
       <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-primary/10">
-        <TicketIcon className="size-[18px] text-secondary-700" aria-hidden />
+        <TicketIcon className="size-4.5 text-secondary-700" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[12.5px] font-extrabold text-secondary-950">
+        <span className="block text-xs font-extrabold text-secondary-950">
           Your {count} {count === 1 ? "ticket" : "tickets"} · Doors{" "}
           {formatEventTime(chat.eventDate, chat.eventTimezone, {
             timeOnly: true,
           })}
         </span>
-        <span className="block text-[11.5px] text-secondary-500">
+        <span className="block text-2xs text-secondary-500">
           {formatEventTime(chat.eventDate, chat.eventTimezone)}
         </span>
       </span>
@@ -118,7 +118,7 @@ export const AboutEventCard: React.FC<{
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-[18px] border border-secondary-100 bg-white p-2.5",
+        "flex items-center gap-3 rounded-2xl border border-secondary-100 bg-card p-2.5",
         className,
       )}
     >
@@ -134,11 +134,11 @@ export const AboutEventCard: React.FC<{
         </span>
       )}
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13.5px] font-extrabold text-secondary-950">
+        <span className="block truncate text-sm font-extrabold text-secondary-950">
           {topic.name}
         </span>
         {topic.date && (
-          <span className="block truncate text-[11.5px] font-semibold text-secondary-500">
+          <span className="block truncate text-2xs font-semibold text-secondary-500">
             {formatEventTime(topic.date, topic.timezone, { withYear: false })}
             {topic.place ? ` · ${topic.place}` : ""}
           </span>
@@ -161,7 +161,7 @@ export const SharedEventCard: React.FC<{ event: IChatSharedEvent }> = ({
 }) => (
   <Link
     href={eventHref(event.id)}
-    className="block w-64 overflow-hidden rounded-2xl border border-black/5 bg-white transition-shadow hover:shadow-md"
+    className="block w-64 overflow-hidden rounded-2xl border border-black/5 bg-card transition-shadow hover:shadow-md"
   >
     <span className="relative block h-28 w-full bg-primary/10">
       {event.image && (

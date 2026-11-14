@@ -19,7 +19,7 @@ export default function NewsPostPage() {
     return (
       <div className="min-h-screen bg-[#F7F8FB] pt-24">
         <SectionContainer className="max-w-[760px]">
-          <div className="h-96 animate-pulse rounded-3xl bg-white" />
+          <div className="h-96 animate-pulse rounded-3xl bg-card" />
         </SectionContainer>
       </div>
     );
@@ -27,8 +27,8 @@ export default function NewsPostPage() {
   if (!post) {
     return (
       <div className="min-h-screen bg-[#F7F8FB] pt-32 text-center">
-        <p className="text-lg font-bold text-zinc-950">We couldn&apos;t find that post</p>
-        <Link href="/news" className="mt-3 inline-block text-sm font-bold text-[#0577FA]">
+        <p className="text-lg font-bold text-foreground">We couldn&apos;t find that post</p>
+        <Link href="/news" className="mt-3 inline-block text-sm font-bold text-secondary-500">
           See all news
         </Link>
       </div>
@@ -40,26 +40,26 @@ export default function NewsPostPage() {
       <SectionContainer className="max-w-[760px]">
         <Link
           href="/news"
-          className="inline-flex items-center gap-1 text-sm font-bold text-zinc-500 hover:text-zinc-900"
+          className="inline-flex items-center gap-1 text-sm font-bold text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft className="size-4" /> All news
         </Link>
-        <article className="mt-4 overflow-hidden rounded-3xl bg-white">
+        <article className="mt-4 overflow-hidden rounded-3xl bg-card">
           {post.cover && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={post.cover} alt="" className="aspect-[16/8] w-full object-cover" />
           )}
           <div className="p-6 md:p-10">
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-muted-foreground">
               {post.author} ·{" "}
               {post.publishedAt ? format(new Date(post.publishedAt), "d MMMM yyyy") : ""} ·{" "}
               {readingTime(post.body)} min read
             </p>
-            <h1 className="mt-3 text-3xl font-extrabold leading-tight tracking-tight text-zinc-950 md:text-4xl">
+            <h1 className="mt-3 text-3xl font-extrabold leading-tight tracking-tight text-foreground md:text-4xl">
               {post.title}
             </h1>
-            {post.excerpt && <p className="mt-3 text-lg font-semibold text-zinc-700">{post.excerpt}</p>}
-            <div className="mt-5 whitespace-pre-line text-[17px] leading-8 text-zinc-800">{post.body}</div>
+            {post.excerpt && <p className="mt-3 text-lg font-semibold text-foreground/80">{post.excerpt}</p>}
+            <div className="mt-5 whitespace-pre-line text-[17px] leading-8 text-foreground/80">{post.body}</div>
           </div>
         </article>
       </SectionContainer>

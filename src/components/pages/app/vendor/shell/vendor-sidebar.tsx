@@ -75,7 +75,7 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
   return (
     <aside
       className={cn(
-        "flex w-[248px] shrink-0 flex-col gap-1 border-r border-border bg-white px-4 pb-4",
+        "flex w-[248px] shrink-0 flex-col gap-1 border-r border-border bg-card px-4 pb-4",
         className,
       )}
     >
@@ -91,7 +91,7 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
             priority
           />
         </Link>
-        <span className="rounded-full bg-secondary-50 px-2 py-1 text-[11px] font-bold tracking-wide text-secondary-700">
+        <span className="rounded-full bg-secondary-50 px-2 py-1 text-2xs font-bold tracking-wide text-secondary-700">
           {workspace ? "TEAM" : "VENDOR"}
         </span>
       </div>
@@ -103,14 +103,14 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
           ref={navRef}
           className="scrollbar-none flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto"
         >
-          <p className="px-[11px] pt-2.5 pb-0.5 text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
+          <p className="px-3 pt-2.5 pb-0.5 text-2xs font-bold tracking-[0.08em] text-muted-foreground uppercase">
             Workspace
           </p>
           {navItems.map((item) => {
             const isActive = isVendorNavItemActive(pathname, item);
             const Icon = item.icon;
             const itemClassName = cn(
-              "flex items-center gap-2.5 rounded-[10px] px-[11px] py-2.5 text-sm transition-colors duration-100 ease-out",
+              "flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 text-sm transition-colors duration-100 ease-out",
               isActive
                 ? "bg-secondary-50 font-semibold text-secondary-800"
                 : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -131,7 +131,7 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
                   )}
                   title="Available once your vendor account is verified"
                 >
-                  <Icon className="size-[18px] shrink-0" aria-hidden />
+                  <Icon className="size-4.5 shrink-0" aria-hidden />
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
                   <Lock className="size-3.5 shrink-0" aria-hidden />
                   <span className="sr-only">(locked until verified)</span>
@@ -152,11 +152,11 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
                 aria-current={isActive ? "page" : undefined}
                 className={itemClassName}
               >
-                <Icon className="size-[18px] shrink-0" aria-hidden />
+                <Icon className="size-4.5 shrink-0" aria-hidden />
                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
                 {badge > 0 && (
                   <span
-                    className="shrink-0 rounded-full bg-primary px-[7px] py-[3px] text-xs font-semibold text-white tabular-nums"
+                    className="shrink-0 rounded-full bg-primary px-2 py-1 text-xs font-semibold text-white tabular-nums"
                     aria-label={
                       item.badge === "chats"
                         ? `${badge} unread`
@@ -195,7 +195,7 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
           </AvatarFallback>
         </Avatar>
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-[13px] font-semibold text-foreground">
+          <span className="truncate text-sm font-semibold text-foreground">
             {displayName}
           </span>
           <span className="truncate text-xs text-muted-foreground">

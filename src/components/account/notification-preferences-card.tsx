@@ -113,7 +113,7 @@ const NotificationPreferencesCard = ({ organiser = false }: { organiser?: boolea
   );
 
   return (
-    <section className="space-y-4 rounded-[1.5rem] border border-secondary-100 bg-white p-6">
+    <section className="space-y-4 rounded-3xl border border-secondary-100 bg-card p-6">
       <div className="flex items-start gap-3">
         <span className="rounded-xl bg-secondary-50 p-2.5 text-secondary">
           <Bell className="size-5" aria-hidden />

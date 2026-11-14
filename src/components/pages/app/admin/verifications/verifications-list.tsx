@@ -70,7 +70,7 @@ const VerificationsList = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-bold text-secondary-800">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           Vendor verifications
         </h1>
         <p className="text-sm text-muted-foreground">

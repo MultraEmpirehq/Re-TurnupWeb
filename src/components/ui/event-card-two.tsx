@@ -20,7 +20,7 @@ const EventCardTwo: React.FC<IEventDetailsType> = ({
   }, [date]);
 
   return (
-    <div className="bg-white dark:bg-secondary-950 p-1 rounded-md shadow-sm flex flex-row items-center gap-3 text-secondary-950 dark:text-white">
+    <div className="bg-card dark:bg-secondary-950 p-1 rounded-md shadow-sm flex flex-row items-center gap-3 text-secondary-950 dark:text-white">
       {/* A fixed width that never shrinks, so every card's image lines up whatever
           the length of the text beside it. */}
       <Link
@@ -34,7 +34,7 @@ const EventCardTwo: React.FC<IEventDetailsType> = ({
           alt={name}
           imageClassName="object-cover"
         />
-        <button className="size-7 rounded-full bg-white items-center justify-center inline-flex absolute top-2 right-2">
+        <button className="size-7 rounded-full bg-card items-center justify-center inline-flex absolute top-2 right-2">
           <span>
             <StarIcon size={14} />
           </span>

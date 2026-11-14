@@ -31,7 +31,6 @@ import { AlertTriangle, Search, Undo2 } from "lucide-react";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "@/lib/toast";
 import { useDebounce } from "use-debounce";
-import RefundFlow from "./refund-flow";
 import {
   FilterTabs,
   ListSkeleton,
@@ -40,8 +39,8 @@ import {
 
 const STATUS_STYLE: Record<TRefundStatus, string> = {
   PROCESSING: "bg-secondary-50 text-secondary-700",
-  COMPLETED: "bg-emerald-50 text-emerald-700",
-  FAILED: "bg-red-50 text-red-700 dark:text-red-300",
+  COMPLETED: "bg-success-soft text-success",
+  FAILED: "bg-danger-soft text-danger dark:text-red-300",
 };
 const STATUS_LABEL: Record<TRefundStatus, string> = {
   PROCESSING: "Processing",
@@ -94,7 +93,6 @@ const Refunds = () => (
       Credit goes back at once; the card part through the payment provider. Refunding one order keeps Turnupz&apos;s fee;
       cancelling an event returns it. Everything here is audited.
     </PageHeading>
-    <RefundFlow />
     <CancellationRequests />
     <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
       <RefundAnOrder />
@@ -318,7 +316,7 @@ const OrderRefundPanel: React.FC<{
           <p className="mb-2 font-medium">What happens</p>
           {preview.isLoading && <Skeleton className="h-20 w-full" />}
           {preview.error && (
-            <p className="text-red-700 dark:text-red-300">
+            <p className="text-danger dark:text-red-300">
               {constructErrorMessage(
                 preview.error as TApiErrorResponseType,
                 "Couldn't work out this refund",
@@ -362,7 +360,7 @@ const OrderRefundPanel: React.FC<{
       </label>
 
       {confirming ? (
-        <div className="space-y-3 rounded-lg border-2 border-red-200 bg-red-50 p-3 text-sm text-red-900">
+        <div className="space-y-3 rounded-lg border-2 border-danger-line bg-danger-soft p-3 text-sm text-danger">
           <p className="flex items-start gap-2">
             <AlertTriangle className="mt-0.5 size-4 shrink-0" />
             {confirming === "refund"
@@ -455,7 +453,7 @@ const CancelEvent = () => {
           placeholder="Paste the event's page link"
         />
         {link && !eventId && (
-          <span className="text-xs text-red-600">
+          <span className="text-xs text-danger">
             That doesn&apos;t contain an event ID.
           </span>
         )}
@@ -470,7 +468,7 @@ const CancelEvent = () => {
         />
       </label>
       {confirming ? (
-        <div className="space-y-3 rounded-lg border-2 border-red-200 bg-red-50 p-3 text-sm text-red-900">
+        <div className="space-y-3 rounded-lg border-2 border-danger-line bg-danger-soft p-3 text-sm text-danger">
           <p className="flex items-start gap-2">
             <AlertTriangle className="mt-0.5 size-4 shrink-0" />
             Cancel this event and refund everyone? Every ticket stops working.
@@ -576,7 +574,7 @@ const CancellationRequestRow: React.FC<{ request: ICancellationRequest }> = ({
         </div>
       )}
       {mode === "approve" && (
-        <div className="space-y-3 rounded-lg border-2 border-red-200 bg-red-50 p-3 text-sm text-red-900">
+        <div className="space-y-3 rounded-lg border-2 border-danger-line bg-danger-soft p-3 text-sm text-danger">
           <p className="flex items-start gap-2">
             <AlertTriangle className="mt-0.5 size-4 shrink-0" />
             Cancel {request.event.name} and refund all {request.holders.toLocaleString()}{" "}
@@ -766,7 +764,7 @@ const RefundHistory = () => {
                       {STATUS_LABEL[refund.status]}
                     </span>
                     {refund.status === "FAILED" && refund.providerMessage && (
-                      <p className="mt-1 max-w-[180px] text-xs text-red-700 dark:text-red-300">
+                      <p className="mt-1 max-w-[180px] text-xs text-danger dark:text-red-300">
                         {refund.providerMessage}
                       </p>
                     )}

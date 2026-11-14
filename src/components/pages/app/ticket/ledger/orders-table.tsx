@@ -31,12 +31,12 @@ export const describeTypes = (types: ILedgerOrder["ticketTypes"]) => {
 const Tag = ({ children, tone }: { children: React.ReactNode; tone: "blue" | "violet" | "amber" | "red" | "green" }) => (
   <span
     className={cn(
-      "rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap",
+      "rounded-full px-2 py-0.5 text-2xs font-semibold whitespace-nowrap",
       tone === "blue" && "bg-secondary-50 text-secondary-700",
       tone === "violet" && "bg-violet-50 text-violet-700",
-      tone === "amber" && "bg-amber-50 text-amber-800",
-      tone === "red" && "bg-red-50 text-red-700",
-      tone === "green" && "text-emerald-700",
+      tone === "amber" && "bg-warning-soft text-warning",
+      tone === "red" && "bg-danger-soft text-danger",
+      tone === "green" && "text-success",
     )}
   >
     {children}
@@ -69,7 +69,7 @@ const Progress = ({ order }: { order: ILedgerOrder }) => {
     <span className="flex items-center gap-2">
       <span className="h-1.5 w-16 overflow-hidden rounded-full bg-secondary-50">
         <span
-          className="block h-full rounded-full bg-emerald-500"
+          className="block h-full rounded-full bg-success-solid"
           style={{ width: `${live ? (order.checkedIn / live) * 100 : 0}%` }}
         />
       </span>

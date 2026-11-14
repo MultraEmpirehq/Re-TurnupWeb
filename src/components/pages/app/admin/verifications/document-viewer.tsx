@@ -115,7 +115,7 @@ const DocumentViewer: React.FC<{
               <iframe
                 src={document.url}
                 title={label}
-                className="size-full min-h-[60vh] rounded-lg bg-white"
+                className="size-full min-h-[60vh] rounded-lg bg-card"
               />
             )}
           </div>

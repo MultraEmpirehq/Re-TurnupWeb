@@ -93,7 +93,7 @@ const CategoryTiles = () => {
               className="absolute -right-3 -bottom-3 size-20 text-white/20 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6"
             />
             <span className="flex size-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur">
-              <Icon className="size-[18px]" aria-hidden />
+              <Icon className="size-4.5" aria-hidden />
             </span>
             <span className="relative truncate text-sm font-semibold">
               {category.name}

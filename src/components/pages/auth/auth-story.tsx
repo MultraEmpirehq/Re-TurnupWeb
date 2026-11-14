@@ -24,11 +24,16 @@ const enter = (delay: number) => ({ animationDelay: `${delay}ms` });
 const IN =
   "animate-in fade-in slide-in-from-bottom-3 fill-mode-backwards duration-500";
 
+/** A neutral stand-in for text: the story shows the shape of each screen, not made-up details. */
+const Bar = ({ className }: { className?: string }) => (
+  <span aria-hidden className={cn("block h-2 rounded-full bg-secondary-100", className)} />
+);
+
 const FindScreen = () => (
   <div className="space-y-3 p-4">
     <div
       className={cn(
-        "flex h-9 items-center gap-2 rounded-full bg-secondary-50 px-3 text-[11px] text-secondary-400",
+        "flex h-9 items-center gap-2 rounded-full bg-secondary-50 px-3 text-2xs text-secondary-400",
         IN,
       )}
     >
@@ -36,27 +41,14 @@ const FindScreen = () => (
       What&apos;s on this week?
     </div>
     {[
-      {
-        name: "Afrobeats Live",
-        tone: "from-secondary-300 to-secondary-600",
-        when: "Sat · 4pm",
-      },
-      {
-        name: "Lagos Tech Fest",
-        tone: "from-primary-200 to-primary-500",
-        when: "Fri · 9am",
-        liked: true,
-      },
-      {
-        name: "Laugh Out Loud",
-        tone: "from-secondary-200 to-secondary-400",
-        when: "Sat · 7pm",
-      },
+      { name: "w-24", tone: "from-secondary-300 to-secondary-600", when: "w-12" },
+      { name: "w-20", tone: "from-primary-200 to-primary-500", when: "w-14", liked: true },
+      { name: "w-16", tone: "from-secondary-200 to-secondary-400", when: "w-10" },
     ].map((event, index) => (
       <div
         key={event.name}
         className={cn(
-          "flex items-center gap-3 rounded-2xl bg-white p-2.5 shadow-sm ring-1 ring-secondary-50",
+          "flex items-center gap-3 rounded-2xl bg-card p-2.5 shadow-sm ring-1 ring-secondary-50",
           IN,
         )}
         style={enter(250 + index * 220)}
@@ -68,10 +60,8 @@ const FindScreen = () => (
           )}
         />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[12px] font-semibold text-secondary-950">
-            {event.name}
-          </p>
-          <p className="text-[10px] text-secondary-950/50">{event.when}</p>
+          <Bar className={cn("h-2.5 bg-secondary-200", event.name)} />
+          <Bar className={cn("mt-2 h-1.5", event.when)} />
         </div>
         <Heart
           aria-hidden
@@ -96,17 +86,14 @@ const BookScreen = () => (
         IN,
       )}
     />
-    <p
-      className={cn("text-[12px] font-bold text-secondary-950", IN)}
-      style={enter(150)}
-    >
-      Lagos Tech Fest
-    </p>
-    {["Regular", "VIP", "Group of 4"].map((tier, index) => (
+    <div className={IN} style={enter(150)}>
+      <Bar className="h-3 w-3/4 bg-secondary-200" />
+    </div>
+    {["w-14", "w-8", "w-16"].map((tier, index) => (
       <div
         key={tier}
         className={cn(
-          "flex items-center justify-between rounded-xl border px-3 py-2 text-[11px] font-semibold transition-colors duration-500",
+          "flex items-center justify-between rounded-xl border px-3 py-2.5 transition-colors duration-500",
           index === 1
             ? "border-primary bg-primary-50 text-primary-700"
             : "border-secondary-100 text-secondary-800",
@@ -114,7 +101,7 @@ const BookScreen = () => (
         )}
         style={enter(300 + index * 150)}
       >
-        {tier}
+        <Bar className={cn(tier, index === 1 && "bg-primary-200")} />
         <span
           className={cn(
             "size-3.5 rounded-full border-2",
@@ -128,7 +115,7 @@ const BookScreen = () => (
     ))}
     <div
       className={cn(
-        "mt-auto rounded-full bg-secondary-950 py-2.5 text-center text-[11px] font-semibold text-white",
+        "mt-auto rounded-full bg-secondary-950 py-2.5 text-center text-2xs font-semibold text-white",
         IN,
       )}
       style={enter(1300)}
@@ -141,32 +128,15 @@ const BookScreen = () => (
 const ChatScreen = () => (
   <div className="flex h-full flex-col">
     <div className={cn("border-b border-secondary-50 px-4 py-3", IN)}>
-      <p className="text-[12px] font-bold text-secondary-950">
-        Lagos Tech Fest
-      </p>
-      <p className="text-[10px] text-emerald-600">248 going · 31 online</p>
+      <Bar className="h-2.5 w-28 bg-secondary-200" />
+      <Bar className="mt-2 h-1.5 w-16 bg-success-line" />
     </div>
     <div className="flex-1 space-y-2.5 p-4">
       {[
-        {
-          from: "Tolu",
-          text: "Who's getting there early? 👀",
-          mine: false,
-          tone: "bg-secondary-300",
-        },
-        { from: "You", text: "Me! Getting there at 8:30", mine: true },
-        {
-          from: "Kemi",
-          text: "Same, see you at registration ☕",
-          mine: false,
-          tone: "bg-sky-300",
-        },
-        {
-          from: "Dayo",
-          text: "This speaker line-up is 🔥",
-          mine: false,
-          tone: "bg-primary-300",
-        },
+        { text: "w-24", mine: false, tone: "bg-secondary-300" },
+        { text: "w-20", mine: true },
+        { text: "w-28", mine: false, tone: "bg-info-solid/70" },
+        { text: "w-16", mine: false, tone: "bg-primary-300" },
       ].map((message, index) => (
         <div
           key={index}
@@ -182,22 +152,27 @@ const ChatScreen = () => (
               className={cn("size-5 shrink-0 rounded-full", message.tone)}
             />
           )}
-          <p
+          <span
             className={cn(
-              "max-w-[75%] rounded-2xl px-3 py-2 text-[11px]",
+              "max-w-[75%] rounded-2xl px-3 py-2.5",
               message.mine
-                ? "rounded-br-sm bg-linear-to-r from-secondary to-primary text-white"
-                : "rounded-bl-sm bg-secondary-50 text-secondary-950",
+                ? "rounded-br-sm bg-linear-to-r from-secondary to-primary"
+                : "rounded-bl-sm bg-secondary-50",
             )}
           >
-            {message.text}
-          </p>
+            <Bar
+              className={cn(
+                message.text,
+                message.mine ? "bg-white/45" : "bg-secondary-200",
+              )}
+            />
+          </span>
         </div>
       ))}
     </div>
     <div
       className={cn(
-        "m-3 flex items-center gap-2 rounded-full bg-secondary-50 px-3 py-2 text-[10px] text-secondary-400",
+        "m-3 flex items-center gap-2 rounded-full bg-secondary-50 px-3 py-2 text-2xs text-secondary-400",
         IN,
       )}
     >
@@ -215,39 +190,39 @@ const ScanScreen = () => (
   <div className="relative flex h-full flex-col items-center justify-center gap-4 bg-linear-to-b from-secondary-950 to-secondary-900 p-5">
     <p
       className={cn(
-        "text-[10px] font-semibold tracking-[0.2em] text-white/50 uppercase",
+        "text-2xs font-semibold tracking-[0.2em] text-white/50 uppercase",
         IN,
       )}
     >
       Your pass
     </p>
     <div
-      className={cn("relative overflow-hidden rounded-2xl bg-white p-3", IN)}
+      className={cn("relative overflow-hidden rounded-2xl bg-card p-3", IN)}
       style={enter(150)}
     >
-      <div className="grid grid-cols-7 gap-[3px]">
+      <div className="grid grid-cols-7 gap-1">
         {QR.map((on, index) => (
           <span
             key={index}
             className={cn(
-              "size-3 rounded-[2px]",
+              "size-3 rounded-xs",
               on ? "bg-secondary-950" : "bg-transparent",
             )}
           />
         ))}
       </div>
-      <span className="animate-landing-scan absolute inset-x-0 h-1 rounded-full bg-emerald-400 shadow-[0_0_16px_4px_rgba(52,211,153,0.7)]" />
+      <span className="animate-landing-scan absolute inset-x-0 h-1 rounded-full bg-success-solid/70 shadow-[0_0_16px_4px_rgba(52,211,153,0.7)]" />
     </div>
     {/* The scan lands: the pass turns green. */}
     <div
-      className="animate-landing-pop absolute inset-0 flex flex-col items-center justify-center gap-3 bg-emerald-500"
+      className="animate-landing-pop absolute inset-0 flex flex-col items-center justify-center gap-3 bg-success-solid"
       style={enter(1900)}
     >
-      <span className="flex size-16 items-center justify-center rounded-full bg-white text-emerald-600">
+      <span className="flex size-16 items-center justify-center rounded-full bg-card text-success">
         <Check className="size-8" strokeWidth={3} aria-hidden />
       </span>
       <p className="text-lg font-bold text-white">You&apos;re in!</p>
-      <p className="text-[11px] text-white/80">Enjoy the night</p>
+      <p className="text-2xs text-white/80">Enjoy the night</p>
     </div>
   </div>
 );
@@ -343,7 +318,7 @@ const AuthStory = ({ intent = "attendee" }: { intent?: TAuthIntent }) => {
             <div className="text-center">
               <p
                 className={cn(
-                  "text-[11px] font-semibold tracking-[0.2em] uppercase transition-colors duration-500",
+                  "text-2xs font-semibold tracking-[0.2em] uppercase transition-colors duration-500",
                   isActive ? "text-primary-300" : "text-white/50",
                 )}
               >
@@ -369,7 +344,7 @@ const AuthStory = ({ intent = "attendee" }: { intent?: TAuthIntent }) => {
                     // A fresh key each time this stop comes round replays its moment.
                     key={isActive ? `play-${chapter}` : "rest"}
                     className={cn(
-                      "relative h-full overflow-hidden rounded-[1.8rem] bg-white",
+                      "relative h-full overflow-hidden rounded-3xl bg-card",
                       // Resting stops show their finished frame, not a replay.
                       !isActive && "[&_*]:[animation:none!important]",
                     )}
@@ -391,7 +366,7 @@ const AuthStory = ({ intent = "attendee" }: { intent?: TAuthIntent }) => {
                     <p className="mt-1.5 text-[8px] font-semibold tracking-[0.2em] text-white/75 uppercase">
                       Admit one
                     </p>
-                    <p className="text-[10px] font-bold">VIP · Tech Fest</p>
+                    <Bar className="mt-1 h-1.5 w-14 bg-white/50" />
                   </div>
                   <div className="w-6 border-l-2 border-dashed border-white/40" />
                 </div>
@@ -405,7 +380,7 @@ const AuthStory = ({ intent = "attendee" }: { intent?: TAuthIntent }) => {
                       "animate-landing-confetti absolute top-1/2 left-1/2",
                       piece.round
                         ? "size-2 rounded-full"
-                        : "h-2 w-3 rounded-[2px]",
+                        : "h-2 w-3 rounded-xs",
                     )}
                     style={
                       {

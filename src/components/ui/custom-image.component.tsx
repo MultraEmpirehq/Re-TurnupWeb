@@ -81,13 +81,13 @@ const CustomImageComponent = React.forwardRef<
         {!isLoaded && !hasError && src && (
           <div
             aria-hidden
-            className="absolute inset-0 animate-pulse bg-gray-100 dark:bg-white/5"
+            className="absolute inset-0 animate-pulse bg-muted dark:bg-white/5"
           />
         )}
         {(hasError || !src) && (
           <div
             aria-hidden
-            className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-300 dark:bg-white/5 dark:text-white/20"
+            className="absolute inset-0 flex items-center justify-center bg-muted text-gray-300 dark:bg-white/5 dark:text-white/20"
           >
             <ImageOff className="size-[20%] min-h-5 min-w-5 max-h-10 max-w-10" />
           </div>

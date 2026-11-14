@@ -1,5 +1,6 @@
 "use client";
 
+import OrganiserToDoChip from "@/components/pages/app/organiser-to-do-chip";
 import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/lib/variables";
 import { SearchIcon } from "lucide-react";
@@ -82,12 +83,13 @@ const DashboardNav: React.FC<{ onOpenNav: () => void }> = ({ onOpenNav }) => {
         />
         <button
           type="submit"
-          className="absolute right-1.5 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-secondary-400 hover:bg-white hover:text-secondary-700"
+          className="absolute right-1.5 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-secondary-400 hover:bg-card hover:text-secondary-700"
           aria-label="Search vendor workspace"
         >
           <SearchIcon className="size-4" />
         </button>
       </form>
+      <OrganiserToDoChip />
     </WorkspaceTopBar>
   );
 };

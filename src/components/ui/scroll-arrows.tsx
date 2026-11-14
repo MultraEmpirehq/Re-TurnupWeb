@@ -27,7 +27,7 @@ const ScrollArrows: React.FC<{
         tabIndex={-1}
         aria-hidden={!visible}
         className={cn(
-          "absolute top-1/2 z-10 flex -translate-y-1/2 items-center justify-center rounded-full bg-white text-secondary-900 shadow-[0_2px_10px_rgba(15,23,42,0.18)] ring-1 ring-black/5 transition-[opacity,transform] hover:scale-105 hover:bg-secondary-50 active:scale-95",
+          "absolute top-1/2 z-10 flex -translate-y-1/2 items-center justify-center rounded-full bg-card text-secondary-900 shadow-[0_2px_10px_rgba(15,23,42,0.18)] ring-1 ring-black/5 transition-[opacity,transform] hover:scale-105 hover:bg-secondary-50 active:scale-95",
           size === "sm" ? "size-7" : "size-9",
           side === "left" ? "left-1" : "right-1",
           visible ? "opacity-100" : "pointer-events-none opacity-0",

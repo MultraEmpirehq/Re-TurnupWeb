@@ -9,7 +9,7 @@ import { useMemo } from "react";
 const PostCard = ({ post }: { post: ICompanyPost }) => (
   <Link
     href={`/news/${post.slug}`}
-    className="group flex flex-col overflow-hidden rounded-2xl bg-white transition hover:shadow-md"
+    className="group flex flex-col overflow-hidden rounded-2xl bg-card transition hover:shadow-md"
   >
     <div className="aspect-[16/9] bg-linear-to-br from-[#0577FA] to-[#00B2FF]">
       {post.cover && (
@@ -18,13 +18,13 @@ const PostCard = ({ post }: { post: ICompanyPost }) => (
       )}
     </div>
     <div className="flex flex-1 flex-col p-5">
-      <p className="text-xs font-semibold text-zinc-500">
+      <p className="text-xs font-semibold text-muted-foreground">
         {post.publishedAt ? format(new Date(post.publishedAt), "d MMMM yyyy") : ""}
       </p>
-      <h2 className="mt-2 text-lg font-extrabold leading-snug text-zinc-950 group-hover:text-[#0577FA]">
+      <h2 className="mt-2 text-lg font-extrabold leading-snug text-foreground group-hover:text-secondary-500">
         {post.title}
       </h2>
-      <p className="mt-2 line-clamp-3 text-sm leading-6 text-zinc-600">{post.excerpt || post.preview}</p>
+      <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">{post.excerpt || post.preview}</p>
     </div>
   </Link>
 );
@@ -48,15 +48,15 @@ export default function NewsPage() {
         {news.isLoading ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="h-80 animate-pulse rounded-2xl bg-white" />
+              <div key={index} className="h-80 animate-pulse rounded-2xl bg-card" />
             ))}
           </div>
         ) : news.error ? (
-          <p className="py-20 text-center text-zinc-500">We couldn&apos;t load the news. Please refresh the page.</p>
+          <p className="py-20 text-center text-muted-foreground">We couldn&apos;t load the news. Please refresh the page.</p>
         ) : !posts.length ? (
           <div className="py-20 text-center">
-            <p className="text-lg font-bold text-zinc-950">No news yet</p>
-            <p className="mt-1 text-zinc-500">Our first posts are on their way.</p>
+            <p className="text-lg font-bold text-foreground">No news yet</p>
+            <p className="mt-1 text-muted-foreground">Our first posts are on their way.</p>
           </div>
         ) : (
           <>
@@ -71,7 +71,7 @@ export default function NewsPage() {
                   type="button"
                   onClick={() => void news.fetchNextPage()}
                   disabled={news.isFetchingNextPage}
-                  className="h-11 rounded-full border border-zinc-200 bg-white px-6 text-sm font-bold text-zinc-900 hover:bg-zinc-50 disabled:opacity-60"
+                  className="h-11 rounded-full border border-border bg-card px-6 text-sm font-bold text-foreground hover:bg-muted disabled:opacity-60"
                 >
                   {news.isFetchingNextPage ? "Loading…" : "Show more"}
                 </button>

@@ -32,10 +32,10 @@ const TABS: { value: string | undefined; label: string }[] = [
 ];
 
 const PHASE_STYLE: Record<string, string> = {
-  in_review: "bg-amber-50 text-amber-800",
-  paused: "bg-amber-50 text-amber-800",
-  live: "bg-emerald-50 text-emerald-700",
-  scheduled: "bg-sky-50 text-sky-800",
+  in_review: "bg-warning-soft text-warning",
+  paused: "bg-warning-soft text-warning",
+  live: "bg-success-soft text-success",
+  scheduled: "bg-info-soft text-info",
 };
 
 const when = (iso: string) =>
@@ -77,7 +77,7 @@ const BoostItem: React.FC<{ boost: IBoost }> = ({ boost }) => {
             </Link>
             <span
               className={cn(
-                "rounded-full px-2 py-0.5 text-[11px] font-bold capitalize",
+                "rounded-full px-2 py-0.5 text-2xs font-bold capitalize",
                 PHASE_STYLE[boost.phase] ?? "bg-muted text-muted-foreground",
               )}
             >
@@ -93,12 +93,12 @@ const BoostItem: React.FC<{ boost: IBoost }> = ({ boost }) => {
             · {when(boost.startsAt)} → {when(boost.endsAt)}
           </p>
           {boost.reviewReasons.length > 0 && boost.phase === "in_review" && (
-            <p className="text-sm text-amber-800">
+            <p className="text-sm text-warning">
               Why it&apos;s here: {boost.reviewReasons.join(" · ")}
             </p>
           )}
           {boost.pausedReason && boost.phase === "paused" && (
-            <p className="text-sm text-amber-800">{boost.pausedReason}</p>
+            <p className="text-sm text-warning">{boost.pausedReason}</p>
           )}
         </div>
         <div className="shrink-0 text-sm sm:text-right">
@@ -144,7 +144,7 @@ const BoostItem: React.FC<{ boost: IBoost }> = ({ boost }) => {
               variant="outline"
               disabled={busy}
               onClick={() => setAsking("stop")}
-              className="text-red-600"
+              className="text-danger"
             >
               Stop and refund unused days
             </Button>

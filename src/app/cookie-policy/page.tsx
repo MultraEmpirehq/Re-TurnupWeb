@@ -96,7 +96,7 @@ const Table = ({ rows }: { rows: TRow[] }) => (
 );
 
 const Card = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <article className="rounded-[1.6rem] border border-secondary-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+  <article className="rounded-3xl border border-secondary-100 bg-card p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
     <h2 className="text-xl font-bold text-secondary-950">{title}</h2>
     {children}
   </article>

@@ -14,7 +14,7 @@ const BackToAccount = () => {
     <Link
       href={dashboard ? ROUTES.DASHBOARD.href : ROUTES.USER_PROFILE.href}
       aria-label={dashboard ? "Back to your dashboard" : "Back to your profile"}
-      className="flex size-10 items-center justify-center rounded-full border border-secondary-100 bg-white text-secondary-700 hover:bg-secondary-50"
+      className="flex size-10 items-center justify-center rounded-full border border-secondary-100 bg-card text-secondary-700 hover:bg-secondary-50"
     >
       <ArrowLeft className="size-4" />
     </Link>

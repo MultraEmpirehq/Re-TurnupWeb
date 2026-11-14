@@ -14,7 +14,7 @@ const SponsorShowToggle = ({
   <div
     role="radiogroup"
     aria-label="Show on the sponsor board"
-    className={cn("inline-flex rounded-full bg-secondary-50 p-0.5 text-[11px] font-semibold", className)}
+    className={cn("inline-flex rounded-full bg-secondary-50 p-0.5 text-2xs font-semibold", className)}
   >
     {(
       [
@@ -30,7 +30,7 @@ const SponsorShowToggle = ({
         onClick={() => onChange(value)}
         className={cn(
           "rounded-full px-2.5 py-0.5 transition-colors",
-          showName === value ? "bg-white text-secondary-950 shadow-sm" : "text-muted-foreground",
+          showName === value ? "bg-card text-secondary-950 shadow-sm" : "text-muted-foreground",
         )}
       >
         {label}

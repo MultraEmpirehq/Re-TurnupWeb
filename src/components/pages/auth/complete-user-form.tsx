@@ -340,7 +340,7 @@ const CompleteUserForm = () => {
             <>
               {isValidatingUserName && <Spinner className="size-4" />}
               {!isValidatingUserName && isUserNameValid && (
-                <CheckIcon className="size-4 text-emerald-600" />
+                <CheckIcon className="size-4 text-success" />
               )}
             </>
           }
@@ -421,7 +421,7 @@ const CompleteUserForm = () => {
             invite.state === "checking" ? (
               <Spinner className="size-4" />
             ) : invite.state === "ok" ? (
-              <CheckIcon className="size-4 text-emerald-600" />
+              <CheckIcon className="size-4 text-success" />
             ) : null
           }
           {...register("inviteCode")}

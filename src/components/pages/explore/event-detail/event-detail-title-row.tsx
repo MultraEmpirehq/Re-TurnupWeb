@@ -52,7 +52,7 @@ const EventDetailTitleRow = ({
             aria-label={copied ? "Copied" : "Copy link"}
           >
             {copied ? (
-              <Check className="size-4 text-green-600" />
+              <Check className="size-4 text-success" />
             ) : (
               <Share2 className="size-4" />
             )}

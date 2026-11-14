@@ -172,7 +172,7 @@ const TicketsPage = () => {
       {incoming > 0 && (
         <Link
           href={`${ROUTES.PROFILE_TICKETS.href}?tab=received`}
-          className="block rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-900 hover:bg-sky-100/70"
+          className="block rounded-2xl border border-info-line bg-info-soft px-4 py-3 text-sm text-info hover:bg-info-soft/70"
         >
           {incoming === 1
             ? "Someone sent you a ticket."

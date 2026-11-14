@@ -100,7 +100,7 @@ export const PlaceResults = memo(function PlaceResults() {
       {shown.map((item) => (
         <div
           key={item.countryCode}
-          className="space-y-3 rounded-3xl bg-white p-5 ring-1 ring-black/5"
+          className="space-y-3 rounded-3xl bg-card p-5 ring-1 ring-black/5"
         >
           <button
             type="button"

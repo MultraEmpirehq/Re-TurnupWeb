@@ -31,7 +31,7 @@ import {
   useForm,
   type UseFormReturn,
 } from "react-hook-form";
-import useUserStore from "@/stores/user-store";
+import useUserStore, { EUserRoles } from "@/stores/user-store";
 import { toast } from "@/lib/toast";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
@@ -85,6 +85,9 @@ const getEventYear = (date?: Date | string | null) =>
   `${(date ? new Date(date) : new Date()).getFullYear()}`;
 
 const defaultValues: TFormValues = {
+  hostId: "",
+  hostName: "",
+  hostSells: false,
   eventName: "",
   organizerName: "",
   eventDate: new Date(new Date().setDate(new Date().getDate() + 1)),
@@ -214,6 +217,8 @@ const buildEventFormData = async (
     body.eventCountryCode || body.eventCountry,
   );
   formData.append("status", status);
+  // Admins only: who it's for. Fixed by the first save, so sent just then.
+  if (body.hostId && !editing) formData.append("hostId", body.hostId);
   formData.append("eventName", body.eventName);
   formData.append("organizerName", body.organizerName);
   formData.append(
@@ -437,6 +442,7 @@ const CreateEvent = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const userDetails = useUserStore((state) => state.userDetails);
+  const isAdmin = userDetails?.role === EUserRoles.ADMIN;
   // A copy kept in this browser as they type, brought back after a refresh.
   const [restored, setRestored] = useState<{
     savedAt: string;
@@ -552,6 +558,9 @@ const CreateEvent = () => {
             ...defaultValues,
             eventName: draftEvent.name ?? "",
             organizerName: draftEvent.organizerName ?? "",
+            // Who it's for, shown (fixed) to an admin who reopens the draft.
+            hostId: draftEvent.hostedByTurnupz ? "turnupz" : draftEvent.isOwner ? "" : "organiser",
+            hostName: draftEvent.organizerName ?? "",
             eventDate: draftEvent.date
               ? instantToWallTimeInZone(draftEvent.date, draftEvent.timezone)
               : defaultValues.eventDate,
@@ -796,6 +805,10 @@ const CreateEvent = () => {
   );
 
   const advanceStep = useCallback(async () => {
+    if (isAdmin && !draftId && !form.getValues("hostId")) {
+      toast.error("Choose who's hosting first: Turnupz, or an organiser.");
+      return;
+    }
     if (step < 4) {
       const nextStep = step + 1;
       activeStepRef.current = nextStep;
@@ -905,8 +918,14 @@ const CreateEvent = () => {
       setStep(1);
       setDraftId(null);
       form.reset({ ...defaultValues, eventTimezone: defaultEventTimezone() });
+      const forOrganiser = isAdmin && body.hostId && body.hostId !== "turnupz";
       // Waiting for review only if an admin check is ever turned on; otherwise live.
-      if (response.data?.data?.status === "pending_review") {
+      if (forOrganiser) {
+        toast.success(`Saved for ${body.hostName || "the organiser"}`, {
+          description:
+            "It's a draft in their events. They've been told to check it and publish.",
+        });
+      } else if (response.data?.data?.status === "pending_review") {
         toast.success("Event created", {
           description: "It goes live once it's been checked.",
         });
@@ -916,7 +935,9 @@ const CreateEvent = () => {
         });
       }
       // Done here: back to the dashboard with a clean form for next time.
-      router.push(ROUTES.DASHBOARD.href);
+      router.push(
+        isAdmin ? `${ROUTES.ADMIN_OVERVIEW.href}/events` : ROUTES.DASHBOARD.href,
+      );
     } catch (error) {
       const err = error as TApiErrorResponseType;
       console.error("Create event failed", {
@@ -929,7 +950,7 @@ const CreateEvent = () => {
         constructErrorMessage(err, "Something went wrong while creating event"),
       );
     }
-  }, [draftId, form, router, saveDraft, step, useMockEvents, userDetails]);
+  }, [draftId, form, isAdmin, router, saveDraft, step, useMockEvents, userDetails]);
 
   // Every step saves before it moves on, so the steps share one saving flag for
   // their button loaders and a second click can't send the same save twice.

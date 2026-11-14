@@ -56,7 +56,7 @@ const Row: React.FC<{
     </>
   );
   return (
-    <li className="flex items-center gap-3 rounded-2xl bg-white p-3 ring-1 ring-black/5">
+    <li className="flex items-center gap-3 rounded-2xl bg-card p-3 ring-1 ring-black/5">
       <PerformerAvatar name={name} image={image} className="size-12" />
       {href ? (
         <Link
@@ -195,7 +195,7 @@ const FollowingPage = () => {
         <div
           role="tablist"
           aria-label="Connections"
-          className="flex gap-1 rounded-full border border-secondary-100 bg-white p-1"
+          className="flex gap-1 rounded-full border border-secondary-100 bg-card p-1"
         >
           {tabs.map((item) => (
             <button

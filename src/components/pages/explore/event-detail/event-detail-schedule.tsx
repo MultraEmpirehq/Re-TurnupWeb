@@ -37,7 +37,7 @@ const EventDetailSchedule: React.FC<{
 
       <ol className="space-y-4">
         {days.map((day, index) => (
-          <li key={day.id} className="rounded-2xl bg-white p-4 ring-1 ring-black/5 sm:p-5">
+          <li key={day.id} className="rounded-2xl bg-card p-4 ring-1 ring-black/5 sm:p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <h4 className="font-semibold">
                 <span className="mr-2 text-xs font-bold tracking-wider text-primary uppercase">
@@ -58,7 +58,7 @@ const EventDetailSchedule: React.FC<{
                 {day.performers.map((performer) => (
                   <div key={performer.id} className="relative">
                     {performer.isHeadliner && day.performers!.length > 1 && (
-                      <span className="absolute -top-2 right-3 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase">
+                      <span className="absolute -top-2 right-3 z-10 rounded-full bg-primary px-2 py-0.5 text-2xs font-bold tracking-wider text-white uppercase">
                         Headliner
                       </span>
                     )}

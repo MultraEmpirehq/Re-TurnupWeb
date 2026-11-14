@@ -26,7 +26,7 @@ export default function BlogsPage() {
             Line-ups, news and behind-the-scenes from the organisers of events
             on Turnupz.
           </p>
-          <label className="mt-6 flex h-12 max-w-md items-center gap-2 rounded-full bg-white px-4 text-zinc-900">
+          <label className="mt-6 flex h-12 max-w-md items-center gap-2 rounded-full bg-card px-4 text-foreground">
             <Search className="size-4 text-zinc-400" />
             <input
               value={query}
@@ -44,20 +44,20 @@ export default function BlogsPage() {
             {Array.from({ length: 6 }).map((_, index) => (
               <div
                 key={index}
-                className="h-80 animate-pulse rounded-2xl bg-white"
+                className="h-80 animate-pulse rounded-2xl bg-card"
               />
             ))}
           </div>
         ) : blogs.error ? (
-          <p className="py-20 text-center text-zinc-500">
+          <p className="py-20 text-center text-muted-foreground">
             We couldn&apos;t load blogs. Please refresh the page.
           </p>
         ) : !posts.length ? (
           <div className="py-20 text-center">
-            <p className="text-lg font-bold text-zinc-950">
+            <p className="text-lg font-bold text-foreground">
               {query ? "No blogs match that" : "No blogs yet"}
             </p>
-            <p className="mt-1 text-zinc-500">
+            <p className="mt-1 text-muted-foreground">
               {query
                 ? "Try another word."
                 : "When organisers post updates about their events, you'll find them here."}
@@ -76,7 +76,7 @@ export default function BlogsPage() {
                   type="button"
                   onClick={() => void blogs.fetchNextPage()}
                   disabled={blogs.isFetchingNextPage}
-                  className="h-11 rounded-full border border-zinc-200 bg-white px-6 text-sm font-bold text-zinc-900 hover:bg-zinc-50 disabled:opacity-60"
+                  className="h-11 rounded-full border border-border bg-card px-6 text-sm font-bold text-foreground hover:bg-muted disabled:opacity-60"
                 >
                   {blogs.isFetchingNextPage ? "Loading…" : "Show more"}
                 </button>

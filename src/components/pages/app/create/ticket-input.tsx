@@ -498,7 +498,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                 control={control}
                 name="transferable"
                 render={({ field }) => (
-                  <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-white px-3 text-sm text-secondary-700">
+                  <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-card px-3 text-sm text-secondary-700">
                     <input
                       type="checkbox"
                       checked={!!field.value}
@@ -527,7 +527,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                       "rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
                       active
                         ? "border-secondary-800 bg-secondary-800 text-white"
-                        : "border-secondary-200 bg-white text-secondary-600 hover:border-secondary-400",
+                        : "border-secondary-200 bg-card text-secondary-600 hover:border-secondary-400",
                     );
                   return (
                     <fieldset className="col-span-full space-y-2">
@@ -581,7 +581,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                   variant="outline"
                   size="sm"
                   type="button"
-                  className="inline-flex items-center gap-2 border-red-300 text-xs text-red-500"
+                  className="inline-flex items-center gap-2 border-danger-line text-xs text-danger"
                   onClick={closeForm}
                 >
                   Cancel

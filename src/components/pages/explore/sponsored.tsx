@@ -74,7 +74,7 @@ const useSeen = (events: TSponsoredEvent[]) => {
 const SponsoredTag: React.FC<{ className?: string }> = ({ className }) => (
   <span
     className={cn(
-      "rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur",
+      "rounded-full bg-black/55 px-2.5 py-1 text-2xs font-bold text-white backdrop-blur",
       className,
     )}
   >
@@ -110,7 +110,7 @@ export const SponsoredRow: React.FC<{
             key={event.id}
             href={hrefOf(event)}
             onClick={() => recordClick(event.boostId)}
-            className="group overflow-hidden rounded-2xl bg-white ring-2 ring-primary/60 transition-shadow hover:shadow-lg"
+            className="group overflow-hidden rounded-2xl bg-card ring-2 ring-primary/60 transition-shadow hover:shadow-lg"
           >
             <span className="relative block aspect-[16/9] bg-secondary-100">
               <CustomImageComponent
@@ -122,7 +122,7 @@ export const SponsoredRow: React.FC<{
               />
               <SponsoredTag className="absolute top-3 left-3" />
               {event.momentum?.sellingFast && (
-                <span className="absolute top-3 right-3 rounded-full bg-orange-500 px-2.5 py-1 text-[11px] font-extrabold text-white">
+                <span className="absolute top-3 right-3 rounded-full bg-warning-solid px-2.5 py-1 text-2xs font-extrabold text-white">
                   🔥 Selling fast
                 </span>
               )}
@@ -192,7 +192,7 @@ export const FeaturedBoost: React.FC<{ countryCode?: string; city?: string }> =
         <Link
           href={hrefOf(event)}
           onClick={() => recordClick(event.boostId)}
-          className="group relative block h-[340px] overflow-hidden rounded-[28px] bg-secondary-900 sm:h-[400px]"
+          className="group relative block h-[340px] overflow-hidden rounded-3xl bg-secondary-900 sm:h-[400px]"
         >
           <CustomImageComponent
             src={(event.image || event.medias?.[0])!}
@@ -205,7 +205,7 @@ export const FeaturedBoost: React.FC<{ countryCode?: string; city?: string }> =
           <SponsoredTag className="absolute top-5 right-5" />
           <span className="absolute bottom-7 left-7 max-w-[min(560px,80%)] space-y-3 text-white">
             {event.momentum?.sellingFast && (
-              <span className="inline-block rounded-full bg-orange-500 px-2.5 py-1 text-xs font-extrabold">
+              <span className="inline-block rounded-full bg-warning-solid px-2.5 py-1 text-xs font-extrabold">
                 🔥 Selling fast
               </span>
             )}
@@ -216,7 +216,7 @@ export const FeaturedBoost: React.FC<{ countryCode?: string; city?: string }> =
               {whenOf(event)}
               {placeOf(event) ? ` · ${placeOf(event)}` : ""}
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-sm font-extrabold text-[#06142e]">
+            <span className="inline-flex items-center gap-1.5 rounded-xl bg-card px-4 py-2 text-sm font-extrabold text-[#06142e]">
               Get tickets
               {price?.formatted?.withCurrency
                 ? ` · from ${price.formatted.withCurrency}`
@@ -233,7 +233,7 @@ export const FeaturedBoost: React.FC<{ countryCode?: string; city?: string }> =
                 <span
                   key={item.id}
                   className={cn(
-                    "h-1.5 rounded-full bg-white",
+                    "h-1.5 rounded-full bg-card",
                     dot === index % events.length ? "w-6" : "w-1.5 opacity-50",
                   )}
                 />

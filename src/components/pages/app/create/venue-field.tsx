@@ -1,5 +1,6 @@
 "use client";
 
+import AddressField from "@/components/ui/address-field";
 import InputField from "@/components/ui/input-field";
 import { useVenues } from "@/hooks/use-venue";
 import { MapPin } from "lucide-react";
@@ -91,8 +92,8 @@ const VenueField: React.FC<{
           }
         />
         {showSuggestions && (
-          <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-secondary-100 bg-white shadow-lg">
-            <li className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-secondary-400 uppercase">
+          <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-secondary-100 bg-card shadow-lg">
+            <li className="px-3 pt-2 pb-1 text-2xs font-semibold tracking-wide text-secondary-400 uppercase">
               From the venue directory
             </li>
             {suggestions.map((venue) => (
@@ -149,12 +150,11 @@ const VenueField: React.FC<{
       ) : (
         venueName.trim() && (
           <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
-            <InputField
+            <AddressField
               label="Venue address (optional)"
               placeholder="Street, area — helps people find it"
               value={venueAddress}
-              autoComplete="off"
-              onChange={(event) => onTypeAddress(event.target.value)}
+              onChange={onTypeAddress}
               helperText="Not in our directory yet? It still shows on your event; our team adds it after a quick check."
             />
             {onTypeCapacity && (

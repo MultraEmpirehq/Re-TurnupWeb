@@ -77,7 +77,7 @@ const ChatDetails: React.FC<{
       </div>
 
       {kind === "EVENT_GROUP" && chat.eventId && (
-        <div className="space-y-3 rounded-2xl border border-secondary-100 bg-white p-4">
+        <div className="space-y-3 rounded-2xl border border-secondary-100 bg-card p-4">
           <p className="text-xs font-bold tracking-wide text-secondary-400 uppercase">
             The event
           </p>

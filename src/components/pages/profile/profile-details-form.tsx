@@ -101,7 +101,7 @@ const roleLabels: Record<EUserRoles, string> = {
 };
 
 const cardClassName =
-  "rounded-[1.75rem] border border-secondary-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-8";
+  "rounded-3xl border border-secondary-100 bg-card p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-8";
 
 /**
  * The signed-in user's photo and personal details, saved to the api. Shared by the
@@ -254,15 +254,12 @@ const ProfileDetailsForm = ({ embedded = false }: { embedded?: boolean }) => {
     // account page gives it the full width, the dashboard a narrower column.
     <div className="@container space-y-6">
       {/* Who they are: photo, name, how they sign in. */}
-      <section className="overflow-hidden rounded-[1.75rem] border border-secondary-100 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-        <div
-          aria-hidden
-          className="h-28 bg-linear-to-r from-secondary-400 via-primary-300 to-primary sm:h-36"
-        />
-        <div className="flex flex-col gap-5 px-6 pb-6 sm:px-8 @3xl:flex-row @3xl:items-end @3xl:justify-between">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="relative -mt-12 w-fit shrink-0 sm:-mt-14">
-              <Avatar className="size-24 rounded-[1.75rem] ring-4 ring-white shadow-md sm:size-28">
+      <section className="overflow-hidden rounded-3xl border border-secondary-100 bg-card shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+        {/* One slim row: the details below are what people come here for. */}
+        <div className="flex items-center justify-between gap-4 border-t-4 border-primary p-4 sm:px-6">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="relative w-fit shrink-0">
+              <Avatar className="size-16 rounded-2xl ring-2 ring-white shadow-sm sm:size-[4.5rem]">
                 <AvatarImage
                   src={
                     resolveAttachmentUrl(
@@ -273,7 +270,7 @@ const ProfileDetailsForm = ({ embedded = false }: { embedded?: boolean }) => {
                   alt={displayName}
                   className="object-cover"
                 />
-                <AvatarFallback className="rounded-[1.75rem] bg-secondary-800 text-2xl font-semibold text-white">
+                <AvatarFallback className="rounded-2xl bg-secondary-800 text-xl font-semibold text-white">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -281,10 +278,10 @@ const ProfileDetailsForm = ({ embedded = false }: { embedded?: boolean }) => {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploadingAvatar}
-                className="absolute -right-1 -bottom-1 flex size-9 cursor-pointer items-center justify-center rounded-full bg-secondary-400 text-white ring-4 ring-white transition-colors hover:bg-secondary-500 disabled:opacity-50"
+                className="absolute -right-1.5 -bottom-1.5 flex size-7 cursor-pointer items-center justify-center rounded-full bg-secondary-400 text-white ring-2 ring-white transition-colors hover:bg-secondary-500 disabled:opacity-50"
                 aria-label="Upload profile photo"
               >
-                <Camera className="size-4" />
+                <Camera className="size-3.5" />
               </button>
               <input
                 ref={fileInputRef}
@@ -295,11 +292,11 @@ const ProfileDetailsForm = ({ embedded = false }: { embedded?: boolean }) => {
                 aria-label="Upload profile photo"
               />
             </div>
-            <div className="min-w-0 pb-1">
-              <h1 className="truncate text-2xl font-bold text-secondary-950 sm:text-3xl">
+            <div className="min-w-0">
+              <h2 className="truncate text-lg font-bold text-secondary-950 sm:text-xl">
                 {displayName}
-              </h1>
-              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-secondary-500">
+              </h2>
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-secondary-500">
                 {userDetails?.username && <span>@{userDetails.username}</span>}
                 {memberSince && (
                   <span className="inline-flex items-center gap-1.5">
@@ -311,7 +308,7 @@ const ProfileDetailsForm = ({ embedded = false }: { embedded?: boolean }) => {
             </div>
           </div>
           {userDetails?.role && (
-            <span className="w-fit rounded-full bg-secondary-50 px-4 py-2 text-sm font-medium text-secondary-700">
+            <span className="hidden w-fit shrink-0 rounded-full bg-secondary-50 px-3 py-1.5 text-xs font-medium text-secondary-700 sm:inline-block">
               {roleLabels[userDetails.role]}
             </span>
           )}
@@ -468,7 +465,7 @@ const ProfileDetailsForm = ({ embedded = false }: { embedded?: boolean }) => {
                       Not verified yet
                     </p>
                   ) : (
-                    <p className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-700">
+                    <p className="mt-1 inline-flex items-center gap-1 text-xs text-success">
                       <BadgeCheck className="size-3.5" />
                       Verified · used to sign in
                     </p>
@@ -500,7 +497,7 @@ const ProfileDetailsForm = ({ embedded = false }: { embedded?: boolean }) => {
           </section>
 
           {!isAdmin && (
-            <section className="rounded-[1.75rem] bg-secondary-50 p-6 sm:p-8">
+            <section className="rounded-3xl bg-secondary-50 p-6 sm:p-8">
               <div className="flex items-start gap-3">
                 <CircleHelp className="mt-0.5 size-5 shrink-0 text-secondary-500" />
                 <div>

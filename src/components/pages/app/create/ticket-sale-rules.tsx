@@ -137,7 +137,7 @@ const TicketSaleRulesFields: React.FC<{
                   : null,
               })
             }
-            className="h-11 rounded-xl border-secondary-200 bg-white"
+            className="h-11 rounded-xl border-secondary-200 bg-card"
           />
         </label>
       </div>

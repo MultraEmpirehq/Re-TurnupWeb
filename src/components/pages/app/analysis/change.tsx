@@ -27,8 +27,8 @@ const Change: React.FC<{
       <span
         className={cn(
           "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold",
-          value > 0 && "bg-emerald-50 text-emerald-700",
-          value < 0 && "bg-red-50 text-red-700",
+          value > 0 && "bg-success-soft text-success",
+          value < 0 && "bg-danger-soft text-danger",
           value === 0 && "bg-secondary-50 text-secondary-600",
         )}
       >

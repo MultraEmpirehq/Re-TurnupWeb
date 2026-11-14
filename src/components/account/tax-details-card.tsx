@@ -31,7 +31,7 @@ const REVIEW: Record<string, string> = {
   CONFIRMED: "Confirmed",
   REJECTED: "Needs another look",
 };
-const field = "h-11 w-full rounded-xl border border-secondary-100 bg-white px-3 text-sm";
+const field = "h-11 w-full rounded-xl border border-secondary-100 bg-card px-3 text-sm";
 
 const failed = (error: unknown, fallback: string) =>
   toast.error(constructErrorMessage(error as TApiErrorResponseType, fallback));
@@ -91,7 +91,7 @@ const Registration: React.FC<{
         />
       )}
       {saved?.reviewStatus === "REJECTED" && saved.reviewNote && (
-        <p className="text-sm text-red-700">{saved.reviewNote}</p>
+        <p className="text-sm text-danger">{saved.reviewNote}</p>
       )}
       {changed && !!status && (
         <Button size="sm" onClick={save} disabled={saving || (status === "REGISTERED" && !number.trim())}>
@@ -200,7 +200,7 @@ const TaxDetailsCard = ({ sellsIn = [] }: { sellsIn?: string[] }) => {
   );
   const hidden = data.countries.length - shown.length;
   return (
-    <section className="space-y-5 rounded-[1.5rem] border border-secondary-100 bg-white p-6">
+    <section className="space-y-5 rounded-3xl border border-secondary-100 bg-card p-6">
       <div className="flex items-start gap-3">
         <span className="rounded-xl bg-secondary-50 p-2.5 text-secondary">
           <Receipt className="size-5" aria-hidden />
@@ -262,7 +262,7 @@ const TaxDetailsCard = ({ sellsIn = [] }: { sellsIn?: string[] }) => {
               {COUNTRY[row.countryCode] ?? row.countryCode} · {row.event?.name ?? "All your events there"}
             </p>
             <p className="text-secondary-500">{REVIEW[row.status]}</p>
-            {row.reviewNote && <p className="text-red-700">{row.reviewNote}</p>}
+            {row.reviewNote && <p className="text-danger">{row.reviewNote}</p>}
           </div>
         ))}
       </div>

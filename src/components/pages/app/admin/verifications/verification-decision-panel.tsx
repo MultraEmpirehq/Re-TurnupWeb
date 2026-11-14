@@ -98,10 +98,10 @@ const STATE_BADGE: Record<TLevelState, string> = {
 };
 
 const STATE_STYLE: Record<TLevelState, string> = {
-  match: "bg-emerald-50 text-emerald-700",
+  match: "bg-success-soft text-success",
   lower: "bg-secondary-50 text-secondary-700",
   not_applied: "bg-secondary-50 text-secondary-700",
-  blocked: "bg-red-50 text-red-700",
+  blocked: "bg-danger-soft text-danger",
   hold: "bg-muted text-muted-foreground",
 };
 
@@ -328,7 +328,7 @@ const VerificationDecisionPanel: React.FC<{
                     <span className="text-sm font-medium">{level.label}</span>
                     <span
                       className={cn(
-                        "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                        "shrink-0 rounded-full px-2 py-0.5 text-2xs font-medium",
                         STATE_STYLE[state],
                       )}
                     >
@@ -343,7 +343,7 @@ const VerificationDecisionPanel: React.FC<{
                       className={cn(
                         "mt-1 block text-xs",
                         state === "blocked"
-                          ? "text-red-700"
+                          ? "text-danger"
                           : "text-secondary-700",
                       )}
                     >
@@ -378,7 +378,7 @@ const VerificationDecisionPanel: React.FC<{
                     )}
                   >
                     {allowed ? (
-                      <Check className="size-3.5 text-emerald-600" />
+                      <Check className="size-3.5 text-success" />
                     ) : (
                       <X className="size-3.5 text-muted-foreground" />
                     )}

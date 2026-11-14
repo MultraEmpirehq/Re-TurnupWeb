@@ -23,7 +23,7 @@ export const AnalyticsHeader: React.FC<{
 }> = ({ title, description, period, setPeriod, paidOnly, setPaidOnly, onExport }) => (
   <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
     <div className="space-y-1">
-      <h1 className="text-xl font-bold text-secondary-800 dark:text-foreground">{title}</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{title}</h1>
       <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
     </div>
     <div className="flex flex-wrap items-center gap-2">
@@ -74,7 +74,7 @@ export const EventsTable: React.FC<{ rows: IAnalyticsEvent[]; compact?: boolean 
   <div className="overflow-x-auto">
     <table className={cn("w-full text-sm", !compact && "min-w-[760px]")}>
       <thead>
-        <tr className="border-b border-border text-left text-[11px] tracking-wider text-muted-foreground uppercase">
+        <tr className="border-b border-border text-left text-2xs tracking-wider text-muted-foreground uppercase">
           <th className="py-2 pr-3 font-semibold">Event</th>
           <th className="py-2 pr-3 text-right font-semibold">Views</th>
           {!compact && <th className="py-2 pr-3 text-right font-semibold">Opened tickets</th>}

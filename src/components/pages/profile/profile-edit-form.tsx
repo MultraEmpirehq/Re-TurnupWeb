@@ -95,7 +95,7 @@ const schema = Joi.object({
 });
 
 const card =
-  "rounded-[1.75rem] border border-secondary-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-8";
+  "rounded-3xl border border-secondary-100 bg-card p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-8";
 
 const Group: React.FC<{
   title: string;
@@ -208,12 +208,12 @@ const ProfileEditForm = () => {
           type="button"
           onClick={leave}
           aria-label="Back to your profile"
-          className="flex size-10 items-center justify-center rounded-full border border-secondary-100 bg-white text-secondary-700 hover:bg-secondary-50"
+          className="flex size-10 items-center justify-center rounded-full border border-secondary-100 bg-card text-secondary-700 hover:bg-secondary-50"
         >
           <ArrowLeft className="size-4" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-secondary-950">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Edit profile
           </h1>
           <p className="text-sm text-secondary-500">
@@ -367,7 +367,7 @@ const ProfileEditForm = () => {
                     <CircleAlert className="size-3.5" /> Not verified yet
                   </p>
                 ) : (
-                  <p className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-700">
+                  <p className="mt-1 inline-flex items-center gap-1 text-xs text-success">
                     <BadgeCheck className="size-3.5" /> Verified · used to sign
                     in
                   </p>
@@ -385,7 +385,7 @@ const ProfileEditForm = () => {
               </Link>
             </Button>
           </section>
-          <section className="rounded-[1.75rem] bg-secondary-50 p-6 sm:p-8">
+          <section className="rounded-3xl bg-secondary-50 p-6 sm:p-8">
             <div className="flex items-start gap-3">
               <CircleHelp className="mt-0.5 size-5 shrink-0 text-secondary-500" />
               <div>

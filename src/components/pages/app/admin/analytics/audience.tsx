@@ -26,7 +26,7 @@ const SignupsChart: React.FC<{ months: IAnalyticsAudience["months"] }> = ({ mont
           return (
             <div key={month.month} className="group relative flex h-full flex-1 items-end justify-center">
               <div
-                className="flex w-full max-w-10 flex-col gap-[2px] transition-opacity group-hover:opacity-90"
+                className="flex w-full max-w-10 flex-col gap-0.5 transition-opacity group-hover:opacity-90"
                 style={{ height: `${total ? Math.max((total / max) * 100, 1.5) : 0}%` }}
               >
                 {month.organisers > 0 && (
@@ -53,7 +53,7 @@ const SignupsChart: React.FC<{ months: IAnalyticsAudience["months"] }> = ({ mont
       </div>
       <div className="mt-2 flex gap-1.5">
         {months.map((month) => (
-          <span key={month.month} className="flex-1 text-center text-[11px] text-muted-foreground">
+          <span key={month.month} className="flex-1 text-center text-2xs text-muted-foreground">
             {monthLabel(month.month)}
           </span>
         ))}
@@ -166,7 +166,7 @@ const Audience = () => {
                   <Skeleton className="h-10 w-full" />
                 ) : app + web ? (
                   <>
-                    <div className="flex h-2.5 gap-[2px]">
+                    <div className="flex h-2.5 gap-0.5">
                       {app > 0 && <div className="rounded-l-full bg-series-1" style={{ flexGrow: app, flexBasis: 0 }} />}
                       {web > 0 && <div className="rounded-r-full bg-series-2" style={{ flexGrow: web, flexBasis: 0 }} />}
                     </div>
@@ -191,7 +191,7 @@ const Audience = () => {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[520px] text-sm">
                   <thead>
-                    <tr className="text-[11px] tracking-wider text-muted-foreground uppercase">
+                    <tr className="text-2xs tracking-wider text-muted-foreground uppercase">
                       <th className="py-2 text-left font-semibold">First bought</th>
                       <th className="py-2 text-right font-semibold">Buyers</th>
                       {["+1 month", "+2 months", "+3 months"].map((label) => (

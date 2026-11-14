@@ -33,7 +33,7 @@ export const NovuInbox = () => {
         asChild
         size="icon"
         variant="outline"
-        className="relative rounded-full border-secondary-100 bg-white text-secondary-600 shadow-none hover:bg-secondary-50"
+        className="relative rounded-full border-secondary-100 bg-card text-secondary-600 shadow-none hover:bg-secondary-50"
       >
         <Link
           href={ROUTES.NOTIFICATIONS.href}
@@ -47,7 +47,7 @@ export const NovuInbox = () => {
           {unreadCount > 0 && (
             <span
               aria-hidden
-              className="absolute -top-1 -right-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white"
+              className="absolute -top-1 -right-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-2xs font-semibold leading-none text-white ring-2 ring-white"
             >
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>

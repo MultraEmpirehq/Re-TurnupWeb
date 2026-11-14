@@ -19,7 +19,7 @@ const EventCardComponent: React.FC<
       : `${ROUTES.EXPLORE.href}/event/${id}`;
   }, [id, isDashboard]);
   return (
-    <div className="flex-col flex items-start bg-white dark:bg-secondary-950 gap-4 text-secondary-950 dark:text-white">
+    <div className="flex-col flex items-start bg-card dark:bg-secondary-950 gap-4 text-secondary-950 dark:text-white">
       <Link
         href={eventDetailsURL}
         className="w-full aspect-video bg-cover relative rounded-lg overflow-hidden border border-black/5"

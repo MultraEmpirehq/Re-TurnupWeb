@@ -94,21 +94,21 @@ const WorkspaceSwitcher: React.FC<{ className?: string }> = ({ className }) => {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "flex w-full items-center gap-2.5 rounded-xl border border-border bg-white p-2 text-left transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-secondary",
+          "flex w-full items-center gap-2.5 rounded-xl border border-border bg-card p-2 text-left transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-secondary",
           className,
         )}
       >
         <Avatar className="size-8 rounded-lg">
           <AvatarImage src={active ? (active.image ?? undefined) : userDetails?.avatar} />
-          <AvatarFallback className="rounded-lg bg-secondary-800 text-[11px] font-semibold text-white">
+          <AvatarFallback className="rounded-lg bg-secondary-800 text-2xs font-semibold text-white">
             {initialsOf(label)}
           </AvatarFallback>
         </Avatar>
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-[13px] font-semibold text-foreground">
+          <span className="truncate text-sm font-semibold text-foreground">
             {label}
           </span>
-          <span className="truncate text-[11px] text-muted-foreground">
+          <span className="truncate text-2xs text-muted-foreground">
             {active ? "Team workspace" : "Your account"}
           </span>
         </span>
@@ -121,7 +121,7 @@ const WorkspaceSwitcher: React.FC<{ className?: string }> = ({ className }) => {
         <DropdownMenuItem onSelect={() => switchTo(null)} className="gap-2">
           <span className="min-w-0 flex-1 truncate">
             {ownName}
-            <span className="block text-[11px] text-muted-foreground">
+            <span className="block text-2xs text-muted-foreground">
               {isVendor ? "Your account" : "Back to my tickets"}
             </span>
           </span>
@@ -136,7 +136,7 @@ const WorkspaceSwitcher: React.FC<{ className?: string }> = ({ className }) => {
           >
             <span className="min-w-0 flex-1 truncate">
               {item.name}
-              <span className="block text-[11px] text-muted-foreground">
+              <span className="block text-2xs text-muted-foreground">
                 Team · {item.permissions.length} permission
                 {item.permissions.length === 1 ? "" : "s"}
               </span>

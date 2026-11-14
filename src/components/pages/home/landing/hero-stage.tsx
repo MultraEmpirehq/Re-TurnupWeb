@@ -85,7 +85,7 @@ const Pass = () => {
       style={{ transition: "transform 80ms linear" }}
     >
       {/* Front: the ticket. */}
-      <div className="absolute inset-0 overflow-hidden rounded-[28px] bg-linear-to-br from-secondary-400 via-secondary-600 to-primary shadow-[0_40px_90px_-30px_rgba(5,119,250,0.65)] [backface-visibility:hidden]">
+      <div className="absolute inset-0 overflow-hidden rounded-3xl bg-linear-to-br from-secondary-400 via-secondary-600 to-primary shadow-[0_40px_90px_-30px_rgba(5,119,250,0.65)] [backface-visibility:hidden]">
         {/* Light catches the surface as it leans. */}
         <div className="absolute inset-0 bg-[linear-gradient(115deg,transparent_30%,rgba(255,255,255,0.35)_48%,transparent_62%)] [transform:translateX(calc(var(--mx,0)*45%))]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(255,255,255,0.25),transparent_45%)]" />
@@ -97,12 +97,12 @@ const Pass = () => {
                 <path key={d.slice(0, 16)} d={d} fill="white" />
               ))}
             </svg>
-            <span className="rounded-full border border-white/40 px-2.5 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase">
+            <span className="rounded-full border border-white/40 px-2.5 py-0.5 text-2xs font-bold tracking-[0.2em] uppercase">
               Admit one
             </span>
           </div>
           <div className="mt-auto space-y-1">
-            <p className="text-[11px] font-semibold tracking-[0.3em] text-white/70 uppercase">
+            <p className="text-2xs font-semibold tracking-[0.3em] text-white/70 uppercase">
               Tonight
             </p>
             <p className="text-3xl leading-tight font-bold">
@@ -117,7 +117,7 @@ const Pass = () => {
             <span className="absolute -top-3 -left-9 size-6 rounded-full bg-secondary-950" />
             <span className="absolute -top-3 -right-9 size-6 rounded-full bg-secondary-950" />
           </div>
-          <div className="flex items-end justify-between gap-3 text-[10px] tracking-[0.18em] uppercase">
+          <div className="flex items-end justify-between gap-3 text-2xs tracking-[0.18em] uppercase">
             <div className="space-y-1">
               <p className="text-white/60">Gate</p>
               <p className="text-sm font-bold">A</p>
@@ -132,12 +132,12 @@ const Pass = () => {
             </div>
           </div>
           {/* A barcode, from fixed widths. */}
-          <div className="mt-4 flex h-8 items-stretch gap-[2px] opacity-90">
+          <div className="mt-4 flex h-8 items-stretch gap-0.5 opacity-90">
             {[3, 1, 2, 1, 3, 2, 1, 1, 3, 1, 2, 3, 1, 2, 1, 3, 1, 1, 2, 3, 1, 2, 1, 3, 2, 1].map(
               (width, index) => (
                 <span
                   key={index}
-                  className="bg-white"
+                  className="bg-card"
                   style={{ width, opacity: index % 4 === 3 ? 0.5 : 1 }}
                 />
               ),
@@ -147,8 +147,8 @@ const Pass = () => {
       </div>
 
       {/* Back: what the door staff scan. */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 rounded-[28px] bg-white p-8 text-secondary-950 shadow-[0_40px_90px_-30px_rgba(15,23,42,0.6)] [backface-visibility:hidden] [transform:rotateY(180deg)]">
-        <p className="text-[11px] font-bold tracking-[0.3em] text-secondary-400 uppercase">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 rounded-3xl bg-card p-8 text-secondary-950 shadow-[0_40px_90px_-30px_rgba(15,23,42,0.6)] [backface-visibility:hidden] [transform:rotateY(180deg)]">
+        <p className="text-2xs font-bold tracking-[0.3em] text-secondary-400 uppercase">
           Scan to enter
         </p>
         <div className="relative rounded-2xl bg-secondary-50 p-4">
@@ -210,7 +210,7 @@ const HeroStage: React.FC<{ className?: string }> = ({ className }) => (
                       <span className={cn("rounded-xl bg-linear-to-br p-2 text-white", chip.tone)}>
                         <Icon className="size-5" />
                       </span>
-                      <span className="text-[9px] font-semibold tracking-wide text-white/80">
+                      <span className="text-2xs font-semibold tracking-wide text-white/80">
                         {chip.label}
                       </span>
                     </div>

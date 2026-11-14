@@ -9,7 +9,7 @@ import React, { memo, useMemo } from "react";
 import useExploreFilters, { SHOW_OPTIONS, TShow } from "./use-explore-filters";
 
 const selectClassName =
-  "h-9 rounded-full bg-white px-3 pr-8 text-sm font-medium text-secondary-800 ring-1 ring-black/5 outline-none focus-visible:ring-2 focus-visible:ring-secondary";
+  "h-9 rounded-full bg-card px-3 pr-8 text-sm font-medium text-secondary-800 ring-1 ring-black/5 outline-none focus-visible:ring-2 focus-visible:ring-secondary";
 
 /**
  * Where (only places with events coming up, busiest first, so no empty picks)
@@ -97,7 +97,7 @@ const ExplorePlaceFilters = () => {
                 "h-9 rounded-full px-4 text-sm font-medium ring-1 transition-colors",
                 active
                   ? "bg-secondary-950 text-white ring-secondary-950"
-                  : "bg-white text-secondary-800 ring-black/5 hover:bg-secondary-50",
+                  : "bg-card text-secondary-800 ring-black/5 hover:bg-secondary-50",
               )}
             >
               {option.label}

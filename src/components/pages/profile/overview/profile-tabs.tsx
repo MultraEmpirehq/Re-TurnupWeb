@@ -55,7 +55,7 @@ const EventRow: React.FC<{
   <Link
     href={href}
     className={cn(
-      "group flex items-center gap-4 rounded-2xl border border-secondary-100 bg-white p-3 transition-colors hover:border-primary/40",
+      "group flex items-center gap-4 rounded-2xl border border-secondary-100 bg-card p-3 transition-colors hover:border-primary/40",
       past && "opacity-75",
     )}
   >
@@ -101,7 +101,7 @@ const Empty: React.FC<{
   title: string;
   body: string;
 }> = ({ icon: Icon, title, body }) => (
-  <div className="rounded-[1.5rem] border border-dashed border-secondary-200 bg-white px-6 py-14 text-center">
+  <div className="rounded-3xl border border-dashed border-secondary-200 bg-card px-6 py-14 text-center">
     <Icon className="mx-auto size-8 text-secondary-300" aria-hidden />
     <p className="mt-3 font-bold text-secondary-950">{title}</p>
     <p className="mx-auto mt-1 max-w-sm text-sm text-secondary-500">{body}</p>

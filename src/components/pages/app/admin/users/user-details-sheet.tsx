@@ -16,7 +16,10 @@ import React, { memo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { constructErrorMessage } from "@/api/functions";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
-import { useSetUserSuspension } from "@/hooks/use-admin-moderation";
+import {
+  useSetUserRestriction,
+  useSetUserSuspension,
+} from "@/hooks/use-admin-moderation";
 import { NoteDialog } from "../moderation/moderation-ui";
 import UserTransfers from "./user-transfers";
 import { toast } from "@/lib/toast";
@@ -90,6 +93,63 @@ const VerificationBlock: React.FC<{
   );
 };
 
+type TAccountAction = "suspend" | "reactivate" | "restrict" | "unrestrict";
+
+/** What each account action says before and after. */
+const ACCOUNT_ACTIONS: Record<
+  TAccountAction,
+  {
+    title: string;
+    description: string;
+    placeholder: string;
+    confirm: string;
+    done: string;
+    tone: "danger" | "default";
+    required: boolean;
+  }
+> = {
+  suspend: {
+    title: "Suspend this account?",
+    description:
+      "They're signed out on every device and can't sign in until reactivated. Your reason goes in the email they get.",
+    placeholder: "For example: repeated chargebacks on ticket purchases.",
+    confirm: "Suspend",
+    done: "Account suspended and signed out. They've been emailed the reason.",
+    tone: "danger",
+    required: true,
+  },
+  reactivate: {
+    title: "Reactivate this account?",
+    description:
+      "They can sign in again straight away, and get an email saying so.",
+    placeholder: "For the audit log.",
+    confirm: "Reactivate",
+    done: "Account reactivated.",
+    tone: "default",
+    required: false,
+  },
+  restrict: {
+    title: "Restrict this account?",
+    description:
+      "They can still sign in and use what they have, but can't publish new events, get or send tickets, or message (support chat stays open). An organiser's events on sale keep selling, and their share is held until you lift it. Your reason goes in the email they get and on their account.",
+    placeholder: "For example: your ID has expired and needs replacing.",
+    confirm: "Restrict",
+    done: "Account restricted. They've been emailed the reason.",
+    tone: "danger",
+    required: true,
+  },
+  unrestrict: {
+    title: "Lift the restriction?",
+    description:
+      "Everything works again straight away, and they get an email saying so. Payouts resume on new sales; anything held is paid out from Finance.",
+    placeholder: "For the audit log.",
+    confirm: "Lift restriction",
+    done: "Restriction lifted.",
+    tone: "default",
+    required: false,
+  },
+};
+
 const UserDetailsSheet: React.FC<{
   userId?: string;
   open: boolean;
@@ -98,26 +158,30 @@ const UserDetailsSheet: React.FC<{
   const { data, isLoading } = useAdminUser(open ? userId : undefined);
   const { has } = useAdminPermissions();
   const setSuspension = useSetUserSuspension();
-  const [confirming, setConfirming] = useState<"suspend" | "reactivate" | null>(
-    null,
-  );
+  const setRestriction = useSetUserRestriction();
+  const [confirming, setConfirming] = useState<TAccountAction | null>(null);
+  const action = confirming ? ACCOUNT_ACTIONS[confirming] : null;
   // Admins are suspended from the Admins & Permissions page instead.
   const canSuspend =
     has("USERS_MANAGE") && !!data && data.role !== EUserRoles.ADMIN;
 
-  const handleSuspension = async (reason: string) => {
-    if (!data?.id || !confirming) return;
+  const handleAction = async (reason: string) => {
+    if (!data?.id || !confirming || !action) return;
     try {
-      await setSuspension.mutateAsync({
-        id: data.id,
-        suspended: confirming === "suspend",
-        reason: reason || undefined,
-      });
-      toast.success(
-        confirming === "suspend"
-          ? "Account suspended and signed out. They've been emailed the reason."
-          : "Account reactivated.",
-      );
+      if (confirming === "suspend" || confirming === "reactivate") {
+        await setSuspension.mutateAsync({
+          id: data.id,
+          suspended: confirming === "suspend",
+          reason: reason || undefined,
+        });
+      } else {
+        await setRestriction.mutateAsync({
+          id: data.id,
+          restricted: confirming === "restrict",
+          reason: reason || undefined,
+        });
+      }
+      toast.success(action.done);
       setConfirming(null);
     } catch (suspendError) {
       toast.error(
@@ -164,7 +228,11 @@ const UserDetailsSheet: React.FC<{
                   {data.isAccountCreationCompleted ? "Yes" : "No"}
                 </Field>
                 <Field label="Account status">
-                  {data.isAccountDisabled ? "Disabled" : "Active"}
+                  {data.isAccountDisabled
+                    ? "Suspended"
+                    : data.restriction
+                      ? "Restricted"
+                      : "Active"}
                 </Field>
                 <Field label="Joined">{formatDate(data.createdAt)}</Field>
               </div>
@@ -175,6 +243,47 @@ const UserDetailsSheet: React.FC<{
               )}
 
               <UserTransfers userId={data.id} />
+
+              {!!data.restriction && (
+                <div className="rounded-lg border border-warning-line bg-warning-soft p-4 text-sm text-warning">
+                  <p className="font-semibold">
+                    Restricted since {formatDate(data.restriction.since)}
+                    {data.restriction.idExpired ? " (ID expired)" : ""}
+                  </p>
+                  {data.restriction.reason && (
+                    <p className="mt-1">{data.restriction.reason}</p>
+                  )}
+                </div>
+              )}
+
+              {canSuspend && !data.isAccountDisabled && (
+                <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {data.restriction ? "Account restricted" : "Restrict account"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {data.restriction
+                        ? "Lifting it lets them publish, get and send tickets, and message again. Organisers' payouts resume on new sales."
+                        : "They can still sign in, but can't publish new events, get or send tickets, or message. Organisers' events on sale keep selling; their payouts are held."}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={
+                      data.restriction
+                        ? "shrink-0 rounded-xl border-success-line text-success hover:bg-success-soft"
+                        : "shrink-0 rounded-xl border-warning-line text-warning hover:bg-warning-soft"
+                    }
+                    onClick={() =>
+                      setConfirming(data.restriction ? "unrestrict" : "restrict")
+                    }
+                  >
+                    {data.restriction ? "Lift restriction" : "Restrict"}
+                  </Button>
+                </div>
+              )}
 
               {canSuspend && (
                 <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-4">
@@ -195,8 +304,8 @@ const UserDetailsSheet: React.FC<{
                     variant="outline"
                     className={
                       data.isAccountDisabled
-                        ? "shrink-0 rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                        : "shrink-0 rounded-xl border-red-200 text-red-700 hover:bg-red-50"
+                        ? "shrink-0 rounded-xl border-success-line text-success hover:bg-success-soft"
+                        : "shrink-0 rounded-xl border-danger-line text-danger hover:bg-danger-soft"
                     }
                     onClick={() =>
                       setConfirming(
@@ -214,28 +323,16 @@ const UserDetailsSheet: React.FC<{
       </SheetContent>
       <NoteDialog
         open={!!confirming}
-        title={
-          confirming === "suspend"
-            ? "Suspend this account?"
-            : "Reactivate this account?"
-        }
-        description={
-          confirming === "suspend"
-            ? "They're signed out on every device and can't sign in until reactivated. Your reason goes in the email they get."
-            : "They can sign in again straight away, and get an email saying so."
-        }
-        label={confirming === "suspend" ? "Reason" : "Note (optional)"}
-        placeholder={
-          confirming === "suspend"
-            ? "For example: repeated chargebacks on ticket purchases."
-            : "For the audit log."
-        }
-        confirmLabel={confirming === "suspend" ? "Suspend" : "Reactivate"}
-        tone={confirming === "suspend" ? "danger" : "default"}
-        required={confirming === "suspend"}
-        busy={setSuspension.isPending}
+        title={action?.title ?? ""}
+        description={action?.description ?? ""}
+        label={action?.required ? "Reason" : "Note (optional)"}
+        placeholder={action?.placeholder ?? ""}
+        confirmLabel={action?.confirm ?? ""}
+        tone={action?.tone ?? "default"}
+        required={!!action?.required}
+        busy={setSuspension.isPending || setRestriction.isPending}
         onCancel={() => setConfirming(null)}
-        onConfirm={(note) => void handleSuspension(note)}
+        onConfirm={(note) => void handleAction(note)}
       />
     </Sheet>
   );

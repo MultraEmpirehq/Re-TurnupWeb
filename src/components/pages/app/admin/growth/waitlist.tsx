@@ -129,7 +129,7 @@ const Waitlist = () => {
             { label: "Joined in the last 7 days", value: totals.lastWeek },
             { label: "Want to host events", value: totals.organisers },
           ].map((stat) => (
-            <div key={stat.label} className="rounded-xl border bg-white p-4">
+            <div key={stat.label} className="rounded-xl border bg-card p-4">
               <p className="text-sm text-muted-foreground">{stat.label}</p>
               <p className="mt-1 text-2xl font-bold tabular-nums">{stat.value.toLocaleString()}</p>
             </div>
@@ -158,7 +158,7 @@ const Waitlist = () => {
           description="Sign-ups from the Coming soon page will show up here."
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-white">
+        <div className="overflow-x-auto rounded-xl border bg-card">
           <table className="w-full text-left text-sm">
             <thead className="border-b bg-secondary-50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
@@ -180,12 +180,12 @@ const Waitlist = () => {
                   <td className="px-4 py-3">
                     <span className="block font-medium">{row.email}</span>
                     {row.emailConfirmedAt ? (
-                      <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
+                      <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-success">
                         <BadgeCheck className="size-3.5" aria-hidden />
                         Confirmed
                       </span>
                     ) : (
-                      <span className="mt-1 inline-flex items-center gap-1 text-xs text-amber-700">
+                      <span className="mt-1 inline-flex items-center gap-1 text-xs text-warning">
                         <Clock className="size-3.5" aria-hidden />
                         Not confirmed yet
                       </span>

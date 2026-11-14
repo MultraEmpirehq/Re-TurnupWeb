@@ -96,7 +96,7 @@ const ReceivedTransfers = () => {
           return (
             <li
               key={transfer.id}
-              className="flex flex-col gap-4 rounded-2xl border border-sky-100 bg-sky-50/40 p-4 sm:flex-row sm:items-center"
+              className="flex flex-col gap-4 rounded-2xl border border-info-line bg-info-soft/40 p-4 sm:flex-row sm:items-center"
             >
               <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-secondary-50">
                 {!!event?.image && (

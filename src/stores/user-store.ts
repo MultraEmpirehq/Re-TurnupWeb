@@ -1,3 +1,4 @@
+import type { IAccountRestriction } from "@/lib/types";
 import { create } from "zustand";
 import {
   createJSONStorage,
@@ -46,6 +47,8 @@ export type TUserDetails = {
   isAccountCreationCompleted?: boolean;
   /** Signed in with a temporary password: they choose their own before anything else. */
   mustChangePassword?: boolean;
+  /** Restricted by the team: signs in, but can't publish, buy, send or message. */
+  restriction?: IAccountRestriction | null;
 };
 
 type TStoreState = {

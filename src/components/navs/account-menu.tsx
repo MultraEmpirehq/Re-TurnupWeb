@@ -72,10 +72,10 @@ const AccountMenu: React.FC<{ variant: "site" | "workspace" }> = ({
           type="button"
           aria-label="Account menu"
           className={cn(
-            "flex cursor-pointer items-center gap-2 rounded-full py-1 pl-1 outline-none transition-colors",
+            "flex cursor-pointer items-center gap-2 rounded-full p-1 outline-none transition-colors",
             isSite
-              ? "pr-3 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/40"
-              : "pr-2 hover:bg-secondary-50 focus-visible:ring-2 focus-visible:ring-secondary-300",
+              ? "pr-2 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/40"
+              : "pr-1.5 hover:bg-secondary-50 focus-visible:ring-2 focus-visible:ring-secondary-300",
           )}
         >
           <Avatar
@@ -108,13 +108,19 @@ const AccountMenu: React.FC<{ variant: "site" | "workspace" }> = ({
           </span>
           <ChevronDown
             className={cn(
-              "size-4",
+              // Close to the name, with the same room the picture has on the left.
+              "-ml-0.5 size-4 shrink-0",
               isSite ? "text-white/70" : "text-muted-foreground",
             )}
           />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent
+        align="end"
+        // Just clears the header below the button, with a small gap.
+        sideOffset={variant === "site" ? 17 : 8}
+        className="w-56"
+      >
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col gap-1">
             <p className="text-sm font-semibold">{displayName}</p>

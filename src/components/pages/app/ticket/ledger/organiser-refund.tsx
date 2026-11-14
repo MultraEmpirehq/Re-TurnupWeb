@@ -147,7 +147,7 @@ const OrganiserRefund = ({
                           {ticket.holderName}
                         </span>
                       </span>
-                      <span className="font-mono text-[11px] text-muted-foreground">{ticket.ticketCode}</span>
+                      <span className="font-mono text-2xs text-muted-foreground">{ticket.ticketCode}</span>
                     </label>
                   </li>
                 ))}

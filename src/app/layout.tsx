@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import AppLayout from "@/components/layouts/app-layout/app.layout";
+import SmoothScroll from "@/components/layouts/smooth-scroll";
 
 // The brand typeface, Plus Jakarta Sans, in every weight the app uses (the
 // mobile app uses the same family).
@@ -40,7 +41,10 @@ export default function RootLayout({
       // have to exist at that level for it to resolve.
       className={`${brandSans.variable} ${geistMono.variable}`}
     >
-      <body className="font-sans antialiased bg-background">
+      {/* Extensions like Grammarly add attributes to <body> before React loads;
+          only this tag's own attributes are excused, nothing inside it. */}
+      <body className="font-sans antialiased bg-background" suppressHydrationWarning>
+        <SmoothScroll />
         <AppLayout>{children}</AppLayout>
       </body>
     </html>

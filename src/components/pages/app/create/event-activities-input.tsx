@@ -195,7 +195,7 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
                       editing === index && "ring-2 ring-primary",
                     )}
                   >
-                    <span className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-md bg-white px-2 py-0.5 text-xs font-semibold tabular-nums text-secondary-800">
+                    <span className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-md bg-card px-2 py-0.5 text-xs font-semibold tabular-nums text-secondary-800">
                       <Clock className="size-3 text-secondary-400" />
                       {format(new Date(activity.activityDate), "h:mm a")}
                     </span>
@@ -212,7 +212,7 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
                       onClick={() => startEdit(index)}
                       disabled={editing === index}
                       aria-label={`Edit ${activity.activityName}`}
-                      className="flex size-7 shrink-0 items-center justify-center rounded-lg text-secondary-500 hover:bg-white hover:text-secondary-950 disabled:opacity-40"
+                      className="flex size-7 shrink-0 items-center justify-center rounded-lg text-secondary-500 hover:bg-card hover:text-secondary-950 disabled:opacity-40"
                     >
                       <Pencil className="size-3.5" />
                     </button>
@@ -223,7 +223,7 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
                         if (editing === index) close();
                       }}
                       aria-label={`Remove ${activity.activityName}`}
-                      className="flex size-7 shrink-0 items-center justify-center rounded-lg text-red-500 hover:bg-red-50"
+                      className="flex size-7 shrink-0 items-center justify-center rounded-lg text-danger hover:bg-danger-soft"
                     >
                       <TrashIcon className="size-3.5" />
                     </button>
@@ -263,7 +263,7 @@ const EventActivitiesInput: React.FC<IEventActivitiesInputProps> = ({
                   onChange={(event) =>
                     setDraft((current) => ({ ...current, dayIndex: Number(event.target.value) }))
                   }
-                  className="h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+                  className="h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
                 >
                   {activityDays.map((day, index) => (
                     <option key={index} value={index}>

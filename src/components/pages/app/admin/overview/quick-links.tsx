@@ -200,7 +200,7 @@ const QuickLinks = () => {
             </span>
             {busy && (
               <span
-                className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground"
+                className="shrink-0 rounded-full px-1.5 py-0.5 text-2xs font-bold text-primary-foreground"
                 style={{ background: BLUE }}
                 aria-label={`${link.waiting} ${link.waitingLabel}`}
               >

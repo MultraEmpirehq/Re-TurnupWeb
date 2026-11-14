@@ -22,7 +22,7 @@ const Count = ({
   note?: React.ReactNode;
   children?: React.ReactNode;
 }) => (
-  <div className="min-w-0 rounded-2xl border border-secondary-100 bg-white p-5">
+  <div className="min-w-0 rounded-2xl border border-secondary-100 bg-card p-5">
     <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">{label}</p>
     <p className="mt-2 truncate text-2xl font-bold text-secondary-950">{value}</p>
     {children}
@@ -33,7 +33,7 @@ const Count = ({
 const Bar = ({ value, max, tone = "green" }: { value: number; max: number; tone?: "green" | "blue" }) => (
   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary-50">
     <div
-      className={cn("h-full rounded-full", tone === "green" ? "bg-emerald-500" : "bg-secondary-500")}
+      className={cn("h-full rounded-full", tone === "green" ? "bg-success-solid" : "bg-secondary-500")}
       style={{ width: `${max ? Math.min(100, (value / max) * 100) : 0}%` }}
     />
   </div>
@@ -137,8 +137,8 @@ const LedgerOverview = ({
                   className={cn(
                     "w-[280px] shrink-0 snap-start rounded-2xl border p-4",
                     event.live
-                      ? "border-emerald-200 bg-emerald-50/50"
-                      : "border-secondary-100 bg-white",
+                      ? "border-success-line bg-success-soft/50"
+                      : "border-secondary-100 bg-card",
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -149,7 +149,7 @@ const LedgerOverview = ({
                       </p>
                     </div>
                     {event.live && (
-                      <span className="shrink-0 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white uppercase">
+                      <span className="shrink-0 rounded-full bg-success-solid px-2 py-0.5 text-2xs font-bold tracking-wide text-white uppercase">
                         Live
                       </span>
                     )}
@@ -165,7 +165,7 @@ const LedgerOverview = ({
                     <p
                       className={cn(
                         "text-sm font-semibold",
-                        event.live ? "text-emerald-700" : "text-muted-foreground",
+                        event.live ? "text-success" : "text-muted-foreground",
                       )}
                     >
                       {eventPercent}%

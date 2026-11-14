@@ -82,7 +82,7 @@ const ChangePasswordForm = () => {
   return (
     <section
       id="security"
-      className="scroll-mt-24 rounded-[1.75rem] border border-secondary-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-8"
+      className="scroll-mt-24 rounded-3xl border border-secondary-100 bg-card p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-8"
     >
       <p className="text-xs font-bold tracking-[0.2em] text-secondary-400 uppercase">
         Security

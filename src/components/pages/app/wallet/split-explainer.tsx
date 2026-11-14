@@ -18,7 +18,7 @@ const SplitExplainer = ({ currency }: { currency: string }) => {
     }).format(amount);
   const fee = (price * FEE_PERCENT) / 100;
   return (
-    <section className="rounded-[1.5rem] bg-secondary-50 p-6">
+    <section className="rounded-3xl bg-secondary-50 p-6">
       <h2 className="text-base font-bold text-secondary-800">
         How a {money(price)} ticket is split
       </h2>

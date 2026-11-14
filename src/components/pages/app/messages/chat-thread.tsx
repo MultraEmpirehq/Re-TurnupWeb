@@ -262,7 +262,7 @@ const ChatThread: React.FC<{
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-secondary-100 bg-white px-3 py-3 sm:px-4">
+      <div className="flex items-center gap-3 border-b border-secondary-100 bg-card px-3 py-3 sm:px-4">
         <button
           type="button"
           onClick={onBack}
@@ -273,10 +273,10 @@ const ChatThread: React.FC<{
         </button>
         <ChatPicture chat={chat} myId={myId} size="md" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-extrabold text-secondary-950">
+          <p className="truncate text-base font-extrabold text-secondary-950">
             {chat.eventName}
           </p>
-          <p className="truncate text-[11.5px] font-semibold text-secondary-500">
+          <p className="truncate text-2xs font-semibold text-secondary-500">
             {chatSubtitle(chat, iAmOrganiser)}
             {chat.muted ? " · Muted" : ""}
           </p>
@@ -296,7 +296,7 @@ const ChatThread: React.FC<{
             </Button>
             {menuOpen && (
               <div
-                className="absolute top-11 right-0 z-30 w-72 rounded-[1.1rem] border border-secondary-100 bg-white p-2 shadow-[0_20px_50px_-28px_rgba(15,35,95,0.45)]"
+                className="absolute top-11 right-0 z-30 w-72 rounded-[1.1rem] border border-secondary-100 bg-card p-2 shadow-[0_20px_50px_-28px_rgba(15,35,95,0.45)]"
                 onClick={() => setMenuOpen(false)}
               >
                 {isGroup && (
@@ -387,7 +387,7 @@ const ChatThread: React.FC<{
       {(chat.isClosed ||
         onlyOrganiser ||
         (isGroup && iAmOrganiser && chat.announcementMode)) && (
-        <p className="mx-3 mt-2 rounded-xl border border-dashed border-secondary-200 bg-white px-3 py-2 text-[11.5px] font-semibold text-secondary-500 sm:mx-4">
+        <p className="mx-3 mt-2 rounded-xl border border-dashed border-secondary-200 bg-card px-3 py-2 text-2xs font-semibold text-secondary-500 sm:mx-4">
           {chat.isClosed
             ? "This chat closed after the event. You can still read it."
             : onlyOrganiser
@@ -425,7 +425,7 @@ const ChatThread: React.FC<{
             {rows.map((row) =>
               row.type === "day" ? (
                 <div key={row.id} className="flex justify-center py-2">
-                  <span className="rounded-full border border-secondary-100 bg-white px-2.5 py-0.5 text-[11px] font-bold text-secondary-400">
+                  <span className="rounded-full border border-secondary-100 bg-card px-2.5 py-0.5 text-2xs font-bold text-secondary-400">
                     {row.label}
                   </span>
                 </div>
@@ -465,7 +465,7 @@ const ChatThread: React.FC<{
 
       {showQuickQuestions && (
         <div className="px-3 pb-2">
-          <p className="mb-1.5 text-center text-[11.5px] font-semibold text-secondary-500">
+          <p className="mb-1.5 text-center text-2xs font-semibold text-secondary-500">
             Quick questions
           </p>
           <div className="flex flex-wrap justify-center gap-1.5">
@@ -486,7 +486,7 @@ const ChatThread: React.FC<{
 
       {/* Composer */}
       {canPost && (
-        <div className="border-t border-secondary-100 bg-white px-3 py-3 sm:px-4">
+        <div className="border-t border-secondary-100 bg-card px-3 py-3 sm:px-4">
           {emojiOpen && (
             <div className="mb-2 flex flex-wrap gap-1.5">
               {EMOJIS.map((emoji) => (
@@ -570,7 +570,7 @@ const ChatThread: React.FC<{
               rows={1}
               placeholder={placeholder}
               aria-label={placeholder}
-              className="max-h-32 min-h-10 min-w-0 flex-1 resize-none rounded-[20px] border border-secondary-100 bg-secondary-50/60 px-4 py-2.5 text-sm text-secondary-950 outline-none placeholder:text-secondary-400 focus:border-primary/40 [field-sizing:content]"
+              className="max-h-32 min-h-10 min-w-0 flex-1 resize-none rounded-2xl border border-secondary-100 bg-secondary-50/60 px-4 py-2.5 text-sm text-secondary-950 outline-none placeholder:text-secondary-400 focus:border-primary/40 [field-sizing:content]"
             />
             <button
               type="button"

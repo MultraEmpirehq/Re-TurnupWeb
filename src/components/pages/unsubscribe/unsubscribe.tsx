@@ -36,7 +36,7 @@ const Unsubscribe = () => {
       {state === "working" ? (
         <Loader2 className="size-10 animate-spin text-primary" aria-hidden />
       ) : state === "done" ? (
-        <CheckCircle2 className="size-12 text-emerald-500" aria-hidden />
+        <CheckCircle2 className="size-12 text-success" aria-hidden />
       ) : (
         <MailX className="size-12 text-secondary-400" aria-hidden />
       )}

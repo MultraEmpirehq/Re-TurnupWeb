@@ -49,21 +49,21 @@ const PHASE: Record<IBoost["phase"], { label: string; className: string }> = {
   },
   payment_failed: {
     label: "Payment failed",
-    className: "bg-red-50 text-red-700",
+    className: "bg-danger-soft text-danger",
   },
   in_review: {
     label: "Being checked",
-    className: "bg-amber-50 text-amber-800",
+    className: "bg-warning-soft text-warning",
   },
-  scheduled: { label: "Starts soon", className: "bg-sky-50 text-sky-800" },
-  live: { label: "● Live", className: "bg-emerald-50 text-emerald-700" },
-  paused: { label: "Paused", className: "bg-amber-50 text-amber-800" },
+  scheduled: { label: "Starts soon", className: "bg-info-soft text-info" },
+  live: { label: "● Live", className: "bg-success-soft text-success" },
+  paused: { label: "Paused", className: "bg-warning-soft text-warning" },
   ended: { label: "Ended", className: "bg-secondary-50 text-secondary-500" },
   stopped: {
     label: "Stopped",
     className: "bg-secondary-50 text-secondary-500",
   },
-  rejected: { label: "Not approved", className: "bg-red-50 text-red-700" },
+  rejected: { label: "Not approved", className: "bg-danger-soft text-danger" },
 };
 
 const dayLabel = (iso: string) =>
@@ -91,7 +91,7 @@ const BoostRow: React.FC<{ boost: IBoost }> = ({ boost }) => {
         <span className="flex flex-wrap items-center gap-2 text-sm">
           <span
             className={cn(
-              "rounded-full px-2 py-0.5 text-[11px] font-bold",
+              "rounded-full px-2 py-0.5 text-2xs font-bold",
               phase.className,
             )}
           >
@@ -109,14 +109,14 @@ const BoostRow: React.FC<{ boost: IBoost }> = ({ boost }) => {
         </span>
       </div>
       {boost.phase === "in_review" && boost.reviewReasons.length > 0 && (
-        <p className="text-xs text-amber-800">
+        <p className="text-xs text-warning">
           We check a few boosts first:{" "}
           {boost.reviewReasons.join(", ").toLowerCase()}. Usually within an
           hour.
         </p>
       )}
       {boost.phase === "paused" && (
-        <p className="text-xs text-amber-800">
+        <p className="text-xs text-warning">
           {boost.pausedReason}. Our team is looking at it.
         </p>
       )}
@@ -140,7 +140,7 @@ const BoostRow: React.FC<{ boost: IBoost }> = ({ boost }) => {
             <b className="block text-sm text-secondary-950 tabular-nums">
               {stat.value}
             </b>
-            <span className="block text-[11px] text-secondary-500">
+            <span className="block text-2xs text-secondary-500">
               {stat.label}
             </span>
           </span>
@@ -156,7 +156,7 @@ const BoostRow: React.FC<{ boost: IBoost }> = ({ boost }) => {
           type="button"
           variant="ghost"
           size="sm"
-          className="rounded-lg text-red-600 hover:bg-red-50"
+          className="rounded-lg text-danger hover:bg-danger-soft"
           onClick={() => setConfirming(true)}
         >
           Stop boost
@@ -261,7 +261,7 @@ const BoostDialog: React.FC<{
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92svh] overflow-y-auto rounded-[1.6rem] p-0 sm:max-w-3xl">
+      <DialogContent className="max-h-[92svh] overflow-y-auto rounded-3xl p-0 sm:max-w-3xl">
         <DialogHeader className="border-b border-secondary-100 px-6 py-4 text-left">
           <DialogTitle className="flex items-center gap-2 text-xl font-extrabold text-secondary-950">
             <Rocket className="size-5 text-primary" aria-hidden />
@@ -337,7 +337,7 @@ const BoostDialog: React.FC<{
                       className={cn(
                         "rounded-lg py-2 text-sm font-bold disabled:opacity-40",
                         area === value
-                          ? "bg-white text-secondary-950 shadow-sm"
+                          ? "bg-card text-secondary-950 shadow-sm"
                           : "text-secondary-600",
                       )}
                     >
@@ -347,7 +347,7 @@ const BoostDialog: React.FC<{
                     </button>
                   ))}
                 </div>
-                <p className="mt-1 text-[11px] text-secondary-500">
+                <p className="mt-1 text-2xs text-secondary-500">
                   The whole country costs 1.5×.
                 </p>
               </div>
@@ -391,7 +391,7 @@ const BoostDialog: React.FC<{
                   </span>
                 </div>
                 {quote && (
-                  <p className="mt-1 text-[11px] text-secondary-500">
+                  <p className="mt-1 text-2xs text-secondary-500">
                     Ends {dayLabel(quote.endsAt)}
                     {quote.shortened ? " (when the event starts)" : ""}
                   </p>
@@ -422,7 +422,7 @@ const BoostDialog: React.FC<{
                 Pick at least one place to show it.
               </p>
             ) : error && !quote ? (
-              <p className="text-sm text-red-700">
+              <p className="text-sm text-danger">
                 {constructErrorMessage(
                   error as unknown as TApiErrorResponseType,
                   "Couldn't price that.",
@@ -450,7 +450,7 @@ const BoostDialog: React.FC<{
                     </li>
                   ))}
                   {quote.discount.amount > 0 && (
-                    <li className="flex justify-between gap-2 text-emerald-700">
+                    <li className="flex justify-between gap-2 text-success">
                       <span>Bundle: 10% off</span>
                       <b className="shrink-0 whitespace-nowrap tabular-nums">
                         −{quote.discount.formatted?.withCurrency}
@@ -467,7 +467,7 @@ const BoostDialog: React.FC<{
                   </span>
                 </div>
                 {quote.eligible === false ? (
-                  <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">
+                  <p className="rounded-xl bg-warning-soft p-3 text-xs text-warning">
                     Get the event ready first:{" "}
                     {quote.missing?.join(", ").toLowerCase() ||
                       "it must be published and still to come"}
@@ -488,7 +488,7 @@ const BoostDialog: React.FC<{
                     Pay {quote.total.formatted?.withCurrency} and boost
                   </Button>
                 )}
-                <p className="text-[11px] leading-5 text-secondary-500">
+                <p className="text-2xs leading-5 text-secondary-500">
                   Most boosts start as soon as they&apos;re paid; some get a quick
                   check first. Stop any time and the unused days go back to your
                   card.

@@ -43,7 +43,7 @@ const DevicesCard = () => {
   };
 
   return (
-    <section className="space-y-4 rounded-[1.5rem] border border-secondary-100 bg-white p-6">
+    <section className="space-y-4 rounded-3xl border border-secondary-100 bg-card p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-secondary-950">
@@ -97,7 +97,7 @@ const DevicesCard = () => {
                         ? "Turnupz app"
                         : "Web browser")}
                     {session.isCurrent && (
-                      <span className="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                      <span className="ml-2 rounded-full bg-success-soft px-2 py-0.5 text-xs font-semibold text-success">
                         This device
                       </span>
                     )}
@@ -117,7 +117,7 @@ const DevicesCard = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-red-600 hover:text-red-700"
+                    className="text-danger hover:text-danger"
                     loading={pendingId === session.id}
                     disabled={!!pendingId}
                     onClick={() => void handleSignOut(session.id)}

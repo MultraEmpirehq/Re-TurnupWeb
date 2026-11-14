@@ -133,7 +133,7 @@ const OrganiserContactDialog: React.FC<{
 
   return (
     <Dialog open={!!target} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="rounded-[1.6rem] border-secondary-100 p-6 sm:max-w-md">
+      <DialogContent className="rounded-3xl border-secondary-100 p-6 sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-secondary-950">
             Contact the organiser
@@ -154,7 +154,7 @@ const OrganiserContactDialog: React.FC<{
         )}
 
         {!!error && !isLoading && (
-          <div className="space-y-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+          <div className="space-y-3 rounded-2xl border border-danger-line bg-danger-soft p-4 text-sm text-danger">
             <p>
               {constructErrorMessage(
                 error as TApiErrorResponseType,
@@ -191,7 +191,7 @@ const OrganiserContactDialog: React.FC<{
                   <span
                     className={cn(
                       "inline-flex items-center gap-1",
-                      organiser.isVerified && "text-emerald-700",
+                      organiser.isVerified && "text-success",
                     )}
                   >
                     {organiser.isVerified && (
@@ -293,7 +293,7 @@ const OrganiserContactDialog: React.FC<{
                   <Button
                     asChild
                     variant="outline"
-                    className="h-11 rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 sm:col-span-2"
+                    className="h-11 rounded-xl border-success-line text-success hover:bg-success-soft sm:col-span-2"
                   >
                     <a
                       href={`https://wa.me/${phoneDigits}?text=${encodeURIComponent(

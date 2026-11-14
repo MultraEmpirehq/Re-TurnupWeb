@@ -8,12 +8,17 @@ import { useEvents } from "@/hooks/use-event";
 import { cn } from "@/lib/utils";
 import { formatDate } from "date-fns";
 import { CalendarSearch, X } from "lucide-react";
-import React, { memo, useMemo } from "react";
+import React, { memo, useEffect, useMemo, useState } from "react";
 import Reveal from "../home/landing/reveal";
 import TicketCard, { TicketCardSkeleton } from "../home/landing/ticket-card";
 import ExplorePlaceFilters from "./explore-place-filters";
 import ExplorePlacePicker from "./explore-place-picker";
-import useExplorePlace from "./use-explore-place";
+import useExplorePlace, { placeLabel } from "./use-explore-place";
+import NoEventsHere, {
+  NothingInYourCountry,
+  countryName,
+  visitorRegion,
+} from "./no-events-here";
 import { useEventLocations } from "@/hooks/use-discovery";
 import useExploreFilters, {
   PRICE_OPTIONS,
@@ -45,7 +50,10 @@ const EventList = () => {
     clearFilters,
   } = useExploreFilters();
   const { data: locations = [] } = useEventLocations();
-  const { place, isReady } = useExplorePlace();
+  const { place, setPlace, isReady } = useExplorePlace();
+  // Read after mounting: the browser's region isn't known on the server.
+  const [region, setRegion] = useState<string | undefined>();
+  useEffect(() => setRegion(visitorRegion()), []);
   const { data: categories } = useCategory();
 
   const {
@@ -114,6 +122,16 @@ const EventList = () => {
     when,
   ]);
 
+  // Browsing a place with nothing on: the empty state with somewhere to go.
+  const placeIsEmpty =
+    !activeCount && !!place && !error && !isLoading && events.length === 0;
+  // Browsing everywhere because the visitor's own country has nothing on yet.
+  const missingCountry =
+    !activeCount && !place && isReady && locations.length > 0 && region &&
+    !locations.some((item) => item.countryCode === region)
+      ? countryName(region)
+      : undefined;
+
   // With no filters the first event leads, at double size.
   const hasFeature = !activeCount && events.length >= 3;
 
@@ -144,7 +162,7 @@ const EventList = () => {
         <div
           role="group"
           aria-label="Price"
-          className="flex w-fit rounded-full bg-white p-1 ring-1 ring-black/5"
+          className="flex w-fit rounded-full bg-card p-1 ring-1 ring-black/5"
         >
           {[{ value: undefined, label: "All" }, ...PRICE_OPTIONS].map(
             (option) => (
@@ -169,7 +187,11 @@ const EventList = () => {
 
       <ExplorePlaceFilters />
 
-      {error && !data ? (
+      {missingCountry && <NothingInYourCountry country={missingCountry} />}
+
+      {placeIsEmpty ? (
+        <NoEventsHere place={placeLabel(place)} onShowEverywhere={() => setPlace(null)} />
+      ) : error && !data ? (
         <ErrorContainer
           error={constructErrorMessage(
             error as TApiErrorResponseType,
@@ -178,7 +200,7 @@ const EventList = () => {
           retryFunction={refetch}
         />
       ) : !isLoading && events.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-secondary-200 bg-white px-6 py-16 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-secondary-200 bg-card px-6 py-16 text-center">
           <span className="flex size-12 items-center justify-center rounded-full bg-secondary-50 text-secondary-800">
             <CalendarSearch className="size-5" aria-hidden />
           </span>

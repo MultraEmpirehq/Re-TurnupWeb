@@ -8,13 +8,13 @@ const values = [
     title: "Our Expertise",
     description:
       "Our team combines deep expertise in software development, user experience design, and digital strategy to build a powerful platform that simplifies event discovery, ticketing, and management.",
-    className: "bg-sky-50",
+    className: "bg-info-soft",
   },
   {
     title: "Core Values",
     description:
       "We believe great events are built on trust, collaboration, and shared experiences. That's why our culture is rooted in transparency, integrity, and a constant openness to feedback.",
-    className: "bg-slate-50",
+    className: "bg-muted",
   },
   {
     title: "Client-Centric Approach",
@@ -26,13 +26,13 @@ const values = [
     title: "Pioneering Innovation",
     description:
       "From intuitive dashboards to seamless ticketing and real-time insights, we're redefining how events are planned and experienced. Innovation fuels everything we do, ensuring our platform stays ahead of the curve.",
-    className: "bg-slate-50",
+    className: "bg-muted",
   },
   {
     title: "Your Digital Transformation Partner",
     description:
       "As events evolve, we're here to help you evolve with them. Whether you're stepping into hybrid events, mobile-first experiences, or smart audience engagement, Turnupz is your partner in digital transformation.",
-    className: "bg-sky-50",
+    className: "bg-info-soft",
   },
 ];
 

@@ -48,7 +48,7 @@ const PayoutChecklist = ({
     },
   ];
   return (
-    <section className="rounded-[1.5rem] border border-primary-100 bg-primary-50/50 p-5">
+    <section className="rounded-3xl border border-primary-100 bg-primary-50/50 p-5">
       <p className="text-sm font-bold tracking-[0.18em] text-primary-700 uppercase">
         Before your first paid sale
       </p>
@@ -56,7 +56,7 @@ const PayoutChecklist = ({
         {steps.map((step) => (
           <li key={step.label} className="flex items-start gap-3">
             {step.done ? (
-              <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" />
+              <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" />
             ) : (
               <Circle className="mt-0.5 size-5 shrink-0 text-secondary-300" />
             )}

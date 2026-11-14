@@ -149,7 +149,7 @@ const PerformerPage = () => {
                   href={link.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-medium text-secondary-700 ring-1 ring-black/10 hover:text-secondary"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-sm font-medium text-secondary-700 ring-1 ring-black/10 hover:text-secondary"
                 >
                   <link.icon className="size-4" aria-hidden />
                   {link.label}

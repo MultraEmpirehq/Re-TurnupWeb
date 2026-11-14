@@ -79,9 +79,9 @@ const Change: React.FC<{ value: number | null; days: number }> = ({
       className={cn(
         "inline-flex items-center gap-0.5 text-xs font-semibold",
         value > 0
-          ? "text-emerald-700"
+          ? "text-success"
           : value < 0
-            ? "text-red-700"
+            ? "text-danger"
             : "text-muted-foreground",
       )}
       title={`Compared with the ${days} days before`}
@@ -345,7 +345,7 @@ const AdminDashboard = () => {
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Dashboard</h1>
           <p className="text-sm text-muted-foreground">
             {firstName ? `Welcome back, ${firstName}. ` : ""}
             The last {days} days, against the {days} before.

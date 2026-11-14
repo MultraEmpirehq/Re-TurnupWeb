@@ -1,4 +1,5 @@
 "use client";
+import PageHeader from "@/components/ui/page-header";
 
 import ScrollRow from "@/components/ui/scroll-row";
 import { Button } from "@/components/ui/button";
@@ -20,10 +21,8 @@ export const PageHeading: React.FC<{
   title: string;
   children: React.ReactNode;
 }> = ({ title, children }) => (
-  <div className="flex flex-col gap-1">
-    <h1 className="text-xl font-bold text-secondary-800">{title}</h1>
-    <p className="max-w-2xl text-sm text-muted-foreground">{children}</p>
-  </div>
+  // The site-wide page header, so admin pages match the rest.
+  <PageHeader title={title} description={children} />
 );
 
 export const FilterTabs = <T extends string | undefined>({
@@ -102,7 +101,7 @@ export const NoteDialog: React.FC<{
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !busy && onCancel()}>
-      <DialogContent className="rounded-[1.6rem] border-secondary-100 p-6 sm:max-w-md">
+      <DialogContent className="rounded-3xl border-secondary-100 p-6 sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-secondary-950">
             {title}
@@ -138,7 +137,7 @@ export const NoteDialog: React.FC<{
             className={cn(
               "rounded-2xl text-white",
               tone === "danger"
-                ? "bg-red-600 hover:bg-red-700"
+                ? "bg-danger-solid hover:bg-danger-solid"
                 : "bg-secondary-800 hover:bg-secondary-900",
             )}
           >

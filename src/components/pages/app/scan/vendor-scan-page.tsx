@@ -108,12 +108,9 @@ const VendorScanPage = () => {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
-      <div className="space-y-2">
-        <span className="text-[0.75rem] font-bold tracking-[0.2em] text-secondary-400 uppercase">
-          Door
-        </span>
-        <h1 className="text-3xl font-bold tracking-tight text-secondary-950">Scan tickets</h1>
-        <p className="max-w-2xl text-secondary-500">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Scan tickets</h1>
+        <p className="hidden max-w-2xl text-sm text-muted-foreground sm:block">
           Point the camera at a ticket&apos;s QR code. Each ticket gets in once,
           or once a day for multi-day events.
         </p>
@@ -145,7 +142,7 @@ const VendorScanPage = () => {
                 setChosenDayId("");
               }}
               disabled={!events.length}
-              className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm font-medium"
+              className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm font-medium"
             >
               {events.map((event) => (
                 <option key={event.id} value={event.id}>

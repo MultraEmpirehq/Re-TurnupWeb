@@ -271,8 +271,8 @@ export default function TransferTicketPage() {
 
   const statusLabel = transfer ? "Transferred" : "Not transferred";
   const statusTone = transfer
-    ? "bg-sky-100 text-sky-700"
-    : "bg-slate-100 text-slate-600";
+    ? "bg-info-soft text-info"
+    : "bg-muted text-muted-foreground";
 
   const onSubmit = useCallback(
     async (body: ITransferFormValues) => {
@@ -310,7 +310,7 @@ export default function TransferTicketPage() {
     return (
       <div className="space-y-6">
         <Skeleton className="h-6 w-40 rounded-full" />
-        <Skeleton className="h-[420px] w-full rounded-[30px]" />
+        <Skeleton className="h-[420px] w-full rounded-3xl" />
       </div>
     );
   }
@@ -348,11 +348,11 @@ export default function TransferTicketPage() {
           <ArrowLeft className="size-4" />
           Back to My Tickets
         </Link>
-        <div className="rounded-[30px] border border-black/10 bg-white p-8 text-center shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <div className="rounded-3xl border border-black/10 bg-card p-8 text-center shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Ticket not found
           </h2>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-muted-foreground">
             We couldn&apos;t find the ticket you selected. Head back to your
             tickets and try again.
           </p>
@@ -371,15 +371,15 @@ export default function TransferTicketPage() {
         Back to My Tickets
       </Link>
 
-      <section className="overflow-hidden rounded-[34px] border border-sky-100 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.06)]">
-        <div className="border-b border-sky-100 bg-[linear-gradient(180deg,#f8fdff_0%,#ffffff_100%)] px-6 py-6 sm:px-8">
+      <section className="overflow-hidden rounded-[34px] border border-info-line bg-card shadow-[0_24px_80px_rgba(15,23,42,0.06)]">
+        <div className="border-b border-info-line bg-[linear-gradient(180deg,#f8fdff_0%,#ffffff_100%)] px-6 py-6 sm:px-8">
           <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.32em] text-sky-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.32em] text-info">
                 Ticket Transfer
               </p>
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                   #{ticket.code}
                 </h1>
                 <span
@@ -388,26 +388,26 @@ export default function TransferTicketPage() {
                   {statusLabel}
                 </span>
               </div>
-              <p className="max-w-2xl text-sm leading-7 text-slate-500">
+              <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
                 {transfer
                   ? "This ticket has already been sent through the Turnupz transfer flow. Here is the current recipient and ticket breakdown."
                   : "This ticket is still with you. Review the details below and send it to a recipient whenever you are ready."}
               </p>
             </div>
 
-            <div className="rounded-[24px] border border-sky-100 bg-white px-4 py-3 text-sm shadow-sm">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+            <div className="rounded-3xl border border-info-line bg-card px-4 py-3 text-sm shadow-sm">
+              <p className="text-2xs font-semibold uppercase tracking-[0.22em] text-slate-400">
                 Issued Date
               </p>
-              <p className="mt-1 font-semibold text-slate-800">
+              <p className="mt-1 font-semibold text-foreground/80">
                 {formatDisplayDate(ticket.createdAt)}
               </p>
               {transfer?.createdAt && (
                 <>
-                  <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                  <p className="mt-3 text-2xs font-semibold uppercase tracking-[0.22em] text-slate-400">
                     Transfer Date
                   </p>
-                  <p className="mt-1 font-semibold text-slate-800">
+                  <p className="mt-1 font-semibold text-foreground/80">
                     {formatDisplayDate(transfer.createdAt)}
                   </p>
                 </>
@@ -421,48 +421,48 @@ export default function TransferTicketPage() {
         <div className="grid grid-cols-1 gap-8 px-6 py-8 sm:px-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.9fr)]">
           <div className="min-w-0 space-y-8">
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
+              <div className="rounded-3xl border border-border bg-muted/70 p-5">
+                <p className="text-2xs font-semibold uppercase tracking-[0.28em] text-slate-400">
                   Bill From
                 </p>
-                <h2 className="mt-4 text-lg font-semibold text-slate-900">
+                <h2 className="mt-4 text-lg font-semibold text-foreground">
                   {senderName}
                 </h2>
-                <div className="mt-4 space-y-2 text-sm text-slate-500">
+                <div className="mt-4 space-y-2 text-sm text-muted-foreground">
                   {userDetails?.email && (
                     <p className="flex items-center gap-2">
-                      <Mail className="size-4 text-sky-500" />
+                      <Mail className="size-4 text-info" />
                       {userDetails.email}
                     </p>
                   )}
                   {event?.venue?.name && (
                     <p className="flex items-center gap-2">
-                      <MapPin className="size-4 text-sky-500" />
+                      <MapPin className="size-4 text-info" />
                       {event.venue.name}
                     </p>
                   )}
                   {event?.date && (
                     <p className="flex items-center gap-2">
-                      <CalendarDays className="size-4 text-sky-500" />
+                      <CalendarDays className="size-4 text-info" />
                       {formatDisplayDate(event.date, "dd/MM/yyyy")}
                     </p>
                   )}
                 </div>
               </div>
 
-              <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
+              <div className="rounded-3xl border border-border bg-muted/70 p-5">
+                <p className="text-2xs font-semibold uppercase tracking-[0.28em] text-slate-400">
                   {transfer ? "Transferred To" : "Transfer Status"}
                 </p>
-                <h2 className="mt-4 text-lg font-semibold text-slate-900">
+                <h2 className="mt-4 text-lg font-semibold text-foreground">
                   {recipientName}
                 </h2>
-                <div className="mt-4 space-y-2 text-sm text-slate-500">
+                <div className="mt-4 space-y-2 text-sm text-muted-foreground">
                   <p>{recipientMeta}</p>
                   {transfer?.claimedAt && (
                     <p>
                       Claimed on{" "}
-                      <span className="font-medium text-slate-700">
+                      <span className="font-medium text-foreground/80">
                         {formatDisplayDate(transfer.claimedAt)}
                       </span>
                     </p>
@@ -477,16 +477,16 @@ export default function TransferTicketPage() {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-[30px] border border-slate-200">
-              <div className="border-b border-slate-200 bg-slate-50/80 px-5 py-4">
-                <h2 className="text-lg font-semibold text-slate-900">
+            <div className="overflow-hidden rounded-3xl border border-border">
+              <div className="border-b border-border bg-muted/80 px-5 py-4">
+                <h2 className="text-lg font-semibold text-foreground">
                   Ticket Details
                 </h2>
               </div>
               <ScrollTable label="Ticket breakdown">
                 <table className="min-w-full text-left">
                   <thead>
-                    <tr className="border-b border-sky-400/70 text-xs uppercase tracking-[0.24em] text-slate-400">
+                    <tr className="border-b border-info/70 text-xs uppercase tracking-[0.24em] text-slate-400">
                       <th className="px-5 py-4 font-semibold">
                         Ticket Category
                       </th>
@@ -496,8 +496,8 @@ export default function TransferTicketPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-b border-slate-200 text-sm text-slate-700">
-                      <td className="px-5 py-4 font-medium text-slate-900">
+                    <tr className="border-b border-border text-sm text-foreground/80">
+                      <td className="px-5 py-4 font-medium text-foreground">
                         {ticket.ticket.type}
                       </td>
                       <td className="px-5 py-4">{priceLabel}</td>
@@ -510,15 +510,15 @@ export default function TransferTicketPage() {
                     ].map(([label, value]) => (
                       <tr
                         key={label}
-                        className="border-b border-slate-100 last:border-b-0"
+                        className="border-b border-border last:border-b-0"
                       >
                         <td
-                          className="px-5 py-3 text-sm text-slate-500"
+                          className="px-5 py-3 text-sm text-muted-foreground"
                           colSpan={3}
                         >
                           {label}
                         </td>
-                        <td className="px-5 py-3 text-sm font-medium text-slate-700">
+                        <td className="px-5 py-3 text-sm font-medium text-foreground/80">
                           {formatMoney(
                             Number(value),
                             priceLocale,
@@ -534,8 +534,8 @@ export default function TransferTicketPage() {
             </div>
           </div>
 
-          <aside className="rounded-[30px] bg-[#0f172a] p-6 text-white shadow-[0_18px_60px_rgba(15,23,42,0.18)]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-sky-200/80">
+          <aside className="rounded-3xl bg-[#0f172a] p-6 text-white shadow-[0_18px_60px_rgba(15,23,42,0.18)]">
+            <p className="text-2xs font-semibold uppercase tracking-[0.3em] text-sky-200/80">
               Ticket Summary
             </p>
             <h2 className="mt-4 text-2xl font-semibold leading-tight">
@@ -630,14 +630,14 @@ export default function TransferTicketPage() {
                   disabled={!isValid || !userTicketId || usernameBlocked}
                   loading={isSubmitting}
                   type="submit"
-                  className="h-11 w-full rounded-full bg-sky-400 text-slate-950 hover:bg-sky-300"
+                  className="h-11 w-full rounded-full bg-info-solid/70 text-foreground hover:bg-info-solid/70"
                 >
                   <SendHorizontal className="size-4" />
                   Transfer Ticket
                 </Button>
               </form>
             ) : !transferAllowed ? (
-              <div className="mt-8 rounded-[24px] border border-secondary-400/20 bg-white/5 p-5">
+              <div className="mt-8 rounded-3xl border border-secondary-400/20 bg-white/5 p-5">
                 <p className="text-sm font-semibold text-white">
                   Transfer disabled
                 </p>
@@ -656,7 +656,7 @@ export default function TransferTicketPage() {
                 </Button>
               </div>
             ) : (
-              <div className="mt-8 rounded-[24px] border border-sky-400/20 bg-white/5 p-5">
+              <div className="mt-8 rounded-3xl border border-info/20 bg-white/5 p-5">
                 <p className="text-sm font-semibold text-white">
                   {transfer?.status === "PENDING"
                     ? "Sent, waiting to be claimed"
@@ -688,7 +688,7 @@ export default function TransferTicketPage() {
                         );
                       }
                     }}
-                    className="mt-4 h-11 w-full rounded-full bg-white text-slate-950 hover:bg-slate-100"
+                    className="mt-4 h-11 w-full rounded-full bg-card text-foreground hover:bg-muted"
                   >
                     Take it back
                   </Button>

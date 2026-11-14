@@ -23,7 +23,9 @@ import {
   sponsorName,
 } from "@/lib/types";
 import { updateDevMockEvent } from "@/lib/dev-mock-events";
-import useUserStore from "@/stores/user-store";
+import AddressField from "@/components/ui/address-field";
+import useUserStore, { EUserRoles } from "@/stores/user-store";
+import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   BellRing,
@@ -149,11 +151,11 @@ const TicketDaysField: React.FC<{
     `rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
       active
         ? "border-secondary-800 bg-secondary-800 text-white"
-        : "border-secondary-200 bg-white text-secondary-600 hover:border-secondary-400"
+        : "border-secondary-200 bg-card text-secondary-600 hover:border-secondary-400"
     }`;
   return (
     <fieldset
-      className={`space-y-2 rounded-xl border border-secondary-200 bg-white p-3 ${className ?? ""}`}
+      className={`space-y-2 rounded-xl border border-secondary-200 bg-card p-3 ${className ?? ""}`}
     >
       <legend className="sr-only">Valid on</legend>
       <p className="text-sm font-medium text-secondary-700">
@@ -205,6 +207,8 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
   const { data, isLoading } = useEvent(id);
   const queryClient = useQueryClient();
   const userDetails = useUserStore((state) => state.userDetails);
+  const isAdmin = userDetails?.role === EUserRoles.ADMIN;
+  const { has: hasPermission } = useAdminPermissions();
   const [formValues, setFormValues] = useState({
     name: "",
     date: "",
@@ -374,22 +378,23 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     return (
       <div className="space-y-6">
         <Skeleton className="h-10 w-64 rounded-xl" />
-        <Skeleton className="h-[32rem] w-full rounded-[2rem]" />
+        <Skeleton className="h-[32rem] w-full rounded-3xl" />
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="rounded-[2rem] border border-secondary-100 bg-white p-8 text-secondary-600 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+      <div className="rounded-3xl border border-secondary-100 bg-card p-8 text-secondary-600 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
         This event could not be found.
       </div>
     );
   }
 
-  if (!data.isOwner) {
+  // Admins who host events also edit Turnupz's own.
+  if (!data.isOwner && !(data.hostedByTurnupz && isAdmin && hasPermission("EVENTS_HOST"))) {
     return (
-      <div className="rounded-[2rem] border border-secondary-100 bg-white p-8 text-secondary-600 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+      <div className="rounded-3xl border border-secondary-100 bg-card p-8 text-secondary-600 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
         You can only edit events you created.
       </div>
     );
@@ -1142,14 +1147,11 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-secondary-400">
-            Edit Event
-          </p>
-          <h1 className="text-[clamp(2rem,4vw,3rem)] font-bold leading-[0.96] tracking-tight text-secondary-950">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Refine {data.name}
           </h1>
-          <p className="max-w-3xl text-base text-secondary-500">
+          <p className="hidden max-w-2xl text-sm text-muted-foreground sm:block">
             Update the event story, stored sections, and venue details without
             losing the Turnupz workflow you already have in place.
           </p>
@@ -1181,7 +1183,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
 
       <section>
         <form
-          className="rounded-[1.6rem] border border-secondary-100 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:rounded-[2.2rem] sm:p-8"
+          className="rounded-3xl border border-secondary-100 bg-card p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:rounded-[2.2rem] sm:p-8"
           onSubmit={(event) => {
             event.preventDefault();
             handleSave();
@@ -1189,7 +1191,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
         >
           <div className="space-y-8">
             {hasSales && (
-              <div className="flex gap-3 rounded-[1.3rem] border border-primary-100 bg-primary-50/70 p-4 text-sm leading-6 text-secondary-800">
+              <div className="flex gap-3 rounded-2xl border border-primary-100 bg-primary-50/70 p-4 text-sm leading-6 text-secondary-800">
                 <BellRing
                   className="mt-0.5 size-5 shrink-0 text-primary"
                   aria-hidden
@@ -1221,11 +1223,11 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                   </div>
                   {bannerImage ? (
                     <div
-                      className="h-52 max-w-full rounded-[1.2rem] border border-secondary-100 bg-cover bg-center sm:h-64"
+                      className="h-52 max-w-full rounded-2xl border border-secondary-100 bg-cover bg-center sm:h-64"
                       style={{ backgroundImage: `url(${bannerImage})` }}
                     />
                   ) : (
-                    <div className="flex h-52 max-w-full items-center justify-center rounded-[1.2rem] border border-dashed border-secondary-200 bg-secondary-50 text-sm text-secondary-500 sm:h-64">
+                    <div className="flex h-52 max-w-full items-center justify-center rounded-2xl border border-dashed border-secondary-200 bg-secondary-50 text-sm text-secondary-500 sm:h-64">
                       No banner selected yet. Upload the event banner below.
                     </div>
                   )}
@@ -1303,16 +1305,14 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                       className="h-12 rounded-2xl border-secondary-200"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-secondary-700">
-                      Venue Address
-                    </label>
-                    <Input
-                      value={formValues.venueAddress}
-                      onChange={handleChange("venueAddress")}
-                      className="h-12 rounded-2xl border-secondary-200"
-                    />
-                  </div>
+                  <AddressField
+                    label="Venue Address"
+                    placeholder="Street, area — helps people find it"
+                    value={formValues.venueAddress}
+                    onChange={(venueAddress) =>
+                      setFormValues((current) => ({ ...current, venueAddress }))
+                    }
+                  />
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-sm font-medium text-secondary-700">
                       Description
@@ -1320,7 +1320,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                     <Textarea
                       value={formValues.description}
                       onChange={handleChange("description")}
-                      className="min-h-32 rounded-[1.5rem] border-secondary-200 px-4 py-3"
+                      className="min-h-32 rounded-3xl border-secondary-200 px-4 py-3"
                     />
                   </div>
                 </div>
@@ -1358,7 +1358,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                     {mediaImages.map((image, index) => (
                       <div
                         key={`${image}-${index}`}
-                        className="overflow-hidden rounded-[1.2rem] border border-secondary-100 bg-secondary-50"
+                        className="overflow-hidden rounded-2xl border border-secondary-100 bg-secondary-50"
                       >
                         <div className="relative h-32 w-full">
                           <MediaThumb
@@ -1380,7 +1380,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                             type="button"
                             variant="outline"
                             size="icon"
-                            className="shrink-0 rounded-xl border-secondary-200 bg-white"
+                            className="shrink-0 rounded-xl border-secondary-200 bg-card"
                             disabled={index === 0}
                             onClick={() => moveMedia(index, -1)}
                             aria-label="Move photo earlier"
@@ -1391,7 +1391,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                             type="button"
                             variant="outline"
                             size="icon"
-                            className="shrink-0 rounded-xl border-secondary-200 bg-white"
+                            className="shrink-0 rounded-xl border-secondary-200 bg-card"
                             disabled={index === mediaImages.length - 1}
                             onClick={() => moveMedia(index, 1)}
                             aria-label="Move photo later"
@@ -1401,7 +1401,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                           <Button
                             type="button"
                             variant="outline"
-                            className="flex-1 rounded-xl border-secondary-200 bg-white"
+                            className="flex-1 rounded-xl border-secondary-200 bg-card"
                             onClick={() => removeMedia(index)}
                           >
                             <Trash2 className="size-4" />
@@ -1445,7 +1445,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="grid gap-4 rounded-[1.3rem] bg-secondary-50 p-4 md:grid-cols-2">
+                    <div className="grid gap-4 rounded-2xl bg-secondary-50 p-4 md:grid-cols-2">
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-secondary-700">
                           Ticket Option
@@ -1461,7 +1461,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                           onChange={(event) =>
                             setSaleMethod(event.target.value)
                           }
-                          className="h-11 w-full rounded-xl border border-secondary-200 bg-white px-3 text-sm disabled:opacity-60"
+                          className="h-11 w-full rounded-xl border border-secondary-200 bg-card px-3 text-sm disabled:opacity-60"
                         >
                           <option value="">Select ticket option</option>
                           <option value="on_turnup">Sell on Turnupz</option>
@@ -1480,7 +1480,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                               setTicketUrl(event.target.value)
                             }
                             placeholder="https://example.com/tickets"
-                            className="h-11 rounded-xl border-secondary-200 bg-white"
+                            className="h-11 rounded-xl border-secondary-200 bg-card"
                           />
                         </div>
                       )}
@@ -1507,7 +1507,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                     </div>
 
                     {eventTickets.length === 0 && (
-                      <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
+                      <div className="rounded-2xl border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
                         No ticket categories yet. Add one to display tickets in
                         the preview.
                       </div>
@@ -1517,13 +1517,13 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                       return (
                         <div
                           key={`ticket-${index}`}
-                          className="rounded-[1.3rem] bg-secondary-50 p-4"
+                          className="rounded-2xl bg-secondary-50 p-4"
                         >
                           <div className="mb-4 flex items-center justify-between gap-3">
                             <p className="text-sm font-semibold text-secondary-950">
                               Ticket {index + 1}
                               {sold > 0 && (
-                                <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-secondary-600 ring-1 ring-secondary-200">
+                                <span className="ml-2 rounded-full bg-card px-2 py-0.5 text-xs font-semibold text-secondary-600 ring-1 ring-secondary-200">
                                   {sold.toLocaleString()} sold · price locked
                                 </span>
                               )}
@@ -1531,7 +1531,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                             <Button
                               type="button"
                               variant="outline"
-                              className="rounded-xl border-secondary-200 bg-white"
+                              className="rounded-xl border-secondary-200 bg-card"
                               disabled={sold > 0}
                               title={
                                 sold > 0
@@ -1559,7 +1559,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                     event.target.value,
                                   )
                                 }
-                                className="h-11 rounded-xl border-secondary-200 bg-white"
+                                className="h-11 rounded-xl border-secondary-200 bg-card"
                                 placeholder="Regular ticket"
                               />
                             </div>
@@ -1583,7 +1583,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                     event.target.value,
                                   )
                                 }
-                                className="h-11 rounded-xl border-secondary-200 bg-white"
+                                className="h-11 rounded-xl border-secondary-200 bg-card"
                               />
                             </div>
                             <div className="space-y-2">
@@ -1601,7 +1601,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                     event.target.value,
                                   )
                                 }
-                                className="h-11 rounded-xl border-secondary-200 bg-white"
+                                className="h-11 rounded-xl border-secondary-200 bg-card"
                               />
                             </div>
                             <div className="space-y-2">
@@ -1617,7 +1617,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                     event.target.value,
                                   )
                                 }
-                                className="h-11 w-full rounded-xl border border-secondary-200 bg-white px-3 text-sm"
+                                className="h-11 w-full rounded-xl border border-secondary-200 bg-card px-3 text-sm"
                               >
                                 <option value="public">Public</option>
                                 <option value="private">Private</option>
@@ -1637,7 +1637,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                     event.target.value,
                                   )
                                 }
-                                className="h-11 w-full rounded-xl border border-secondary-200 bg-white px-3 text-sm"
+                                className="h-11 w-full rounded-xl border border-secondary-200 bg-card px-3 text-sm"
                               >
                                 <option value="paid">Paid</option>
                                 <option value="register">Register</option>
@@ -1650,7 +1650,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                 their own from the event page.
                               </p>
                             ) : (
-                              <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-white px-3 text-sm text-secondary-700 md:col-span-2 xl:col-span-5">
+                              <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-card px-3 text-sm text-secondary-700 md:col-span-2 xl:col-span-5">
                                 <input
                                   type="checkbox"
                                   checked={!!ticket.transferable}
@@ -1669,7 +1669,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                               </label>
                             )}
                             <TicketSaleRulesFields
-                              className="rounded-xl border border-secondary-200 bg-white p-3 md:col-span-2 xl:col-span-5"
+                              className="rounded-xl border border-secondary-200 bg-card p-3 md:col-span-2 xl:col-span-5"
                               value={ticket}
                               timezone={timezone}
                               onChange={(patch) =>
@@ -1693,7 +1693,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                               />
                             )}
                             {ticket.visibility === "private" && (
-                              <div className="space-y-2 rounded-xl border border-dashed border-secondary-200 bg-white p-3 md:col-span-2 xl:col-span-5">
+                              <div className="space-y-2 rounded-xl border border-dashed border-secondary-200 bg-card p-3 md:col-span-2 xl:col-span-5">
                                 <p className="text-sm font-medium text-secondary-700">
                                   Private Invite Link
                                 </p>
@@ -1758,7 +1758,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
 
                   <div className="space-y-4">
                     {passAssignments.length === 0 && (
-                      <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
+                      <div className="rounded-2xl border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
                         No access passes yet. Add media, sponsor, worker, or
                         guest passes.
                       </div>
@@ -1766,7 +1766,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                     {passAssignments.map((pass, index) => (
                       <div
                         key={`pass-${index}`}
-                        className="rounded-[1.3rem] bg-secondary-50 p-4"
+                        className="rounded-2xl bg-secondary-50 p-4"
                       >
                         <div className="mb-4 flex items-center justify-between gap-3">
                           <p className="text-sm font-semibold text-secondary-950">
@@ -1775,7 +1775,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                           <Button
                             type="button"
                             variant="outline"
-                            className="rounded-xl border-secondary-200 bg-white"
+                            className="rounded-xl border-secondary-200 bg-card"
                             onClick={() => handleRemovePass(index)}
                           >
                             <Trash2 className="size-4" />
@@ -1797,7 +1797,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                 )
                               }
                               placeholder="Media pass"
-                              className="h-11 rounded-xl border-secondary-200 bg-white"
+                              className="h-11 rounded-xl border-secondary-200 bg-card"
                             />
                           </div>
                           <div className="space-y-2">
@@ -1815,7 +1815,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                   event.target.value,
                                 )
                               }
-                              className="h-11 rounded-xl border-secondary-200 bg-white"
+                              className="h-11 rounded-xl border-secondary-200 bg-card"
                             />
                           </div>
                           <div className="space-y-2 md:col-span-2">
@@ -1832,11 +1832,11 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                 )
                               }
                               placeholder="one email per line or separated by commas"
-                              className="min-h-24 rounded-[1rem] border-secondary-200 bg-white px-4 py-3"
+                              className="min-h-24 rounded-2xl border-secondary-200 bg-card px-4 py-3"
                             />
                             {pass.assignments?.length ? (
-                              <div className="rounded-xl border border-secondary-100 bg-white px-3 py-3">
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-secondary-400">
+                              <div className="rounded-xl border border-secondary-100 bg-card px-3 py-3">
+                                <p className="text-2xs font-semibold uppercase tracking-[0.18em] text-secondary-400">
                                   Email delivery
                                 </p>
                                 <div className="mt-2 space-y-2">
@@ -1868,7 +1868,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                               </p>
                             )}
                           </div>
-                          <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-white px-3 text-sm text-secondary-700 md:col-span-2">
+                          <label className="flex min-h-11 items-center gap-3 rounded-xl border border-secondary-200 bg-card px-3 text-sm text-secondary-700 md:col-span-2">
                             <input
                               type="checkbox"
                               checked={!!pass.transferable}
@@ -1920,7 +1920,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
             {step === 1 && (
               <>
                 {!isMultiDay && (
-                  <div className="rounded-[1.3rem] bg-secondary-50 p-4">
+                  <div className="rounded-2xl bg-secondary-50 p-4">
                     <LineupPicker value={lineup} onChange={setLineup} />
                   </div>
                 )}
@@ -1957,14 +1957,14 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
 
                   <div className="space-y-4">
                     {activities.length === 0 && (
-                      <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
+                      <div className="rounded-2xl border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
                         No activities yet. Add agenda items for this event.
                       </div>
                     )}
                     {activities.map((activity, index) => (
                       <div
                         key={`activity-${index}`}
-                        className="rounded-[1.3rem] bg-secondary-50 p-4"
+                        className="rounded-2xl bg-secondary-50 p-4"
                       >
                         <div className="mb-4 flex items-center justify-between gap-3">
                           <p className="text-sm font-semibold text-secondary-950">
@@ -1973,7 +1973,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                           <Button
                             type="button"
                             variant="outline"
-                            className="rounded-xl border-secondary-200 bg-white"
+                            className="rounded-xl border-secondary-200 bg-card"
                             onClick={() => handleRemoveActivity(index)}
                           >
                             <Trash2 className="size-4" />
@@ -1994,7 +1994,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                   event.target.value,
                                 )
                               }
-                              className="h-11 rounded-xl border-secondary-200 bg-white"
+                              className="h-11 rounded-xl border-secondary-200 bg-card"
                             />
                           </div>
                           <div className="space-y-2">
@@ -2011,7 +2011,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                   event.target.value,
                                 )
                               }
-                              className="h-11 rounded-xl border-secondary-200 bg-white"
+                              className="h-11 rounded-xl border-secondary-200 bg-card"
                             />
                           </div>
                           <div className="space-y-2 md:col-span-2">
@@ -2027,7 +2027,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                   event.target.value,
                                 )
                               }
-                              className="min-h-24 rounded-[1rem] border-secondary-200 bg-white px-4 py-3"
+                              className="min-h-24 rounded-2xl border-secondary-200 bg-card px-4 py-3"
                             />
                           </div>
                         </div>
@@ -2068,14 +2068,14 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
 
                   <div className="space-y-4">
                     {blogPosts.length === 0 && (
-                      <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
+                      <div className="rounded-2xl border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
                         No blog posts yet. Add one to keep attendees updated.
                       </div>
                     )}
                     {blogPosts.map((post, index) => (
                       <div
                         key={post.id}
-                        className="space-y-4 rounded-[1.3rem] bg-secondary-50 p-4"
+                        className="space-y-4 rounded-2xl bg-secondary-50 p-4"
                       >
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-semibold text-secondary-950">
@@ -2084,7 +2084,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                           <Button
                             type="button"
                             variant="outline"
-                            className="rounded-xl border-secondary-200 bg-white"
+                            className="rounded-xl border-secondary-200 bg-card"
                             onClick={() => handleRemoveBlogPost(index)}
                           >
                             <Trash2 className="size-4" />
@@ -2105,7 +2105,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                   event.target.value,
                                 )
                               }
-                              className="h-11 rounded-xl border-secondary-200 bg-white"
+                              className="h-11 rounded-xl border-secondary-200 bg-card"
                             />
                           </div>
                           <div className="space-y-2 md:col-span-2">
@@ -2121,7 +2121,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                   event.target.value,
                                 )
                               }
-                              className="h-11 rounded-xl border-secondary-200 bg-white"
+                              className="h-11 rounded-xl border-secondary-200 bg-card"
                             />
                           </div>
                           <div className="space-y-2 md:col-span-2">
@@ -2137,7 +2137,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                   event.target.value,
                                 )
                               }
-                              className="min-h-44 rounded-[1rem] border-secondary-200 bg-white px-4 py-3"
+                              className="min-h-44 rounded-2xl border-secondary-200 bg-card px-4 py-3"
                             />
                           </div>
                           <div className="space-y-2">
@@ -2152,7 +2152,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                   event.target.value,
                                 )
                               }
-                              className="h-11 w-full rounded-xl border border-secondary-200 bg-white px-3 text-sm"
+                              className="h-11 w-full rounded-xl border border-secondary-200 bg-card px-3 text-sm"
                             >
                               <option value="">Choose an image</option>
                               {availableImageOptions.map(
@@ -2175,7 +2175,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                               type="file"
                               accept="image/*"
                               multiple
-                              className="h-11 rounded-xl border-secondary-200 bg-white"
+                              className="h-11 rounded-xl border-secondary-200 bg-card"
                               onChange={(event) => {
                                 handleBlogImageUploads(
                                   index,
@@ -2193,7 +2193,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                               return (
                                 <div
                                   key={`${previewUrl}-${imageIndex}`}
-                                  className="overflow-hidden rounded-[1rem] border border-secondary-100 bg-white"
+                                  className="overflow-hidden rounded-2xl border border-secondary-100 bg-card"
                                 >
                                   <div
                                     className="h-36 bg-cover bg-center"
@@ -2208,7 +2208,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                     <Button
                                       type="button"
                                       variant="outline"
-                                      className="h-9 rounded-xl border-secondary-200 bg-white px-3 text-xs"
+                                      className="h-9 rounded-xl border-secondary-200 bg-card px-3 text-xs"
                                       onClick={() =>
                                         handleRemoveBlogImage(index, imageIndex)
                                       }
@@ -2257,14 +2257,14 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                   </div>
                   <div className="space-y-3">
                     {sponsors.length === 0 && (
-                      <div className="rounded-[1.3rem] border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
+                      <div className="rounded-2xl border border-dashed border-secondary-200 px-4 py-5 text-sm text-secondary-500">
                         No sponsors yet.
                       </div>
                     )}
                     {sponsors.map((sponsor, index) => (
                       <div
                         key={`sponsor-${index}`}
-                        className="grid gap-3 rounded-[1.3rem] bg-secondary-50 p-4 md:grid-cols-[1fr_auto]"
+                        className="grid gap-3 rounded-2xl bg-secondary-50 p-4 md:grid-cols-[1fr_auto]"
                       >
                         <div className="grid gap-3 md:grid-cols-2">
                           <Input
@@ -2279,12 +2279,12 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                               )
                             }
                             placeholder="Sponsor name"
-                            className="h-11 rounded-xl border-secondary-200 bg-white"
+                            className="h-11 rounded-xl border-secondary-200 bg-card"
                           />
                           <Input
                             type="file"
                             accept="image/*"
-                            className="h-11 rounded-xl border-secondary-200 bg-white"
+                            className="h-11 rounded-xl border-secondary-200 bg-card"
                             onChange={(event) => {
                               handleSponsorImageUpload(
                                 index,
@@ -2299,7 +2299,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                             type="button"
                             variant="outline"
                             size="icon"
-                            className="rounded-xl border-secondary-200 bg-white"
+                            className="rounded-xl border-secondary-200 bg-card"
                             disabled={index === 0}
                             onClick={() => moveSponsor(index, -1)}
                             aria-label="Move sponsor up"
@@ -2310,7 +2310,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                             type="button"
                             variant="outline"
                             size="icon"
-                            className="rounded-xl border-secondary-200 bg-white"
+                            className="rounded-xl border-secondary-200 bg-card"
                             disabled={index === sponsors.length - 1}
                             onClick={() => moveSponsor(index, 1)}
                             aria-label="Move sponsor down"
@@ -2320,7 +2320,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                           <Button
                             type="button"
                             variant="outline"
-                            className="rounded-xl border-secondary-200 bg-white"
+                            className="rounded-xl border-secondary-200 bg-card"
                             onClick={() => removeSponsor(index)}
                           >
                             <Trash2 className="size-4" />
@@ -2330,7 +2330,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                         {sponsorImages[index] && (
                           <div className="space-y-2 md:col-span-2">
                             <div
-                              className="flex h-24 items-center justify-center rounded-[1rem] border border-secondary-100 bg-white bg-contain bg-center bg-no-repeat"
+                              className="flex h-24 items-center justify-center rounded-2xl border border-secondary-100 bg-card bg-contain bg-center bg-no-repeat"
                               style={{
                                 backgroundImage: `url(${sponsorImages[index]})`,
                               }}
@@ -2428,7 +2428,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                     key={section.step}
                     type="button"
                     onClick={() => goTo(section.step)}
-                    className="flex w-full items-start justify-between gap-4 rounded-[1.3rem] border border-secondary-100 p-4 text-left transition-colors hover:border-secondary-300"
+                    className="flex w-full items-start justify-between gap-4 rounded-2xl border border-secondary-100 p-4 text-left transition-colors hover:border-secondary-300"
                   >
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold text-secondary-950">

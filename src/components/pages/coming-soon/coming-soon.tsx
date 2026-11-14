@@ -344,7 +344,7 @@ const ComingSoon = () => {
                     <p className="mt-1 text-sm leading-6 text-white/70">Spots on the first night are limited.</p>
                   </div>
                   {confirming === "failed" && (
-                    <p className="rounded-xl border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm text-red-100" role="alert">
+                    <p className="rounded-xl border border-danger-line/30 bg-danger-solid/10 px-4 py-3 text-sm text-red-100" role="alert">
                       {confirmError}
                     </p>
                   )}
@@ -469,7 +469,7 @@ const ComingSoon = () => {
                   </details>
 
                   {submitError && (
-                    <p className="rounded-xl border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm text-red-100" role="alert">
+                    <p className="rounded-xl border border-danger-line/30 bg-danger-solid/10 px-4 py-3 text-sm text-red-100" role="alert">
                       {submitError}
                     </p>
                   )}

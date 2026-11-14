@@ -30,6 +30,7 @@ const TABS: { value: TAdminUserType; label: string }[] = [
   { value: "vendors", label: "Vendors" },
   { value: "users", label: "Users" },
   { value: "suspended", label: "Suspended" },
+  { value: "restricted", label: "Restricted" },
   { value: "unverified", label: "Unverified" },
 ];
 
@@ -37,19 +38,23 @@ const TAB_NOTES: Partial<Record<TAdminUserType, string>> = {
   unverified:
     "People who signed up but haven't verified their email yet. They aren't counted as users until they do.",
   suspended: "Accounts that can't sign in until an admin reactivates them.",
+  restricted:
+    "Accounts that can sign in but can't publish new events, get or send tickets, or message. Organisers' payouts are held.",
 };
 
 /** Suspension wins over verification: a suspended account can't sign in either way. */
 const accountStatus = (user: IAdminUserListItem) =>
   user.isAccountDisabled
-    ? { label: "Suspended", tone: "bg-red-50 text-red-700" }
-    : user.isEmailVerified === false && user.role !== EUserRoles.ADMIN
+    ? { label: "Suspended", tone: "bg-danger-soft text-danger" }
+    : user.isRestricted
+      ? { label: "Restricted", tone: "bg-warning-soft text-warning" }
+      : user.isEmailVerified === false && user.role !== EUserRoles.ADMIN
       ? { label: "Unverified", tone: "bg-secondary-50 text-secondary-800" }
-      : { label: "Active", tone: "bg-emerald-50 text-emerald-700" };
+      : { label: "Active", tone: "bg-success-soft text-success" };
 
 const ROLE_TONE: Record<string, string> = {
   [EUserRoles.ADMIN]: "bg-primary-50 text-primary-700",
-  [EUserRoles.VENDOR]: "bg-blue-50 text-blue-700",
+  [EUserRoles.VENDOR]: "bg-info-soft text-info",
   [EUserRoles.USER]: "bg-muted text-muted-foreground",
 };
 
@@ -89,7 +94,7 @@ const UsersList = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-bold text-secondary-800">Users</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Users</h1>
         <p className="text-sm text-muted-foreground">
           {TAB_NOTES[type] ??
             "Every account that has verified its email. Open one to see its details."}
@@ -158,6 +163,8 @@ const UsersList = () => {
               ? "No account matches that search."
               : type === "suspended"
                 ? "No account is suspended."
+                : type === "restricted"
+                  ? "No account is restricted."
                 : type === "unverified"
                   ? "Everyone who signed up has verified their email."
                   : "There are no accounts in this group yet."
@@ -193,7 +200,7 @@ const UsersList = () => {
                   }}
                   className={cn(
                     "cursor-pointer",
-                    user.isAccountDisabled && "bg-red-50/40",
+                    user.isAccountDisabled && "bg-danger-soft/40",
                   )}
                 >
                   <TableCell className="font-medium">

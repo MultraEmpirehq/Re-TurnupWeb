@@ -86,7 +86,7 @@ const StepReview: React.FC<{ verification: IVendorVerification }> = ({
                         disabled={review.isPending || status === "approved"}
                         onClick={() => decide(step.key, "approved")}
                       >
-                        <Check className="size-4 text-emerald-600" />
+                        <Check className="size-4 text-success" />
                       </Button>
                       <Button
                         size="icon"

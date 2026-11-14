@@ -1,5 +1,6 @@
 "use client";
 
+import IdExpiryPanel from "./id-expiry-panel";
 import { constructErrorMessage } from "@/api/functions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import ErrorContainer from "@/components/ui/error-container";
@@ -243,6 +244,10 @@ const Details: React.FC<{
               </FieldGrid>
             </Section>
           )}
+
+          <Section title="ID validity">
+            <IdExpiryPanel verification={verification} />
+          </Section>
 
           <Section title="Documents">
             <div className="grid gap-4 sm:grid-cols-2">

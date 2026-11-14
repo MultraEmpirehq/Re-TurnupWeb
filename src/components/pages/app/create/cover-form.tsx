@@ -139,12 +139,12 @@ const CoverForm: React.FC<{
             <button
               type="button"
               title="Remove Image"
-              className="size-full opacity-0 hover:opacity-100 transition-all duration-300 z-10 absolute top-0 left-0 flex items-center justify-center text-red-500 bg-white/30 cursor-pointer"
+              className="size-full opacity-0 hover:opacity-100 transition-all duration-300 z-10 absolute top-0 left-0 flex items-center justify-center text-danger bg-white/30 cursor-pointer"
               onClick={() => {
                 setValue("coverImage", null, { shouldValidate: true });
               }}
             >
-              <TrashIcon className="size-8 text-red-500" />
+              <TrashIcon className="size-8 text-danger" />
             </button>
           </div>
         )}

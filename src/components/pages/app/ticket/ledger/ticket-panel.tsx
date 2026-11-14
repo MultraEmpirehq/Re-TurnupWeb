@@ -31,10 +31,10 @@ import { toast } from "@/lib/toast";
 const time = (value: string) => format(new Date(value), "d MMM yyyy, h:mm a");
 
 const STATUS: Record<ILedgerRecord["status"], { label: string; className: string }> = {
-  checked_in: { label: "Checked in", className: "bg-emerald-50 text-emerald-700" },
+  checked_in: { label: "Checked in", className: "bg-success-soft text-success" },
   not_checked_in: { label: "Not checked in", className: "bg-secondary-50 text-secondary-700" },
-  pending: { label: "Awaiting approval", className: "bg-amber-50 text-amber-800" },
-  refunded: { label: "Refunded", className: "bg-red-50 text-red-700" },
+  pending: { label: "Awaiting approval", className: "bg-warning-soft text-warning" },
+  refunded: { label: "Refunded", className: "bg-danger-soft text-danger" },
   declined: { label: "Declined", className: "bg-muted text-muted-foreground" },
 };
 
@@ -61,11 +61,11 @@ const LiveQr = ({
   const radius = ring / 2 - 4;
   const around = 2 * Math.PI * radius;
   return (
-    <div className="rounded-[1.5rem] bg-gradient-to-br from-secondary-800 via-secondary-600 to-primary-500 p-5 text-white">
+    <div className="rounded-3xl bg-gradient-to-br from-secondary-800 via-secondary-600 to-primary-500 p-5 text-white">
       <div className="flex items-center justify-between text-xs font-semibold">
         <span className="inline-flex items-center gap-1.5">
           <span
-            className={cn("size-2 rounded-full", live ? "animate-pulse bg-emerald-300" : "bg-white/50")}
+            className={cn("size-2 rounded-full", live ? "animate-pulse bg-success-solid/70" : "bg-white/50")}
           />
           {live ? "Live code" : "Ticket code"}
         </span>
@@ -90,7 +90,7 @@ const LiveQr = ({
             />
           </svg>
         )}
-        <div className={cn("rounded-2xl bg-white p-3", dimmed && "opacity-30")}>
+        <div className={cn("rounded-2xl bg-card p-3", dimmed && "opacity-30")}>
           <QRCodeSVG value={value} size={size} level="M" />
         </div>
       </div>
@@ -133,7 +133,7 @@ const ReviewActions = ({ record, onDone }: { record: ILedgerRecord; onDone: () =
     }
   };
   return (
-    <div className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
+    <div className="space-y-3 rounded-2xl border border-warning-line bg-warning-soft/60 p-4">
       <p className="text-sm text-secondary-800">
         This event needs your approval. Their ticket works once you let them in.
       </p>
@@ -141,7 +141,7 @@ const ReviewActions = ({ record, onDone }: { record: ILedgerRecord; onDone: () =
         <Button
           type="button"
           variant="outline"
-          className="rounded-full bg-white"
+          className="rounded-full bg-card"
           disabled={review.isPending}
           onClick={() => decide("rejected")}
         >
@@ -254,7 +254,7 @@ const TicketPanel = ({
             </SheetHeader>
             <div className="space-y-5 px-4 pt-2 pb-8">
               {detail.isPending ? (
-                <Skeleton className="h-[330px] rounded-[1.5rem]" />
+                <Skeleton className="h-[330px] rounded-3xl" />
               ) : ticket && !ticket.canSeeLiveCode ? (
                 <div className="rounded-2xl bg-secondary-50 p-4 text-sm text-secondary-800">
                   <p className="font-mono font-semibold tracking-widest">{record.ticketCode}</p>

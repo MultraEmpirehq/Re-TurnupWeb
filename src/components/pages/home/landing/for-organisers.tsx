@@ -67,7 +67,7 @@ const ForOrganisers = () => {
   const percent = Math.round((value / 300) * 100);
 
   return (
-    <section className="bg-white pb-20 md:pb-28">
+    <section className="bg-card pb-20 md:pb-28">
       <SectionContainer>
         <Reveal className="relative isolate overflow-hidden rounded-[2.5rem] bg-secondary-950 px-6 py-14 sm:px-12 md:py-20">
           <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
@@ -120,8 +120,8 @@ const ForOrganisers = () => {
                 <span className="text-sm font-medium text-white/70">
                   Checked in today
                 </span>
-                <span className="flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-1 text-[11px] font-semibold text-emerald-300">
-                  <span className="size-1.5 animate-pulse rounded-full bg-emerald-300" />
+                <span className="flex items-center gap-1.5 rounded-full bg-success-solid/15 px-2.5 py-1 text-2xs font-semibold text-emerald-300">
+                  <span className="size-1.5 animate-pulse rounded-full bg-success-solid/70" />
                   Live
                 </span>
               </div>
@@ -143,11 +143,11 @@ const ForOrganisers = () => {
                 ].map(([tier, count]) => (
                   <div key={tier} className="rounded-2xl bg-white/[0.06] py-3">
                     <p className="text-lg font-semibold text-white tabular-nums">{count}</p>
-                    <p className="text-[11px] text-white/50">{tier}</p>
+                    <p className="text-2xs text-white/50">{tier}</p>
                   </div>
                 ))}
               </div>
-              <p className="mt-5 text-center text-[11px] text-white/35">
+              <p className="mt-5 text-center text-2xs text-white/35">
                 Sample dashboard
               </p>
             </div>
