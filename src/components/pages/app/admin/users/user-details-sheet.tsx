@@ -23,6 +23,10 @@ import {
 import { NoteDialog } from "../moderation/moderation-ui";
 import UserTransfers from "./user-transfers";
 import { toast } from "@/lib/toast";
+import StatusBadge from "@/components/ui/status-badge";
+import Link from "next/link";
+import { deleteData } from "@/api";
+import { useQueryClient } from "@tanstack/react-query";
 import StatusPill from "../status-pill";
 
 const APPROVAL_LABEL: Record<string, string> = {
@@ -93,7 +97,12 @@ const VerificationBlock: React.FC<{
   );
 };
 
-type TAccountAction = "suspend" | "reactivate" | "restrict" | "unrestrict";
+type TAccountAction =
+  | "suspend"
+  | "reactivate"
+  | "restrict"
+  | "unrestrict"
+  | "resetTwoFactor";
 
 /** What each account action says before and after. */
 const ACCOUNT_ACTIONS: Record<
@@ -138,6 +147,16 @@ const ACCOUNT_ACTIONS: Record<
     tone: "danger",
     required: true,
   },
+  resetTwoFactor: {
+    title: "Reset two-factor sign-in?",
+    description:
+      "Only once you're sure it's really them (for example, on a call from the number on their account). It turns two-factor off and forgets their trusted devices; they're emailed, and it's in the audit log.",
+    placeholder: "How you checked it was them, for the audit log.",
+    confirm: "Reset two-factor",
+    done: "Two-factor sign-in reset. They can turn it back on in Settings.",
+    tone: "danger",
+    required: false,
+  },
   unrestrict: {
     title: "Lift the restriction?",
     description:
@@ -159,6 +178,7 @@ const UserDetailsSheet: React.FC<{
   const { has } = useAdminPermissions();
   const setSuspension = useSetUserSuspension();
   const setRestriction = useSetUserRestriction();
+  const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState<TAccountAction | null>(null);
   const action = confirming ? ACCOUNT_ACTIONS[confirming] : null;
   // Admins are suspended from the Admins & Permissions page instead.
@@ -174,6 +194,9 @@ const UserDetailsSheet: React.FC<{
           suspended: confirming === "suspend",
           reason: reason || undefined,
         });
+      } else if (confirming === "resetTwoFactor") {
+        await deleteData(`/admin/users/${data.id}/two-factor`);
+        await queryClient.invalidateQueries({ queryKey: ["admin-user", data.id] });
       } else {
         await setRestriction.mutateAsync({
           id: data.id,
@@ -216,6 +239,21 @@ const UserDetailsSheet: React.FC<{
 
           {!!data && (
             <>
+              {data.accountType && (
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-4">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Account type</p>
+                    <StatusBadge tone={data.accountType.tone}>{data.accountType.label}</StatusBadge>
+                  </div>
+                  {data.accountType.verificationId && has("VENDORS_VERIFY") && (
+                    <Button asChild variant="outline" className="rounded-xl">
+                      <Link href={`/app/admin/verifications/${data.accountType.verificationId}`}>
+                        Open application
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4 rounded-lg border border-border bg-card p-4">
                 <Field label="Role">{data.role ?? "—"}</Field>
                 <Field label="Username">{data.username ?? "—"}</Field>
@@ -284,6 +322,27 @@ const UserDetailsSheet: React.FC<{
                   </Button>
                 </div>
               )}
+
+              {data.twoFactorEnabled &&
+                has("USERS_MANAGE") &&
+                (data.role !== EUserRoles.ADMIN || has("ADMINS_MANAGE")) && (
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-4">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Two-factor sign-in is on</p>
+                      <p className="text-xs text-muted-foreground">
+                        Lost their phone and backup codes? Reset it once you&apos;ve checked it&apos;s them.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="shrink-0 rounded-xl border-danger-line text-danger hover:bg-danger-soft"
+                      onClick={() => setConfirming("resetTwoFactor")}
+                    >
+                      Reset
+                    </Button>
+                  </div>
+                )}
 
               {canSuspend && (
                 <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-4">

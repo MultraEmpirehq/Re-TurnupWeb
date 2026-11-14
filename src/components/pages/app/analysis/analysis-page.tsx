@@ -16,15 +16,17 @@ import useUserStore from "@/stores/user-store";
 import Link from "next/link";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import Change from "./change";
+import PeriodFilter from "@/components/ui/period-filter";
+import SegmentedControl from "@/components/ui/segmented-control";
+import { PERIODS as SITE_PERIODS } from "@/lib/periods";
 import SalesChart from "./sales-chart";
 
-const PERIODS: { days: TInsightsDays; label: string; previous: string }[] = [
-  { days: 7, label: "7 days", previous: "previous 7 days" },
-  { days: 30, label: "30 days", previous: "previous 30 days" },
-  { days: 90, label: "90 days", previous: "previous 90 days" },
-  { days: 365, label: "12 months", previous: "previous 12 months" },
-  { days: 0, label: "All time", previous: "" },
-];
+// One set of periods across the site (src/lib/periods.ts).
+const PERIODS = SITE_PERIODS.map((period) => ({
+  ...period,
+  // Change reads "vs previous 30 days".
+  previous: period.previous.replace(/^the (.*) before$/, "previous $1"),
+}));
 const PERIOD_KEY = "turnupz-analytics-days";
 
 const number = (value: number) => value.toLocaleString();
@@ -71,43 +73,7 @@ const Card: React.FC<{
   </section>
 );
 
-const Segmented = <T extends string | number>({
-  options,
-  value,
-  onChange,
-  label,
-}: {
-  options: { value: T; label: string; disabled?: boolean; title?: string }[];
-  value: T;
-  onChange: (value: T) => void;
-  label: string;
-}) => (
-  <div
-    role="radiogroup"
-    aria-label={label}
-    className="scrollbar-none flex w-fit max-w-full gap-1 overflow-x-auto rounded-full border border-secondary-100 bg-card p-1 shadow-sm"
-  >
-    {options.map((option) => (
-      <button
-        key={String(option.value)}
-        type="button"
-        role="radio"
-        aria-checked={option.value === value}
-        disabled={option.disabled}
-        title={option.title}
-        onClick={() => onChange(option.value)}
-        className={cn(
-          "shrink-0 rounded-full px-3 py-1.5 text-xs font-bold tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-40",
-          option.value === value
-            ? "bg-secondary-900 text-white"
-            : "text-secondary-500 hover:text-secondary-900",
-        )}
-      >
-        {option.label}
-      </button>
-    ))}
-  </div>
-);
+const Segmented = SegmentedControl;
 
 type TSort = "upcoming" | "sold" | "sellThrough";
 
@@ -253,12 +219,7 @@ const AnalysisPage = () => {
           </p>
         </div>
         <div className="flex flex-col items-start gap-2 lg:items-end">
-          <Segmented
-            label="Period"
-            value={days}
-            onChange={choosePeriod}
-            options={PERIODS.map((item) => ({ value: item.days, label: item.label }))}
-          />
+          <PeriodFilter value={days} onChange={choosePeriod} />
           <CurrencyFilter
             totals={codes.map<TCurrencyTotal>((code) => ({ code, amount: 0, formatted: "" }))}
             selected={filter.selected}

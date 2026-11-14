@@ -24,10 +24,13 @@ import { format } from "date-fns";
 import { Search, Users } from "lucide-react";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import UserDetailsSheet from "./user-details-sheet";
+import PageHeader from "@/components/ui/page-header";
+import StatusBadge, { type TTone } from "@/components/ui/status-badge";
 
 const TABS: { value: TAdminUserType; label: string }[] = [
   { value: "all", label: "All" },
   { value: "vendors", label: "Vendors" },
+  { value: "applicants", label: "Applicants" },
   { value: "users", label: "Users" },
   { value: "suspended", label: "Suspended" },
   { value: "restricted", label: "Restricted" },
@@ -35,6 +38,8 @@ const TABS: { value: TAdminUserType; label: string }[] = [
 ];
 
 const TAB_NOTES: Partial<Record<TAdminUserType, string>> = {
+  applicants:
+    "People partway through applying to host, or organisers asking to sell tickets. Open one to go to their application.",
   unverified:
     "People who signed up but haven't verified their email yet. They aren't counted as users until they do.",
   suspended: "Accounts that can't sign in until an admin reactivates them.",
@@ -43,20 +48,23 @@ const TAB_NOTES: Partial<Record<TAdminUserType, string>> = {
 };
 
 /** Suspension wins over verification: a suspended account can't sign in either way. */
-const accountStatus = (user: IAdminUserListItem) =>
+const accountStatus = (user: IAdminUserListItem): { label: string; tone: TTone } =>
   user.isAccountDisabled
-    ? { label: "Suspended", tone: "bg-danger-soft text-danger" }
+    ? { label: "Suspended", tone: "danger" }
     : user.isRestricted
-      ? { label: "Restricted", tone: "bg-warning-soft text-warning" }
+      ? { label: "Restricted", tone: "warning" }
       : user.isEmailVerified === false && user.role !== EUserRoles.ADMIN
-      ? { label: "Unverified", tone: "bg-secondary-50 text-secondary-800" }
-      : { label: "Active", tone: "bg-success-soft text-success" };
+        ? { label: "Unverified", tone: "neutral" }
+        : { label: "Active", tone: "success" };
 
-const ROLE_TONE: Record<string, string> = {
-  [EUserRoles.ADMIN]: "bg-primary-50 text-primary-700",
-  [EUserRoles.VENDOR]: "bg-info-soft text-info",
-  [EUserRoles.USER]: "bg-muted text-muted-foreground",
-};
+/** The API's account type; the bare role only if it's missing. */
+const accountType = (user: IAdminUserListItem): { label: string; tone: TTone } =>
+  user.accountType ??
+  (user.role === EUserRoles.ADMIN
+    ? { label: "Admin", tone: "info" }
+    : user.role === EUserRoles.VENDOR
+      ? { label: "Organiser", tone: "success" }
+      : { label: "Attendee", tone: "neutral" });
 
 const displayName = (user: IAdminUserListItem) =>
   user.name?.trim() || user.username || user.email || "Unnamed";
@@ -93,13 +101,13 @@ const UsersList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Users</h1>
-        <p className="text-sm text-muted-foreground">
-          {TAB_NOTES[type] ??
-            "Every account that has verified its email. Open one to see its details."}
-        </p>
-      </div>
+      <PageHeader
+        title="Users"
+        description={
+          TAB_NOTES[type] ??
+          "Every account that has verified its email. Open one to see its details."
+        }
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <ScrollRow>
@@ -179,7 +187,7 @@ const UsersList = () => {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
+                <TableHead>Account type</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Country</TableHead>
                 <TableHead>Joined</TableHead>
@@ -210,25 +218,14 @@ const UsersList = () => {
                     {user.email ?? "—"}
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                        ROLE_TONE[user.role ?? ""] ??
-                          ROLE_TONE[EUserRoles.USER],
-                      )}
-                    >
-                      {user.role ?? "—"}
-                    </span>
+                    <StatusBadge tone={accountType(user).tone}>
+                      {accountType(user).label}
+                    </StatusBadge>
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                        accountStatus(user).tone,
-                      )}
-                    >
+                    <StatusBadge tone={accountStatus(user).tone}>
                       {accountStatus(user).label}
-                    </span>
+                    </StatusBadge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {user.country ?? "—"}

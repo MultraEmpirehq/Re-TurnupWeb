@@ -1,12 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { IAnalyticsEvent, IAnalyticsSource } from "@/hooks/use-admin-analytics";
 import { cn } from "@/lib/utils";
 import { Download } from "lucide-react";
 import React from "react";
-import { PERIODS, TPeriod } from "../finance/finance-ui";
+import { TPeriod } from "../finance/finance-ui";
+import { CalendarPeriodFilter } from "@/components/ui/period-filter";
+import SegmentedControl from "@/components/ui/segmented-control";
 
 export const count = (value: number) => value.toLocaleString();
 export const pct = (value: number | null | undefined) =>
@@ -28,38 +29,17 @@ export const AnalyticsHeader: React.FC<{
     </div>
     <div className="flex flex-wrap items-center gap-2">
       {setPaidOnly && (
-        <div className="inline-flex rounded-full border border-border bg-card p-1" role="group" aria-label="Which events">
-          {[
-            [false, "All events"],
-            [true, "Paid only"],
-          ].map(([value, label]) => (
-            <button
-              key={String(value)}
-              type="button"
-              aria-pressed={paidOnly === value}
-              onClick={() => setPaidOnly(value as boolean)}
-              className={cn(
-                "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
-                paidOnly === value ? "bg-secondary-800 text-white dark:bg-foreground dark:text-background" : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          label="Which events"
+          value={!!paidOnly}
+          onChange={setPaidOnly}
+          options={[
+            { value: false, label: "All events" },
+            { value: true, label: "Paid only" },
+          ]}
+        />
       )}
-      <Select value={period} onValueChange={(value) => setPeriod(value as TPeriod)}>
-        <SelectTrigger className="h-9 w-[150px] rounded-full bg-card text-xs font-semibold" aria-label="Period">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {PERIODS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <CalendarPeriodFilter value={period} onChange={setPeriod} />
       {onExport && (
         <Button variant="outline" size="sm" className="h-9 rounded-full bg-card text-xs font-semibold" onClick={onExport}>
           <Download className="size-3.5" aria-hidden /> Export CSV

@@ -1,3 +1,4 @@
+import { getTrustedDevice } from "@/lib/trusted-device";
 import { visitorId } from "@/lib/visitor-id";
 import { apiBaseUrl } from "@/lib/env";
 import useUserStore from "@/stores/user-store";
@@ -35,6 +36,11 @@ api.interceptors.request.use(
     // Working on another organiser's team: the api checks what they allowed.
     const workspace = getActiveWorkspace();
     if (workspace) config.headers["X-Vendor-Workspace"] = workspace.vendorId;
+    // Signing in from a device they trusted skips the two-factor code.
+    if (config.url?.startsWith("/auth/")) {
+      const trusted = getTrustedDevice();
+      if (trusted) config.headers["X-Trusted-Device"] = trusted;
+    }
     const authToken = useUserStore.getState().userToken;
     if (authToken) {
       config.headers.Authorization = authToken.startsWith("Bearer ")

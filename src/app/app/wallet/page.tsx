@@ -1,5 +1,9 @@
 "use client";
 
+import PeriodFilter from "@/components/ui/period-filter";
+import SegmentedControl from "@/components/ui/segmented-control";
+import { DEFAULT_PERIOD, periodPhrase, TPeriodDays } from "@/lib/periods";
+
 import { constructErrorMessage } from "@/api/functions";
 import { VendorVerificationNotice } from "@/components/pages/app/vendor-verification";
 import ErrorContainer from "@/components/ui/error-container";
@@ -12,7 +16,6 @@ import {
   useVendorPayouts,
   VendorCurrencyEarnings,
 } from "@/hooks/use-vendor-wallet";
-import { cn } from "@/lib/utils";
 import ChangeBankDialog from "@/components/pages/app/wallet/change-bank-dialog";
 import EarningsHero from "@/components/pages/app/wallet/earnings-hero";
 import PayoutAccountCard from "@/components/pages/app/wallet/payout-account-card";
@@ -39,13 +42,6 @@ const StripePayouts = dynamic(
   },
 );
 
-const PERIODS = [
-  { days: 7, label: "Last 7 days" },
-  { days: 30, label: "Last 30 days" },
-  { days: 90, label: "Last 90 days" },
-  { days: 365, label: "Last 12 months" },
-  { days: 0, label: "All time" },
-];
 
 /** Nothing sold yet in this currency: the page still shows its shape. */
 const emptyTotals = (currency: string): VendorCurrencyEarnings => {
@@ -78,7 +74,7 @@ const emptyTotals = (currency: string): VendorCurrencyEarnings => {
  * to withdraw.
  */
 const WalletPage = () => {
-  const [days, setDays] = useState(30);
+  const [days, setDays] = useState<TPeriodDays>(DEFAULT_PERIOD);
   const [eventId, setEventId] = useState<string>();
   const filter: TWalletFilter = { days: days || undefined, eventId };
   const { data, isLoading, error, refetch } = useVendorEarnings(filter);
@@ -102,7 +98,7 @@ const WalletPage = () => {
       ? chosenCurrency
       : (currencies[0]?.currency ?? account?.currency ?? "NGN");
   const totals = currencies.find((c) => c.currency === currency) ?? emptyTotals(currency);
-  const periodLabel = PERIODS.find((p) => p.days === days)?.label.toLowerCase() ?? "all time";
+  const periodLabel = periodPhrase(days).replace(/^the /, "");
 
   // Flutterwave payouts not paid yet, and when the next one lands.
   const onItsWay = useMemo(() => {
@@ -138,42 +134,14 @@ const WalletPage = () => {
         <div className="flex flex-wrap items-center gap-2">
           <HideAmountsButton className="h-10 border border-secondary-100 bg-card px-4 text-secondary-700 hover:bg-secondary-50" />
           {currencies.length > 1 && (
-            <div
-              role="tablist"
-              aria-label="Currency"
-              className="flex rounded-full border border-secondary-100 bg-card p-1 text-sm font-semibold"
-            >
-              {currencies.map((c) => (
-                <button
-                  key={c.currency}
-                  type="button"
-                  role="tab"
-                  aria-selected={c.currency === currency}
-                  onClick={() => setChosenCurrency(c.currency)}
-                  className={cn(
-                    "rounded-full px-4 py-1.5 transition-colors",
-                    c.currency === currency
-                      ? "bg-secondary-950 text-white"
-                      : "text-muted-foreground hover:text-secondary-800",
-                  )}
-                >
-                  {c.currency}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              label="Currency"
+              value={currency}
+              onChange={setChosenCurrency}
+              options={currencies.map((c) => ({ value: c.currency, label: c.currency }))}
+            />
           )}
-          <select
-            value={days}
-            onChange={(event) => setDays(Number(event.target.value))}
-            aria-label="Period"
-            className="h-10 rounded-full border border-secondary-100 bg-card px-4 text-sm font-semibold text-secondary-700"
-          >
-            {PERIODS.map((period) => (
-              <option key={period.days} value={period.days}>
-                {period.label}
-              </option>
-            ))}
-          </select>
+<PeriodFilter value={days} onChange={setDays} />
         </div>
       </div>
 

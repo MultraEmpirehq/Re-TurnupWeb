@@ -9,6 +9,8 @@ import joi from "joi";
 import { useForm } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
 import { postData, WEB_CLIENT_HEADERS } from "@/api";
+import TwoFactorPrompt from "./two-factor-prompt";
+import { isTwoFactorChallenge } from "@/lib/trusted-device";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/lib/toast";
 import { constructErrorMessage } from "@/api/functions";
@@ -273,8 +275,16 @@ const AuthForm = ({ intent = "attendee" }: { intent?: TAuthIntent }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefilledEmail]);
 
+  // Two-factor is on: the sign-in came back asking for the app's code.
+  const [twoFactor, setTwoFactor] = useState<string | null>(null);
+
   const handleAuthSuccess = useCallback(
     async (authPayload?: IAuthResponse | ISocialAuthResponse) => {
+      if (isTwoFactorChallenge(authPayload)) {
+        setCodeStep(null);
+        setTwoFactor(authPayload.challenge);
+        return;
+      }
       const payload = authPayload as IAuthResponse | undefined;
       const authToken =
         payload?.token || payload?.accessToken || payload?.authToken;
@@ -407,6 +417,15 @@ const AuthForm = ({ intent = "attendee" }: { intent?: TAuthIntent }) => {
           onReady={onGoogleScriptReady}
         />
       )}
+      {twoFactor ? (
+        <div className="flex w-full flex-col gap-7">
+          <TwoFactorPrompt
+            challenge={twoFactor}
+            onDone={(response) => handleAuthSuccess(response as unknown as IAuthResponse)}
+            onCancel={() => setTwoFactor(null)}
+          />
+        </div>
+      ) : (
       <div className="flex w-full flex-col gap-7">
         <div className="space-y-2">
           <p className="text-sm font-semibold tracking-wider text-primary uppercase">
@@ -528,6 +547,7 @@ const AuthForm = ({ intent = "attendee" }: { intent?: TAuthIntent }) => {
         )}
 
       </div>
+      )}
     </>
   );
 };

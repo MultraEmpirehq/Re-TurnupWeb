@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import InviteFriendsCard from "./invite-friends-card";
 import CreditCard from "./credit-card";
 import { patchData, postData } from "@/api";
@@ -100,15 +101,28 @@ const roleLabels: Record<EUserRoles, string> = {
   [EUserRoles.USER]: "Attendee account",
 };
 
-const cardClassName =
-  "rounded-3xl border border-secondary-100 bg-card p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-8";
+// The standard card, like the other Settings cards beside it.
+const cardClassName = "rounded-2xl border border-border bg-card p-4 sm:p-5";
 
 /**
  * The signed-in user's photo and personal details, saved to the api. Shared by the
  * dashboard profile and the attendee account area so both edit the same way.
  */
-/** `embedded`: shown on the settings page itself, so no link back to it. */
-const ProfileDetailsForm = ({ embedded = false }: { embedded?: boolean }) => {
+/**
+ * `embedded`: shown on the settings page itself, so no link back to it.
+ * `side`: what goes beside the form there when nothing else does (an admin's
+ * signed-in devices), so the column isn't left empty; `below`: what follows
+ * the form in its own column (an admin's sign-in and security).
+ */
+const ProfileDetailsForm = ({
+  embedded = false,
+  side,
+  below,
+}: {
+  embedded?: boolean;
+  side?: React.ReactNode;
+  below?: React.ReactNode;
+}) => {
   const userDetails = useUserStore((state) => state.userDetails);
   const isAdmin = userDetails?.role === EUserRoles.ADMIN;
   const { performAuthOperation } = useAuth();
@@ -241,6 +255,9 @@ const ProfileDetailsForm = ({ embedded = false }: { embedded?: boolean }) => {
   }, [reset, defaultValues]);
 
   // Vendors and admins keep their settings in the dashboard.
+  // Credit, invites and help for organisers and attendees; elsewhere the
+  // sign-in summary; or what the page puts there (`side`).
+  const hasAside = !isAdmin || !embedded || !!side;
   const settingsHref =
     userDetails?.role === EUserRoles.USER || !userDetails?.role
       ? ROUTES.PROFILE_SETTINGS.href
@@ -315,11 +332,18 @@ const ProfileDetailsForm = ({ embedded = false }: { embedded?: boolean }) => {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 items-start gap-6 @5xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div
+        className={cn(
+          "grid grid-cols-1 items-start gap-6",
+          // Without anything beside it, the form takes the width.
+          hasAside && "@5xl:grid-cols-[minmax(0,1fr)_340px]",
+        )}
+      >
+        <div className="min-w-0 space-y-6">
         <section className={cardClassName}>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 className="text-xl font-bold text-secondary-950">
+              <h2 className="text-lg font-bold text-foreground">
                 Personal information
               </h2>
               <p className="mt-1 max-w-2xl text-sm text-secondary-500">
@@ -441,15 +465,22 @@ const ProfileDetailsForm = ({ embedded = false }: { embedded?: boolean }) => {
             <button type="submit" hidden disabled={!isEditing} />
           </form>
         </section>
+          {below}
+        </div>
 
-        {/* How they sign in, and where to change the rest. */}
+        {/* Their contact details, and where to change sign-in and security. */}
+        {hasAside && (
         <aside className="space-y-6">
+          {side}
           {!isAdmin && <CreditCard className={cardClassName} />}
           {/* Invites are for attendees: organisers and admins don't invite. */}
           {userDetails?.role === EUserRoles.USER && <InviteFriendsCard className={cardClassName} />}
+          {/* On Settings the sign-in email sits in "Sign-in and security"; elsewhere,
+              a summary that links there. */}
+          {!embedded && (
           <section className={cardClassName}>
             <h2 className="text-base font-bold text-secondary-950">
-              Sign-in &amp; security
+              Email and phone
             </h2>
             <ul className="mt-5 space-y-4 text-sm">
               <li className="flex items-start gap-3">
@@ -482,19 +513,18 @@ const ProfileDetailsForm = ({ embedded = false }: { embedded?: boolean }) => {
                 </div>
               </li>
             </ul>
-            {!embedded && (
             <Button
               asChild
               variant="outline"
               className="mt-6 h-11 w-full rounded-2xl border-secondary-200 font-semibold"
             >
-              <Link href={settingsHref}>
+              <Link href={`${settingsHref}#security`}>
                 <KeyRound className="size-4" />
-                {isAdmin ? "Password and devices" : "Password, devices & notifications"}
+                {isAdmin ? "Sign-in, security and devices" : "Sign-in, security and notifications"}
               </Link>
             </Button>
-            )}
           </section>
+          )}
 
           {!isAdmin && (
             <section className="rounded-3xl bg-secondary-50 p-6 sm:p-8">
@@ -519,6 +549,7 @@ const ProfileDetailsForm = ({ embedded = false }: { embedded?: boolean }) => {
             </section>
           )}
         </aside>
+        )}
       </div>
     </div>
   );

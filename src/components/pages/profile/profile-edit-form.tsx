@@ -353,8 +353,9 @@ const ProfileEditForm = () => {
 
         <aside className="space-y-6 @5xl:sticky @5xl:top-24">
           <section className={card}>
+            {/* Password and two-factor are in Settings, under "Sign-in and security". */}
             <h2 className="text-base font-bold text-secondary-950">
-              Sign-in &amp; security
+              Sign-in email
             </h2>
             <div className="mt-5 flex items-start gap-3 text-sm">
               <Mail className="mt-0.5 size-4 shrink-0 text-secondary-400" />
@@ -379,9 +380,9 @@ const ProfileEditForm = () => {
               variant="outline"
               className="mt-6 h-11 w-full rounded-2xl border-secondary-200 font-semibold"
             >
-              <Link href={ROUTES.PROFILE_SETTINGS.href}>
+              <Link href={`${ROUTES.PROFILE_SETTINGS.href}#security`}>
                 <KeyRound className="size-4" />
-                Password, devices &amp; notifications
+                Sign-in, security and notifications
               </Link>
             </Button>
           </section>
