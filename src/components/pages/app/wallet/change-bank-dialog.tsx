@@ -80,7 +80,7 @@ const ChangeBankDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-[1.6rem] p-6 sm:max-w-md">
+      <DialogContent className="rounded-3xl p-6 sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Change the bank you&apos;re paid to</DialogTitle>
           <DialogDescription>
@@ -116,7 +116,7 @@ const ChangeBankDialog = ({
               <p className="mt-1.5 text-xs text-muted-foreground">Checking with the bank…</p>
             )}
             {accountName.data && (
-              <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-success">
                 <CheckCircle2 className="size-3.5" />
                 {accountName.data}
               </p>

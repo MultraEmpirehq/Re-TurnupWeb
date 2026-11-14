@@ -98,7 +98,7 @@ const LandingHero = () => {
           {STARS.map((star, index) => (
             <span
               key={index}
-              className="animate-landing-twinkle absolute rounded-full bg-white"
+              className="animate-landing-twinkle absolute rounded-full bg-card"
               style={{
                 top: star.top,
                 left: star.left,
@@ -141,7 +141,7 @@ const LandingHero = () => {
             <Button
               asChild
               size="lg"
-              className="group h-12 rounded-full bg-white px-6 text-secondary-950 hover:bg-white/90"
+              className="group h-12 rounded-full bg-card px-6 text-secondary-950 hover:bg-white/90"
             >
               <Link href={ROUTES.EXPLORE.href}>
                 Explore events
@@ -185,7 +185,7 @@ const LandingHero = () => {
       {/* A nudge to scroll, fading out once you do. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-[11px] tracking-[0.3em] text-white/45 uppercase [opacity:calc(1-var(--p,0)*4)] md:flex"
+        className="pointer-events-none absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-2xs tracking-[0.3em] text-white/45 uppercase [opacity:calc(1-var(--p,0)*4)] md:flex"
       >
         Scroll
         <span className="flex h-9 w-5 justify-center rounded-full border border-white/30 pt-1.5">

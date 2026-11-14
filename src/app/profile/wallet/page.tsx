@@ -32,10 +32,10 @@ const STATE: Record<
   TCreditGrant["state"],
   { label: string; className: string }
 > = {
-  PENDING: { label: "On the way", className: "bg-amber-50 text-amber-700" },
+  PENDING: { label: "On the way", className: "bg-warning-soft text-warning" },
   AVAILABLE: {
     label: "Available",
-    className: "bg-emerald-50 text-emerald-700",
+    className: "bg-success-soft text-success",
   },
   SPENT: { label: "Spent", className: "bg-secondary-50 text-secondary-500" },
   EXPIRED: {
@@ -49,7 +49,7 @@ const STATE: Record<
 };
 
 const card =
-  "rounded-[1.75rem] border border-secondary-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)]";
+  "rounded-3xl border border-secondary-100 bg-card p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)]";
 
 /** What they can spend, per currency, with what's on the way. */
 const Balances: React.FC = () => {
@@ -57,7 +57,7 @@ const Balances: React.FC = () => {
   const { hidden, toggle } = useHideBalance();
   const { creditSpending } = useFeatures();
   return (
-    <section className="rounded-[1.75rem] bg-linear-to-br from-secondary-800 via-secondary-600 to-primary p-6 text-white shadow-[0_24px_60px_-30px_rgba(5,119,250,0.6)]">
+    <section className="rounded-3xl bg-linear-to-br from-secondary-800 via-secondary-600 to-primary p-6 text-white shadow-[0_24px_60px_-30px_rgba(5,119,250,0.6)]">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-white/80">Turnupz Credit</p>
         <button
@@ -198,7 +198,7 @@ const SavedCardRow: React.FC<{ saved: TSavedCard }> = ({ saved }) => {
         )}
         aria-hidden
       >
-        <span className="text-[10px] font-extrabold tracking-wide uppercase">
+        <span className="text-2xs font-extrabold tracking-wide uppercase">
           {saved.brand}
         </span>
         <span className="font-mono text-xs">•••• {saved.last4}</span>
@@ -214,7 +214,7 @@ const SavedCardRow: React.FC<{ saved: TSavedCard }> = ({ saved }) => {
             </span>
           )}
           {saved.isExpired && (
-            <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-bold text-red-700">
+            <span className="rounded-full bg-danger-soft px-2 py-0.5 text-xs font-bold text-danger">
               Expired
             </span>
           )}
@@ -256,7 +256,7 @@ const SavedCardRow: React.FC<{ saved: TSavedCard }> = ({ saved }) => {
           size="sm"
           disabled={busy}
           onClick={() => setConfirming(true)}
-          className="rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700"
+          className="rounded-xl text-danger hover:bg-danger-soft hover:text-danger"
         >
           Remove
         </Button>
@@ -333,7 +333,7 @@ const WalletPage = () => (
   <div className="@container space-y-6">
     <div className="flex items-center gap-3">
       <BackToAccount />
-      <h1 className="text-2xl font-bold tracking-tight text-secondary-950">
+      <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
         Wallet
       </h1>
     </div>

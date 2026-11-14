@@ -33,7 +33,7 @@ const ConfirmDialog: React.FC<{
   onConfirm,
 }) => (
   <Dialog open={open} onOpenChange={(next) => !next && !busy && onCancel()}>
-    <DialogContent className="rounded-[1.6rem] p-6 sm:max-w-md">
+    <DialogContent className="rounded-3xl p-6 sm:max-w-md">
       <DialogHeader>
         <DialogTitle className="text-xl font-bold text-secondary-950">
           {title}
@@ -60,7 +60,7 @@ const ConfirmDialog: React.FC<{
           className={cn(
             "rounded-2xl text-white",
             tone === "danger"
-              ? "bg-red-600 hover:bg-red-700"
+              ? "bg-danger-solid hover:bg-danger-solid"
               : "bg-secondary hover:bg-secondary-600",
           )}
         >

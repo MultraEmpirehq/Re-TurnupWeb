@@ -59,15 +59,15 @@ const Stat: React.FC<{ label: string; value?: number; tone?: "warn" | "bad"; loa
   <div
     className={cn(
       "rounded-2xl border bg-card p-4",
-      tone === "warn" && value ? "border-amber-200 bg-amber-50/60" : "",
-      tone === "bad" && value ? "border-red-200 bg-red-50/60" : "",
+      tone === "warn" && value ? "border-warning-line bg-warning-soft/60" : "",
+      tone === "bad" && value ? "border-danger-line bg-danger-soft/60" : "",
       !(tone && value) && "border-border",
     )}
   >
     <p
       className={cn(
-        "text-[11px] font-semibold tracking-wider uppercase",
-        tone === "warn" && value ? "text-amber-700" : tone === "bad" && value ? "text-red-700" : "text-muted-foreground",
+        "text-2xs font-semibold tracking-wider uppercase",
+        tone === "warn" && value ? "text-warning" : tone === "bad" && value ? "text-danger" : "text-muted-foreground",
       )}
     >
       {label}
@@ -82,14 +82,14 @@ const Stat: React.FC<{ label: string; value?: number; tone?: "warn" | "bad"; loa
 
 const StatusPill: React.FC<{ performer: IPerformer }> = ({ performer }) => {
   if (performer.reviewStatus === "pending") {
-    return <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800">In review</span>;
+    return <span className="rounded-full bg-warning-soft px-2.5 py-0.5 text-2xs font-semibold text-warning">In review</span>;
   }
   if (performer.reviewStatus === "rejected") {
-    return <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-semibold text-red-700">Needs changes</span>;
+    return <span className="rounded-full bg-danger-soft px-2.5 py-0.5 text-2xs font-semibold text-danger">Needs changes</span>;
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
-      <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
+    <span className="inline-flex items-center gap-1 rounded-full bg-success-soft px-2.5 py-0.5 text-2xs font-semibold text-success">
+      <span className="size-1.5 rounded-full bg-success-solid" aria-hidden />
       Live
     </span>
   );
@@ -108,8 +108,8 @@ const PerformerCard: React.FC<{
   return (
     <li
       className={cn(
-        "relative flex flex-col rounded-[1.4rem] border bg-card p-5 text-center shadow-[0_14px_36px_-28px_rgba(15,23,42,0.4)]",
-        pending ? "border-amber-200" : rejected ? "border-red-200" : "border-secondary-100",
+        "relative flex flex-col rounded-3xl border bg-card p-5 text-center shadow-[0_14px_36px_-28px_rgba(15,23,42,0.4)]",
+        pending ? "border-warning-line" : rejected ? "border-danger-line" : "border-secondary-100",
       )}
     >
       <div className="absolute top-4 right-4">
@@ -126,11 +126,11 @@ const PerformerCard: React.FC<{
       </p>
 
       {pending ? (
-        <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">
+        <p className="mt-3 rounded-xl bg-warning-soft px-3 py-2 text-xs leading-5 text-warning">
           You can use them on your events now. They show in search once approved.
         </p>
       ) : rejected ? (
-        <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs leading-5 text-red-800">
+        <p className="mt-3 rounded-xl bg-danger-soft px-3 py-2 text-xs leading-5 text-danger">
           <strong>Admin note:</strong> {performer.reviewNote || "Please check their details and send them again."}
         </p>
       ) : (
@@ -270,7 +270,7 @@ const PerformersManager = () => {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-secondary-950">Performers</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Performers</h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
             {isAdmin
               ? "Everyone who can be added to a line-up. You can edit or remove any of them."
@@ -368,7 +368,7 @@ const PerformersManager = () => {
       {isLoading ? (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} className="h-80 rounded-[1.4rem]" />
+            <Skeleton key={index} className="h-80 rounded-3xl" />
           ))}
         </ul>
       ) : error ? (
@@ -396,9 +396,9 @@ const PerformersManager = () => {
               <button
                 type="button"
                 onClick={() => setAdding(true)}
-                className="flex h-full min-h-72 w-full flex-col items-center justify-center gap-3 rounded-[1.4rem] border-2 border-dashed border-primary-200 bg-primary-50/40 p-5 text-center transition-colors hover:border-primary-300 hover:bg-primary-50"
+                className="flex h-full min-h-72 w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-primary-200 bg-primary-50/40 p-5 text-center transition-colors hover:border-primary-300 hover:bg-primary-50"
               >
-                <span className="flex size-14 items-center justify-center rounded-full bg-white text-primary shadow-sm">
+                <span className="flex size-14 items-center justify-center rounded-full bg-card text-primary shadow-sm">
                   <Plus className="size-6" aria-hidden />
                 </span>
                 <span className="text-base font-bold text-secondary-950">Add a performer</span>

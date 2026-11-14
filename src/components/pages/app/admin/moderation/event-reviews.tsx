@@ -1,5 +1,6 @@
 "use client";
 
+import StatusBadge from "@/components/ui/status-badge";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import CustomImageComponent from "@/components/ui/custom-image.component";
@@ -29,9 +30,20 @@ import { ListSkeleton, NoteDialog, PageHeading } from "./moderation-ui";
 const errorText = (error: unknown, fallback: string) =>
   constructErrorMessage(error as TApiErrorResponseType, fallback);
 
+/** Why an event was held (codes from the API's event-review rules). */
+const REVIEW_FLAG_LABELS: Record<string, string> = {
+  high_price: "High ticket price",
+  many_tickets: "Very large event",
+  flagged_words: "Words we check",
+  high_risk_organiser: "High-risk organiser",
+  recently_restricted: "Organiser restricted recently",
+  recently_reported: "Organiser reported recently",
+};
+
 /**
- * Every new event waits here until an admin approves it. Approving puts it live;
- * sending it back returns it to the organiser's drafts with a note.
+ * Events held for a check before buyers can see them, with why. Their organiser
+ * published as normal and isn't told. Approving shows it to buyers; sending it
+ * back returns it to the organiser's drafts with a note.
  */
 const EventReviews = () => {
   const [page, setPage] = useState(1);
@@ -90,7 +102,7 @@ const EventReviews = () => {
         <EmptyContainer
           icon={<ClipboardCheck className="size-6" />}
           title="Nothing to review"
-          description="New events submitted by organisers will show up here."
+          description="Events held for a check (high prices, very large events, words we check, organisers to watch) show up here."
         />
       )}
 
@@ -129,6 +141,15 @@ const EventReviews = () => {
                     event.organiser.email}
                 </span>
               </p>
+              {!!event.reviewFlags?.length && (
+                <p className="flex flex-wrap gap-1">
+                  {event.reviewFlags.map((flag) => (
+                    <StatusBadge key={flag} tone="warning">
+                      {REVIEW_FLAG_LABELS[flag] ?? flag}
+                    </StatusBadge>
+                  ))}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
                 Submitted{" "}
                 {formatDistanceToNow(new Date(event.submittedAt), {
@@ -156,7 +177,7 @@ const EventReviews = () => {
               </Button>
               <Button
                 type="button"
-                className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700"
+                className="rounded-xl bg-success-solid text-white hover:bg-success-solid"
                 loading={approvingId === event.id}
                 disabled={!!approvingId}
                 onClick={() => void handleApprove(event)}

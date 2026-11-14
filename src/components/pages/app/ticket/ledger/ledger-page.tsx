@@ -42,14 +42,14 @@ const LedgerPage = () => {
     <div className="space-y-6 pb-16">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-[1.75rem] font-bold tracking-tight text-secondary-950">Tickets</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Tickets</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Every ticket for your events: who has it, whether they&apos;re in, and where it went.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {activeTab === "tickets" && (
-            <HideAmountsButton className="h-11 border border-secondary-100 bg-white px-4 text-secondary-700 hover:bg-secondary-50" />
+            <HideAmountsButton className="h-11 border border-secondary-100 bg-card px-4 text-secondary-700 hover:bg-secondary-50" />
           )}
           {can("TICKETS_SCAN") && (
             <Link

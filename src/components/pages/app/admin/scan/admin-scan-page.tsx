@@ -28,7 +28,7 @@ const AdminScanPage = () => {
   return (
     <div className="mx-auto max-w-3xl space-y-6 pb-16">
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight">Scan tickets</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Scan tickets</h1>
         <p className="text-sm text-muted-foreground">
           Check a ticket in for any event, for example when an organiser&apos;s
           scanner is down. It counts for today on multi-day events, and each

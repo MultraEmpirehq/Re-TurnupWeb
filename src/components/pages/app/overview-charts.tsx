@@ -91,13 +91,13 @@ export const DailyColumns: React.FC<{
       {/* Labels sit outside the stretched SVG so text never distorts. */}
       {max > 0 && points[peak] && (
         <span
-          className="pointer-events-none absolute -translate-x-1/2 text-[11px] font-semibold text-secondary-700"
+          className="pointer-events-none absolute -translate-x-1/2 text-2xs font-semibold text-secondary-700"
           style={{ left: `${((peak + 0.5) / points.length) * 100}%`, top: 0 }}
         >
           {format(points[peak].value)}
         </span>
       )}
-      <div className="mt-1 flex justify-between text-[11px] text-secondary-400">
+      <div className="mt-1 flex justify-between text-2xs text-secondary-400">
         <span>{points[0] && dayLabel(points[0].start)}</span>
         <span>Today</span>
       </div>
@@ -209,7 +209,7 @@ export const SplitMeter: React.FC<{
   return (
     <div
       className={cn(
-        "flex h-3 w-full gap-[2px] overflow-hidden rounded-full",
+        "flex h-3 w-full gap-0.5 overflow-hidden rounded-full",
         className,
       )}
       role="meter"

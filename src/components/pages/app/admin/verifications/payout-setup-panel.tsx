@@ -87,7 +87,7 @@ const PayoutSetupPanel: React.FC<{ verification: IVendorVerification }> = ({
 
   if (account) {
     return (
-      <div className="flex items-start gap-3 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-900">
+      <div className="flex items-start gap-3 rounded-xl bg-success-soft p-4 text-sm text-success">
         <Landmark className="mt-0.5 size-4 shrink-0" />
         <p>
           Paid directly by {account.provider.toLowerCase()} to{" "}

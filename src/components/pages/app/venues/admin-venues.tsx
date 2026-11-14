@@ -44,18 +44,18 @@ const Count = ({ label, value, tone = "default" }: { label: string; value: React
   <div
     className={cn(
       "rounded-2xl border p-5",
-      tone === "warn" ? "border-amber-200 bg-amber-50/60" : "border-secondary-100 bg-white",
+      tone === "warn" ? "border-warning-line bg-warning-soft/60" : "border-secondary-100 bg-card",
     )}
   >
     <p
       className={cn(
         "text-xs font-semibold tracking-wider uppercase",
-        tone === "warn" ? "text-amber-700" : "text-muted-foreground",
+        tone === "warn" ? "text-warning" : "text-muted-foreground",
       )}
     >
       {label}
     </p>
-    <p className={cn("mt-2 text-2xl font-bold", tone === "warn" ? "text-amber-800" : "text-secondary-950")}>
+    <p className={cn("mt-2 text-2xl font-bold", tone === "warn" ? "text-warning" : "text-secondary-950")}>
       {value}
     </p>
   </div>
@@ -102,7 +102,7 @@ const EditVenueDialog = ({ venue, onClose }: { venue: IVenueDetailsType | null; 
 
   return (
     <Dialog open={!!venue} onOpenChange={(open) => !open && !saving && onClose()}>
-      <DialogContent className="rounded-[1.6rem] p-6 sm:max-w-lg">
+      <DialogContent className="rounded-3xl p-6 sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-secondary-950">Edit venue</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
@@ -204,7 +204,7 @@ const AdminVenues = () => {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-secondary-800">Venues</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Venues</h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
             The directory organisers choose venues from. Venues they type in themselves wait in Submissions until approved.
           </p>
@@ -229,7 +229,7 @@ const AdminVenues = () => {
             value={
               <span className="flex items-baseline justify-between gap-2">
                 {waiting}
-                <span className="text-xs font-semibold text-amber-700">Review →</span>
+                <span className="text-xs font-semibold text-warning">Review →</span>
               </span>
             }
             tone={waiting ? "warn" : "default"}
@@ -249,7 +249,7 @@ const AdminVenues = () => {
                 "rounded-full px-3 py-1.5 transition-colors",
                 city === name
                   ? "bg-secondary-50 text-secondary-700"
-                  : "border border-secondary-100 bg-white text-muted-foreground hover:text-secondary-800",
+                  : "border border-secondary-100 bg-card text-muted-foreground hover:text-secondary-800",
               )}
             >
               {name ?? "All cities"}
@@ -263,7 +263,7 @@ const AdminVenues = () => {
             onChange={(event) => setSearchInput(event.target.value)}
             placeholder="Search venues"
             aria-label="Search venues"
-            className="h-10 w-full rounded-full border border-secondary-100 bg-white pr-4 pl-10 text-sm outline-none focus:border-secondary-300"
+            className="h-10 w-full rounded-full border border-secondary-100 bg-card pr-4 pl-10 text-sm outline-none focus:border-secondary-300"
           />
         </label>
       </div>
@@ -271,7 +271,7 @@ const AdminVenues = () => {
       {venuesQuery.isLoading ? (
         <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} className="h-80 rounded-[1.5rem]" />
+            <Skeleton key={index} className="h-80 rounded-3xl" />
           ))}
         </section>
       ) : venues.length === 0 ? (
@@ -284,7 +284,7 @@ const AdminVenues = () => {
         <>
           <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {venues.map((venue) => (
-              <article key={venue.id} className="flex flex-col overflow-hidden rounded-[1.5rem] border border-secondary-100 bg-white">
+              <article key={venue.id} className="flex flex-col overflow-hidden rounded-3xl border border-secondary-100 bg-card">
                 <div className="relative h-40 bg-muted">
                   {venue.images?.[0] ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -326,7 +326,7 @@ const AdminVenues = () => {
                     </Button>
                     <Button
                       variant="ghost"
-                      className="rounded-full text-red-600 hover:text-red-700"
+                      className="rounded-full text-danger hover:text-danger"
                       onClick={() => setRemoving(venue)}
                     >
                       Remove

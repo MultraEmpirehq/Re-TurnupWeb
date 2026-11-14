@@ -96,7 +96,7 @@ const Credit = () => {
           </div>
 
           {data && !data.spendingOn && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-900">
+            <div className="rounded-xl border border-warning-line bg-warning-soft/70 px-4 py-3 text-sm text-warning">
               <strong>Paying with credit is paused.</strong> People keep their balance; it can be spent once
               it&apos;s switched back on in{" "}
               <Link href="/app/admin/marketing/referrals" className="font-semibold underline underline-offset-2">
@@ -114,7 +114,7 @@ const Credit = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[480px] text-sm">
                     <thead>
-                      <tr className="border-b border-border text-left text-[11px] tracking-wider text-muted-foreground uppercase">
+                      <tr className="border-b border-border text-left text-2xs tracking-wider text-muted-foreground uppercase">
                         <th className="py-2 font-semibold">Month</th>
                         <th className="py-2 text-right font-semibold">Given</th>
                         <th className="py-2 text-right font-semibold">Spent</th>
@@ -146,7 +146,7 @@ const Credit = () => {
                     <li key={person.userId} className="flex items-center justify-between gap-3 text-sm">
                       <span className="flex items-center gap-2.5">
                         <Avatar className="size-8">
-                          <AvatarFallback className="bg-secondary-50 text-[11px] font-semibold text-secondary-700">
+                          <AvatarFallback className="bg-secondary-50 text-2xs font-semibold text-secondary-700">
                             {initials(person.name)}
                           </AvatarFallback>
                         </Avatar>

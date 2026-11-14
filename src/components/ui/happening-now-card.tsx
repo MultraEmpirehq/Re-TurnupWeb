@@ -33,10 +33,10 @@ const HappeningNowCard: React.FC<IEventDetailsType> = ({
   }, [date]);
 
   return (
-    <div className="bg-white dark:bg-secondary-950 py-3 px-2 flex flex-row items-start gap-2 shadow-md rounded-md text-secondary-950 dark:text-white">
+    <div className="bg-card dark:bg-secondary-950 py-3 px-2 flex flex-row items-start gap-2 shadow-md rounded-md text-secondary-950 dark:text-white">
       <div className="flex flex-col self-stretch items-center gap-1.5">
         <div className="bg-secondary size-3 rounded-full items-center justify-center flex flex-col">
-          <div className="size-[50%] bg-white rounded-full" />
+          <div className="size-[50%] bg-card rounded-full" />
         </div>
         <div className="flex-1 border-l border-black/30 border-dashed" />
       </div>

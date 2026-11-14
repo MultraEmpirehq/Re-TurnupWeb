@@ -99,46 +99,43 @@ const GroupMembersPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[1.75rem] border border-secondary-100 bg-white p-5 shadow-[0_24px_60px_-40px_rgba(15,35,95,0.14)] sm:p-6">
+      <div className="rounded-3xl border border-secondary-100 bg-card p-5 shadow-[0_24px_60px_-40px_rgba(15,35,95,0.14)] sm:p-6">
         <div className="max-w-4xl">
           <Button
             type="button"
             variant="outline"
-            className="mb-5 h-10 rounded-full border-secondary-100 bg-secondary-50 px-4 text-sm font-semibold text-secondary-700 hover:bg-white hover:text-primary"
+            className="mb-5 h-10 rounded-full border-secondary-100 bg-secondary-50 px-4 text-sm font-semibold text-secondary-700 hover:bg-card hover:text-primary"
             onClick={handleBack}
           >
             <ArrowLeftIcon className="mr-2 size-4" />
             Back to chats
           </Button>
-          <div className="space-y-3">
-            <span className="block text-[0.75rem] font-bold uppercase tracking-[0.22em] text-secondary-400">
-              Group Members
-            </span>
-            <h1 className="text-3xl font-bold tracking-tight text-secondary-950 md:text-[2.35rem]">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               {activeGroup ? `${activeGroup.eventName} Community` : "Event Community"}
             </h1>
           </div>
         </div>
 
         <div className="mt-7 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-[1.25rem] bg-secondary-50 px-4 py-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-400">
+          <div className="rounded-2xl bg-secondary-50 px-4 py-3">
+            <p className="text-2xs font-semibold uppercase tracking-[0.18em] text-secondary-400">
               Attendees
             </p>
             <p className="mt-2 text-2xl font-bold text-secondary-950">
               {attendeeMembers.length}
             </p>
           </div>
-          <div className="rounded-[1.25rem] bg-secondary-50 px-4 py-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-400">
+          <div className="rounded-2xl bg-secondary-50 px-4 py-3">
+            <p className="text-2xs font-semibold uppercase tracking-[0.18em] text-secondary-400">
               Managers
             </p>
             <p className="mt-2 text-2xl font-bold text-secondary-950">
               {vendorMember ? 1 : 0}
             </p>
           </div>
-          <div className="rounded-[1.25rem] bg-secondary-50 px-4 py-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-400">
+          <div className="rounded-2xl bg-secondary-50 px-4 py-3">
+            <p className="text-2xs font-semibold uppercase tracking-[0.18em] text-secondary-400">
               Member List
             </p>
             <Button
@@ -176,7 +173,7 @@ const GroupMembersPage = () => {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
-        <section className="rounded-[1.75rem] border border-secondary-100 bg-white p-5 shadow-[0_24px_60px_-40px_rgba(15,35,95,0.14)]">
+        <section className="rounded-3xl border border-secondary-100 bg-card p-5 shadow-[0_24px_60px_-40px_rgba(15,35,95,0.14)]">
           <div className="border-b border-secondary-100 pb-4">
             <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-secondary-400">
               Official Manager
@@ -197,19 +194,19 @@ const GroupMembersPage = () => {
                   {vendorMember.username ? `@${vendorMember.username}` : "Organiser"}
                 </p>
               </div>
-              <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-2xs font-semibold uppercase tracking-[0.18em] text-primary">
                 <ShieldCheckIcon className="mr-1.5 size-3" />
                 Vendor
               </span>
             </div>
           ) : (
-            <div className="mt-5 rounded-[1.25rem] bg-secondary-50 px-4 py-5 text-sm text-secondary-500">
+            <div className="mt-5 rounded-2xl bg-secondary-50 px-4 py-5 text-sm text-secondary-500">
               This group could not be found on this device yet.
             </div>
           )}
         </section>
 
-        <section className="rounded-[1.75rem] border border-secondary-100 bg-white p-5 shadow-[0_24px_60px_-40px_rgba(15,35,95,0.14)]">
+        <section className="rounded-3xl border border-secondary-100 bg-card p-5 shadow-[0_24px_60px_-40px_rgba(15,35,95,0.14)]">
           <div className="flex items-end justify-between gap-4 border-b border-secondary-100 pb-4">
             <div>
               <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-secondary-400">
@@ -226,13 +223,13 @@ const GroupMembersPage = () => {
 
           <div className="mt-4 divide-y divide-secondary-100">
             {isLoadingMembers ? (
-              <div className="rounded-[1.25rem] bg-secondary-50 px-4 py-8 text-center text-sm text-secondary-500">
+              <div className="rounded-2xl bg-secondary-50 px-4 py-8 text-center text-sm text-secondary-500">
                 Loading group members...
               </div>
             ) : null}
 
             {memberLoadFailed && !activeGroup ? (
-              <div className="rounded-[1.25rem] bg-danger/10 px-4 py-8 text-center text-sm font-medium text-danger">
+              <div className="rounded-2xl bg-danger-soft px-4 py-8 text-center text-sm font-medium text-danger">
                 We could not load this group yet. Go back to chats and try again.
               </div>
             ) : null}
@@ -253,19 +250,19 @@ const GroupMembersPage = () => {
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {member.reportedAt ? (
-                        <span className="rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-warning">
+                        <span className="rounded-full bg-warning-soft px-2 py-0.5 text-2xs font-semibold uppercase tracking-[0.16em] text-warning">
                           Reported
                         </span>
                       ) : null}
                       {member.isBlocked ? (
-                        <span className="rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-danger">
+                        <span className="rounded-full bg-danger-soft px-2 py-0.5 text-2xs font-semibold uppercase tracking-[0.16em] text-danger">
                           Blocked
                         </span>
                       ) : null}
                     </div>
                   </div>
                 </div>
-                <span className="rounded-full bg-secondary-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-500">
+                <span className="rounded-full bg-secondary-50 px-3 py-1 text-2xs font-semibold uppercase tracking-[0.18em] text-secondary-500">
                   {getMemberRoleLabel(member)}
                 </span>
                 <div className="flex gap-2 sm:justify-end">
@@ -316,13 +313,13 @@ const GroupMembersPage = () => {
             ))}
 
             {activeGroup && !isLoadingMembers && attendeeMembers.length === 0 ? (
-              <div className="rounded-[1.25rem] bg-secondary-50 px-4 py-8 text-center text-sm text-secondary-500">
+              <div className="rounded-2xl bg-secondary-50 px-4 py-8 text-center text-sm text-secondary-500">
                 No attendees have joined this group yet.
               </div>
             ) : null}
 
             {!activeGroup && !isLoadingMembers && !memberLoadFailed ? (
-              <div className="rounded-[1.25rem] bg-secondary-50 px-4 py-8 text-center text-sm text-secondary-500">
+              <div className="rounded-2xl bg-secondary-50 px-4 py-8 text-center text-sm text-secondary-500">
                 This group could not be found on this device yet.
               </div>
             ) : null}

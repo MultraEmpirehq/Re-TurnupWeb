@@ -176,10 +176,10 @@ const OrderDetailPage = () => {
               className={cn(
                 "rounded-xl px-4 py-3 text-sm",
                 order.status === EOrderStatus.REFUNDED
-                  ? "bg-sky-50 text-sky-800"
+                  ? "bg-info-soft text-info"
                   : order.status === EOrderStatus.NEEDS_REVIEW
                     ? "bg-secondary-50 text-secondary-800"
-                    : "bg-red-50 text-red-700",
+                    : "bg-danger-soft text-danger",
               )}
             >
               {order.statusReason}
@@ -224,7 +224,7 @@ const OrderDetailPage = () => {
                       <span className="text-right">
                         <span
                           className={cn(
-                            "inline-block rounded-full px-2 py-0.5 text-[11px] font-bold",
+                            "inline-block rounded-full px-2 py-0.5 text-2xs font-bold",
                             status.className,
                           )}
                         >

@@ -45,7 +45,7 @@ const STUB: Record<TAuthIntent, { kicker: string; title: string }> = {
 
 const Stub = ({ intent }: { intent: TAuthIntent }) => (
   <div>
-    <p className="text-[11px] font-semibold tracking-[0.25em] text-white/75 uppercase">
+    <p className="text-2xs font-semibold tracking-[0.25em] text-white/75 uppercase">
       {STUB[intent].kicker}
     </p>
     <p className="mt-1 text-xl font-bold">{STUB[intent].title}</p>
@@ -114,7 +114,7 @@ const AuthStage: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       {STARS.map((star, index) => (
         <span
           key={index}
-          className="animate-landing-twinkle absolute rounded-full bg-white"
+          className="animate-landing-twinkle absolute rounded-full bg-card"
           style={{
             top: star.top,
             left: star.left,
@@ -155,7 +155,7 @@ const AuthStage: React.FC<{ children: React.ReactNode }> = ({ children }) => (
           aria-hidden
           className="pointer-events-none absolute -inset-10 -z-10 rounded-full bg-linear-to-br from-secondary/35 via-primary/25 to-primary/35 blur-[70px]"
         />
-        <div className="overflow-hidden rounded-[2rem] text-secondary-950 shadow-[0_50px_100px_-30px_rgba(0,0,0,0.85)]">
+        <div className="overflow-hidden rounded-3xl text-secondary-950 shadow-[0_50px_100px_-30px_rgba(0,0,0,0.85)]">
           <div style={STUB_NOTCHES} className="relative overflow-hidden bg-linear-to-br from-secondary via-secondary-500 to-primary px-7 pt-6 pb-7 text-white">
             <div
               aria-hidden
@@ -165,7 +165,7 @@ const AuthStage: React.FC<{ children: React.ReactNode }> = ({ children }) => (
               <Suspense fallback={<Stub intent="attendee" />}>
                 <StubForDoor />
               </Suspense>
-              <span className="rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-semibold tracking-wider backdrop-blur">
+              <span className="rounded-full bg-white/20 px-2.5 py-1 text-2xs font-semibold tracking-wider backdrop-blur">
                 No. 0001
               </span>
             </div>
@@ -176,7 +176,7 @@ const AuthStage: React.FC<{ children: React.ReactNode }> = ({ children }) => (
             <span className="absolute inset-x-7 top-0 border-t-2 border-dashed border-secondary-100" />
           </div>
 
-          <div style={FORM_NOTCHES} className="bg-white px-7 pt-8 pb-7">{children}</div>
+          <div style={FORM_NOTCHES} className="bg-card px-7 pt-8 pb-7">{children}</div>
         </div>
         <Suspense fallback={null}>
           <BelowTicket />

@@ -96,6 +96,18 @@ const identitySchema = Joi.object({
       "any.required": "Date of birth is required",
       "date.adult": "You must be at least 18 to verify as a vendor",
     }),
+  idExpiresOn: Joi.date()
+    .required()
+    .custom((value: Date, helpers) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return value < today ? helpers.error("date.expired") : value;
+    })
+    .messages({
+      "date.base": "Add the date your ID expires",
+      "any.required": "Add the date your ID expires",
+      "date.expired": "This ID has expired. Use one that's still valid.",
+    }),
   countryOfResidence: text("Country of residence"),
   address: text("Residential address", 5),
   phoneNumber,

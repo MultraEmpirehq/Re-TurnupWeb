@@ -4,7 +4,6 @@ import ComboboxSelect from "@/components/ui/combobox-select";
 import DateSelect from "@/components/ui/date-select";
 import InputField from "@/components/ui/input-field";
 import PhoneField from "@/components/ui/phone-field";
-import TextareaField from "@/components/ui/textarea-field";
 import { earliestBirthDate, latestAdultBirthDate } from "@/lib/age";
 import { useMarketOptions } from "@/hooks/use-markets";
 import { Country } from "country-state-city";
@@ -12,6 +11,7 @@ import { BadgeCheck, Building2, Info, Ticket, UserRound } from "lucide-react";
 import useUserStore from "@/stores/user-store";
 import React, { useEffect } from "react";
 import { Controller, useFormContext } from "react-hook-form";
+import AddressField from "@/components/ui/address-field";
 import { ChoiceCards, DocumentField } from "../fields";
 import { VerificationFormValues } from "../types";
 
@@ -76,7 +76,7 @@ export const VendorTypeStep: React.FC<{ planLocked?: boolean }> = ({
                 ]}
               />
               {fieldState.error?.message && (
-                <p className="text-xs text-red-600">
+                <p className="text-xs text-danger">
                   {fieldState.error.message}
                 </p>
               )}
@@ -263,14 +263,21 @@ export const IdentityStep: React.FC<{ free?: boolean }> = ({ free }) => {
       />
       {!free && (
         <>
-          <TextareaField
-            label="Residential address"
-            placeholder="House number, street, city"
-            autoComplete="street-address"
-            required
-            containerClassName="md:col-span-2"
-            {...register("address")}
-            error={errors.address?.message}
+          <Controller
+            control={control}
+            name="address"
+            render={({ field, fieldState }) => (
+              <AddressField
+                label="Residential address"
+                placeholder="House number, street, city"
+                required
+                anyCountry
+                className="md:col-span-2"
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                error={fieldState.error?.message}
+              />
+            )}
           />
           <Controller
             control={control}
@@ -288,6 +295,25 @@ export const IdentityStep: React.FC<{ free?: boolean }> = ({ free }) => {
               </div>
             )}
           />
+          <Controller
+            control={control}
+            name="idExpiresOn"
+            render={({ field, fieldState }) => (
+              <DateSelect
+                date={field.value}
+                setDate={field.onChange}
+                label="ID expiry date"
+                placeholder="When your ID expires"
+                required
+                error={fieldState.error?.message}
+                errorClassName="text-xs"
+                helperText="As printed on the ID. We'll remind you to upload a new one before it expires."
+                minDate={new Date()}
+                maxDate={new Date(new Date().getFullYear() + 25, 11, 31)}
+                inputClassName="h-11"
+              />
+            )}
+          />
         </>
       )}
     </div>
@@ -298,6 +324,7 @@ export const BusinessStep = () => {
   const {
     register,
     formState: { errors },
+    control,
   } = useFormContext<VerificationFormValues>();
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -330,13 +357,21 @@ export const BusinessStep = () => {
         error={errors.taxId?.message}
         helperText="Optional."
       />
-      <TextareaField
-        label="Registered business address"
-        placeholder="As on your registration or tax records"
-        required
-        containerClassName="md:col-span-2"
-        {...register("businessAddress")}
-        error={errors.businessAddress?.message}
+      <Controller
+        control={control}
+        name="businessAddress"
+        render={({ field, fieldState }) => (
+          <AddressField
+            label="Registered business address"
+            placeholder="As on your registration or tax records"
+            required
+            anyCountry
+            className="md:col-span-2"
+            value={field.value ?? ""}
+            onChange={field.onChange}
+            error={fieldState.error?.message}
+          />
+        )}
       />
     </div>
   );

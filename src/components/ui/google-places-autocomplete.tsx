@@ -44,6 +44,8 @@ interface IGooglePlacesAutocompleteProps {
   labelClassName?: string;
   errorClassName?: string;
   countryRestriction?: string | string[];
+  /** A line under the field, like InputField's. */
+  helperText?: string;
 }
 
 // One shape for address parts from both Places (New), which uses longText and
@@ -154,6 +156,7 @@ const GooglePlacesAutocomplete: React.FC<IGooglePlacesAutocompleteProps> = ({
   labelClassName,
   errorClassName,
   countryRestriction,
+  helperText,
 }) => {
   const [predictions, setPredictions] = useState<
     google.maps.places.PlacePrediction[]
@@ -414,6 +417,9 @@ const GooglePlacesAutocomplete: React.FC<IGooglePlacesAutocompleteProps> = ({
           <AlertTriangle className="size-3" />
           {loadError}
         </p>
+      )}
+      {helperText && !error && (
+        <p className="text-xs text-muted-foreground">{helperText}</p>
       )}
       {error && !loadError && (
         <p className={cn("text-xs text-destructive", errorClassName)}>

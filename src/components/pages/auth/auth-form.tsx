@@ -160,7 +160,7 @@ const CodeStep = memo(function CodeStep({
       }}
     >
       <div className="flex items-center gap-3 rounded-2xl bg-[#f7f9fc] px-4 py-3 ring-1 ring-secondary-100">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white text-secondary-800 ring-1 ring-secondary-100">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-card text-secondary-800 ring-1 ring-secondary-100">
           <Mail className="size-4" aria-hidden />
         </span>
         <span className="min-w-0 flex-1 truncate font-medium text-secondary-950">
@@ -504,7 +504,7 @@ const AuthForm = ({ intent = "attendee" }: { intent?: TAuthIntent }) => {
                 disabled={isBusy}
                 loading={isSendingCode}
                 onClick={() => void startCode("login")}
-                className="-mt-4 h-10 w-full rounded-md border-secondary-200 bg-white text-sm font-medium text-secondary-950"
+                className="-mt-4 h-10 w-full rounded-md border-secondary-200 bg-card text-sm font-medium text-secondary-950"
               >
                 <Mail className="size-4" aria-hidden />
                 Email me a sign-in code

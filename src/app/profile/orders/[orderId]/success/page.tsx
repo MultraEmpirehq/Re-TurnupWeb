@@ -97,7 +97,7 @@ const OrderSuccessPage = () => {
       case EOrderStatus.COMPLETED:
         return {
           Icon: CheckCircle2,
-          tone: "bg-green-100 text-green-600 dark:bg-green-950/40",
+          tone: "bg-success-soft text-success dark:bg-green-950/40",
           title: isFreeOrder ? "You're in!" : "Payment successful!",
           message:
             "Your tickets have been confirmed. You can download them or head to the event group chat.",
@@ -105,7 +105,7 @@ const OrderSuccessPage = () => {
       case EOrderStatus.REFUNDED:
         return {
           Icon: Undo2,
-          tone: "bg-sky-100 text-sky-600 dark:bg-sky-950/40",
+          tone: "bg-info-soft text-info dark:bg-sky-950/40",
           title: "Payment refunded",
           message: `${order.statusReason ?? "We couldn't complete this order."} We've refunded you in full; it can take a few days to show.`,
         };
@@ -120,7 +120,7 @@ const OrderSuccessPage = () => {
       case EOrderStatus.FAILED:
         return {
           Icon: XCircle,
-          tone: "bg-red-100 text-red-600 dark:bg-red-950/40",
+          tone: "bg-danger-soft text-danger dark:bg-red-950/40",
           title: "Payment failed",
           message:
             order.statusReason ??

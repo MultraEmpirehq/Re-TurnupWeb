@@ -35,7 +35,7 @@ const StripePayouts = dynamic(
   () => import("@/components/pages/app/wallet/stripe-payouts"),
   {
     ssr: false,
-    loading: () => <Skeleton className="h-64 rounded-[1.5rem]" />,
+    loading: () => <Skeleton className="h-64 rounded-3xl" />,
   },
 );
 
@@ -129,19 +129,19 @@ const WalletPage = () => {
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-[1.75rem] font-bold tracking-tight text-secondary-950">Wallet</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Wallet</h1>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
             Your share of every ticket goes straight to your bank. Turnupz keeps only its fee, so
             there&apos;s nothing to withdraw.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <HideAmountsButton className="h-10 border border-secondary-100 bg-white px-4 text-secondary-700 hover:bg-secondary-50" />
+          <HideAmountsButton className="h-10 border border-secondary-100 bg-card px-4 text-secondary-700 hover:bg-secondary-50" />
           {currencies.length > 1 && (
             <div
               role="tablist"
               aria-label="Currency"
-              className="flex rounded-full border border-secondary-100 bg-white p-1 text-sm font-semibold"
+              className="flex rounded-full border border-secondary-100 bg-card p-1 text-sm font-semibold"
             >
               {currencies.map((c) => (
                 <button
@@ -166,7 +166,7 @@ const WalletPage = () => {
             value={days}
             onChange={(event) => setDays(Number(event.target.value))}
             aria-label="Period"
-            className="h-10 rounded-full border border-secondary-100 bg-white px-4 text-sm font-semibold text-secondary-700"
+            className="h-10 rounded-full border border-secondary-100 bg-card px-4 text-sm font-semibold text-secondary-700"
           >
             {PERIODS.map((period) => (
               <option key={period.days} value={period.days}>
@@ -180,10 +180,10 @@ const WalletPage = () => {
       {isLoading ? (
         <div className="space-y-5">
           <div className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">
-            <Skeleton className="h-56 rounded-[1.75rem]" />
-            <Skeleton className="h-56 rounded-[1.75rem]" />
+            <Skeleton className="h-56 rounded-3xl" />
+            <Skeleton className="h-56 rounded-3xl" />
           </div>
-          <Skeleton className="h-28 rounded-[1.5rem]" />
+          <Skeleton className="h-28 rounded-3xl" />
         </div>
       ) : error ? (
         <ErrorContainer

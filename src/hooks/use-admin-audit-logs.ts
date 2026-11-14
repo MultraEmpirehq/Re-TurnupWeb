@@ -1,5 +1,6 @@
-import { getData } from "@/api";
-import { useQuery } from "@tanstack/react-query";
+import { getData, postData } from "@/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { TAdminPermission } from "./use-admin-permissions";
 
 export const AUDIT_PAGE_SIZE = 20;
 
@@ -25,7 +26,22 @@ export interface IAuditLogEntry {
   actor: { id: string | null; email: string | null; role: string | null };
   ipAddress: string | null;
   createdAt: string;
+  /** Set when it can still be undone: the button's words and the area permission it needs. */
+  undo?: { label: string; permission: TAdminPermission } | null;
 }
+
+/** Takes back one audit entry; needs Undo admin actions plus that area's permission. */
+export const useUndoAuditEntry = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      postData(`/admin/audit-logs/${id}/undo`, { reason }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin-audit-logs"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin-verifications"] });
+    },
+  });
+};
 
 export const useAdminAuditLogs = ({
   targetType,

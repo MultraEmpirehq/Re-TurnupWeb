@@ -2,6 +2,7 @@
 import AuthProvider from "@/components/auth/auth-provider";
 import GeneralFooterComponent from "@/components/footers/general-footer/general-footer.component";
 import GeneralNavComponent from "@/components/navs/general-nav/general-nav.component";
+import RestrictionBanner from "@/components/account/restriction-banner";
 import { Toaster } from "@/components/ui/sonner";
 import CookieGate from "@/components/cookies/cookie-gate";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -31,6 +32,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <AuthProvider>
         <NextTopLoader color="#00b2ff" height={3} showSpinner={false} />
         {!shouldHideNav && <GeneralNavComponent />}
+        {!shouldHideNav && <RestrictionBanner />}
         <div className="min-h-[calc(100vh-70px)]">{children}</div>
         {!shouldHideFooter && <GeneralFooterComponent />}
         <Toaster position="top-center" />

@@ -27,9 +27,9 @@ export const payoutState = (status: string) => {
 };
 
 const STATE = {
-  paid: { label: "Paid", icon: Check, tone: "bg-emerald-50 text-emerald-700" },
-  pending: { label: "On its way", icon: Clock, tone: "bg-amber-50 text-amber-700" },
-  failed: { label: "Didn't go through", icon: X, tone: "bg-red-50 text-red-700" },
+  paid: { label: "Paid", icon: Check, tone: "bg-success-soft text-success" },
+  pending: { label: "On its way", icon: Clock, tone: "bg-warning-soft text-warning" },
+  failed: { label: "Didn't go through", icon: X, tone: "bg-danger-soft text-danger" },
 };
 
 /** Flutterwave's payouts to the organiser's bank: what was paid in and when. */
@@ -43,7 +43,7 @@ const PayoutsList = ({
   /** "Access Bank ••0031", shown on paid rows. */
   bankLabel?: string | null;
 }) => (
-  <section className="rounded-[1.5rem] border border-secondary-100 bg-white p-5 md:p-6">
+  <section className="rounded-3xl border border-secondary-100 bg-card p-5 md:p-6">
     <h2 className="text-base font-bold text-secondary-950">Payouts to your bank</h2>
     <p className="mt-1 text-xs text-muted-foreground">
       Paid by Flutterwave after its fees and any refunds.

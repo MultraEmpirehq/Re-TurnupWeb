@@ -28,6 +28,26 @@
   --color-series-1: var(--series-1);
   --color-series-2: var(--series-2);
   --color-heat: var(--heat);
+  /* Status tones: text/icon, soft fill, border. Badges, notices, banners. */
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-line: var(--success-line);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-line: var(--warning-line);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-line: var(--danger-line);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-info-line: var(--info-line);
+  --color-success-solid: var(--success-solid);
+  --color-warning-solid: var(--warning-solid);
+  --color-danger-solid: var(--danger-solid);
+  --color-info-solid: var(--info-solid);
+  /* Type scale: the one size below text-xs, for badges and tiny labels. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -129,6 +149,24 @@
   --series-1: #008fcc;
   --series-2: #e17100;
   --heat: #008fcc;
+  /* Status tones (light). Never reuse for chart series. */
+  --success: #047857;
+  --success-soft: #ecfdf5;
+  --success-line: #a7f3d0;
+  --warning: #b45309;
+  --warning-soft: #fffbeb;
+  --warning-line: #fde68a;
+  --danger: #b91c1c;
+  --danger-soft: #fef2f2;
+  --danger-line: #fecaca;
+  --info: #006b99;
+  --info-soft: #eef9ff;
+  --info-line: #b3e6ff;
+  /* Solid fills (dots, bars, filled buttons) that keep white text readable. */
+  --success-solid: #059669;
+  --warning-solid: #d97706;
+  --danger-solid: #dc2626;
+  --info-solid: #0284c7;
   --chart-1: #00b2ff;
   --chart-2: #0577fa;
   --chart-3: #006b99;
@@ -193,6 +231,23 @@
   --series-1: #33c2ff;
   --series-2: #ffb900;
   --heat: #0577fa;
+  /* Status tones (dark). */
+  --success: #6ee7b7;
+  --success-soft: rgb(16 185 129 / 0.12);
+  --success-line: rgb(16 185 129 / 0.32);
+  --warning: #fcd34d;
+  --warning-soft: rgb(245 158 11 / 0.12);
+  --warning-line: rgb(245 158 11 / 0.32);
+  --danger: #fca5a5;
+  --danger-soft: rgb(239 68 68 / 0.12);
+  --danger-line: rgb(239 68 68 / 0.32);
+  --info: #7dd3fc;
+  --info-soft: rgb(0 178 255 / 0.12);
+  --info-line: rgb(0 178 255 / 0.32);
+  --success-solid: #10b981;
+  --warning-solid: #f59e0b;
+  --danger-solid: #ef4444;
+  --info-solid: #0ea5e9;
   --chart-1: #00b2ff;
   --chart-2: #0577fa;
   --chart-3: #006b99;
@@ -214,6 +269,12 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* Nothing scrolls the page sideways on a phone: a wide decoration or strip
+     is cut at the edge instead. `clip`, not `hidden`, keeps sticky headers. */
+  html,
+  body {
+    overflow-x: clip;
   }
   /* iPhones zoom the page in when a field with text under 16px is tapped, and it
      stays zoomed. On touch screens every field is 16px, so that never happens. */
@@ -651,4 +712,17 @@
 [data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-close-button]:hover {
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
+}
+
+/* Native dropdowns: the browser's own arrow sits tight against the edge and
+   differs per browser. One arrow, with the same room as the left side. Kept
+   outside the layers so a field's px-* class can't squeeze it again. */
+select:not([multiple]):not([size]) {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8f98' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-inline-end: 2.5rem;
 }

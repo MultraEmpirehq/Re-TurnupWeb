@@ -75,12 +75,14 @@ const RegisterTokenForm = () => {
       }
       try {
         const { data } = await postData<
-          { password: string; token: string; email: string },
+          { password: string; token: string; email: string; intent?: string },
           { user: TUserDetails; accessToken?: string }
         >("/auth/register/verify", {
           password: body?.password,
           token: token?.toString(),
           email: email?.toString(),
+          // An organiser sign-up gets the organiser welcome email.
+          intent,
         });
         // The app and the api are on different domains, so the browser won't send
         // the cookie: the next steps need this token, as they do after a login.

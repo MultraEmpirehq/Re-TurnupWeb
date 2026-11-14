@@ -166,9 +166,9 @@ const TicketPreview: React.FC<{
         <button
           type="button"
           onClick={() => setShowRegistrationDetails(true)}
-          className="w-full rounded-[1.2rem] bg-secondary-50 px-4 py-4 text-left transition hover:bg-primary-50"
+          className="w-full rounded-2xl bg-secondary-50 px-4 py-4 text-left transition hover:bg-primary-50"
         >
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-secondary-400">
+          <p className="text-2xs font-semibold uppercase tracking-[0.22em] text-secondary-400">
             Registration
           </p>
           <p className="mt-2 text-sm font-semibold text-secondary-950">
@@ -196,7 +196,7 @@ const TicketPreview: React.FC<{
 
         {showRegistrationDetails && (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 px-4 py-8">
-            <div className="mx-auto max-w-lg rounded-[1.6rem] bg-white p-5 shadow-2xl">
+            <div className="mx-auto max-w-lg rounded-3xl bg-card p-5 shadow-2xl">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-secondary-400">
@@ -239,19 +239,19 @@ const TicketPreview: React.FC<{
                           <p className="mt-1 text-xs text-secondary-500">
                             {ticket.ticketQuantity} registration spots
                           </p>
-                          <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-secondary-400">
+                          <p className="mt-1 text-2xs uppercase tracking-[0.18em] text-secondary-400">
                             {ticket.visibility || "public"} -{" "}
                             {ticket.soldCount ?? 0} registered
                           </p>
                         </div>
-                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-secondary-500">
+                        <span className="rounded-full bg-card px-2.5 py-1 text-2xs font-bold uppercase tracking-[0.14em] text-secondary-500">
                           {ticket.visibility || "public"}
                         </span>
                       </div>
                       {privateHref && (
                         <Link
                           href={privateHref}
-                          className="mt-3 block break-all rounded-xl bg-white px-3 py-2 text-xs font-medium text-secondary-500 underline"
+                          className="mt-3 block break-all rounded-xl bg-card px-3 py-2 text-xs font-medium text-secondary-500 underline"
                         >
                           {privateHref}
                         </Link>
@@ -274,8 +274,8 @@ const TicketPreview: React.FC<{
 
   if (saleMethod === "external_link") {
     return ticketUrl ? (
-      <div className="rounded-[1.2rem] bg-secondary-50 px-4 py-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-secondary-400">
+      <div className="rounded-2xl bg-secondary-50 px-4 py-3">
+        <p className="text-2xs font-semibold uppercase tracking-[0.22em] text-secondary-400">
           Your own ticketing
         </p>
         <p className="mt-2 text-sm text-secondary-700">
@@ -309,8 +309,8 @@ const TicketPreview: React.FC<{
 
   return (
     <div className="space-y-3">
-      <div className="rounded-[1.2rem] bg-secondary-50 px-4 py-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-secondary-400">
+      <div className="rounded-2xl bg-secondary-50 px-4 py-3">
+        <p className="text-2xs font-semibold uppercase tracking-[0.22em] text-secondary-400">
           {previewLabel}
         </p>
         <p className="mt-2 text-sm font-semibold text-secondary-950">
@@ -331,7 +331,7 @@ const TicketPreview: React.FC<{
           {eventTickets.map((ticket) => (
             <div
               key={`${ticket.ticketName}-${ticket.ticketPrice}-${ticket.ticketQuantity}`}
-              className="flex items-center justify-between gap-3 rounded-[1rem] border border-secondary-100 bg-white px-4 py-3"
+              className="flex items-center justify-between gap-3 rounded-2xl border border-secondary-100 bg-card px-4 py-3"
             >
               <div>
                 <p className="text-sm font-semibold text-secondary-950">
@@ -340,17 +340,17 @@ const TicketPreview: React.FC<{
                 <p className="text-xs text-secondary-500">
                   {ticket.ticketQuantity} tickets
                 </p>
-                <p className="text-[10px] uppercase tracking-[0.18em] text-secondary-400">
+                <p className="text-2xs uppercase tracking-[0.18em] text-secondary-400">
                   {ticket.transferable
                     ? "Transfer enabled"
                     : "Transfer disabled"}
                 </p>
-                <p className="text-[10px] uppercase tracking-[0.18em] text-secondary-400">
+                <p className="text-2xs uppercase tracking-[0.18em] text-secondary-400">
                   {ticket.visibility || "public"} · {ticket.soldCount ?? 0}{" "}
                   {ticket.actionType === "register" ? "registered" : "sold"}
                 </p>
                 {ticketRules(ticket, event).map((line) => (
-                  <p key={line} className="text-[11px] text-secondary-500">
+                  <p key={line} className="text-2xs text-secondary-500">
                     {line}
                   </p>
                 ))}
@@ -368,22 +368,22 @@ const TicketPreview: React.FC<{
       ) : null}
 
       {!!passAssignments?.length && (
-        <div className="space-y-2 rounded-[1.2rem] bg-secondary-50 px-4 py-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-secondary-400">
+        <div className="space-y-2 rounded-2xl bg-secondary-50 px-4 py-4">
+          <p className="text-2xs font-semibold uppercase tracking-[0.22em] text-secondary-400">
             Access Passes
           </p>
           {passAssignments.map((pass, index) => (
             <div
               key={`${pass.passName}-${index}`}
-              className="rounded-[1rem] bg-white px-4 py-3 text-sm text-secondary-600"
+              className="rounded-2xl bg-card px-4 py-3 text-sm text-secondary-600"
             >
               <p className="font-semibold text-secondary-950">
                 {pass.passName}
               </p>
-              <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-secondary-400">
+              <p className="mt-1 text-2xs uppercase tracking-[0.18em] text-secondary-400">
                 {pass.transferable ? "Transfer enabled" : "Transfer disabled"}
               </p>
-              <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold">
+              <div className="mt-3 flex flex-wrap gap-2 text-2xs font-semibold">
                 <span className="rounded-full bg-primary-50 px-2.5 py-1 text-primary-700">
                   {pass.assignments?.filter(
                     (assignment) => assignment.passClaimStatus === "invited",
@@ -392,7 +392,7 @@ const TicketPreview: React.FC<{
                     0}{" "}
                   invites sent
                 </span>
-                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">
+                <span className="rounded-full bg-success-soft px-2.5 py-1 text-success">
                   {pass.assignments?.filter(
                     (assignment) => assignment.passClaimStatus === "claimed",
                   ).length ?? 0}{" "}
@@ -446,7 +446,7 @@ const BookingChip: React.FC<{
       ? "Pay Now"
       : "Register free";
   const chipClassName = isExternal
-    ? "bg-red-500 text-white shadow-red-200/70"
+    ? "bg-danger-solid text-white shadow-red-200/70"
     : "bg-secondary-400 text-white shadow-secondary-200/80";
 
   const href =
@@ -496,7 +496,7 @@ const PrivateTicketLinks: React.FC<{
   if (privateTickets.length === 0) return null;
 
   return (
-    <section className="space-y-3 rounded-[1.2rem] border border-secondary-100 bg-white p-4">
+    <section className="space-y-3 rounded-2xl border border-secondary-100 bg-card p-4">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-secondary-400">
           Vendor Private Links
@@ -593,7 +593,7 @@ const PendingRegistrationReview: React.FC<{
   if (!enabled) return null;
 
   return (
-    <section className="space-y-4 rounded-[1.2rem] border border-secondary-100 bg-white p-4">
+    <section className="space-y-4 rounded-2xl border border-secondary-100 bg-card p-4">
       <div>
         <h2 className="text-lg font-semibold text-secondary-950">
           Pending Registrations
@@ -647,7 +647,7 @@ const PendingRegistrationReview: React.FC<{
                 reviewRegistration(registration.registrationId, "rejected")
               }
               disabled={reviewingId === registration.registrationId}
-              className="rounded-xl border-red-100 text-red-600 hover:bg-red-50"
+              className="rounded-xl border-danger-line text-danger hover:bg-danger-soft"
             >
               Reject
             </Button>
@@ -668,7 +668,7 @@ const ActivityTimeline: React.FC<{ activities?: IEventActivityDetails[] }> = ({
   return (
     <section className="space-y-4">
       <h2 className="text-lg font-semibold text-secondary-950">Activities</h2>
-      <div className="grid gap-3 bg-white md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-3 bg-card md:grid-cols-2 xl:grid-cols-3">
         {[...activities]
           .sort(
             (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
@@ -676,13 +676,13 @@ const ActivityTimeline: React.FC<{ activities?: IEventActivityDetails[] }> = ({
           .map((activity, index) => (
             <article
               key={`${activity.name}-${index}`}
-              className="grid grid-cols-[54px_1fr] gap-4 rounded-[1rem] border border-slate-100 bg-white px-3 py-4 transition-shadow duration-200 hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)]"
+              className="grid grid-cols-[54px_1fr] gap-4 rounded-2xl border border-border bg-card px-3 py-4 transition-shadow duration-200 hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)]"
             >
-              <div className="border-r border-dashed border-sky-200 pr-3 text-center">
+              <div className="border-r border-dashed border-info-line pr-3 text-center">
                 <p className="text-base font-bold leading-none text-secondary-950">
                   {formatActivityDay(activity.date)}
                 </p>
-                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-secondary-400">
+                <p className="mt-1 text-2xs font-semibold uppercase tracking-[0.2em] text-secondary-400">
                   {formatActivityMonth(activity.date)}
                 </p>
               </div>
@@ -690,7 +690,7 @@ const ActivityTimeline: React.FC<{ activities?: IEventActivityDetails[] }> = ({
                 <p className="text-sm font-medium text-secondary-700">
                   {activity.name}
                 </p>
-                <p className="text-[11px] text-secondary-300">
+                <p className="text-2xs text-secondary-300">
                   {formatEventTime(activity.date)}
                 </p>
                 {activity.description && (
@@ -721,7 +721,7 @@ const MediaStrip: React.FC<{
         </p>
       </div>
       {mediaItems.length === 0 ? (
-        <div className="flex h-32 flex-col items-center justify-center gap-1 rounded-[1rem] border border-dashed border-secondary-200 bg-secondary-50/60 px-4 text-center">
+        <div className="flex h-32 flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-secondary-200 bg-secondary-50/60 px-4 text-center">
           <p className="text-sm font-semibold text-secondary-700">
             No photos or videos yet
           </p>
@@ -738,7 +738,7 @@ const MediaStrip: React.FC<{
                 key={`${item.url}-${index}`}
                 onClick={() => setOpen(index)}
                 aria-label={`Open ${isVideo(item) ? "video" : "photo"} ${index + 1}`}
-                className="relative h-32 w-48 flex-none cursor-zoom-in overflow-hidden rounded-[1rem] border border-secondary-100 bg-secondary-50"
+                className="relative h-32 w-48 flex-none cursor-zoom-in overflow-hidden rounded-2xl border border-secondary-100 bg-secondary-50"
               >
                 <MediaThumb item={item} alt={`Media ${index + 1}`} />
               </button>
@@ -789,7 +789,7 @@ export const SponsorsBoard: React.FC<{
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-[1rem] border border-secondary-100 bg-white shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+      <div className="overflow-hidden rounded-2xl border border-secondary-100 bg-card shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
         {sponsorItems.length === 0 && (
           <div className="flex h-24 flex-col items-center justify-center gap-1 px-4 text-center">
             <p className="text-sm font-semibold text-secondary-700">
@@ -822,7 +822,7 @@ export const SponsorsBoard: React.FC<{
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-between border-t border-secondary-100 bg-secondary-50 px-4 py-3 text-[11px] text-secondary-400">
+        <div className="flex items-center justify-between border-t border-secondary-100 bg-secondary-50 px-4 py-3 text-2xs text-secondary-400">
           <span>{organizerName ? `Organized by ${organizerName}` : ""}</span>
           <span>{eventYear}</span>
         </div>
@@ -856,7 +856,7 @@ export const BlogPostsBoard: React.FC<{
           <Link
             key={post.id}
             href={hrefFor ? hrefFor(post.id) : `/app/events/${eventId}/blog/${post.id}`}
-            className="group overflow-hidden rounded-[1.2rem] border border-secondary-100 bg-white shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition-transform hover:-translate-y-1"
+            className="group overflow-hidden rounded-2xl border border-secondary-100 bg-card shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition-transform hover:-translate-y-1"
           >
             <div
               className="h-40 bg-secondary-50 bg-cover bg-center"
@@ -868,7 +868,7 @@ export const BlogPostsBoard: React.FC<{
               }}
             />
             <div className="space-y-2 p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-secondary-400">
+              <p className="text-2xs font-semibold uppercase tracking-[0.22em] text-secondary-400">
                 Event Update
               </p>
               <h3 className="text-lg font-semibold leading-tight text-secondary-950 group-hover:text-secondary-500">
@@ -896,10 +896,10 @@ export const EventPreviewCard: React.FC<{
   const bannerImage = data.image || "";
   const inAdmin = !!usePathname()?.startsWith("/app/admin");
   return (
-    <section className="overflow-hidden rounded-[1.8rem] border border-secondary-100 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
+    <section className="overflow-hidden rounded-3xl border border-secondary-100 bg-card shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
       <div className="px-4 pt-4 sm:px-6 sm:pt-6">
         <div
-          className="h-52 overflow-hidden rounded-[1.2rem] bg-cover bg-center sm:h-64"
+          className="h-52 overflow-hidden rounded-2xl bg-cover bg-center sm:h-64"
           style={{
             backgroundImage: bannerImage
               ? `url(${bannerImage})`
@@ -951,7 +951,7 @@ export const EventPreviewCard: React.FC<{
                   timezone={data.timezone}
                 />
               )}
-              <div className="space-y-3 text-[13px] text-secondary-700">
+              <div className="space-y-3 text-sm text-secondary-700">
                 {(data.days?.length ?? 0) <= 1 && (
                   <>
                     <div className="flex items-center gap-3">
@@ -973,7 +973,7 @@ export const EventPreviewCard: React.FC<{
                 )}
                 <div className="flex items-start gap-3 pt-1">
                   <MapPin className="mt-0.5 size-4 shrink-0 text-secondary-500" />
-                  <div className="min-w-0 text-[12px] leading-5 break-words text-secondary-700">
+                  <div className="min-w-0 text-xs leading-5 break-words text-secondary-700">
                     <p>
                       {data.venue?.name ||
                         data.venueName ||
@@ -1029,7 +1029,7 @@ export const EventPreviewCard: React.FC<{
             <h2 className="text-lg font-semibold text-secondary-950">
               Event Description
             </h2>
-            <div className="space-y-4 text-[13px] leading-6 text-secondary-700">
+            <div className="space-y-4 text-sm leading-6 text-secondary-700">
               <p>
                 {data.description ||
                   "Add a fuller event story on the edit screen so attendees can quickly understand the experience."}
@@ -1146,8 +1146,8 @@ const VendorEventView: React.FC<{ id: string }> = ({ id }) => {
     return (
       <div className="mx-auto max-w-5xl space-y-6">
         <Skeleton className="h-10 w-48 rounded-xl" />
-        <Skeleton className="h-64 w-full rounded-[1.8rem]" />
-        <Skeleton className="h-[30rem] w-full rounded-[1.8rem]" />
+        <Skeleton className="h-64 w-full rounded-3xl" />
+        <Skeleton className="h-[30rem] w-full rounded-3xl" />
       </div>
     );
   }

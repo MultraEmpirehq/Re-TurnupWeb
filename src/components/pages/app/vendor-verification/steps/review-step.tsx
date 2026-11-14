@@ -128,7 +128,7 @@ const PasswordPrompt: React.FC<{
         }
       }}
     >
-      <DialogContent className="rounded-[1.6rem] p-6 sm:max-w-sm">
+      <DialogContent className="rounded-3xl p-6 sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Show your bank details</DialogTitle>
           <DialogDescription>
@@ -308,6 +308,14 @@ const ReviewSummary: React.FC<{
           <>
             <Row label="Address" value={values.address} />
             <Row label="Government ID" value={doc(values.idDocument)} />
+            <Row
+              label="ID expires"
+              value={
+                values.idExpiresOn
+                  ? format(values.idExpiresOn, "d MMMM yyyy")
+                  : ""
+              }
+            />
           </>
         )}
       </Group>

@@ -18,7 +18,7 @@ import { NoteDialog } from "../moderation/moderation-ui";
 
 const STATUS_TONE: Record<IAdminUserTransfer["status"], string> = {
   PENDING: "bg-secondary-50 text-secondary-800",
-  CLAIMED: "bg-emerald-50 text-emerald-700",
+  CLAIMED: "bg-success-soft text-success",
   CANCELLED: "bg-muted text-muted-foreground",
 };
 const STATUS_LABEL: Record<IAdminUserTransfer["status"], string> = {
@@ -77,7 +77,7 @@ const UserTransfers: React.FC<{ userId: string }> = ({ userId }) => {
                 <Icon
                   className={cn(
                     "mt-0.5 size-4 shrink-0",
-                    sent ? "text-sky-600" : "text-emerald-600",
+                    sent ? "text-info" : "text-success",
                   )}
                   aria-label={sent ? "Sent" : "Received"}
                 />
@@ -99,7 +99,7 @@ const UserTransfers: React.FC<{ userId: string }> = ({ userId }) => {
                 <div className="flex shrink-0 flex-col items-end gap-2">
                   <span
                     className={cn(
-                      "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                      "rounded-full px-2 py-0.5 text-2xs font-semibold",
                       STATUS_TONE[transfer.status],
                     )}
                   >
@@ -110,7 +110,7 @@ const UserTransfers: React.FC<{ userId: string }> = ({ userId }) => {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-7 px-2 text-xs text-red-600 hover:text-red-700"
+                      className="h-7 px-2 text-xs text-danger hover:text-danger"
                       onClick={() => setCancelling(transfer)}
                     >
                       Cancel

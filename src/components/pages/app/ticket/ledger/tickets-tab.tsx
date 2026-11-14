@@ -62,14 +62,14 @@ const STATUS_STYLE: Record<
 > = {
   checked_in: {
     icon: CheckCircle2,
-    className: "bg-emerald-50 text-emerald-700",
+    className: "bg-success-soft text-success",
   },
   not_checked_in: {
     icon: CircleDashed,
     className: "bg-secondary-50 text-secondary-600",
   },
-  pending: { icon: Hourglass, className: "bg-amber-50 text-amber-700" },
-  refunded: { icon: Undo2, className: "bg-red-50 text-red-700" },
+  pending: { icon: Hourglass, className: "bg-warning-soft text-warning" },
+  refunded: { icon: Undo2, className: "bg-danger-soft text-danger" },
   declined: { icon: Ban, className: "bg-secondary-50 text-muted-foreground" },
 };
 
@@ -164,7 +164,7 @@ const Meter: React.FC<{
 const CapacityStrip: React.FC<{
   capacity: NonNullable<TLedgerSummary["capacity"]>;
 }> = ({ capacity }) => (
-  <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-secondary-100 bg-white px-4 py-2.5">
+  <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-secondary-100 bg-card px-4 py-2.5">
     <Meter
       value={capacity.sold}
       max={capacity.total}
@@ -194,7 +194,7 @@ const TicketTypeBreakdown: React.FC<{
   selectedId: string;
   onSelect: (id: string) => void;
 }> = ({ eventName, rows, selectedId, onSelect }) => (
-  <section className="rounded-[1.5rem] border border-secondary-100 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+  <section className="rounded-3xl border border-secondary-100 bg-card p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
     <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
       <h2 className="font-bold text-secondary-950">
         {eventName ? `${eventName} · by ticket type` : "By ticket type"}
@@ -398,7 +398,7 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
             onChange={(event) => setSearchInput(event.target.value)}
             placeholder="Search name, email, order or ticket code"
             aria-label="Search tickets"
-            className="h-11 rounded-xl bg-white pl-10"
+            className="h-11 rounded-xl bg-card pl-10"
           />
         </div>
         <div className="grid grid-cols-2 gap-3 sm:flex">
@@ -409,7 +409,7 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
               setTicketTypeId("");
             }}
             aria-label="Event"
-            className="col-span-2 h-11 min-w-0 rounded-xl border border-secondary-200 bg-white px-3 text-sm sm:max-w-[240px]"
+            className="col-span-2 h-11 min-w-0 rounded-xl border border-secondary-200 bg-card px-3 text-sm sm:max-w-[240px]"
           >
             <option value="">All events</option>
             {events.map((event) => (
@@ -424,7 +424,7 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
             disabled={!eventId}
             aria-label="Ticket type"
             title={eventId ? undefined : "Pick an event first"}
-            className="h-11 min-w-0 rounded-xl border border-secondary-200 bg-white px-3 text-sm disabled:opacity-50"
+            className="h-11 min-w-0 rounded-xl border border-secondary-200 bg-card px-3 text-sm disabled:opacity-50"
           >
             <option value="">All ticket types</option>
             {ticketTypes.map((ticket) => (
@@ -437,7 +437,7 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
             value={sort}
             onChange={(event) => setSort(event.target.value as TLedgerSort)}
             aria-label="Sort"
-            className="h-11 min-w-0 rounded-xl border border-secondary-200 bg-white px-3 text-sm"
+            className="h-11 min-w-0 rounded-xl border border-secondary-200 bg-card px-3 text-sm"
           >
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>
@@ -448,7 +448,7 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
             variant="outline"
             onClick={exportCsv}
             disabled={exporting || !total}
-            className="col-span-2 h-11 rounded-xl bg-white sm:col-span-1"
+            className="col-span-2 h-11 rounded-xl bg-card sm:col-span-1"
           >
             {exporting ? (
               <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -460,7 +460,7 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
           <div
             role="tablist"
             aria-label="Show"
-            className="col-span-2 flex h-11 shrink-0 rounded-xl border border-secondary-200 bg-white p-1 text-xs font-semibold sm:col-span-1"
+            className="col-span-2 flex h-11 shrink-0 rounded-xl border border-secondary-200 bg-card p-1 text-xs font-semibold sm:col-span-1"
           >
             {(
               [
@@ -514,7 +514,7 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
                   "flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors",
                   isSelected
                     ? "border-secondary-900 bg-secondary-900 text-white"
-                    : "border-secondary-200 bg-white text-secondary-600 hover:border-secondary-400",
+                    : "border-secondary-200 bg-card text-secondary-600 hover:border-secondary-400",
                 )}
               >
                 {option.label}
@@ -544,7 +544,7 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
         />
       )}
 
-      <section className="overflow-hidden rounded-[1.5rem] border border-secondary-100 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+      <section className="overflow-hidden rounded-3xl border border-secondary-100 bg-card shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
         {loading ? (
           <div className="flex justify-center py-20">
             <Loader2
@@ -599,7 +599,7 @@ const TicketsTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) => {
                         {record.ticketType} · {record.eventName}
                       </span>
                       <span className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-[11px] tracking-wide text-muted-foreground">
+                        <span className="font-mono text-2xs tracking-wide text-muted-foreground">
                           {record.ticketCode}
                         </span>
                         <StatusChip record={record} />

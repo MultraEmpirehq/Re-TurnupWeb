@@ -63,7 +63,7 @@ const CancelRequestDialog: React.FC<{
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !busy && onClose()}>
-      <DialogContent className="rounded-[1.6rem] p-6 sm:max-w-md">
+      <DialogContent className="rounded-3xl p-6 sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-secondary-950">
             Ask us to cancel this event?
@@ -84,7 +84,7 @@ const CancelRequestDialog: React.FC<{
         </ol>
 
         {declined && (
-          <p className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          <p className="rounded-2xl border border-warning-line bg-warning-soft p-3 text-sm text-warning">
             Your last request wasn&apos;t approved
             {declined.reviewNote ? `: ${declined.reviewNote}` : "."}
           </p>
@@ -114,7 +114,7 @@ const CancelRequestDialog: React.FC<{
           </Button>
           <Button
             type="button"
-            className="rounded-2xl bg-red-600 text-white hover:bg-red-700"
+            className="rounded-2xl bg-danger-solid text-white hover:bg-danger-solid"
             loading={busy}
             disabled={busy || reason.trim().length < 10}
             onClick={submit}
@@ -156,7 +156,7 @@ const PendingDialog: React.FC<{
   };
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !busy && onClose()}>
-      <DialogContent className="rounded-[1.6rem] p-6 sm:max-w-md">
+      <DialogContent className="rounded-3xl p-6 sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-secondary-950">
             Cancellation requested
@@ -251,7 +251,7 @@ const EventRemovalAction: React.FC<{
         variant="outline"
         className={cn(
           BUTTON,
-          "border-secondary-200 bg-white text-secondary-800 hover:bg-secondary-50",
+          "border-secondary-200 bg-card text-secondary-800 hover:bg-secondary-50",
           className,
         )}
         loading={archiving}
@@ -282,8 +282,8 @@ const EventRemovalAction: React.FC<{
           className={cn(
             BUTTON,
             pending
-              ? "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
-              : "border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
+              ? "border-warning-line bg-warning-soft text-warning hover:bg-warning-soft"
+              : "border-danger-line bg-danger-soft text-danger hover:bg-danger-soft",
             className,
           )}
           onClick={() => setDialog(pending ? "pending" : "cancel")}
@@ -317,7 +317,7 @@ const EventRemovalAction: React.FC<{
       variant="outline"
       className={cn(
         BUTTON,
-        "border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
+        "border-danger-line bg-danger-soft text-danger hover:bg-danger-soft",
         className,
       )}
       onClick={() => onDeleteRequest(event)}

@@ -78,21 +78,21 @@ const SupportChats = () => {
                   type="button"
                   onClick={() => setOpenId(chat.id)}
                   className={cn(
-                    "w-full rounded-xl border bg-white p-3 text-left transition hover:border-primary-300",
+                    "w-full rounded-xl border bg-card p-3 text-left transition hover:border-primary-300",
                     chat.id === openId && "border-primary-500 ring-2 ring-primary-100",
                   )}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <p className="truncate font-semibold">{chat.person.name}</p>
                     {chat.waitingOnUs && (
-                      <span className="shrink-0 rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-orange-700">
+                      <span className="shrink-0 rounded-full bg-warning-soft px-2 py-0.5 text-2xs font-bold text-warning">
                         Waiting
                       </span>
                     )}
                   </div>
                   <p className="truncate text-xs text-muted-foreground">{chat.person.email}</p>
                   <p className="mt-1 line-clamp-2 text-sm text-secondary-700">{chat.preview}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">
+                  <p className="mt-1 text-2xs text-muted-foreground">
                     {formatDistanceToNow(new Date(chat.lastMessageAt), { addSuffix: true })}
                   </p>
                 </button>
@@ -100,7 +100,7 @@ const SupportChats = () => {
             ))}
           </ul>
 
-          <div className="flex min-h-[420px] flex-col rounded-xl border bg-white">
+          <div className="flex min-h-[420px] flex-col rounded-xl border bg-card">
             {!open ? (
               <div className="m-auto p-8 text-center text-sm text-muted-foreground">
                 Pick a chat to read and reply.
@@ -128,7 +128,7 @@ const SupportChats = () => {
                               fromTeam ? "bg-primary-500 text-white" : "bg-secondary-50 text-secondary-900",
                             )}
                           >
-                            <p className="mb-0.5 text-[11px] font-semibold opacity-75">
+                            <p className="mb-0.5 text-2xs font-semibold opacity-75">
                               {fromTeam ? `${message.senderName} · Turnupz team` : message.senderName}
                             </p>
                             {message.body}

@@ -57,7 +57,7 @@ const MonthsChart: React.FC<{ months: IFinanceRevenue["months"]; currency: strin
       </div>
       <div className="mt-2 flex gap-1.5">
         {months.map((month) => (
-          <span key={month.month} className="flex-1 text-center text-[11px] text-muted-foreground">
+          <span key={month.month} className="flex-1 text-center text-2xs text-muted-foreground">
             {monthLabel(month.month)}
           </span>
         ))}
@@ -202,7 +202,7 @@ const Revenue = () => {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[640px] text-sm">
                   <thead>
-                    <tr className="border-b border-border text-left text-[11px] tracking-wider text-muted-foreground uppercase">
+                    <tr className="border-b border-border text-left text-2xs tracking-wider text-muted-foreground uppercase">
                       <th className="py-2 font-semibold">Month</th>
                       <th className="py-2 text-right font-semibold">Sales</th>
                       <th className="py-2 text-right font-semibold">Turnupz fees</th>

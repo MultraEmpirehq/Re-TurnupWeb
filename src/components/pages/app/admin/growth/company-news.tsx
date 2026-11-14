@@ -145,7 +145,7 @@ const PostEditor = ({
             <button
               type="button"
               onClick={() => setDraft((current) => ({ ...current, cover: null, coverId: null }))}
-              className="text-xs font-semibold text-red-600 hover:underline"
+              className="text-xs font-semibold text-danger hover:underline"
             >
               Remove cover
             </button>
@@ -251,7 +251,7 @@ const CompanyNews = () => {
                 <span
                   className={cn(
                     "rounded-full px-2.5 py-1 text-xs font-semibold",
-                    post.status === "published" ? "bg-emerald-50 text-emerald-700" : "bg-muted text-muted-foreground",
+                    post.status === "published" ? "bg-success-soft text-success" : "bg-muted text-muted-foreground",
                   )}
                 >
                   {post.status === "published" ? "Published" : "Draft"}
@@ -270,7 +270,7 @@ const CompanyNews = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-red-600 hover:text-red-700"
+                    className="text-danger hover:text-danger"
                     onClick={() => setDeleting(post)}
                   >
                     Delete

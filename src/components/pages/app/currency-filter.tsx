@@ -136,7 +136,7 @@ const CurrencyFilter: React.FC<{
       role="radiogroup"
       aria-label="Show figures for"
       className={cn(
-        "scrollbar-none flex w-fit max-w-full gap-1 overflow-x-auto rounded-full border border-secondary-100 bg-white p-1 shadow-sm",
+        "scrollbar-none flex w-fit max-w-full gap-1 overflow-x-auto rounded-full border border-secondary-100 bg-card p-1 shadow-sm",
         className,
       )}
     >

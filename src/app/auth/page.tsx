@@ -58,7 +58,7 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
       <div className="grid gap-3">
         <Button
           asChild
-          className="h-auto min-h-20 justify-between rounded-2xl bg-secondary px-5 py-4 text-left text-white hover:bg-secondary-600"
+          className="h-auto min-h-20 w-full justify-between gap-3 rounded-2xl whitespace-normal bg-secondary px-5 py-4 text-left text-white hover:bg-secondary-600"
         >
           <Link href={attendeeHref}>
             <span className="flex items-center gap-4">
@@ -79,7 +79,7 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
         <Button
           asChild
           variant="outline"
-          className="h-auto min-h-20 justify-between rounded-2xl border-secondary-200 px-5 py-4 text-left text-secondary-950 hover:bg-secondary-50"
+          className="h-auto min-h-20 w-full justify-between gap-3 rounded-2xl whitespace-normal border-secondary-200 px-5 py-4 text-left text-secondary-950 hover:bg-secondary-50"
         >
           <Link href={vendorHref}>
             <span className="flex items-center gap-4">

@@ -48,7 +48,7 @@ const EarningsHero = ({
   const hidden = useHideAmounts((state) => state.hidden);
   const [whole, fraction] = totals.earnings.formatted.withCurrency.split(".");
   return (
-    <section className="relative overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-secondary-800 via-secondary-600 to-primary-500 p-6 text-white shadow-[0_24px_60px_rgba(5,119,250,0.28)] md:p-7">
+    <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-secondary-800 via-secondary-600 to-primary-500 p-6 text-white shadow-[0_24px_60px_rgba(5,119,250,0.28)] md:p-7">
       <div aria-hidden className="absolute -top-16 -right-16 size-64 rounded-full bg-white/10" />
       <div aria-hidden className="absolute right-24 -bottom-24 size-56 rounded-full bg-white/5" />
       <div className="relative">

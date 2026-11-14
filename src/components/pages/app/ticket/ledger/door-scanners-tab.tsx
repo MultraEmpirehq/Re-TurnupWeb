@@ -44,12 +44,12 @@ const Status = ({ member }: { member: IDoorTeamMember }) => {
     return <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">Ended</span>;
   }
   if (member.status === "invited") {
-    return <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">Invite sent</span>;
+    return <span className="rounded-full bg-warning-soft px-2.5 py-1 text-xs font-semibold text-warning">Invite sent</span>;
   }
   if (member.scanningNow) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-        <span className="size-1.5 rounded-full bg-emerald-500" />
+      <span className="inline-flex items-center gap-1 rounded-full bg-success-soft px-2.5 py-1 text-xs font-semibold text-success">
+        <span className="size-1.5 rounded-full bg-success-solid" />
         Scanning now
       </span>
     );
@@ -130,10 +130,10 @@ const AddDoorStaff = ({ eventId, eventName }: { eventId: string; eventName?: str
             placeholder="@username, name or email"
             aria-label="Add door staff by username or email"
             autoComplete="off"
-            className="h-11 w-full rounded-full border border-secondary-100 bg-white px-4 text-sm outline-none focus:border-secondary-300"
+            className="h-11 w-full rounded-full border border-secondary-100 bg-card px-4 text-sm outline-none focus:border-secondary-300"
           />
           {open && query.replace(/^@/, "").length >= 2 && !value.includes("@", 1) && (
-            <ul className="absolute top-full right-0 left-0 z-20 mt-1 max-h-72 overflow-y-auto rounded-2xl border border-secondary-100 bg-white p-1 shadow-lg">
+            <ul className="absolute top-full right-0 left-0 z-20 mt-1 max-h-72 overflow-y-auto rounded-2xl border border-secondary-100 bg-card p-1 shadow-lg">
               {people.isFetching && !results.length ? (
                 <li className="px-3 py-2.5 text-sm text-muted-foreground">Searching…</li>
               ) : !results.length ? (
@@ -249,14 +249,14 @@ const DoorScannersTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) 
                 aria-pressed={chosen}
                 onClick={() => setEventId(event.id)}
                 className={cn(
-                  "w-[240px] shrink-0 rounded-2xl border bg-white p-4 text-left transition-colors",
+                  "w-[240px] shrink-0 rounded-2xl border bg-card p-4 text-left transition-colors",
                   chosen ? "border-secondary-500 ring-2 ring-secondary-100" : "border-secondary-100 hover:border-secondary-300",
                 )}
               >
                 <span className="flex items-start justify-between gap-2">
                   <span className="truncate font-bold text-secondary-950">{event.name}</span>
                   {isLive(event) && (
-                    <span className="shrink-0 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase">
+                    <span className="shrink-0 rounded-full bg-success-solid px-2 py-0.5 text-2xs font-bold text-white uppercase">
                       Live
                     </span>
                   )}
@@ -272,7 +272,7 @@ const DoorScannersTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) 
               value={past.some((event) => event.id === selectedId) ? selectedId : ""}
               onChange={(event) => event.target.value && setEventId(event.target.value)}
               aria-label="Past events"
-              className="h-auto w-[170px] shrink-0 rounded-2xl border border-dashed border-secondary-200 bg-white px-3 text-xs font-semibold text-muted-foreground"
+              className="h-auto w-[170px] shrink-0 rounded-2xl border border-dashed border-secondary-200 bg-card px-3 text-xs font-semibold text-muted-foreground"
             >
               <option value="">Past events</option>
               {past.map((event) => (
@@ -287,7 +287,7 @@ const DoorScannersTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) 
 
       {selected && (
         <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
-          <section className="rounded-[1.5rem] border border-secondary-100 bg-white p-5 md:p-6">
+          <section className="rounded-3xl border border-secondary-100 bg-card p-5 md:p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <h2 className="truncate text-lg font-bold text-secondary-950">Door team · {selected.name}</h2>
@@ -331,7 +331,7 @@ const DoorScannersTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) 
                       <div className="min-w-0 flex-1">
                         <p className="flex flex-wrap items-center gap-2 font-semibold text-secondary-950">
                           <span className="truncate">{name}</span>
-                          <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", KIND[member.kind].className)}>
+                          <span className={cn("rounded-full px-2 py-0.5 text-2xs font-bold", KIND[member.kind].className)}>
                             {KIND[member.kind].label}
                           </span>
                         </p>
@@ -344,7 +344,7 @@ const DoorScannersTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) 
                       </div>
                       <div className="w-24 text-right">
                         <p className="font-bold text-secondary-950">{member.scans.toLocaleString()}</p>
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-2xs text-muted-foreground">
                           {member.lastScanAt ? `Last ${format(new Date(member.lastScanAt), "h:mm a")}` : "scans"}
                         </p>
                       </div>
@@ -353,7 +353,7 @@ const DoorScannersTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) 
                           <button
                             type="button"
                             onClick={() => setRemoving(member)}
-                            className="text-xs font-semibold text-red-600 hover:underline"
+                            className="text-xs font-semibold text-danger hover:underline"
                           >
                             Remove
                           </button>
@@ -373,12 +373,12 @@ const DoorScannersTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) 
           </section>
 
           <div className="space-y-5">
-            <section className="rounded-[1.5rem] border border-secondary-100 bg-white p-5 md:p-6">
+            <section className="rounded-3xl border border-secondary-100 bg-card p-5 md:p-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold text-secondary-950">At the door</h2>
                 {isLive(selected) && (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
-                    <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-success">
+                    <span className="size-2 animate-pulse rounded-full bg-success-solid" />
                     Live
                   </span>
                 )}
@@ -401,7 +401,7 @@ const DoorScannersTab: React.FC<{ events: IEventDetailsType[] }> = ({ events }) 
                         <span
                           className={cn(
                             "mt-0.5 grid size-6 shrink-0 place-items-center rounded-full",
-                            again ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600",
+                            again ? "bg-warning-soft text-warning" : "bg-success-soft text-success",
                           )}
                         >
                           {again ? <RotateCcw className="size-3.5" aria-hidden /> : <Check className="size-3.5" aria-hidden />}

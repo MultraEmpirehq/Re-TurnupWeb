@@ -52,14 +52,15 @@ const ExplorePlacePicker: React.FC<{
           className={cn(
             variant === "inline"
               ? "inline-flex items-center gap-1 rounded-lg text-primary decoration-2 underline-offset-4 hover:underline"
-              : "inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-3.5 text-sm font-semibold text-secondary-900 ring-1 ring-black/5 hover:bg-secondary-50",
+              : "inline-flex h-9 items-center gap-1.5 rounded-full bg-card px-3.5 text-sm font-semibold text-secondary-900 ring-1 ring-black/5 hover:bg-secondary-50",
             className,
           )}
         >
           {variant === "chip" && (
             <MapPin className="size-4 text-primary" aria-hidden />
           )}
-          {variant === "inline" && "in "}
+          {/* "in Lagos", but just "everywhere", never "in everywhere". */}
+          {variant === "inline" && place && "in "}
           {placeLabel(place)}
           <ChevronDown className="size-4 shrink-0" aria-hidden />
         </button>

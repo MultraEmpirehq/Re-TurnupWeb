@@ -39,7 +39,7 @@ const PassRow: React.FC<{
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-xl border border-secondary-100 bg-white px-2.5 py-2",
+        "flex items-center gap-3 rounded-xl border border-secondary-100 bg-card px-2.5 py-2",
         editing && "ring-2 ring-primary",
       )}
     >
@@ -50,7 +50,7 @@ const PassRow: React.FC<{
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-secondary-950">{pass.passName}</p>
         <p
-          className="truncate text-[11px] text-secondary-500"
+          className="truncate text-2xs text-secondary-500"
           title={people ? pass.assigneeEmails.join(", ") : undefined}
         >
           {people
@@ -73,7 +73,7 @@ const PassRow: React.FC<{
         type="button"
         onClick={onDelete}
         aria-label={`Delete ${pass.passName}`}
-        className="flex size-7 shrink-0 items-center justify-center rounded-lg text-red-500 transition hover:bg-red-50"
+        className="flex size-7 shrink-0 items-center justify-center rounded-lg text-danger transition hover:bg-danger-soft"
       >
         <Trash2 className="size-3.5" />
       </button>

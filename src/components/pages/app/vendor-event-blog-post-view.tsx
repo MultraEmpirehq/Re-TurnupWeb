@@ -60,8 +60,8 @@ const VendorEventBlogPostView: React.FC<{
     return (
       <div className="mx-auto max-w-4xl space-y-6">
         <Skeleton className="h-10 w-48 rounded-xl" />
-        <Skeleton className="h-72 w-full rounded-[1.8rem]" />
-        <Skeleton className="h-80 w-full rounded-[1.8rem]" />
+        <Skeleton className="h-72 w-full rounded-3xl" />
+        <Skeleton className="h-80 w-full rounded-3xl" />
       </div>
     );
   }
@@ -97,7 +97,7 @@ const VendorEventBlogPostView: React.FC<{
       {images.length > 0 && (
         <section className="space-y-4">
           <div
-            className="h-[22rem] rounded-[1.8rem] border border-secondary-100 bg-secondary-50 bg-cover bg-center shadow-[0_18px_48px_rgba(15,23,42,0.08)]"
+            className="h-[22rem] rounded-3xl border border-secondary-100 bg-secondary-50 bg-cover bg-center shadow-[0_18px_48px_rgba(15,23,42,0.08)]"
             style={{ backgroundImage: `url(${images[selectedImageIndex]})` }}
           />
           {images.length > 1 && (
@@ -107,7 +107,7 @@ const VendorEventBlogPostView: React.FC<{
                   key={`${image}-${index}`}
                   type="button"
                   onClick={() => setSelectedImageIndex(index)}
-                  className={`overflow-hidden rounded-[1rem] border bg-white text-left transition ${
+                  className={`overflow-hidden rounded-2xl border bg-card text-left transition ${
                     selectedImageIndex === index
                       ? "border-secondary-500 ring-2 ring-secondary-100"
                       : "border-secondary-100 hover:border-secondary-300"
@@ -127,7 +127,7 @@ const VendorEventBlogPostView: React.FC<{
         </section>
       )}
 
-      <article className="rounded-[1.8rem] border border-secondary-100 bg-white p-6 shadow-[0_18px_48px_rgba(15,23,42,0.08)] sm:p-8">
+      <article className="rounded-3xl border border-secondary-100 bg-card p-6 shadow-[0_18px_48px_rgba(15,23,42,0.08)] sm:p-8">
         <div className="mb-6 flex flex-wrap items-center gap-3 text-sm text-secondary-500">
           <span className="inline-flex items-center gap-2">
             <CalendarDays className="size-4" />

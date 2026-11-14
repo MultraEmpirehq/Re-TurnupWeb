@@ -158,7 +158,7 @@ const NewDecision: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
             </p>
           )}
           {purpose === "COMMISSION" && (
-            <p className="mt-2 text-amber-800 dark:text-amber-300">
+            <p className="mt-2 text-warning dark:text-amber-300">
               Recorded only. Tax on the commission isn&apos;t charged until the open questions below are settled.
             </p>
           )}
@@ -397,7 +397,7 @@ const Registrations = () => {
                 <p className="text-sm text-muted-foreground">
                   {row.label} · <span className="font-mono">{row.number}</span>
                 </p>
-                {row.reviewNote && <p className="mt-1 text-sm text-red-700 dark:text-red-300">{row.reviewNote}</p>}
+                {row.reviewNote && <p className="mt-1 text-sm text-danger dark:text-red-300">{row.reviewNote}</p>}
               </div>
               {row.reviewStatus === "PENDING" ? (
                 <ReviewButtons onReview={(next, note) => review(row.id, next, note)} />
@@ -461,7 +461,7 @@ const Exemptions = () => {
                   Open their evidence
                 </a>
               )}
-              {row.reviewNote && <p className="text-sm text-red-700 dark:text-red-300">{row.reviewNote}</p>}
+              {row.reviewNote && <p className="text-sm text-danger dark:text-red-300">{row.reviewNote}</p>}
             </div>
           ))}
         </div>
@@ -504,7 +504,7 @@ const TaxAdmin = () => {
   return (
     <div className="space-y-5 pb-16">
       <div className="space-y-1">
-        <h1 className="text-xl font-bold text-secondary-800 dark:text-foreground">Tax</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Tax</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
           Tax is added to a ticket only where a decision here is approved and the organiser is registered to charge it.
           Everywhere else, prices stay as listed.

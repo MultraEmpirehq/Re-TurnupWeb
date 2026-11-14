@@ -51,7 +51,10 @@ import {
   VerificationStatus,
   VerificationStepKey,
   VendorPlan,
+  type IVerificationStage,
 } from "./types";
+import VerificationStages from "./verification-stages";
+import IdRenewalCard from "./id-renewal-card";
 
 /** The steps for a plan; free hosting skips the ID, business and bank ones. */
 const stepsFor = (
@@ -176,6 +179,11 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
     Partial<Record<VerificationStepKey, VerificationStatus>>
   >({});
   const [adminMessage, setAdminMessage] = useState<string | null>(null);
+  const [stages, setStages] = useState<IVerificationStage[]>([]);
+  const [idInfo, setIdInfo] = useState<{
+    expiresOn?: string | null;
+    renewalSubmittedAt?: string | null;
+  }>({});
   const [saved, setSaved] = useState<SavedPayoutDigits>({});
   const [current, setCurrent] = useState(0);
   const [furthest, setFurthest] = useState(0);
@@ -224,6 +232,11 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
     (data?: VendorVerificationApiResponse | null, resetForm = false) => {
       if (!data) return;
       setStatus(data.status ?? "in_progress");
+      if (data.stages) setStages(data.stages);
+      setIdInfo({
+        expiresOn: data.idExpiresOn,
+        renewalSubmittedAt: data.idRenewalSubmittedAt,
+      });
       setCanSell(!!data.canSellTickets);
       setIsFreeHost(
         !data.canSellTickets && data.approvalLevel === "basic_verified",
@@ -455,7 +468,7 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4 rounded-[1.75rem] border border-secondary-100 bg-white p-6 sm:p-8">
+      <div className="space-y-4 rounded-3xl border border-secondary-100 bg-card p-6 sm:p-8">
         <Skeleton className="h-16 w-full rounded-xl" />
         <Skeleton className="h-10 w-2/3 rounded-xl" />
         <Skeleton className="h-64 w-full rounded-xl" />
@@ -469,7 +482,7 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
     <FormProvider {...form}>
       <section
         id="vendor-verification"
-        className="space-y-6 rounded-[1.75rem] border border-secondary-100 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-8"
+        className="space-y-6 rounded-3xl border border-secondary-100 bg-card p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-8"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <VendorVerificationStatusBadge status={status} />
@@ -479,6 +492,8 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
             </p>
           )}
         </div>
+
+        <VerificationStages stages={stages} status={status} />
 
         {status === "submitted" && (
           <div className="flex items-start gap-3 rounded-2xl bg-[#004766] p-5 text-white">
@@ -503,7 +518,7 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
                       onClick={onWithdraw}
                       loading={withdrawing}
                       disabled={withdrawing}
-                      className="rounded-xl bg-white text-[#004766] hover:bg-white/90"
+                      className="rounded-xl bg-card text-[#004766] hover:bg-white/90"
                     >
                       Yes, take it back
                     </Button>
@@ -532,13 +547,20 @@ export const VendorVerificationForm = memo(function VendorVerificationForm() {
           </div>
         )}
         {status === "approved" && canSell && (
-          <div className="flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-5 text-emerald-900">
+          <div className="flex items-start gap-3 rounded-2xl border border-success-line bg-success-soft p-5 text-success">
             <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
             <p className="text-sm leading-6">
               You&apos;re verified. Contact support if any of these details
               change.
             </p>
           </div>
+        )}
+        {status === "approved" && canSell && (
+          <IdRenewalCard
+            expiresOn={idInfo.expiresOn}
+            renewalSubmittedAt={idInfo.renewalSubmittedAt}
+            onRenewed={(data) => apply(data)}
+          />
         )}
         {isFreeHost && !canSell && status !== "submitted" && (
           <div className="flex flex-col gap-4 rounded-2xl border border-primary-100 bg-primary-50/70 p-5 text-secondary-900 sm:flex-row sm:items-center sm:justify-between">

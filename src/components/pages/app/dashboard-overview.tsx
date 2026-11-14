@@ -11,7 +11,7 @@ import { formatEventTime } from "@/lib/event-time";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
 import { useActingVendor } from "@/stores/workspace-store";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useMemo } from "react";
 import {
@@ -51,7 +51,7 @@ const Panel: React.FC<{ className?: string; children: React.ReactNode }> = ({
   children,
 }) => (
   <article
-    className={`rounded-[1.6rem] border border-secondary-100 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-6 ${className}`}
+    className={`rounded-3xl border border-secondary-100 bg-card p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-6 ${className}`}
   >
     {children}
   </article>
@@ -363,8 +363,8 @@ const DashboardOverview = () => {
 
       {!summary ? (
         <div className="grid gap-4 lg:grid-cols-3">
-          <div className="h-72 animate-pulse rounded-[1.6rem] bg-secondary-100/70 lg:col-span-2" />
-          <div className="h-72 animate-pulse rounded-[1.6rem] bg-secondary-100/70" />
+          <div className="h-72 animate-pulse rounded-3xl bg-secondary-100/70 lg:col-span-2" />
+          <div className="h-72 animate-pulse rounded-3xl bg-secondary-100/70" />
         </div>
       ) : (
         <>
@@ -421,40 +421,6 @@ const DashboardOverview = () => {
         </>
       )}
 
-      <details className="group rounded-[1.25rem] border border-secondary-100 bg-white px-5 py-3 text-sm">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-secondary-800">
-          How these are counted
-          <ChevronDown
-            className="size-4 transition-transform group-open:rotate-180"
-            aria-hidden
-          />
-        </summary>
-        <ul className="mt-3 space-y-2 pb-2 leading-6 text-secondary-600">
-          <li>
-            <b className="text-secondary-900">Tickets sold</b>: paid for, or
-            approved for events that need approval, minus refunds. Free tickets
-            count too.
-          </li>
-          <li>
-            <b className="text-secondary-900">The arrow</b>: the last 30 days
-            against the 30 days before. &ldquo;New&rdquo; means there was
-            nothing to compare with.
-          </li>
-          <li>
-            <b className="text-secondary-900">Revenue</b>: ticket prices added
-            up, one currency at a time. Your payouts are in{" "}
-            <Link href={ROUTES.WALLET.href} className="font-semibold underline">
-              Wallet
-            </Link>
-            .
-          </li>
-          <li>
-            <b className="text-secondary-900">Turn-up rate</b>: tickets scanned
-            in at the door, out of every ticket for your events that have
-            started.
-          </li>
-        </ul>
-      </details>
     </section>
   );
 };

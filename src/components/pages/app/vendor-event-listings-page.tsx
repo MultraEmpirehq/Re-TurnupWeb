@@ -102,8 +102,13 @@ const EventListingCard: React.FC<{
   const { has } = useAdminPermissions();
   // Only admins allowed to moderate events act on other organisers' events.
   const canModerate = isAdmin && has("EVENTS_MODERATE");
-  // Only the organiser edits; a moderating admin can also remove anyone's event.
-  const canEdit = event.isOwner === true;
+  // The organiser edits their own. Admins who host events also run Turnupz's
+  // own events, and a draft they set up for an organiser until it's published.
+  const hosts =
+    isAdmin &&
+    has("EVENTS_HOST") &&
+    (event.hostedByTurnupz === true || (event.preparedByYou === true && isDraft));
+  const canEdit = event.isOwner === true || hosts;
   const canDelete = canEdit || canModerate;
   // Moderators take a published event down or bring a suspended one back.
   const canSuspend = canModerate && event.status === "published";
@@ -112,7 +117,7 @@ const EventListingCard: React.FC<{
   // Admins can switch Promote off for everyone.
   const { promotion } = useFeatures();
   const canPromote =
-    canEdit && event.status === "published" && isUpcomingEvent(eventDate) && promotion;
+    event.isOwner === true && event.status === "published" && isUpcomingEvent(eventDate) && promotion;
   const [promoting, setPromoting] = useState(false);
   const buttonCount =
     1 + Number(canEdit) + Number(canDelete) + Number(canSuspend || canRestore);
@@ -135,7 +140,7 @@ const EventListingCard: React.FC<{
   const previewHref = forViewer(`/app/events/${event.id}`, isAdmin);
 
   return (
-    <article className="overflow-hidden rounded-[1.35rem] border border-secondary-100 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition-transform hover:-translate-y-1 sm:rounded-[1.6rem]">
+    <article className="overflow-hidden rounded-[1.35rem] border border-secondary-100 bg-card shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition-transform hover:-translate-y-1 sm:rounded-3xl">
       <div
         className="h-40 bg-secondary-50 bg-cover bg-center"
         style={{
@@ -169,7 +174,7 @@ const EventListingCard: React.FC<{
         </div>
 
         {isSuspended && (
-          <div className="mb-4 rounded-[1rem] border border-secondary-200 bg-secondary-50 px-4 py-3 text-sm text-secondary-800">
+          <div className="mb-4 rounded-2xl border border-secondary-200 bg-secondary-50 px-4 py-3 text-sm text-secondary-800">
             <p className="font-semibold">Suspended by an admin</p>
             {event.suspensionReason && (
               <p className="mt-1 line-clamp-3 text-secondary-700">
@@ -194,9 +199,9 @@ const EventListingCard: React.FC<{
         )}
 
         {isPendingReview && (
-          <div className="mb-4 rounded-[1rem] border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+          <div className="mb-4 rounded-2xl border border-info-line bg-info-soft px-4 py-3 text-sm text-info">
             <p className="font-semibold">Waiting for review</p>
-            <p className="mt-1 text-xs text-sky-700">
+            <p className="mt-1 text-xs text-info">
               {canEdit
                 ? "An admin checks every new event before attendees can see it. You'll be notified once it's live."
                 : "Approve or send it back from Event Reviews."}
@@ -205,7 +210,7 @@ const EventListingCard: React.FC<{
         )}
 
         {isDraft && event.reviewNote && (
-          <div className="mb-4 rounded-[1rem] border border-secondary-200 bg-secondary-50 px-4 py-3 text-sm text-secondary-800">
+          <div className="mb-4 rounded-2xl border border-secondary-200 bg-secondary-50 px-4 py-3 text-sm text-secondary-800">
             <p className="font-semibold">Sent back by an admin</p>
             <p className="mt-1 line-clamp-4 text-secondary-700">
               {event.reviewNote}
@@ -220,7 +225,7 @@ const EventListingCard: React.FC<{
           {event.description || "No event description has been added yet."}
         </p>
 
-        <div className="mb-5 overflow-hidden rounded-[1rem] border border-secondary-100 bg-secondary-50/70">
+        <div className="mb-5 overflow-hidden rounded-2xl border border-secondary-100 bg-secondary-50/70">
           <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-0 text-sm">
             <div className="border-b border-secondary-100 px-4 py-3 font-semibold text-secondary-950">
               Event Date
@@ -307,7 +312,7 @@ const EventListingCard: React.FC<{
           <Button
             asChild
             variant="outline"
-            className="h-10 rounded-xl border-secondary-200 bg-white px-3 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
+            className="h-10 rounded-xl border-secondary-200 bg-card px-3 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
           >
             <Link href={previewHref}>Preview</Link>
           </Button>
@@ -327,7 +332,7 @@ const EventListingCard: React.FC<{
             <Button
               type="button"
               variant="outline"
-              className="h-10 rounded-xl border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
+              className="h-10 rounded-xl border-success-line bg-success-soft px-3 text-sm font-semibold text-success hover:bg-success-soft"
               loading={actions.restoringId === event.id}
               disabled={!!actions.restoringId}
               onClick={() => actions.onRestore(event)}
@@ -349,7 +354,7 @@ const EventListingCard: React.FC<{
               <Button
                 type="button"
                 variant="outline"
-                className="h-10 rounded-xl border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100"
+                className="h-10 rounded-xl border-danger-line bg-danger-soft px-3 text-sm font-semibold text-danger hover:bg-danger-soft"
                 onClick={() => actions.onDeleteRequest(event)}
               >
                 Delete
@@ -404,7 +409,7 @@ const ListingSection: React.FC<{
       </div>
 
       {events.length === 0 ? (
-        <div className="rounded-[1.8rem] border border-secondary-100 bg-white p-8 text-secondary-500 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+        <div className="rounded-3xl border border-secondary-100 bg-card p-8 text-secondary-500 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
           {emptyState}
         </div>
       ) : (
@@ -441,7 +446,7 @@ const ListingSection: React.FC<{
 const ListingsPageSkeleton = () => {
   return (
     <div className="space-y-10">
-      <div className="rounded-[2rem] border border-secondary-100 bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+      <div className="rounded-3xl border border-secondary-100 bg-card p-8 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
         <Skeleton className="h-4 w-40 rounded-xl" />
         <Skeleton className="mt-4 h-10 w-72 rounded-xl" />
         <Skeleton className="mt-4 h-4 w-full max-w-2xl rounded-xl" />
@@ -724,18 +729,14 @@ const VendorEventListingsPage = () => {
     <main className="space-y-10">
       <section>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-secondary-400">
-              Event Listings
-            </p>
-
-            <h1 className="text-[clamp(1.8rem,3.2vw,2.7rem)] font-bold leading-[0.98] tracking-tight text-secondary-950">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               {isAdmin
                 ? "Manage all event listings"
                 : "Manage your event listings"}
             </h1>
 
-            <p className="max-w-2xl text-sm leading-6 text-secondary-500 sm:text-base">
+            <p className="hidden max-w-2xl text-sm text-muted-foreground sm:block">
               {isAdmin
                 ? "Every published and suspended event on the platform. Suspending or removing one tells its organiser why."
                 : "Review drafts, upcoming events, and past listings from one place."}
@@ -848,7 +849,7 @@ const VendorEventListingsPage = () => {
           }
         }}
       >
-        <DialogContent className="rounded-[1.6rem] border-secondary-100 p-6 sm:max-w-md">
+        <DialogContent className="rounded-3xl border-secondary-100 p-6 sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-secondary-950">
               Delete this event?
@@ -891,7 +892,7 @@ const VendorEventListingsPage = () => {
 
             <Button
               type="button"
-              className="rounded-2xl bg-red-600 text-white hover:bg-red-700"
+              className="rounded-2xl bg-danger-solid text-white hover:bg-danger-solid"
               disabled={isDeleting || (needsReason && !deleteReason.trim())}
               onClick={handleDeleteEvent}
             >
@@ -911,7 +912,7 @@ const VendorEventListingsPage = () => {
           if (!open && !isSuspending) closeSuspendDialog();
         }}
       >
-        <DialogContent className="rounded-[1.6rem] border-secondary-100 p-6 sm:max-w-md">
+        <DialogContent className="rounded-3xl border-secondary-100 p-6 sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-secondary-950">
               Suspend this event?

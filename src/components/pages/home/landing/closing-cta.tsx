@@ -8,7 +8,7 @@ import FlipTicket from "./flip-ticket";
 import Reveal from "./reveal";
 
 const ClosingCta = () => (
-  <section className="bg-white py-24 md:py-32">
+  <section className="bg-card py-24 md:py-32">
     <SectionContainer>
       <Reveal className="flex flex-col items-center gap-7 text-center">
         <div className="mb-4">

@@ -42,7 +42,7 @@ const Avatar: React.FC<{ name?: string; src?: string }> = ({ name, src }) =>
     </span>
   ) : (
     <span
-      className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-extrabold text-secondary-700"
+      className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-2xs font-extrabold text-secondary-700"
       aria-hidden
     >
       {initials(name)}
@@ -108,7 +108,7 @@ const ChatMessage: React.FC<{
           type="button"
           onClick={() => onReact(message.id, emoji)}
           aria-label={`React ${emoji}`}
-          className="flex size-7 items-center justify-center rounded-full border border-secondary-100 bg-white text-sm hover:border-primary/40"
+          className="flex size-7 items-center justify-center rounded-full border border-secondary-100 bg-card text-sm hover:border-primary/40"
         >
           {emoji}
         </button>
@@ -121,7 +121,7 @@ const ChatMessage: React.FC<{
               onClick={() => onTogglePin(message.id)}
               aria-label={isPinned ? "Unpin" : "Pin to the top"}
               title={isPinned ? "Unpin" : "Pin to the top"}
-              className="flex size-7 items-center justify-center rounded-full border border-secondary-100 bg-white text-secondary-500 hover:text-secondary-900"
+              className="flex size-7 items-center justify-center rounded-full border border-secondary-100 bg-card text-secondary-500 hover:text-secondary-900"
             >
               {isPinned ? (
                 <PinOffIcon className="size-3.5" />
@@ -135,7 +135,7 @@ const ChatMessage: React.FC<{
             onClick={() => onHide(message.id)}
             aria-label="Hide for everyone"
             title="Hide for everyone"
-            className="flex size-7 items-center justify-center rounded-full border border-secondary-100 bg-white text-secondary-500 hover:text-red-600"
+            className="flex size-7 items-center justify-center rounded-full border border-secondary-100 bg-card text-secondary-500 hover:text-danger"
           >
             <Trash2Icon className="size-3.5" />
           </button>
@@ -157,7 +157,7 @@ const ChatMessage: React.FC<{
             "rounded-full border px-2 py-0.5 text-xs",
             reaction.mine || (myId && reaction.reactedBy.includes(myId))
               ? "border-primary/30 bg-primary/10 text-secondary-800"
-              : "border-secondary-100 bg-white text-secondary-600",
+              : "border-secondary-100 bg-card text-secondary-600",
           )}
         >
           {reaction.emoji} {reaction.count}
@@ -171,7 +171,7 @@ const ChatMessage: React.FC<{
     return (
       <div className="group flex items-end gap-2 py-1">
         <div className="w-full max-w-[560px]">
-          <div className="rounded-[18px] bg-secondary-950 p-4">
+          <div className="rounded-2xl bg-secondary-950 p-4">
             <div className="mb-1.5 flex items-center gap-1.5">
               <span className="text-xs font-extrabold text-white">
                 {message.senderName}
@@ -200,7 +200,7 @@ const ChatMessage: React.FC<{
               </p>
             )}
             {caption && (
-              <p className="whitespace-pre-line text-[13.5px] leading-6 text-white">
+              <p className="whitespace-pre-line text-sm leading-6 text-white">
                 {caption}
               </p>
             )}
@@ -272,7 +272,7 @@ const ChatMessage: React.FC<{
               "mb-1 flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-sm font-semibold",
               mine
                 ? "border-transparent bg-secondary-700 text-white"
-                : "border-secondary-100 bg-white text-secondary-800",
+                : "border-secondary-100 bg-card text-secondary-800",
             )}
           >
             <FileIcon className="size-4 shrink-0" aria-hidden />
@@ -284,14 +284,14 @@ const ChatMessage: React.FC<{
         {caption && message.kind !== "file" && (
           <div
             className={cn(
-              "rounded-[18px] px-3.5 py-2",
+              "rounded-2xl px-3.5 py-2",
               mine
                 ? "rounded-br-md bg-linear-to-br from-secondary to-primary text-white"
-                : "rounded-bl-md border border-secondary-100 bg-white text-secondary-950",
+                : "rounded-bl-md border border-secondary-100 bg-card text-secondary-950",
             )}
           >
             {!mine && isGroup && (
-              <p className="mb-0.5 text-[11.5px] font-extrabold text-secondary-700">
+              <p className="mb-0.5 text-2xs font-extrabold text-secondary-700">
                 {message.senderName}
                 {/* Admins see which of the team wrote it; everyone else just "Turnupz team". */}
                 {message.senderMemberRole === "team" &&
@@ -300,7 +300,7 @@ const ChatMessage: React.FC<{
                 {message.senderMemberRole === "team" && <VerifiedTick className="ml-1 size-3.5 align-text-bottom" />}
               </p>
             )}
-            <p className="whitespace-pre-line text-[13.5px] leading-5">
+            <p className="whitespace-pre-line text-sm leading-5">
               {caption}
             </p>
             <p

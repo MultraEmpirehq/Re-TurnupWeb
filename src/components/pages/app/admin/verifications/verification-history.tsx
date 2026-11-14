@@ -38,9 +38,9 @@ const describe = (entry: IVerificationReview["history"][number]) => {
 
 const tone = (decision: string) =>
   decision === "approved"
-    ? "bg-emerald-500"
+    ? "bg-success-solid"
     : decision === "rejected"
-      ? "bg-red-500"
+      ? "bg-danger-solid"
       : decision === "needs_more_info"
         ? "bg-secondary-500"
         : "bg-secondary-300";

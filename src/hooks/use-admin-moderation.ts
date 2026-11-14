@@ -23,6 +23,8 @@ export interface IEventAwaitingReview {
   description?: string;
   organizerName?: string;
   submittedAt: string;
+  /** Why it was held before going live; the organiser isn't shown these. */
+  reviewFlags?: string[];
   organiser: { id: string; email: string; name: string | null };
 }
 
@@ -165,6 +167,21 @@ export const useSetUserSuspension = () =>
       suspended: boolean;
       reason?: string;
     }) => patchData(`/admin/users/${id}/suspension`, { suspended, reason }),
+    ["admin-users", "admin-user"],
+  );
+
+/** Restrict (signs in, can't publish, buy, send or message) or lift it. */
+export const useSetUserRestriction = () =>
+  useModerationAction(
+    ({
+      id,
+      restricted,
+      reason,
+    }: {
+      id: string;
+      restricted: boolean;
+      reason?: string;
+    }) => patchData(`/admin/users/${id}/restriction`, { restricted, reason }),
     ["admin-users", "admin-user"],
   );
 

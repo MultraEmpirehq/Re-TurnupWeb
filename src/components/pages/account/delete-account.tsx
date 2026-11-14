@@ -66,7 +66,7 @@ const DeleteAccount = () => {
         </p>
       </section>
 
-      <section className="space-y-3 rounded-2xl border border-secondary-100 bg-white p-6">
+      <section className="space-y-3 rounded-2xl border border-secondary-100 bg-card p-6">
         <h2 className="text-lg font-bold text-secondary-950">What happens</h2>
         <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-secondary-600">
           {WHAT_HAPPENS.map((item) => (
@@ -75,7 +75,7 @@ const DeleteAccount = () => {
         </ul>
       </section>
 
-      <section className="space-y-3 rounded-2xl border border-secondary-100 bg-white p-6">
+      <section className="space-y-3 rounded-2xl border border-secondary-100 bg-card p-6">
         <h2 className="text-lg font-bold text-secondary-950">In the app</h2>
         <p className="text-sm leading-7 text-secondary-600">
           Open Turnupz, go to <b>Profile</b>, then <b>Settings</b>, then{" "}
@@ -83,7 +83,7 @@ const DeleteAccount = () => {
         </p>
       </section>
 
-      <section className="space-y-4 rounded-2xl border border-secondary-100 bg-white p-6">
+      <section className="space-y-4 rounded-2xl border border-secondary-100 bg-card p-6">
         <h2 className="text-lg font-bold text-secondary-950">On the web</h2>
         {deleted ? (
           <p className="text-sm leading-7 text-secondary-600" role="status">

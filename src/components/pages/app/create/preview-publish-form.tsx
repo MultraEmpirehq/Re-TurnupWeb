@@ -1,5 +1,6 @@
 "use client";
 
+import PaidSalesBlockers, { usePaidSalesBlockers } from "./paid-sales-blockers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import TextareaField from "@/components/ui/textarea-field";
@@ -9,7 +10,7 @@ import {
 } from "@/components/pages/app/vendor-verification";
 import Joi from "joi";
 import React, { memo, useMemo, useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import type { TFormValues } from "@/app/app/events/create/page";
 import Link from "next/link";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
@@ -107,8 +108,17 @@ const PreviewPublishForm: React.FC<{
     return hasPaidInternalTickets || hasExternalTicketing;
   }, [eventTickets, values.saleMethod]);
 
+  // Anything still to do for paid sales (payouts, a restriction, the
+  // application) holds publishing back, not just the application.
+  const { blockers } = usePaidSalesBlockers();
+  // An admin setting one up for an organiser: it goes to them as a draft.
+  const hostId = useWatch({ name: "hostId" }) as string | undefined;
+  const hostName = useWatch({ name: "hostName" }) as string | undefined;
+  const preparingForOrganiser = isAdmin && !!hostId && hostId !== "turnupz";
   const isPaidPublishingLocked =
-    !isAdmin && requiresPaidVerification && verification.status !== "approved";
+    !isAdmin &&
+    requiresPaidVerification &&
+    (verification.status !== "approved" || blockers.length > 0);
 
   const addBlogPost = () => {
     setValue(
@@ -190,7 +200,7 @@ const PreviewPublishForm: React.FC<{
     <form onSubmit={handleSubmit(handleNextStep)} className="space-y-8">
       <VendorVerificationNotice context="create" />
 
-      <section className="rounded-[1.6rem] border border-secondary-100 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+      <section className="rounded-3xl border border-secondary-100 bg-card p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-secondary-400">
             Preview
@@ -209,7 +219,7 @@ const PreviewPublishForm: React.FC<{
                 aria-pressed={view === key}
                 className={cn(
                   "rounded-full px-4 py-1.5 font-medium text-secondary-500 transition-colors",
-                  view === key && "bg-white text-secondary-950 shadow-sm",
+                  view === key && "bg-card text-secondary-950 shadow-sm",
                 )}
               >
                 {label}
@@ -237,7 +247,7 @@ const PreviewPublishForm: React.FC<{
             </h2>
             {coverImagePreviewUrl && (
               <div
-                className="mt-5 h-52 rounded-[1.2rem] bg-cover bg-center sm:h-64"
+                className="mt-5 h-52 rounded-2xl bg-cover bg-center sm:h-64"
                 style={{ backgroundImage: `url(${coverImagePreviewUrl})` }}
               />
             )}
@@ -291,7 +301,7 @@ const PreviewPublishForm: React.FC<{
       </section>
 
       {(eventTickets.length > 0 || passAssignments.length > 0) && (
-        <section className="space-y-4 rounded-[1.6rem] border border-secondary-100 bg-white p-5">
+        <section className="space-y-4 rounded-3xl border border-secondary-100 bg-card p-5">
           <div>
             <p className="text-sm font-semibold text-secondary-950">
               Transfer Settings
@@ -369,7 +379,7 @@ const PreviewPublishForm: React.FC<{
       )}
 
       {privateTickets.length > 0 && (
-        <section className="space-y-4 rounded-[1.6rem] border border-secondary-100 bg-white p-5">
+        <section className="space-y-4 rounded-3xl border border-secondary-100 bg-card p-5">
           <div>
             <p className="text-sm font-semibold text-secondary-950">
               Private Ticket Invites
@@ -398,7 +408,7 @@ const PreviewPublishForm: React.FC<{
         </section>
       )}
 
-      <section className="space-y-4 rounded-[1.6rem] border border-secondary-100 bg-white p-5">
+      <section className="space-y-4 rounded-3xl border border-secondary-100 bg-card p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-secondary-950">
@@ -425,7 +435,7 @@ const PreviewPublishForm: React.FC<{
                   shouldValidate: true,
                 })
               }
-              className="h-11 rounded-xl bg-white"
+              className="h-11 rounded-xl bg-card"
             />
             <Input
               value={post.excerpt ?? ""}
@@ -435,7 +445,7 @@ const PreviewPublishForm: React.FC<{
                   shouldValidate: true,
                 })
               }
-              className="h-11 rounded-xl bg-white"
+              className="h-11 rounded-xl bg-card"
             />
             <TextareaField
               value={post.body}
@@ -445,9 +455,9 @@ const PreviewPublishForm: React.FC<{
                   shouldValidate: true,
                 })
               }
-              className="bg-white"
+              className="bg-card"
             />
-            <div className="space-y-3 rounded-xl bg-white p-3">
+            <div className="space-y-3 rounded-xl bg-card p-3">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-secondary-950">
@@ -510,7 +520,7 @@ const PreviewPublishForm: React.FC<{
                         <button
                           type="button"
                           onClick={() => removeBlogImage(index, imageIndex)}
-                          className="absolute right-2 top-2 rounded-full bg-white px-2 py-1 text-xs font-semibold text-red-500"
+                          className="absolute right-2 top-2 rounded-full bg-card px-2 py-1 text-xs font-semibold text-danger"
                         >
                           Remove
                         </button>
@@ -541,7 +551,7 @@ const PreviewPublishForm: React.FC<{
         control={control}
         name="acceptedTerms"
         render={({ field }) => (
-          <label className="flex items-start gap-3 rounded-2xl border border-secondary-100 bg-white p-5 text-sm text-secondary-600">
+          <label className="flex items-start gap-3 rounded-2xl border border-secondary-100 bg-card p-5 text-sm text-secondary-600">
             <input
               type="checkbox"
               checked={!!field.value}
@@ -569,6 +579,8 @@ const PreviewPublishForm: React.FC<{
         </p>
       )}
 
+      {isPaidPublishingLocked && <PaidSalesBlockers stage="publish" />}
+
       <div className="flex flex-wrap gap-3">
         <Button
           type="button"
@@ -580,8 +592,12 @@ const PreviewPublishForm: React.FC<{
         </Button>
         {isPaidPublishingLocked ? (
           <Button asChild type="button" variant="outline">
-            <a href="/app/settings/vendor-verification">
-              Complete Verification
+            <a
+              href={
+                blockers[0]?.action?.href ?? "/app/settings/vendor-verification"
+              }
+            >
+              {blockers.length ? "Finish your to-dos" : "Complete Verification"}
             </a>
           </Button>
         ) : (
@@ -590,7 +606,13 @@ const PreviewPublishForm: React.FC<{
             loading={isSubmitting || isSaving}
             disabled={isSubmitting || isSaving}
           >
-            {isSaving ? "Creating..." : "Create event"}
+            {preparingForOrganiser
+              ? isSaving
+                ? "Saving..."
+                : `Save draft for ${hostName || "the organiser"}`
+              : isSaving
+                ? "Creating..."
+                : "Create event"}
           </Button>
         )}
       </div>

@@ -22,7 +22,7 @@ const FeeCalculator = () => {
   const youGetTotal = youGetEach * quantity;
 
   return (
-    <div className="grid overflow-hidden rounded-[2rem] bg-white shadow-[0_40px_80px_-40px_rgba(2,6,23,0.45)] ring-1 ring-black/5 lg:grid-cols-[1.1fr_0.9fr]">
+    <div className="grid overflow-hidden rounded-3xl bg-card shadow-[0_40px_80px_-40px_rgba(2,6,23,0.45)] ring-1 ring-black/5 lg:grid-cols-[1.1fr_0.9fr]">
       <div className="space-y-8 p-6 sm:p-10">
         <div className="space-y-3">
           <label htmlFor={priceId} className="flex items-baseline justify-between gap-4">

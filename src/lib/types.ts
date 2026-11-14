@@ -238,6 +238,10 @@ export interface IEventDetailsType {
   updatedAt?: string | null;
   /** True when the signed-in viewer created this event; only they may edit or delete it. */
   isOwner?: boolean;
+  /** Hosted by Turnupz itself: admins with EVENTS_HOST run it. */
+  hostedByTurnupz?: boolean;
+  /** A draft this admin set up for its organiser. */
+  preparedByYou?: boolean;
   /** How it's selling, from Turnupz: labels shown on its card. */
   momentum?: { sellingFast: boolean; almostGone: boolean; soldOut: boolean } | null;
   /** In the organiser's own listings: how this event can be taken down. */
@@ -488,7 +492,12 @@ export interface ICategoryDetailsType {
 // ---------------------------------------------------------------------------
 
 export type TAdminUserType =
-  "all" | "vendors" | "users" | "unverified" | "suspended";
+  | "all"
+  | "vendors"
+  | "users"
+  | "unverified"
+  | "suspended"
+  | "restricted";
 
 export type TVerificationStatus =
   | "not_started"
@@ -519,6 +528,15 @@ export interface IAdminUserListItem {
   profileImage?: string;
   isEmailVerified?: boolean;
   isAccountDisabled?: boolean;
+  isRestricted?: boolean;
+}
+
+/** A restriction on an account: signs in, but can't publish, buy, send or message. */
+export interface IAccountRestriction {
+  since: string;
+  reason: string | null;
+  /** Made by the system because an organiser's ID expired. */
+  idExpired: boolean;
 }
 
 export interface IVendorVerificationSummary {
@@ -537,6 +555,7 @@ export interface IVendorVerificationSummary {
 
 export interface IAdminUserDetails extends IAdminUserListItem {
   isAccountDisabled: boolean;
+  restriction?: IAccountRestriction | null;
   isAccountCreationCompleted?: boolean;
   dateOfBirth?: string;
   gender?: string;
@@ -574,6 +593,10 @@ export interface IVendorVerification {
   address: string | null;
   phoneNumber: string | null;
   idDocumentDetails: IVerificationDocument | null;
+  /** When the ID on file expires (yyyy-mm-dd), once known. */
+  idExpiresOn?: string | null;
+  /** A new ID sent by the organiser, waiting to be checked. */
+  idRenewalSubmittedAt?: string | null;
   supportingDocumentDetails: IVerificationDocument | null;
   businessName: string | null;
   businessRegistrationNumber: string | null;

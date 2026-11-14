@@ -23,7 +23,7 @@ const PerformerCard: React.FC<{
     "upcomingEventsCount" in performer ? performer.upcomingEventsCount : null;
   const hasPage = performer.isVerified !== false;
   const tileClass = cn(
-    "group flex items-center gap-3 rounded-2xl bg-white p-3 ring-1 ring-black/5 transition-shadow hover:shadow-md",
+    "group flex items-center gap-3 rounded-2xl bg-card p-3 ring-1 ring-black/5 transition-shadow hover:shadow-md",
     className,
   );
   const content = (

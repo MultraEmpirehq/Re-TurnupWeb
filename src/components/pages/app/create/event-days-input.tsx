@@ -103,7 +103,7 @@ const EventDaysInput: React.FC<{
       <label className="flex cursor-pointer items-start justify-between gap-4">
         <span className="flex items-start gap-3">
           <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary-50 text-secondary-700">
-            <CalendarRange className="size-[18px]" aria-hidden />
+            <CalendarRange className="size-4.5" aria-hidden />
           </span>
           <span>
             <span className="block text-sm font-semibold">Runs over several days</span>
@@ -122,7 +122,7 @@ const EventDaysInput: React.FC<{
             const isOpen = openIndex === index;
             const locked = !!day.id && lockedDayIds.includes(day.id);
             return (
-              <div key={day.id ?? index} className="rounded-xl border border-border bg-white">
+              <div key={day.id ?? index} className="rounded-xl border border-border bg-card">
                 <div className="flex items-center gap-2 px-3 py-2.5">
                   <button
                     type="button"
@@ -136,7 +136,7 @@ const EventDaysInput: React.FC<{
                     />
                     <span className="truncate text-sm font-semibold">{dayHeading(day, index)}</span>
                     {day.lineup.length > 0 && (
-                      <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                      <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-2xs font-semibold text-muted-foreground">
                         {day.lineup.length} on the bill
                       </span>
                     )}

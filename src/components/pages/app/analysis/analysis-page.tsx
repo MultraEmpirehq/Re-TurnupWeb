@@ -34,7 +34,7 @@ const Tile: React.FC<{
   children: React.ReactNode;
   footer?: React.ReactNode;
 }> = ({ label, children, footer }) => (
-  <article className="flex flex-col justify-between gap-4 rounded-[1.5rem] border border-secondary-100 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+  <article className="flex flex-col justify-between gap-4 rounded-3xl border border-secondary-100 bg-card p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
     <div className="space-y-2">
       <p className="text-sm font-medium text-secondary-500">{label}</p>
       {children}
@@ -56,7 +56,7 @@ const Card: React.FC<{
 }> = ({ title, subtitle, action, children, className }) => (
   <section
     className={cn(
-      "min-w-0 rounded-[1.75rem] border border-secondary-100 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)] sm:p-6",
+      "min-w-0 rounded-3xl border border-secondary-100 bg-card p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)] sm:p-6",
       className,
     )}
   >
@@ -85,7 +85,7 @@ const Segmented = <T extends string | number>({
   <div
     role="radiogroup"
     aria-label={label}
-    className="scrollbar-none flex w-fit max-w-full gap-1 overflow-x-auto rounded-full border border-secondary-100 bg-white p-1 shadow-sm"
+    className="scrollbar-none flex w-fit max-w-full gap-1 overflow-x-auto rounded-full border border-secondary-100 bg-card p-1 shadow-sm"
   >
     {options.map((option) => (
       <button
@@ -155,7 +155,7 @@ const SellThrough: React.FC<{ sold: number; capacity: number; percent: number | 
 };
 
 const Skeleton: React.FC<{ className?: string }> = ({ className }) => (
-  <div className={cn("animate-pulse rounded-[1.5rem] bg-secondary-100/70", className)} />
+  <div className={cn("animate-pulse rounded-3xl bg-secondary-100/70", className)} />
 );
 
 /**
@@ -244,10 +244,7 @@ const AnalysisPage = () => {
     <main className="space-y-6 pb-16">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-1">
-          <p className="text-xs font-semibold tracking-[0.24em] text-secondary-400 uppercase">
-            Analytics
-          </p>
-          <h1 className="text-[clamp(1.9rem,3.4vw,2.6rem)] font-bold leading-tight tracking-tight text-secondary-950">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             How your events are selling
           </h1>
           <p className="text-sm text-secondary-500">
@@ -281,7 +278,7 @@ const AnalysisPage = () => {
           <Skeleton className="h-[320px]" />
         </div>
       ) : !data ? (
-        <p className="rounded-[1.5rem] border border-dashed border-secondary-200 p-10 text-center text-sm text-secondary-500">
+        <p className="rounded-3xl border border-dashed border-secondary-200 p-10 text-center text-sm text-secondary-500">
           We couldn&apos;t load your analytics. Refresh to try again.
         </p>
       ) : (
@@ -454,7 +451,7 @@ const AnalysisPage = () => {
                                 </span>
                               )}
                               {event.status !== "published" && (
-                                <span className="rounded-full bg-amber-50 px-1.5 py-0.5 font-semibold text-amber-700 capitalize">
+                                <span className="rounded-full bg-warning-soft px-1.5 py-0.5 font-semibold text-warning capitalize">
                                   {event.status.replace("_", " ")}
                                 </span>
                               )}

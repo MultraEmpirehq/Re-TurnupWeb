@@ -58,7 +58,7 @@ const CreditTile: React.FC = () => {
     (row) => row !== main && row.available.amount > 0,
   ).length;
   return (
-    <div className="relative overflow-hidden rounded-[1.4rem] bg-linear-to-br from-secondary-700 to-secondary-500 p-4 text-white">
+    <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-secondary-700 to-secondary-500 p-4 text-white">
       <div className="flex items-center justify-between">
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/80">
           <Wallet className="size-3.5" aria-hidden />
@@ -117,7 +117,7 @@ const InviteTile: React.FC<{ code?: string | null }> = ({ code }) => {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full flex-col items-start rounded-[1.4rem] border border-secondary-100 bg-white p-4 text-left transition-colors hover:border-primary/40"
+        className="flex w-full flex-col items-start rounded-3xl border border-secondary-100 bg-card p-4 text-left transition-colors hover:border-primary/40"
       >
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-secondary-500">
           <Gift className="size-3.5" aria-hidden />
@@ -136,7 +136,7 @@ const InviteTile: React.FC<{ code?: string | null }> = ({ code }) => {
         </span>
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-[1.6rem] p-0 sm:max-w-lg">
+        <DialogContent className="rounded-3xl p-0 sm:max-w-lg">
           <DialogHeader className="sr-only">
             <DialogTitle>Invite friends</DialogTitle>
           </DialogHeader>
@@ -219,7 +219,7 @@ const ProfileCard: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <section className="overflow-hidden rounded-[1.75rem] border border-secondary-100 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+      <section className="overflow-hidden rounded-3xl border border-secondary-100 bg-card shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
         <div
           aria-hidden
           className="h-24 bg-linear-to-r from-secondary-400 via-primary-300 to-primary"
@@ -227,9 +227,9 @@ const ProfileCard: React.FC = () => {
         <div className="px-5 pb-5">
           <div className="flex items-end justify-between gap-3">
             <div className="relative -mt-12 w-fit shrink-0">
-              <Avatar className="size-24 rounded-[1.75rem] shadow-md ring-4 ring-white">
+              <Avatar className="size-24 rounded-3xl shadow-md ring-4 ring-white">
                 <AvatarImage src={photo} alt={name} className="object-cover" />
-                <AvatarFallback className="rounded-[1.75rem] bg-secondary-800 text-2xl font-semibold text-white">
+                <AvatarFallback className="rounded-3xl bg-secondary-800 text-2xl font-semibold text-white">
                   {initialsOf(name)}
                 </AvatarFallback>
               </Avatar>
@@ -263,7 +263,7 @@ const ProfileCard: React.FC = () => {
             </Link>
           </div>
 
-          <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-secondary-950">
+          <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground">
             {name}
           </h1>
           <p className="text-sm text-secondary-500">

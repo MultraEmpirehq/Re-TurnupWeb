@@ -25,7 +25,9 @@ import {
 import {
   ADMIN_PERMISSION_LABELS,
   TAdminPermission,
+  useAdminPermissions,
 } from "@/hooks/use-admin-permissions";
+import UndoEntryButton from "./undo-entry-button";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ScrollText, Search } from "lucide-react";
@@ -49,24 +51,28 @@ const TABS: { value?: TAuditTargetType; label: string }[] = [
 const ACTIONS: Record<string, { label: string; tone: string }> = {
   "vendor_verification.reviewed": {
     label: "Reviewed verification",
-    tone: "bg-blue-50 text-blue-700",
+    tone: "bg-info-soft text-info",
+  },
+  "vendor_verification.decision_undone": {
+    label: "Undid a decision",
+    tone: "bg-warning-soft text-warning",
   },
   "vendor_verification.payout_revealed": {
     label: "Viewed bank details",
     tone: "bg-primary-50 text-primary-700",
   },
-  "event.deleted": { label: "Deleted event", tone: "bg-red-50 text-red-700" },
+  "event.deleted": { label: "Deleted event", tone: "bg-danger-soft text-danger" },
   "event.suspended": {
     label: "Suspended event",
     tone: "bg-secondary-50 text-secondary-800",
   },
   "event.restored": {
     label: "Restored event",
-    tone: "bg-emerald-50 text-emerald-700",
+    tone: "bg-success-soft text-success",
   },
   "category.created": {
     label: "Created category",
-    tone: "bg-emerald-50 text-emerald-700",
+    tone: "bg-success-soft text-success",
   },
   "category.updated": {
     label: "Edited category",
@@ -74,30 +80,30 @@ const ACTIONS: Record<string, { label: string; tone: string }> = {
   },
   "category.deleted": {
     label: "Deleted category",
-    tone: "bg-red-50 text-red-700",
+    tone: "bg-danger-soft text-danger",
   },
   "venue.created": {
     label: "Created venue",
-    tone: "bg-emerald-50 text-emerald-700",
+    tone: "bg-success-soft text-success",
   },
   "venue.updated": {
     label: "Edited venue",
     tone: "bg-muted text-muted-foreground",
   },
-  "venue.deleted": { label: "Deleted venue", tone: "bg-red-50 text-red-700" },
-  "faq.created": { label: "Added FAQ", tone: "bg-emerald-50 text-emerald-700" },
+  "venue.deleted": { label: "Deleted venue", tone: "bg-danger-soft text-danger" },
+  "faq.created": { label: "Added FAQ", tone: "bg-success-soft text-success" },
   "faq.updated": {
     label: "Edited FAQ",
     tone: "bg-muted text-muted-foreground",
   },
-  "faq.deleted": { label: "Deleted FAQ", tone: "bg-red-50 text-red-700" },
+  "faq.deleted": { label: "Deleted FAQ", tone: "bg-danger-soft text-danger" },
   "admin.added": {
     label: "Added admin",
-    tone: "bg-emerald-50 text-emerald-700",
+    tone: "bg-success-soft text-success",
   },
   "admin.permissions_changed": {
     label: "Changed permissions",
-    tone: "bg-blue-50 text-blue-700",
+    tone: "bg-info-soft text-info",
   },
   "admin.suspended": {
     label: "Suspended admin",
@@ -105,20 +111,36 @@ const ACTIONS: Record<string, { label: string; tone: string }> = {
   },
   "admin.reactivated": {
     label: "Reactivated admin",
-    tone: "bg-emerald-50 text-emerald-700",
+    tone: "bg-success-soft text-success",
   },
-  "admin.removed": { label: "Removed admin", tone: "bg-red-50 text-red-700" },
+  "admin.removed": { label: "Removed admin", tone: "bg-danger-soft text-danger" },
   "user.suspended": {
     label: "Suspended user",
     tone: "bg-secondary-50 text-secondary-800",
   },
+  "user.restricted": {
+    label: "Restricted user",
+    tone: "bg-warning-soft text-warning",
+  },
+  "user.unrestricted": {
+    label: "Lifted restriction",
+    tone: "bg-success-soft text-success",
+  },
+  "vendor_verification.id_expiry_set": {
+    label: "Set ID expiry",
+    tone: "bg-muted text-muted-foreground",
+  },
+  "vendor_verification.id_renewal_reviewed": {
+    label: "Checked new ID",
+    tone: "bg-info-soft text-info",
+  },
   "user.reactivated": {
     label: "Reactivated user",
-    tone: "bg-emerald-50 text-emerald-700",
+    tone: "bg-success-soft text-success",
   },
   "event.approved": {
     label: "Approved event",
-    tone: "bg-emerald-50 text-emerald-700",
+    tone: "bg-success-soft text-success",
   },
   "event.rejected": {
     label: "Sent event back",
@@ -126,7 +148,7 @@ const ACTIONS: Record<string, { label: string; tone: string }> = {
   },
   "event_report.resolved": {
     label: "Resolved report",
-    tone: "bg-emerald-50 text-emerald-700",
+    tone: "bg-success-soft text-success",
   },
   "event_report.dismissed": {
     label: "Dismissed report",
@@ -134,11 +156,11 @@ const ACTIONS: Record<string, { label: string; tone: string }> = {
   },
   "contact_message.resolved": {
     label: "Resolved inquiry",
-    tone: "bg-emerald-50 text-emerald-700",
+    tone: "bg-success-soft text-success",
   },
   "ticket_transfer.cancelled": {
     label: "Cancelled transfer",
-    tone: "bg-red-50 text-red-700",
+    tone: "bg-danger-soft text-danger",
   },
 };
 
@@ -154,6 +176,8 @@ const permissionNames = (value: unknown) =>
     : "";
 
 const DECISIONS: Record<string, string> = {
+  id_accepted: "Accepted the new ID",
+  id_turned_down: "Turned down the new ID",
   approved: "Approved",
   rejected: "Rejected",
   needs_more_info: "Asked for more info",
@@ -166,6 +190,9 @@ const text = (value: unknown) =>
 const summariseDetails = (entry: IAuditLogEntry) => {
   const details = entry.details ?? {};
   const parts: string[] = [];
+  const undid = text(details.undid);
+  if (undid) parts.push(`took back “${DECISIONS[undid] ?? undid}”`);
+  if (details.undoneEntryId && !undid) parts.push("undone from the audit log");
   const decision = text(details.decision);
   if (decision) {
     parts.push(DECISIONS[decision] ?? decision);
@@ -208,6 +235,12 @@ const AuditLogList = () => {
     setPage(1);
   }, [targetType, search]);
 
+  const { has } = useAdminPermissions();
+  // Undo needs its own permission plus the one for that area.
+  const canUndo = (entry: IAuditLogEntry) =>
+    !!entry.undo && has("ACTIONS_UNDO") && has(entry.undo.permission);
+  const showUndo = has("ACTIONS_UNDO");
+
   const { data, error, isLoading, refetch } = useAdminAuditLogs({
     targetType,
     search,
@@ -224,7 +257,7 @@ const AuditLogList = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-bold text-secondary-800">Audit Log</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Audit Log</h1>
         <p className="text-sm text-muted-foreground">
           Sensitive actions across the platform, newest first: verification
           decisions, event removals and suspensions, catalogue changes and
@@ -307,6 +340,11 @@ const AuditLogList = () => {
                 <TableHead>Action</TableHead>
                 <TableHead>Target</TableHead>
                 <TableHead>Details</TableHead>
+                {showUndo && (
+                  <TableHead>
+                    <span className="sr-only">Undo</span>
+                  </TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -322,7 +360,7 @@ const AuditLogList = () => {
                       {format(new Date(entry.createdAt), "d MMM yyyy, HH:mm")}
                     </TableCell>
                     <TableCell className="font-medium">
-                      {entry.actor.email ?? "Unknown"}
+                      {entry.actor.email ?? "Automatic"}
                     </TableCell>
                     <TableCell>
                       <span
@@ -343,6 +381,11 @@ const AuditLogList = () => {
                     >
                       {summary}
                     </TableCell>
+                    {showUndo && (
+                      <TableCell className="text-right">
+                        {canUndo(entry) && <UndoEntryButton entry={entry} />}
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}

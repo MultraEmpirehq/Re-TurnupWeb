@@ -313,7 +313,7 @@ const AdminsList = () => {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-bold text-secondary-800">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Admins &amp; Permissions
           </h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
@@ -362,12 +362,12 @@ const AdminsList = () => {
                       {admin.name ?? admin.email}
                     </span>
                     {admin.isYou && (
-                      <span className="rounded-full bg-secondary-50 px-2 py-0.5 text-[11px] font-semibold text-secondary-800">
+                      <span className="rounded-full bg-secondary-50 px-2 py-0.5 text-2xs font-semibold text-secondary-800">
                         You
                       </span>
                     )}
                     {admin.isSuspended && (
-                      <span className="rounded-full bg-secondary-50 px-2 py-0.5 text-[11px] font-semibold text-secondary-800">
+                      <span className="rounded-full bg-secondary-50 px-2 py-0.5 text-2xs font-semibold text-secondary-800">
                         Suspended
                       </span>
                     )}
@@ -432,7 +432,7 @@ const AdminsList = () => {
       )}
 
       <Dialog open={!!editor} onOpenChange={(open) => !open && closeEditor()}>
-        <DialogContent className="max-h-[90svh] overflow-y-auto rounded-[1.6rem] border-secondary-100 p-6 sm:max-w-lg">
+        <DialogContent className="max-h-[90svh] overflow-y-auto rounded-3xl border-secondary-100 p-6 sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-secondary-950">
               {editor?.mode === "edit"
@@ -523,7 +523,7 @@ const AdminsList = () => {
         open={!!confirm}
         onOpenChange={(open) => !open && !isConfirming && setConfirm(undefined)}
       >
-        <DialogContent className="rounded-[1.6rem] border-secondary-100 p-6 sm:max-w-md">
+        <DialogContent className="rounded-3xl border-secondary-100 p-6 sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-secondary-950">
               {confirmCopy?.title}
@@ -550,7 +550,7 @@ const AdminsList = () => {
                 "rounded-2xl text-white",
                 confirm?.kind === "reactivate"
                   ? "bg-secondary-800 hover:bg-secondary-900"
-                  : "bg-red-600 hover:bg-red-700",
+                  : "bg-danger-solid hover:bg-danger-solid",
               )}
             >
               {isConfirming ? "Working..." : confirmCopy?.action}

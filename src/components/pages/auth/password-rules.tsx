@@ -13,7 +13,7 @@ const PasswordRules = ({ value }: { value: string }) => (
           key={rule.label}
           className={cn(
             "flex items-center gap-1.5 transition-colors",
-            met ? "text-emerald-600" : "text-secondary-950/50",
+            met ? "text-success" : "text-secondary-950/50",
           )}
         >
           <Check className={cn("size-3.5", met ? "opacity-100" : "opacity-30")} aria-hidden />

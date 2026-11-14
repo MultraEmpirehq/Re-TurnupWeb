@@ -31,7 +31,7 @@ const QR = Array.from({ length: 121 }, (_, index) =>
 );
 
 const Screen: React.FC<{ step: number }> = ({ step }) => (
-  <div className="relative h-full overflow-hidden rounded-[2rem] bg-white">
+  <div className="relative h-full overflow-hidden rounded-3xl bg-card">
     {/* Discover */}
     <div
       className={cn(
@@ -45,7 +45,7 @@ const Screen: React.FC<{ step: number }> = ({ step }) => (
           <span
             key={label}
             className={cn(
-              "rounded-full px-3 py-1 text-[10px] font-semibold",
+              "rounded-full px-3 py-1 text-2xs font-semibold",
               index === 0
                 ? "bg-secondary-950 text-white"
                 : "bg-secondary-50 text-secondary-700",
@@ -82,7 +82,7 @@ const Screen: React.FC<{ step: number }> = ({ step }) => (
         <div
           key={tier}
           className={cn(
-            "flex items-center justify-between rounded-2xl border px-3.5 py-2.5 text-[11px] font-semibold",
+            "flex items-center justify-between rounded-2xl border px-3.5 py-2.5 text-2xs font-semibold",
             index === 1
               ? "border-primary bg-primary-50 text-primary-700"
               : "border-secondary-100 text-secondary-800",
@@ -97,7 +97,7 @@ const Screen: React.FC<{ step: number }> = ({ step }) => (
           />
         </div>
       ))}
-      <div className="mt-auto rounded-full bg-secondary-950 py-2.5 text-center text-[11px] font-semibold text-white">
+      <div className="mt-auto rounded-full bg-secondary-950 py-2.5 text-center text-2xs font-semibold text-white">
         Pay and get ticket
       </div>
     </div>
@@ -109,19 +109,19 @@ const Screen: React.FC<{ step: number }> = ({ step }) => (
         step === 2 ? "opacity-100" : "pointer-events-none scale-95 opacity-0",
       )}
     >
-      <p className="text-[10px] font-semibold tracking-[0.2em] text-white/50 uppercase">
+      <p className="text-2xs font-semibold tracking-[0.2em] text-white/50 uppercase">
         Your pass
       </p>
-      <div className="grid grid-cols-11 gap-[3px] rounded-2xl bg-white p-3">
+      <div className="grid grid-cols-11 gap-1 rounded-2xl bg-card p-3">
         {QR.map((on, index) => (
           <span
             key={index}
-            className={cn("size-2.5 rounded-[2px]", on ? "bg-secondary-950" : "bg-transparent")}
+            className={cn("size-2.5 rounded-xs", on ? "bg-secondary-950" : "bg-transparent")}
           />
         ))}
       </div>
-      <div className="flex items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-1 text-[11px] font-semibold text-emerald-300">
-        <span className="size-1.5 rounded-full bg-emerald-300" />
+      <div className="flex items-center gap-2 rounded-full bg-success-solid/15 px-3 py-1 text-2xs font-semibold text-emerald-300">
+        <span className="size-1.5 rounded-full bg-success-solid/70" />
         Ready to scan
       </div>
     </div>
@@ -138,7 +138,7 @@ const HowItWorks = () => {
   usePointerTilt(sectionRef, phoneRef, { maxX: 6, maxY: 10 });
 
   return (
-    <section ref={sectionRef} className="bg-white py-20 md:py-28">
+    <section ref={sectionRef} className="bg-card py-20 md:py-28">
       <SectionContainer className="grid items-center gap-14 lg:grid-cols-2">
         <div className="space-y-10">
           <Reveal className="max-w-lg space-y-3">
@@ -216,7 +216,7 @@ const HowItWorks = () => {
               <div className="absolute inset-0 rounded-[2.6rem] bg-secondary-950 p-2.5">
                 <Screen step={step} />
                 {/* Glass: a sheen that slides as the phone turns. */}
-                <div className="pointer-events-none absolute inset-2.5 overflow-hidden rounded-[2rem]">
+                <div className="pointer-events-none absolute inset-2.5 overflow-hidden rounded-3xl">
                   <div
                     className="absolute -inset-y-10 w-1/2 bg-linear-to-r from-transparent via-white/25 to-transparent blur-md transition-transform duration-[900ms] ease-out"
                     style={{
@@ -229,14 +229,14 @@ const HowItWorks = () => {
               {/* Book: the chosen ticket lifts off the screen toward you. */}
               <div
                 className={cn(
-                  "pointer-events-none absolute top-[54%] left-1/2 w-[78%] rounded-2xl bg-white px-4 py-3 shadow-[0_24px_40px_-14px_rgba(5,119,250,0.55)] ring-1 ring-primary-100 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  "pointer-events-none absolute top-[54%] left-1/2 w-[78%] rounded-2xl bg-card px-4 py-3 shadow-[0_24px_40px_-14px_rgba(5,119,250,0.55)] ring-1 ring-primary-100 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
                   step === 1 ? "opacity-100" : "opacity-0",
                 )}
                 style={{
                   transform: `translateX(-50%) translateZ(${step === 1 ? 70 : 0}px) rotateZ(${step === 1 ? -4 : 0}deg)`,
                 }}
               >
-                <p className="text-[10px] font-semibold tracking-[0.18em] text-primary uppercase">
+                <p className="text-2xs font-semibold tracking-[0.18em] text-primary uppercase">
                   VIP · Admit one
                 </p>
                 <div className="mt-2 h-2 w-3/4 rounded-full bg-secondary-100" />
@@ -251,7 +251,7 @@ const HowItWorks = () => {
                 )}
                 style={{ transform: "translateZ(40px)" }}
               >
-                <div className="animate-landing-scan absolute inset-x-0 h-1 rounded-full bg-emerald-300 shadow-[0_0_18px_4px_rgba(110,231,183,0.7)]" />
+                <div className="animate-landing-scan absolute inset-x-0 h-1 rounded-full bg-success-solid/70 shadow-[0_0_18px_4px_rgba(110,231,183,0.7)]" />
               </div>
             </div>
           </div>

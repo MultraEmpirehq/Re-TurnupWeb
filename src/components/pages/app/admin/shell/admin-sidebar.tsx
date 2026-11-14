@@ -90,17 +90,17 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
         href={item.href}
         aria-current={isActive ? "page" : undefined}
         className={cn(
-          "flex items-center gap-2.5 rounded-[10px] px-[11px] py-2.5 text-sm transition-colors duration-100 ease-out",
+          "flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 text-sm transition-colors duration-100 ease-out",
           isActive
             ? "bg-secondary-50 font-semibold text-secondary-800 dark:bg-white/10 dark:text-foreground"
             : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
         )}
       >
-        <Icon className="size-[18px] shrink-0" aria-hidden />
+        <Icon className="size-4.5 shrink-0" aria-hidden />
         <span className="min-w-0 flex-1 truncate">{item.label}</span>
         {badge > 0 && (
           <span
-            className="shrink-0 rounded-full bg-primary px-[7px] py-[3px] text-xs font-semibold text-white"
+            className="shrink-0 rounded-full bg-primary px-2 py-1 text-xs font-semibold text-white"
             aria-label={`${badge} waiting`}
           >
             {badge}
@@ -131,7 +131,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
   return (
     <aside
       className={cn(
-        "flex w-[248px] shrink-0 flex-col gap-1 border-r border-border bg-white px-4 dark:bg-card pb-4",
+        "flex w-[248px] shrink-0 flex-col gap-1 border-r border-border bg-card px-4 dark:bg-card pb-4",
         className,
       )}
     >
@@ -147,7 +147,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
             priority
           />
         </Link>
-        <span className="rounded-full bg-secondary-50 px-2 py-1 text-[11px] font-bold tracking-wide text-secondary-700 dark:bg-white/10 dark:text-foreground">
+        <span className="rounded-full bg-secondary-50 px-2 py-1 text-2xs font-bold tracking-wide text-secondary-700 dark:bg-white/10 dark:text-foreground">
           ADMIN
         </span>
       </div>
@@ -161,7 +161,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
             if (!group.department) {
               return (
                 <Fragment key={group.label}>
-                  <p className="px-[11px] pt-2.5 pb-0.5 text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
+                  <p className="px-3 pt-2.5 pb-0.5 text-2xs font-bold tracking-[0.08em] text-muted-foreground uppercase">
                     {group.label}
                   </p>
                   {group.items.map(renderItem)}
@@ -184,7 +184,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
             return (
               <div key={group.label} className="flex flex-col gap-1 pt-1">
                 {group.label === firstDepartment?.label && (
-                  <p className="px-[11px] pt-2.5 pb-0.5 text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
+                  <p className="px-3 pt-2.5 pb-0.5 text-2xs font-bold tracking-[0.08em] text-muted-foreground uppercase">
                     Departments
                   </p>
                 )}
@@ -194,7 +194,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
                   aria-expanded={isExpanded}
                   aria-controls={listId}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-[10px] px-[7px] py-1.5 text-left text-sm font-semibold transition-colors duration-100 ease-out",
+                    "flex items-center gap-2.5 rounded-[10px] px-2 py-1.5 text-left text-sm font-semibold transition-colors duration-100 ease-out",
                     isGroupActive
                       ? "text-secondary-800 dark:text-foreground"
                       : "text-foreground hover:bg-muted",
@@ -218,7 +218,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
                   </span>
                   {!isExpanded && groupBadge > 0 && (
                     <span
-                      className="shrink-0 rounded-full bg-primary px-[7px] py-[3px] text-xs font-semibold text-white"
+                      className="shrink-0 rounded-full bg-primary px-2 py-1 text-xs font-semibold text-white"
                       aria-label={`${groupBadge} awaiting review`}
                     >
                       {groupBadge}
@@ -275,7 +275,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
           </AvatarFallback>
         </Avatar>
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-[13px] font-semibold text-foreground">
+          <span className="truncate text-sm font-semibold text-foreground">
             {displayName}
           </span>
           <span className="truncate text-xs text-muted-foreground">

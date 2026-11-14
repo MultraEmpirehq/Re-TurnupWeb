@@ -22,7 +22,7 @@ const CategoriesList = () => {
   return (
     <div className="space-y-4">
       <div className="flex flex-row items-center justify-between gap-3">
-        <h1 className="font-bold text-secondary-800">Categories</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Categories</h1>
         <Button asChild size="sm">
           <Link href={ROUTES.CREATE_CATEGORY.href}>
             <Plus className="size-4" />

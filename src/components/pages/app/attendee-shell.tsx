@@ -3,6 +3,7 @@
 import RequireVendorVerification from "@/components/auth/require-vendor-verification";
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import GeneralNavComponent from "@/components/navs/general-nav/general-nav.component";
+import RestrictionBanner from "@/components/account/restriction-banner";
 import { ROUTES } from "@/lib/variables";
 import { usePathname, useRouter } from "next/navigation";
 import React, { memo, useEffect } from "react";
@@ -38,6 +39,7 @@ const AttendeeShell: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,rgba(244,248,255,0.92)_0%,rgba(255,255,255,1)_30%)]">
       <GeneralNavComponent />
+      <RestrictionBanner />
       <SectionContainer
         className={isWide ? "max-w-[1760px] py-6 md:py-8" : "py-8 md:py-10"}
       >

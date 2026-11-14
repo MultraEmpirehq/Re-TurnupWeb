@@ -873,7 +873,7 @@ const TicketPage = () => {
                             <TicketIcon className="size-6 text-primary-700 dark:text-primary-400" />
                           </div>
                           {max === 0 && !saleNote ? (
-                            <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-600">
+                            <span className="rounded-full bg-danger-soft px-2.5 py-1 text-xs font-bold text-danger">
                               Sold out
                             </span>
                           ) : (
@@ -883,7 +883,7 @@ const TicketPage = () => {
                                 className={cn(
                                   "rounded-full px-2.5 py-1 text-xs font-bold",
                                   ticket.available <= 20
-                                    ? "bg-orange-50 text-orange-700"
+                                    ? "bg-warning-soft text-warning"
                                     : "bg-secondary-100 text-secondary-600",
                                 )}
                               >
@@ -1056,7 +1056,7 @@ const TicketPage = () => {
                   (promo ? (
                     <div className="flex items-center justify-between gap-3 text-sm">
                       <p className="text-muted-foreground">
-                        <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 font-mono text-xs font-bold text-emerald-700">
+                        <span className="rounded-md bg-success-soft px-1.5 py-0.5 font-mono text-xs font-bold text-success">
                           {promo.code}
                         </span>{" "}
                         {promo.label}
@@ -1072,7 +1072,7 @@ const TicketPage = () => {
                         </button>
                       </p>
                       {promoDiscount > 0 && (
-                        <p className="font-semibold text-emerald-700">
+                        <p className="font-semibold text-success">
                           −{money(promoDiscount)}
                         </p>
                       )}
