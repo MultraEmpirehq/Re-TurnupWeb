@@ -27,7 +27,7 @@ import { format } from "date-fns";
 import { Copy, Plus, Sparkles } from "lucide-react";
 import React, { memo, useState } from "react";
 import { toast } from "@/lib/toast";
-import { ListSkeleton, PageHeading } from "../moderation/moderation-ui";
+import { ListSkeleton } from "../moderation/moderation-ui";
 import { REFERRAL_STATUS } from "./referrals";
 
 const CODE_PATTERN = /^[A-Z0-9]{4,20}$/;
@@ -46,7 +46,11 @@ const spendLine = (code: IInfluencerCode) =>
  * what they've spent, so the team can see which partnerships work. Creating a
  * code or switching one off needs the "suspend users" permission.
  */
-const InfluencerCodes = () => {
+const InfluencerCodes = ({
+  onSeeReferrals,
+}: {
+  onSeeReferrals?: () => void;
+}) => {
   const { data, error, isLoading, refetch } = useInfluencerCodes();
   const { has } = useAdminPermissions();
   const canManage = has("USERS_MANAGE");
@@ -77,12 +81,23 @@ const InfluencerCodes = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <PageHeading title="Influencer Codes">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-2xl text-sm text-muted-foreground">
           Codes you give influencers. New people enter them at sign-up; we track
-          who joined through each and what they spent. Rewards follow the fixed
-          referral rules.
-        </PageHeading>
+          who joined through each and what they spent.
+          {onSeeReferrals && (
+            <>
+              {" "}
+              <button
+                type="button"
+                className="font-semibold text-primary hover:underline"
+                onClick={onSeeReferrals}
+              >
+                See everyone who joined with a code
+              </button>
+            </>
+          )}
+        </p>
         {canManage && (
           <Button onClick={() => setCreating(true)} className="rounded-lg">
             <Plus className="size-4" />

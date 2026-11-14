@@ -1,8 +1,6 @@
-import InfluencerCodes from "@/components/pages/app/admin/growth/influencer-codes";
-import React, { memo } from "react";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-const Page = () => <InfluencerCodes />;
-
-export default memo(Page);
+/** Influencer codes now live on the Referrals page, in their own tab. */
+export default function InfluencerCodesPage() {
+  redirect("/app/admin/marketing/referrals?tab=codes");
+}

@@ -1,8 +1,13 @@
-import Referrals from "@/components/pages/app/admin/growth/referrals";
-import React, { memo } from "react";
+import ReferralsHub from "@/components/pages/app/admin/growth/referrals-hub";
+import React, { memo, Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 
-const Page = () => <Referrals />;
+/** Friend invites and influencer codes, in one place. */
+const Page = () => (
+  <Suspense>
+    <ReferralsHub />
+  </Suspense>
+);
 
 export default memo(Page);

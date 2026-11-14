@@ -7,7 +7,9 @@ import { useEventChats, useMessageRequests } from "@/hooks/use-event-chat";
 import { cn } from "@/lib/utils";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
 import { MessagesSquare } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { postData } from "@/api";
+import { ROUTES } from "@/lib/variables";
 import React, { memo, useEffect, useState } from "react";
 
 /**
@@ -26,6 +28,18 @@ const MessagesPage = () => {
   // A link to one chat (e.g. from a notification) opens it.
   const searchParams = useSearchParams();
   const linkedChatId = searchParams.get("chat");
+  // From Contact Us after signing in (?support=1): open their chat with the
+  // Turnupz team, made the first time.
+  const router = useRouter();
+  const wantsSupport = searchParams.get("support") === "1";
+  useEffect(() => {
+    if (!wantsSupport || !myId) return;
+    void postData<Record<string, never>, { id: string }>("/chats/support", {})
+      .then(({ data }) => {
+        if (data?.data?.id) router.replace(`${ROUTES.MESSAGES.href}?chat=${data.data.id}`);
+      })
+      .catch(() => undefined);
+  }, [wantsSupport, myId, router]);
   // From an event's "Message organiser": the event the chat is about.
   const aboutParam = searchParams.get("about") ?? undefined;
   const [selectedId, setSelectedId] = useState(linkedChatId ?? "");

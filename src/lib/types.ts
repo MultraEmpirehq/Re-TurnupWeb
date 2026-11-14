@@ -240,6 +240,8 @@ export interface IEventDetailsType {
   isOwner?: boolean;
   /** Hosted by Turnupz itself: admins with EVENTS_HOST run it. */
   hostedByTurnupz?: boolean;
+  /** New sales paused while the team checks reports; ticket holders keep theirs. */
+  salesPaused?: boolean;
   /** A draft this admin set up for its organiser. */
   preparedByYou?: boolean;
   /** How it's selling, from Turnupz: labels shown on its card. */
@@ -492,6 +494,7 @@ export interface ICategoryDetailsType {
 // ---------------------------------------------------------------------------
 
 export type TAdminUserType =
+  | "applicants"
   | "all"
   | "vendors"
   | "users"
@@ -515,8 +518,18 @@ export type TApprovalLevel =
   | "cross_border_verified"
   | "high_risk_review";
 
+/** What kind of account it is, worked out by the API from role and application. */
+export interface IAdminAccountType {
+  kind: "turnupz" | "admin" | "attendee" | "applying" | "organiser";
+  label: string;
+  tone: "success" | "warning" | "danger" | "info" | "neutral";
+  /** Their organiser application, when they have one. */
+  verificationId: string | null;
+}
+
 export interface IAdminUserListItem {
   id: string;
+  accountType?: IAdminAccountType;
   email?: string;
   name?: string;
   firstName?: string;
@@ -556,6 +569,8 @@ export interface IVendorVerificationSummary {
 export interface IAdminUserDetails extends IAdminUserListItem {
   isAccountDisabled: boolean;
   restriction?: IAccountRestriction | null;
+  /** Admin view: two-factor sign-in is on (and can be reset). */
+  twoFactorEnabled?: boolean;
   isAccountCreationCompleted?: boolean;
   dateOfBirth?: string;
   gender?: string;

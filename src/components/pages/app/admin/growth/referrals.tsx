@@ -17,11 +17,7 @@ import { format } from "date-fns";
 import { ArrowRight, Gift, Search } from "lucide-react";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { useDebounce } from "use-debounce";
-import {
-  FilterTabs,
-  ListSkeleton,
-  PageHeading,
-} from "../moderation/moderation-ui";
+import { FilterTabs, ListSkeleton } from "../moderation/moderation-ui";
 import FeatureSwitch from "../feature-switch";
 
 export const REFERRAL_STATUS: Record<
@@ -98,10 +94,23 @@ const Stat: React.FC<{
   </div>
 );
 
-/** Who referred whom: every sign-up that came with a friend's or an influencer's code. */
-const Referrals = () => {
+/**
+ * Who referred whom: every sign-up that came with a friend's or an influencer's
+ * code. Shown in two parts on the Referrals page: the overview (switches,
+ * totals, credit) and the list (who joined).
+ */
+const Referrals = ({
+  part,
+  initialSource,
+}: {
+  part: "overview" | "list";
+  /** Opens the list already filtered, e.g. to influencer codes. */
+  initialSource?: "INVITE" | "INFLUENCER";
+}) => {
   const [status, setStatus] = useState<TReferralStatus | undefined>();
-  const [source, setSource] = useState<"INVITE" | "INFLUENCER" | undefined>();
+  const [source, setSource] = useState<"INVITE" | "INFLUENCER" | undefined>(
+    initialSource,
+  );
   const [search, setSearch] = useState("");
   const [q] = useDebounce(search.trim(), 400);
   const [page, setPage] = useState(1);
@@ -131,130 +140,150 @@ const Referrals = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeading title="Referrals">
-        Who referred whom. Friends invite with their username; influencers with
-        a code you give them. All rewards on an order together are at most 20%
-        of Turnupz&apos;s commission on it (0.8% of the ticket at 4%), and each
-        has its own maximum. {summary.data?.rulesNote}
-      </PageHeading>
-
-      <div className="grid gap-3 lg:grid-cols-2">
-        <FeatureSwitch
-          feature="creditSpending"
-          label="Paying with Turnupz Credit"
-          onText="On: buyers can use their credit at checkout."
-          offText="Off: checkout doesn't offer credit. Balances stay safe and visible, marked as paused."
-        />
-        <FeatureSwitch
-          feature="referralRewards"
-          label="New referral and welcome credit"
-          onText="On: invited friends and referrers earn credit on a friend's first purchase, split evenly from the reward budget."
-          offText="Off: invites are still recorded, but no new credit is given."
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Sign-ups with a code" value={totals.all} />
-        <Stat label="From friend invites" value={totals.invites} />
-        <Stat label="From influencer codes" value={totals.influencer} />
-        <Stat label="Rewarded" value={totals.rewarded} />
-      </div>
-
-      {!!summary.data?.credit.length && (
-        <div className="overflow-x-auto rounded-xl border border-border bg-card">
-          <table className="w-full min-w-[560px] text-sm">
-            <thead className="text-left text-xs text-muted-foreground">
-              <tr className="border-b border-border">
-                <th className="p-3 font-medium">Turnupz Credit</th>
-                <th className="p-3 font-medium">On the way</th>
-                <th className="p-3 font-medium">Spendable</th>
-                <th className="p-3 font-medium">Spent on tickets</th>
-                <th className="p-3 font-medium">Expired</th>
-              </tr>
-            </thead>
-            <tbody>
-              {summary.data.credit.map((row) => (
-                <tr
-                  key={row.currency}
-                  className="border-b border-border last:border-0"
-                >
-                  <td className="p-3 font-semibold">{row.currency}</td>
-                  <td className="p-3">{row.pending.formatted.withCurrency}</td>
-                  <td className="p-3">
-                    {row.available.formatted.withCurrency}
-                  </td>
-                  <td className="p-3">{row.spent.formatted.withCurrency}</td>
-                  <td className="p-3">{row.expired.formatted.withCurrency}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-3">
-        <div className="relative max-w-md">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search names, emails, usernames or the code"
-            className="pl-9"
-          />
-        </div>
-        <FilterTabs tabs={SOURCE_TABS} value={source} onChange={setSource} />
-        <FilterTabs tabs={STATUS_TABS} value={status} onChange={setStatus} />
-      </div>
-
-      {isLoading && <ListSkeleton />}
-
-      {!!error && !isLoading && (
-        <ErrorContainer
-          error={constructErrorMessage(
-            error as TApiErrorResponseType,
-            "Could not load referrals",
+      {part === "overview" && (
+        <>
+          {summary.data?.rulesNote && (
+            <p className="max-w-3xl text-sm text-muted-foreground">
+              {summary.data.rulesNote}
+            </p>
           )}
-          retryFunction={() => void refetch()}
-        />
+          <div className="grid gap-3 lg:grid-cols-2">
+            <FeatureSwitch
+              feature="creditSpending"
+              label="Paying with Turnupz Credit"
+              onText="On: buyers can use their credit at checkout."
+              offText="Off: checkout doesn't offer credit. Balances stay safe and visible, marked as paused."
+            />
+            <FeatureSwitch
+              feature="referralRewards"
+              label="New referral and welcome credit"
+              onText="On: invited friends and referrers earn credit on a friend's first purchase, split evenly from the reward budget."
+              offText="Off: invites are still recorded, but no new credit is given."
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <Stat label="Sign-ups with a code" value={totals.all} />
+            <Stat label="From friend invites" value={totals.invites} />
+            <Stat label="From influencer codes" value={totals.influencer} />
+            <Stat label="Rewarded" value={totals.rewarded} />
+          </div>
+
+          {!!summary.data?.credit.length && (
+            <div className="overflow-x-auto rounded-xl border border-border bg-card">
+              <table className="w-full min-w-[560px] text-sm">
+                <thead className="text-left text-xs text-muted-foreground">
+                  <tr className="border-b border-border">
+                    <th className="p-3 font-medium">Turnupz Credit</th>
+                    <th className="p-3 font-medium">On the way</th>
+                    <th className="p-3 font-medium">Spendable</th>
+                    <th className="p-3 font-medium">Spent on tickets</th>
+                    <th className="p-3 font-medium">Expired</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summary.data.credit.map((row) => (
+                    <tr
+                      key={row.currency}
+                      className="border-b border-border last:border-0"
+                    >
+                      <td className="p-3 font-semibold">{row.currency}</td>
+                      <td className="p-3">
+                        {row.pending.formatted.withCurrency}
+                      </td>
+                      <td className="p-3">
+                        {row.available.formatted.withCurrency}
+                      </td>
+                      <td className="p-3">
+                        {row.spent.formatted.withCurrency}
+                      </td>
+                      <td className="p-3">
+                        {row.expired.formatted.withCurrency}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
 
-      {!isLoading && !error && referrals.length === 0 && (
-        <EmptyContainer
-          icon={<Gift className="size-6" />}
-          title="No referrals here"
-          description="Sign-ups that used an invite or influencer code show up here."
-        />
-      )}
+      {part === "list" && (
+        <>
+          <div className="flex flex-col gap-3">
+            <div className="relative max-w-md">
+              <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search names, emails, usernames or the code"
+                className="pl-9"
+              />
+            </div>
+            <FilterTabs
+              tabs={SOURCE_TABS}
+              value={source}
+              onChange={setSource}
+            />
+            <FilterTabs
+              tabs={STATUS_TABS}
+              value={status}
+              onChange={setStatus}
+            />
+          </div>
 
-      {referrals.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-border bg-card">
-          <table className="w-full min-w-[820px] text-sm">
-            <thead className="text-left text-xs text-muted-foreground">
-              <tr className="border-b border-border">
-                <th className="p-3 font-medium">Referred by</th>
-                <th className="p-3 font-medium" />
-                <th className="p-3 font-medium">New person</th>
-                <th className="p-3 font-medium">Code</th>
-                <th className="p-3 font-medium">Joined</th>
-                <th className="p-3 font-medium">Status</th>
-                <th className="p-3 font-medium">Credit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {referrals.map((referral) => (
-                <ReferralRow key={referral.id} referral={referral} />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+          {isLoading && <ListSkeleton />}
 
-      {totalPages > 1 && (
-        <ResultPagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-        />
+          {!!error && !isLoading && (
+            <ErrorContainer
+              error={constructErrorMessage(
+                error as TApiErrorResponseType,
+                "Could not load referrals",
+              )}
+              retryFunction={() => void refetch()}
+            />
+          )}
+
+          {!isLoading && !error && referrals.length === 0 && (
+            <EmptyContainer
+              icon={<Gift className="size-6" />}
+              title="No referrals here"
+              description="Sign-ups that used an invite or influencer code show up here."
+            />
+          )}
+
+          {referrals.length > 0 && (
+            <div className="overflow-x-auto rounded-xl border border-border bg-card">
+              <table className="w-full min-w-[820px] text-sm">
+                <thead className="text-left text-xs text-muted-foreground">
+                  <tr className="border-b border-border">
+                    <th className="p-3 font-medium">Referred by</th>
+                    <th className="p-3 font-medium" />
+                    <th className="p-3 font-medium">New person</th>
+                    <th className="p-3 font-medium">Code</th>
+                    <th className="p-3 font-medium">Joined</th>
+                    <th className="p-3 font-medium">Status</th>
+                    <th className="p-3 font-medium">Credit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {referrals.map((referral) => (
+                    <ReferralRow key={referral.id} referral={referral} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <ResultPagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+          )}
+        </>
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 import DashboardEvents from "@/components/pages/app/dashboard-events";
 import DashboardOverview from "@/components/pages/app/dashboard-overview";
 import OrganiserToDo from "@/components/pages/app/organiser-to-do";
+import TwoFactorNudge from "@/components/account/two-factor-nudge";
 import React, { memo } from "react";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,7 @@ const DashboardPage = () => {
   return (
     <div className="space-y-10">
       <OrganiserToDo />
+      <TwoFactorNudge gap="2.5rem" />
       <DashboardOverview />
       <DashboardEvents />
     </div>

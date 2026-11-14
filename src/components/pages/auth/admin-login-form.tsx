@@ -14,7 +14,9 @@ import { ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
+import TwoFactorPrompt from "./two-factor-prompt";
+import { isTwoFactorChallenge } from "@/lib/trusted-device";
 import { useForm } from "react-hook-form";
 import { toast } from "@/lib/toast";
 
@@ -56,6 +58,21 @@ const AdminLoginForm = () => {
     defaultValues: { email: "", password: "" },
   });
 
+  // Two-factor is on: the password was right, now the app's code.
+  const [twoFactor, setTwoFactor] = useState<string | null>(null);
+
+  const finish = async (payload?: TAdminLoginResponse) => {
+    const token = payload?.token || payload?.accessToken || payload?.authToken;
+    if (token) setUserToken(token.replace(/^Bearer\s+/i, ""));
+    await performAuthOperation(payload?.user);
+    // A temporary password is changed first (the console sends them there too).
+    router.push(
+      payload?.user?.mustChangePassword
+        ? `${ROUTES.ADMIN_OVERVIEW.href}/change-password`
+        : ROUTES.ADMIN_OVERVIEW.href,
+    );
+  };
+
   const onSubmit = async (values: TAdminLoginValues) => {
     try {
       const { data } = await postData<TAdminLoginValues, TAdminLoginResponse>(
@@ -63,16 +80,11 @@ const AdminLoginForm = () => {
         { email: values.email.trim().toLowerCase(), password: values.password },
       );
       const payload = data?.data;
-      const token =
-        payload?.token || payload?.accessToken || payload?.authToken;
-      if (token) setUserToken(token.replace(/^Bearer\s+/i, ""));
-      await performAuthOperation(payload?.user);
-      // A temporary password is changed first (the console sends them there too).
-      router.push(
-        payload?.user?.mustChangePassword
-          ? `${ROUTES.ADMIN_OVERVIEW.href}/change-password`
-          : ROUTES.ADMIN_OVERVIEW.href,
-      );
+      if (isTwoFactorChallenge(payload)) {
+        setTwoFactor(payload.challenge);
+        return;
+      }
+      await finish(payload);
     } catch (error) {
       toast.error(
         constructErrorMessage(
@@ -94,6 +106,15 @@ const AdminLoginForm = () => {
           </span>
         </div>
 
+        {twoFactor ? (
+          <div className="rounded-2xl bg-card p-6 shadow-xl">
+            <TwoFactorPrompt
+              challenge={twoFactor}
+              onDone={(response) => finish(response as unknown as TAdminLoginResponse)}
+              onCancel={() => setTwoFactor(null)}
+            />
+          </div>
+        ) : (
         <form
           onSubmit={handleSubmit(onSubmit)}
           noValidate
@@ -138,6 +159,7 @@ const AdminLoginForm = () => {
             </Link>
           </p>
         </form>
+        )}
       </div>
     </main>
   );

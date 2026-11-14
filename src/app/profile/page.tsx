@@ -2,6 +2,7 @@
 
 import ProfileCard from "@/components/pages/profile/overview/profile-card";
 import ProfileTabs from "@/components/pages/profile/overview/profile-tabs";
+import TwoFactorNudge from "@/components/account/two-factor-nudge";
 import React, { memo } from "react";
 
 /**
@@ -9,7 +10,8 @@ import React, { memo } from "react";
  * screens), your events on the right. Editing the details is its own page.
  */
 const ProfilePage = () => (
-  <div className="@container">
+  <div className="@container space-y-6">
+    <TwoFactorNudge />
     <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 @4xl:grid-cols-[360px_minmax(0,1fr)] @6xl:grid-cols-[380px_minmax(0,1fr)]">
       <div className="@4xl:sticky @4xl:top-24">
         <ProfileCard />

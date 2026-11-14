@@ -14,7 +14,7 @@ const SettingsPage = () => (
     <div>
       <h2 className="text-lg font-semibold">Settings</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        What you&apos;re notified about, who can reach you, where you&apos;re signed in, and your password. Your photo
+        What you&apos;re notified about, who can reach you, where you&apos;re signed in, your password and two-factor sign-in. Your photo
         and details are in{" "}
         <Link href={ROUTES.PROFILE_EDIT.href} className="font-semibold text-primary hover:underline">
           Edit profile

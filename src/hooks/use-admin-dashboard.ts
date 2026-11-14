@@ -1,7 +1,10 @@
 import { getData, postData } from "@/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export type TDashboardDays = 7 | 30 | 90;
+import type { TPeriodDays } from "@/lib/periods";
+
+/** The site-wide periods (src/lib/periods.ts); 0 is all time. */
+export type TDashboardDays = TPeriodDays;
 
 type TMoney = { amount: number; formatted: { withCurrency: string } };
 type TChange = number | null;

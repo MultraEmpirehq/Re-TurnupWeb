@@ -156,6 +156,7 @@ const EventDetails = () => {
 
       <EventDetailTitleRow
         eventId={id}
+        salesPaused={!!data?.salesPaused}
         name={data?.name}
         saleMethod={data?.saleMethod}
         ticketUrl={data?.ticketUrl}
