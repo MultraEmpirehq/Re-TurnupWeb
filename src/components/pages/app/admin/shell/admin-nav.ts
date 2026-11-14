@@ -13,6 +13,7 @@ import {
   Compass,
   Flag,
   Gift,
+  Handshake,
   Headset,
   Inbox,
   Landmark,
@@ -26,6 +27,7 @@ import {
   Megaphone,
   MessagesSquare,
   Mic,
+  Network,
   Newspaper,
   Percent,
   ReceiptText,
@@ -34,7 +36,6 @@ import {
   ScrollText,
   Settings,
   ShieldCheck,
-  Sparkles,
   Tags,
   TrendingUp,
   Undo2,
@@ -204,12 +205,6 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         permission: "MARKETING_MANAGE",
       },
       {
-        label: "Influencer Codes",
-        href: `${ADMIN_BASE}/marketing/influencer-codes`,
-        icon: Sparkles,
-        permission: "MARKETING_MANAGE",
-      },
-      {
         label: "Company Blog",
         href: `${ADMIN_BASE}/marketing/news`,
         icon: Newspaper,
@@ -238,6 +233,22 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         href: `${ADMIN_BASE}/support/inquiries`,
         icon: Mail,
         permission: "SUPPORT_MANAGE",
+      },
+    ],
+  },
+  {
+    label: "Sales",
+    department: {
+      icon: Handshake,
+      accentClassName: "bg-amber-50 text-amber-600",
+      description: "Partnerships and organisers who want to sell with us.",
+    },
+    items: [
+      {
+        label: "Sales Leads",
+        href: `${ADMIN_BASE}/sales/leads`,
+        icon: Inbox,
+        permission: "SALES_MANAGE",
       },
     ],
   },
@@ -343,6 +354,14 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         href: `${ADMIN_BASE}/operations/admins`,
         icon: UserCog,
         permission: "ADMINS_MANAGE",
+      },
+      // Who works in which department, who heads each, and who hears about
+      // work left waiting.
+      {
+        label: "Departments",
+        href: `${ADMIN_BASE}/operations/departments`,
+        icon: Network,
+        permission: "STAFF_MANAGE",
       },
       // Every admin action across all departments.
       {

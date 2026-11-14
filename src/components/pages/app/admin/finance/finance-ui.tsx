@@ -1,13 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TFinanceRange, useFinanceCurrencies } from "@/hooks/use-admin-finance";
 import { formatCurrency } from "@/lib/functions";
@@ -15,49 +8,18 @@ import { cn } from "@/lib/utils";
 import { ArrowDownRight, ArrowUpRight, Download } from "lucide-react";
 import React, { memo, useMemo } from "react";
 import { create } from "zustand";
+import { CalendarPeriodFilter } from "@/components/ui/period-filter";
+import SegmentedControl from "@/components/ui/segmented-control";
+import {
+  calendarPeriodRange,
+  DEFAULT_CALENDAR_PERIOD,
+  type TCalendarPeriod,
+} from "@/lib/periods";
 
 /* ------------------------------------------------------------ the period */
 
-export type TPeriod =
-  | "this_month"
-  | "last_month"
-  | "last_30"
-  | "last_90"
-  | "this_year"
-  | "last_12_months";
-
-export const PERIODS: { value: TPeriod; label: string }[] = [
-  { value: "this_month", label: "This month" },
-  { value: "last_month", label: "Last month" },
-  { value: "last_30", label: "Last 30 days" },
-  { value: "last_90", label: "Last 90 days" },
-  { value: "this_year", label: "This year" },
-  { value: "last_12_months", label: "Last 12 months" },
-];
-
-const DAY = 24 * 60 * 60 * 1000;
-
-/** The dates a period covers, ending now (or at the end of last month). */
-export const periodRange = (period: TPeriod, now = new Date()) => {
-  const start = (year: number, month: number) => new Date(year, month, 1);
-  switch (period) {
-    case "last_month": {
-      const from = start(now.getFullYear(), now.getMonth() - 1);
-      const to = new Date(start(now.getFullYear(), now.getMonth()).getTime() - 1);
-      return { from, to };
-    }
-    case "last_30":
-      return { from: new Date(now.getTime() - 30 * DAY), to: now };
-    case "last_90":
-      return { from: new Date(now.getTime() - 90 * DAY), to: now };
-    case "this_year":
-      return { from: start(now.getFullYear(), 0), to: now };
-    case "last_12_months":
-      return { from: start(now.getFullYear(), now.getMonth() - 11), to: now };
-    default:
-      return { from: start(now.getFullYear(), now.getMonth()), to: now };
-  }
-};
+/** Finance keeps calendar periods (this month, last month, this year…): they line up with statements. */
+export type TPeriod = TCalendarPeriod;
 
 // Kept while moving between the finance pages, so each opens on the same view.
 const useFinanceView = create<{
@@ -67,7 +29,7 @@ const useFinanceView = create<{
   setPeriod: (period: TPeriod) => void;
 }>((set) => ({
   currency: "NGN",
-  period: "this_month",
+  period: DEFAULT_CALENDAR_PERIOD,
   setCurrency: (currency) => set({ currency }),
   setPeriod: (period) => set({ period }),
 }));
@@ -76,7 +38,7 @@ const useFinanceView = create<{
 export const useFinanceRange = () => {
   const { currency, period, setCurrency, setPeriod } = useFinanceView();
   const range: TFinanceRange = useMemo(
-    () => ({ currency, ...periodRange(period) }),
+    () => ({ currency, ...calendarPeriodRange(period) }),
     // Recomputed when the choice changes, not on every render (which would
     // move "now" and refetch).
     [currency, period],
@@ -141,35 +103,14 @@ export const FinanceHeader: React.FC<{
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {options.length > 1 && (
-          <div className="inline-flex rounded-full border border-border bg-card p-1" role="group" aria-label="Currency">
-            {options.map((code) => (
-              <button
-                key={code}
-                type="button"
-                aria-pressed={code === currency}
-                onClick={() => setCurrency(code)}
-                className={cn(
-                  "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
-                  code === currency ? "bg-secondary-800 text-white dark:bg-foreground dark:text-background" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {code}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            label="Currency"
+            value={currency}
+            onChange={setCurrency}
+            options={options.map((code) => ({ value: code, label: code }))}
+          />
         )}
-        <Select value={period} onValueChange={(value) => setPeriod(value as TPeriod)}>
-          <SelectTrigger className="h-9 w-[150px] rounded-full bg-card text-xs font-semibold" aria-label="Period">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {PERIODS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <CalendarPeriodFilter value={period} onChange={setPeriod} />
         {onExport && (
           <Button
             variant="outline"

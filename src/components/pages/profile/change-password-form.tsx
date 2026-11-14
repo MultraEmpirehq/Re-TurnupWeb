@@ -1,5 +1,7 @@
 "use client";
 
+import TwoFactorSection from "@/components/account/two-factor-section";
+
 import { patchData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
@@ -9,6 +11,9 @@ import Joi from "joi";
 import React, { memo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "@/lib/toast";
+import StatusBadge from "@/components/ui/status-badge";
+import useUserStore from "@/stores/user-store";
+import { BadgeCheck, CircleAlert, Mail } from "lucide-react";
 
 interface IPasswordFormValues {
   currentPassword: string;
@@ -79,24 +84,40 @@ const ChangePasswordForm = () => {
     [reset],
   );
 
+  const email = useUserStore((state) => state.userDetails?.email);
+  const emailVerified = useUserStore((state) => state.userDetails?.isEmailVerified);
+
   return (
     <section
       id="security"
-      className="scroll-mt-24 rounded-3xl border border-secondary-100 bg-card p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-8"
+      aria-labelledby="security-title"
+      className="scroll-mt-24 space-y-5 rounded-2xl border border-border bg-card p-4 sm:p-5"
     >
-      <p className="text-xs font-bold tracking-[0.2em] text-secondary-400 uppercase">
-        Security
-      </p>
-      <h2 className="mt-2 text-2xl font-bold text-secondary-950">
-        Change password
-      </h2>
-      <p className="mt-2 max-w-2xl text-sm text-secondary-500">
-        Update your password to keep your account secure.
-      </p>
+      <div className="space-y-1">
+        <h2 id="security-title" className="text-lg font-bold text-foreground">
+          Sign-in and security
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          The email you sign in with, your password, and a code from your phone at sign-in.
+        </p>
+      </div>
 
+      <div className="flex items-start gap-3 rounded-xl border border-border bg-muted px-3.5 py-3">
+        <Mail className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <div className="min-w-0 space-y-1">
+          <p className="truncate text-sm font-semibold text-foreground">{email ?? "No email"}</p>
+          {emailVerified === false ? (
+            <StatusBadge tone="warning" icon={CircleAlert}>Not verified yet</StatusBadge>
+          ) : (
+            <StatusBadge tone="success" icon={BadgeCheck}>Verified · used to sign in</StatusBadge>
+          )}
+        </div>
+      </div>
+
+      <h3 className="text-sm font-semibold text-foreground">Password</h3>
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2"
+        className="grid grid-cols-1 gap-5 md:grid-cols-2"
       >
         <InputField
           label="Current Password"
@@ -125,12 +146,16 @@ const ChangePasswordForm = () => {
             type="submit"
             disabled={!isValid}
             loading={isSubmitting}
-            className="h-11 rounded-2xl bg-secondary-400 px-5 font-semibold text-white hover:bg-secondary-500"
+            className="rounded-xl"
           >
             Update password
           </Button>
         </div>
       </form>
+
+      <div className="border-t border-border pt-5">
+        <TwoFactorSection />
+      </div>
     </section>
   );
 };

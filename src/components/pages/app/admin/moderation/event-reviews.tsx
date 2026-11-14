@@ -37,7 +37,7 @@ const REVIEW_FLAG_LABELS: Record<string, string> = {
   flagged_words: "Words we check",
   high_risk_organiser: "High-risk organiser",
   recently_restricted: "Organiser restricted recently",
-  recently_reported: "Organiser reported recently",
+  recently_reported: "Organiser's events reported recently (upheld)",
 };
 
 /**

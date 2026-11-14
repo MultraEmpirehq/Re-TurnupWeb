@@ -21,7 +21,9 @@ export type TAdminPermission =
   | "FINANCE_MANAGE"
   | "ANALYTICS_VIEW"
   | "ACTIONS_UNDO"
-  | "EVENTS_HOST";
+  | "EVENTS_HOST"
+  | "SALES_MANAGE"
+  | "STAFF_MANAGE";
 
 /** Every permission, in the order the admin screens list them. */
 export const ADMIN_PERMISSIONS: {
@@ -122,6 +124,18 @@ export const ADMIN_PERMISSIONS: {
     label: "Create events",
     description:
       "Create events hosted by Turnupz, with sales paid to the Turnupz account, and set up draft events for organisers to check and publish.",
+  },
+  {
+    value: "SALES_MANAGE",
+    label: "Manage sales leads",
+    description:
+      "See and answer sales and partnership enquiries from the Contact page, and set the 'Book a call' link.",
+  },
+  {
+    value: "STAFF_MANAGE",
+    label: "Manage departments",
+    description:
+      "Put admins in departments (Support, Sales, Trust & safety, Finance, Marketing), choose each department's head, and set who hears about work nobody picked up.",
   },
   {
     value: "ADMINS_MANAGE",

@@ -56,7 +56,7 @@ const OrganiserNameCard = () => {
   };
 
   return (
-    <section className="space-y-5 rounded-3xl border border-secondary-100 bg-card p-6">
+    <section className="space-y-5 rounded-2xl border border-border bg-card p-4 sm:p-5">
       <div className="flex items-start gap-3">
         <span className="rounded-xl bg-secondary-50 p-2.5 text-secondary">
           <Megaphone className="size-5" aria-hidden />

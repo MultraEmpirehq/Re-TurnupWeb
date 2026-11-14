@@ -1,5 +1,6 @@
 "use client";
 
+import StatusBadge from "@/components/ui/status-badge";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import EmptyContainer from "@/components/ui/empty-container";
@@ -36,12 +37,32 @@ const STATUS_TONES: Record<TReportStatus, string> = {
   dismissed: "bg-muted text-muted-foreground",
 };
 
-const TABS: { value: TReportStatus | undefined; label: string }[] = [
-  { value: "open", label: "Open" },
+/** "Needs review" is what reached a bar (several people, trusted reporters); single reports wait apart. */
+type TTab = "review" | "single" | "resolved" | "dismissed" | "all";
+const TABS: { value: TTab; label: string }[] = [
+  { value: "review", label: "Needs review" },
+  { value: "single", label: "Single reports" },
   { value: "resolved", label: "Resolved" },
   { value: "dismissed", label: "Dismissed" },
-  { value: undefined, label: "All" },
+  { value: "all", label: "All" },
 ];
+const TAB_QUERY: Record<TTab, { status?: TReportStatus; level?: "review" | "single" }> = {
+  review: { status: "open", level: "review" },
+  single: { status: "open", level: "single" },
+  resolved: { status: "resolved" },
+  dismissed: { status: "dismissed" },
+  all: {},
+};
+
+/** How much one report counts, in words. */
+const weightNote = (report: IEventReport) =>
+  report.weight === 0
+    ? "Not counted: the organiser's team"
+    : report.weight === 2
+      ? "Counts double: ticket holder or buyer"
+      : report.weight === 0.5
+        ? "Counts half: new account or often dismissed"
+        : null;
 
 type TClosing = {
   report: IEventReport;
@@ -53,10 +74,10 @@ type TClosing = {
  * needed, then close the report as resolved (something was done) or dismissed.
  */
 const EventReports = () => {
-  const [status, setStatus] = useState<TReportStatus | undefined>("open");
+  const [tab, setTab] = useState<TTab>("review");
   const [page, setPage] = useState(1);
-  useEffect(() => setPage(1), [status]);
-  const { data, error, isLoading, refetch } = useEventReports(status, page);
+  useEffect(() => setPage(1), [tab]);
+  const { data, error, isLoading, refetch } = useEventReports(TAB_QUERY[tab].status, page, TAB_QUERY[tab].level);
   const resolve = useResolveReport();
   const [closing, setClosing] = useState<TClosing>(null);
   const [contact, setContact] = useState<TOrganiserContactTarget | null>(null);
@@ -91,11 +112,12 @@ const EventReports = () => {
   return (
     <div className="space-y-6">
       <PageHeading title="Reported Events">
-        Events attendees have flagged. Check the event, act if it needs it (you
-        can suspend it from Manage Events), then close the report.
+        Every report is kept, but an event only needs a look once several
+        people report it, weighted by trust and reason. Strong scam reports
+        from ticket holders pause new sales until you close them.
       </PageHeading>
 
-      <FilterTabs tabs={TABS} value={status} onChange={setStatus} />
+      <FilterTabs tabs={TABS} value={tab} onChange={setTab} />
 
       {isLoading && <ListSkeleton />}
 
@@ -112,8 +134,12 @@ const EventReports = () => {
       {!isLoading && !error && reports.length === 0 && (
         <EmptyContainer
           icon={<Flag className="size-6" />}
-          title={status === "open" ? "No open reports" : "No reports here"}
-          description="Reports from attendees will show up here."
+          title={tab === "review" ? "Nothing needs a look" : "No reports here"}
+          description={
+            tab === "review"
+              ? "Events show up here once enough people report them. Single reports are in their own tab."
+              : "Reports from attendees will show up here."
+          }
         />
       )}
 
@@ -137,6 +163,10 @@ const EventReports = () => {
                   >
                     {report.status}
                   </span>
+                  {report.event.salesPaused && (
+                    <StatusBadge tone="danger">New sales paused</StatusBadge>
+                  )}
+                  {report.holdsTicket && <StatusBadge tone="info">Ticket holder</StatusBadge>}
                   {report.event.openReports > 1 && (
                     <span className="text-xs font-medium text-danger">
                       {report.event.openReports} open reports on this event
@@ -153,6 +183,9 @@ const EventReports = () => {
                   })}
                   {" · "}event is {report.event.status.replace("_", " ")}
                 </p>
+                {weightNote(report) && (
+                  <p className="text-xs text-muted-foreground">{weightNote(report)}</p>
+                )}
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">
                 <Button

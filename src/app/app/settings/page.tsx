@@ -75,16 +75,17 @@ const SettingsPage = () => {
       )}
 
       {/* Photo, name and contact details: the one place for them in the dashboard. */}
-      <ProfileDetailsForm embedded />
+      {/* An admin's devices sit beside their details, and sign-in and
+          security under them, so neither column is left empty. */}
+      <ProfileDetailsForm
+        embedded
+        side={isAdmin ? <DevicesCard /> : undefined}
+        below={isAdmin ? <ChangePasswordForm /> : undefined}
+      />
 
       {isVendor && <TaxDetailsCard sellsIn={verification.countries} />}
 
-      {isAdmin ? (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <DevicesCard />
-          <ChangePasswordForm />
-        </div>
-      ) : (
+      {isAdmin ? null : (
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-6">
             {isVendor && <OrganiserNameCard />}

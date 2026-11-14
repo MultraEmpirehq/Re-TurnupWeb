@@ -1,5 +1,8 @@
 "use client";
 
+import PeriodFilter from "@/components/ui/period-filter";
+import { DEFAULT_PERIOD, periodPhrase, previousPhrase, type TPeriodDays } from "@/lib/periods";
+
 import { constructErrorMessage } from "@/api/functions";
 import ErrorContainer from "@/components/ui/error-container";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -51,11 +54,6 @@ const MUTED = "var(--muted-foreground)";
 
 type TPoint = { date: string; value: number };
 
-const RANGES: { value: TDashboardDays; label: string }[] = [
-  { value: 7, label: "7 days" },
-  { value: 30, label: "30 days" },
-  { value: 90, label: "90 days" },
-];
 
 const compact = (value: number) =>
   new Intl.NumberFormat(undefined, {
@@ -68,6 +66,8 @@ const Change: React.FC<{ value: number | null; days: number }> = ({
   value,
   days,
 }) => {
+  // All time has nothing before it to compare with.
+  if (days === 0) return null;
   if (value === null) {
     return (
       <span className="text-xs text-muted-foreground">new this period</span>
@@ -84,7 +84,7 @@ const Change: React.FC<{ value: number | null; days: number }> = ({
             ? "text-danger"
             : "text-muted-foreground",
       )}
-      title={`Compared with the ${days} days before`}
+      title={`Compared with ${previousPhrase(days as TPeriodDays) ?? "the period before"}`}
     >
       <Icon className="size-3.5" aria-hidden />
       {value > 0 ? "+" : ""}
@@ -264,7 +264,7 @@ type TMeasure = {
 
 const AdminDashboard = () => {
   const firstName = useUserStore((state) => state.userDetails?.firstName);
-  const [days, setDays] = useState<TDashboardDays>(30);
+  const [days, setDays] = useState<TDashboardDays>(DEFAULT_PERIOD);
   const { data, error, isLoading, refetch } = useAdminDashboard(days);
   const [currency, setCurrency] = useState<string | null>(null);
   const [measureKey, setMeasureKey] = useState<string | null>(null);
@@ -348,7 +348,9 @@ const AdminDashboard = () => {
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Dashboard</h1>
           <p className="text-sm text-muted-foreground">
             {firstName ? `Welcome back, ${firstName}. ` : ""}
-            The last {days} days, against the {days} before.
+            {days === 0
+              ? "Everything since Turnupz started."
+              : `${periodPhrase(days).replace(/^t/, "T")}, against ${previousPhrase(days)}.`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -381,30 +383,7 @@ const AdminDashboard = () => {
               </div>
             </div>
           )}
-          <div
-            role="radiogroup"
-            aria-label="Period"
-            className="inline-flex rounded-lg border p-1"
-            style={{ background: CARD, borderColor: LINE }}
-          >
-            {RANGES.map((range) => (
-              <button
-                key={range.value}
-                type="button"
-                role="radio"
-                aria-checked={days === range.value}
-                onClick={() => setDays(range.value)}
-                className={cn(
-                  "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
-                  days === range.value
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {range.label}
-              </button>
-            ))}
-          </div>
+          <PeriodFilter value={days} onChange={setDays} />
         </div>
       </div>
 
@@ -705,7 +684,7 @@ const Engagement: React.FC<{
             {engagement.referredSignUps.toLocaleString()}
           </p>
           <p className="text-xs text-muted-foreground">
-            Joined with an invite code in {days} days
+            Joined with an invite code in {days === 0 ? "all time" : periodPhrase(days as TPeriodDays).replace(/^the last /, "")}
           </p>
         </Tile>
       </div>
