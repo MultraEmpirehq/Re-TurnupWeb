@@ -135,7 +135,7 @@ const EditVenueDialog = ({ venue, onClose }: { venue: IVenueDetailsType | null; 
           <Button variant="outline" className="rounded-full" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button className="rounded-full" loading={saving} onClick={() => void save()}>
+          <Button className="rounded-full" loading={saving} onClick={() => save()}>
             Save
           </Button>
         </DialogFooter>
@@ -342,7 +342,7 @@ const AdminVenues = () => {
                 variant="outline"
                 className="rounded-full"
                 loading={venuesQuery.isFetchingNextPage}
-                onClick={() => void venuesQuery.fetchNextPage()}
+                onClick={() => venuesQuery.fetchNextPage()}
               >
                 Load more
               </Button>

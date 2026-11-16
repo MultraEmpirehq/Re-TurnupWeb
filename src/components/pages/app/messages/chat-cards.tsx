@@ -5,7 +5,7 @@ import { useEventChatMessages } from "@/hooks/use-event-chat";
 import { useEvent } from "@/hooks/use-event";
 import { useUserTickets } from "@/hooks/use-user-tickets";
 import { IChatSharedEvent, IEventChatGroup } from "@/lib/event-chat";
-import { formatEventTime } from "@/lib/event-time";
+import { formatEventTime, isEventOver } from "@/lib/event-time";
 import { ROUTES } from "@/lib/variables";
 import { cn } from "@/lib/utils";
 import { ChevronRight, TicketIcon } from "lucide-react";
@@ -148,7 +148,7 @@ export const AboutEventCard: React.FC<{
         href={eventHref(topic.id)}
         className="shrink-0 rounded-full bg-secondary-700 px-3 py-2 text-xs font-extrabold text-white hover:bg-secondary-800"
       >
-        Get tickets
+        {isEventOver(topic.date) ? "View event" : "Get tickets"}
       </Link>
     </div>
   );

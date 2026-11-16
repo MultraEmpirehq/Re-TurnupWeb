@@ -10,7 +10,6 @@ import {
   CircleDollarSign,
   ClipboardCheck,
   Coins,
-  Compass,
   Flag,
   Gift,
   Handshake,
@@ -314,8 +313,10 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         permission: "ANALYTICS_VIEW",
       },
       {
-        label: "Sales funnel",
+        label: "Funnel & sources",
         href: `${ADMIN_BASE}/analytics/funnel`,
+        // The old Buyer sources address redirects here.
+        alsoActiveOn: [`${ADMIN_BASE}/analytics/sources`],
         icon: ListFilter,
         permission: "ANALYTICS_VIEW",
       },
@@ -323,12 +324,6 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         label: "Events",
         href: `${ADMIN_BASE}/analytics/events`,
         icon: CalendarRange,
-        permission: "ANALYTICS_VIEW",
-      },
-      {
-        label: "Buyer sources",
-        href: `${ADMIN_BASE}/analytics/sources`,
-        icon: Compass,
         permission: "ANALYTICS_VIEW",
       },
     ],

@@ -29,6 +29,7 @@ import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   BellRing,
+  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -37,6 +38,12 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import StatusBadge from "@/components/ui/status-badge";
+import { VENUE_LAYOUTS, layoutOf, zoneLabel, type TVenueLayout } from "@/lib/venue-layouts";
+import VenueArranger from "@/components/three/venue-arranger";
+import { formatAppMoney, getCurrencyForCode, getCurrencyForCountry } from "@/lib/currency";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "@/lib/toast";
 import { uploadAttachment, uploadAttachments } from "@/api/attachments";
@@ -93,6 +100,19 @@ const createEmptyBlogPost = (): IEventBlogPostDetails => ({
   images: [],
   createdAt: new Date().toISOString(),
 });
+
+/** The parts of a ticket the form edits, to compare with what's saved. */
+const ticketKey = (ticket: IEventTicketOptionDetails) =>
+  JSON.stringify([
+    ticket.ticketName?.trim(),
+    getTicketPriceAmount(ticket.ticketPrice),
+    Number(ticket.ticketQuantity) || 0,
+    ticket.visibility ?? "public",
+    ticket.actionType ?? "paid",
+    !!ticket.transferable,
+    ticket.dayIndexes ?? [],
+    ticket.zone ?? "",
+  ]);
 
 const createEmptyTicket = (): IEventTicketOptionDetails => ({
   ticketName: "",
@@ -245,6 +265,12 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     [eventDays],
   );
   const [saleMethod, setSaleMethod] = useState("");
+  /** A save is running: the buttons wait, so one click saves once. */
+  const [saving, setSaving] = useState(false);
+  const router = useRouter();
+  const inAdminConsole = !!usePathname()?.startsWith("/app/admin");
+  /** The optional 3D ticket view's layout ("" = off). */
+  const [venueLayout, setVenueLayout] = useState("");
   const [taxInclusive, setTaxInclusive] = useState<boolean | null>(null);
   const [taxQualifying, setTaxQualifying] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(false);
@@ -290,6 +316,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
       totalTickets: `${data.totalTickets ?? 0}`,
     });
     setSaleMethod(data.saleMethod ?? "");
+    setVenueLayout(data.venueLayout ?? "");
     setTaxInclusive(data.taxInclusive ?? null);
     setTaxQualifying(!!data.taxQualifyingAdmission);
     setRequiresApproval(!!data.requiresApproval);
@@ -492,6 +519,35 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
   );
   const hasSales = soldTotal > 0;
   const savedDayIds = (data?.days ?? []).map((day) => day.id);
+
+  /** Brings a ticket card into view and puts the cursor in its name. */
+  const scrollToTicket = (index: number) => {
+    const card = document.querySelector<HTMLElement>(`[data-ticket-card="${index}"]`);
+    if (!card) return;
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    card.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true });
+  };
+
+  const addTicketCategory = () => {
+    const index = eventTickets.length;
+    setEventTickets((current) => [...current, createEmptyTicket()]);
+    // Once it's on the page.
+    setTimeout(() => scrollToTicket(index), 50);
+  };
+
+  /** What's on the server for each saved ticket, to tell saved from not. */
+  const savedTicketKeys = new Map(
+    (data.eventTickets ?? []).map((ticket) => [
+      ticket.id,
+      ticketKey({ ...ticket, dayIndexes: ticketDayIndexes(ticket.dayIds, data) }),
+    ]),
+  );
+  const ticketState = (ticket: IEventTicketOptionDetails): "saved" | "changed" | "new" =>
+    !ticket.id ? "new" : savedTicketKeys.get(ticket.id) === ticketKey(ticket) ? "saved" : "changed";
+  const unsavedTickets = eventTickets.filter((ticket) => {
+    const state = ticketState(ticket);
+    return state === "changed" || (state === "new" && (ticket.ticketName.trim() || Number(ticket.ticketQuantity) > 0));
+  }).length;
 
   const handleRemoveTicket = (index: number) => {
     setEventTickets((current) =>
@@ -734,7 +790,8 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     });
   };
 
-  const handleSave = async () => {
+  /** Saves everything; true when it all went through. */
+  const saveEvent = async (): Promise<boolean> => {
     const existingBlogPostIds = new Set(
       data.blogPosts?.map((post) => post.id) ?? [],
     );
@@ -763,6 +820,25 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     const newlyPublishedBlogPosts = cleanedBlogPosts.filter(
       (post) => !existingBlogPostIds.has(post.id),
     );
+    // A category missing its name or quantity used to be left out without a
+    // word (and a saved one was deleted). Say which one, and stop.
+    const incomplete = eventTickets.findIndex((ticket) => {
+      const named = !!ticket.ticketName.trim();
+      const counted = (Number(ticket.ticketQuantity) || 0) > 0;
+      const blankNew = !ticket.id && !named && !counted;
+      return !blankNew && !(named && counted);
+    });
+    if (incomplete >= 0) {
+      const ticket = eventTickets[incomplete];
+      toast.error(
+        `Ticket ${incomplete + 1}${ticket.ticketName.trim() ? ` (“${ticket.ticketName.trim()}”)` : ""} needs ${
+          ticket.ticketName.trim() ? "how many are on sale" : "a name"
+        } before it can be saved.`,
+      );
+      if (step !== 2) goTo(2);
+      requestAnimationFrame(() => scrollToTicket(incomplete));
+      return false;
+    }
     const cleanedEventTickets = eventTickets
       .map((ticket) => ({
         ...ticket,
@@ -811,7 +887,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
         .find(Boolean);
       if (ticketRulesProblem) {
         toast.error(ticketRulesProblem);
-        return;
+        return false;
       }
       try {
         // The event update carries the event's own fields. Tickets, passes and
@@ -857,6 +933,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
         );
         formData.append("description", formValues.description);
         if (saleMethod) formData.append("saleMethod", saleMethod);
+        formData.append("venueLayout", venueLayout || "none");
         if (saleMethod === "register") {
           formData.append("requiresApproval", String(requiresApproval));
         }
@@ -997,6 +1074,8 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
               ? { privateAccessCode: ticket.privateAccessCode }
               : {}),
             ...saleRulesPayload(ticket),
+            // Its area in the 3D view; only with a layout.
+            zone: venueLayout && ticket.zone && zoneLabel(venueLayout, ticket.zone) ? ticket.zone : "",
             ...(savedDayIds.length || data.days?.length
               ? {
                   dayIds: (multiDay ? (ticket.dayIndexes ?? []) : [])
@@ -1038,6 +1117,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
             ? "Saved. It's still waiting for an admin to approve it."
             : "Event updated successfully",
         );
+        return true;
       } catch (error) {
         // Part of the save may have landed; reload so the form shows what did.
         queryClient.invalidateQueries({ queryKey: ["event", id] });
@@ -1047,8 +1127,8 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
             "Unable to update this event right now.",
           ),
         );
+        return false;
       }
-      return;
     }
 
     updateDevMockEvent(id, {
@@ -1142,6 +1222,24 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     });
 
     toast.success("Event updated successfully");
+    return true;
+  };
+
+  /**
+   * One save at a time; saving from the last step goes back to the event, so
+   * it's clear it's done. Earlier steps stay put to keep editing.
+   */
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const saved = await saveEvent();
+      if (saved && step === EDIT_STEPS.length) {
+        router.push(`${inAdminConsole ? "/app/admin/events" : "/app/events"}/${id}`);
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -1186,7 +1284,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
           className="rounded-3xl border border-secondary-100 bg-card p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:rounded-[2.2rem] sm:p-8"
           onSubmit={(event) => {
             event.preventDefault();
-            handleSave();
+            void handleSave();
           }}
         >
           <div className="space-y-8">
@@ -1427,22 +1525,76 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                         Display, add, edit, or delete ticket categories shown in
                         the event preview.
                       </p>
+                      {unsavedTickets > 0 && (
+                        <p className="mt-2 text-sm font-semibold text-warning">
+                          {unsavedTickets === 1 ? "1 category isn't" : `${unsavedTickets} categories aren't`} saved
+                          yet. Press Save changes to keep {unsavedTickets === 1 ? "it" : "them"}.
+                        </p>
+                      )}
                     </div>
                     <Button
                       type="button"
                       variant="outline"
                       className="rounded-xl border-secondary-200"
-                      onClick={() =>
-                        setEventTickets((current) => [
-                          ...current,
-                          createEmptyTicket(),
-                        ])
-                      }
+                      onClick={addTicketCategory}
                     >
                       <Plus className="size-4" />
                       Add Category
                     </Button>
                   </div>
+
+                  {saleMethod !== "external_link" && (
+                    <div className="space-y-3 rounded-2xl border border-secondary-100 p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold text-secondary-950">3D view for buyers (optional)</p>
+                          <p className="text-sm text-secondary-500">
+                            Pick a layout, then choose each ticket&apos;s area. Buyers get &quot;View in 3D&quot; to see
+                            where they&apos;ll be. Skip it and they just see the list.
+                          </p>
+                        </div>
+                        <select
+                          value={venueLayout}
+                          onChange={(event) => setVenueLayout(event.target.value)}
+                          aria-label="3D layout"
+                          className="h-11 rounded-xl border border-secondary-200 bg-card px-3 text-sm"
+                        >
+                          <option value="">No 3D view</option>
+                          {VENUE_LAYOUTS.map((layout) => (
+                            <option key={layout.value} value={layout.value}>
+                              {layout.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      {venueLayout && (
+                        <>
+                          <p className="text-xs text-secondary-500">{layoutOf(venueLayout)?.description}</p>
+                          <VenueArranger
+                            layout={venueLayout as TVenueLayout}
+                            tickets={eventTickets.map((ticket, index) => {
+                              const amount = getTicketPriceAmount(ticket.ticketPrice);
+                              return {
+                                key: String(index),
+                                name: ticket.ticketName.trim(),
+                                priceLabel:
+                                  amount > 0
+                                    ? formatAppMoney(
+                                        amount,
+                                        data.currency
+                                          ? getCurrencyForCode(data.currency)
+                                          : getCurrencyForCountry(data.countryCode || data.country),
+                                      )
+                                    : "Free",
+                                zone: ticket.zone,
+                              };
+                            })}
+                            onAssign={(key, zone) => handleTicketChange(Number(key), "zone", zone ?? "")}
+                          />
+                        </>
+                      )}
+                    </div>
+                  )}
 
                   <div className="space-y-4">
                     <div className="grid gap-4 rounded-2xl bg-secondary-50 p-4 md:grid-cols-2">
@@ -1501,6 +1653,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                             qualifying={taxQualifying}
                             onTaxInclusive={setTaxInclusive}
                             onQualifying={setTaxQualifying}
+                            forTurnupz={!!data.hostedByTurnupz}
                           />
                         </div>
                       )}
@@ -1517,11 +1670,22 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                       return (
                         <div
                           key={`ticket-${index}`}
-                          className="rounded-2xl bg-secondary-50 p-4"
+                          data-ticket-card={index}
+                          className={cn(
+                            "scroll-mt-24 rounded-2xl bg-secondary-50 p-4 ring-1 transition-shadow",
+                            ticketState(ticket) === "saved" ? "ring-transparent" : "ring-warning-line",
+                          )}
                         >
                           <div className="mb-4 flex items-center justify-between gap-3">
-                            <p className="text-sm font-semibold text-secondary-950">
+                            <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-secondary-950">
                               Ticket {index + 1}
+                              {ticketState(ticket) === "saved" ? (
+                                <StatusBadge tone="success" icon={Check}>Saved</StatusBadge>
+                              ) : (
+                                <StatusBadge tone="warning">
+                                  {ticketState(ticket) === "new" ? "New: not saved yet" : "Changed: not saved yet"}
+                                </StatusBadge>
+                              )}
                               {sold > 0 && (
                                 <span className="ml-2 rounded-full bg-card px-2 py-0.5 text-xs font-semibold text-secondary-600 ring-1 ring-secondary-200">
                                   {sold.toLocaleString()} sold · price locked
@@ -1667,6 +1831,23 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                                   category
                                 </span>
                               </label>
+                            )}
+                            {venueLayout && (
+                              <div className="space-y-2 md:col-span-2">
+                                <label className="text-sm font-medium text-secondary-700">Area in the 3D view</label>
+                                <select
+                                  value={ticket.zone ?? ""}
+                                  onChange={(event) => handleTicketChange(index, "zone", event.target.value)}
+                                  className="h-11 w-full rounded-xl border border-secondary-200 bg-card px-3 text-sm"
+                                >
+                                  <option value="">Not in the 3D view</option>
+                                  {layoutOf(venueLayout)?.zones.map((zone) => (
+                                    <option key={zone.value} value={zone.value}>
+                                      {zone.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
                             )}
                             <TicketSaleRulesFields
                               className="rounded-xl border border-secondary-200 bg-card p-3 md:col-span-2 xl:col-span-5"
@@ -2469,9 +2650,11 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                   <Button
                     type="submit"
                     variant="outline"
+                    disabled={saving}
+                    loading={saving}
                     className="h-12 w-full rounded-2xl border-secondary-200 px-7 text-base font-semibold text-secondary-950 hover:bg-secondary-50 sm:w-auto"
                   >
-                    Save changes
+                    {saving ? "Saving…" : "Save changes"}
                   </Button>
                   <Button
                     type="button"
@@ -2492,9 +2675,11 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                   </Button>
                   <Button
                     type="submit"
+                    disabled={saving}
+                    loading={saving}
                     className="h-12 w-full rounded-2xl px-7 text-base font-semibold sm:w-auto"
                   >
-                    Save changes
+                    {saving ? "Saving…" : "Save changes"}
                   </Button>
                 </>
               )}

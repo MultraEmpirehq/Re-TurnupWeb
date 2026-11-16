@@ -23,7 +23,9 @@ const FollowButton: React.FC<{
   className?: string;
   /** A round icon button, where there's no room for the word. */
   iconOnly?: boolean;
-}> = ({ type, id, name, className, iconOnly }) => {
+  /** In place of "Follow", e.g. "Follow for the next one". */
+  label?: string;
+}> = ({ type, id, name, className, iconOnly, label }) => {
   const router = useRouter();
   const pathname = usePathname();
   const isSignedIn = !!useUserStore((state) => state.userDetails);
@@ -60,7 +62,7 @@ const FollowButton: React.FC<{
   return (
     <Button
       type="button"
-      onClick={() => void handleClick()}
+      onClick={() => handleClick()}
       disabled={toggle.isPending || (isSignedIn && follows.isLoading)}
       aria-pressed={isFollowing}
       {...(iconOnly
@@ -81,7 +83,7 @@ const FollowButton: React.FC<{
       ) : (
         iconOnly ? <UserPlus className="size-4" aria-hidden /> : <Plus className="size-4" aria-hidden />
       )}
-      {!iconOnly && (isFollowing ? "Following" : "Follow")}
+      {!iconOnly && (isFollowing ? "Following" : label || "Follow")}
     </Button>
   );
 };

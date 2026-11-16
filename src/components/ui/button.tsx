@@ -1,42 +1,19 @@
+"use client";
+
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
-import { cva, type VariantProps } from "class-variance-authority";
+import { type VariantProps } from "class-variance-authority";
+import { buttonVariants } from "./button-variants";
 
 import { cn } from "@/lib/utils";
 import { Spinner } from "./spinner";
 
-const buttonVariants = cva(
-  "inline-flex items-center cursor-pointer disabled:cursor-not-allowed justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-        outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
-        "icon-sm": "size-8",
-        "icon-lg": "size-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  },
-);
 
+/**
+ * A click handler that returns a promise (a save, an upload, any API call)
+ * makes the button busy until it settles: it shows the spinner and ignores
+ * more clicks, so one click does the work once. `loading` still works as well.
+ */
 function Button({
   loading,
   className,
@@ -45,6 +22,7 @@ function Button({
   size,
   asChild = false,
   children,
+  onClick,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
@@ -52,13 +30,45 @@ function Button({
     loading?: boolean;
   }) {
   const Comp = asChild ? Slot : "button";
+  const [pending, setPending] = React.useState(false);
+  const pendingRef = React.useRef(false);
+  const mounted = React.useRef(true);
+  // Set on every mount: React's development mode mounts twice, and a flag left
+  // false by the first unmount kept the button busy for good.
+  React.useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const busy = !!loading || pending;
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (pendingRef.current) {
+      event.preventDefault();
+      return;
+    }
+    const result = onClick?.(event) as unknown;
+    if (result && typeof (result as Promise<unknown>).then === "function") {
+      pendingRef.current = true;
+      setPending(true);
+      void Promise.resolve(result)
+        .catch(() => undefined)
+        .finally(() => {
+          pendingRef.current = false;
+          if (mounted.current) setPending(false);
+        });
+    }
+  };
 
   return (
     <Comp
-      disabled={disabled || loading}
+      disabled={disabled || busy}
       data-slot="button"
-      data-loading={loading ? "true" : "false"}
+      data-loading={busy ? "true" : "false"}
+      aria-busy={busy || undefined}
       className={cn(buttonVariants({ variant, size, className }))}
+      onClick={onClick ? handleClick : undefined}
       {...props}
     >
       {/* Slot takes exactly one child, so an asChild button gets its children
@@ -67,7 +77,7 @@ function Button({
         children
       ) : (
         <>
-          {loading && <Spinner className="size-4 animate-spin" />}
+          {busy && <Spinner className="size-4 animate-spin" />}
           {children}
         </>
       )}

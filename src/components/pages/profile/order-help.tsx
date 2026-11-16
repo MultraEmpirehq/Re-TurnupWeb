@@ -63,7 +63,7 @@ const OrderHelp = ({
         className="w-full resize-none rounded-lg border px-3 py-2 text-sm outline-none focus:border-primary-400"
       />
       <div className="flex gap-2">
-        <Button onClick={() => void send()} loading={sending} disabled={!message.trim()}>
+        <Button onClick={() => send()} loading={sending} disabled={!message.trim()}>
           Send
         </Button>
         <Button variant="ghost" onClick={() => setOpen(false)}>

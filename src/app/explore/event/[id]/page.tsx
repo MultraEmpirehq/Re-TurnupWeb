@@ -2,7 +2,6 @@
 
 import { useParams, useSearchParams } from "next/navigation";
 import React, { memo, useCallback } from "react";
-import { toast } from "@/lib/toast";
 import { useEvent } from "@/hooks/use-event";
 import SectionContainer from "@/components/layouts/section-container/section-container";
 import ErrorContainer from "@/components/ui/error-container";
@@ -19,7 +18,11 @@ import {
 } from "@/components/pages/explore/event-detail";
 import { resolveAttachmentUrl } from "@/lib/functions";
 import { mediaItemsOf } from "@/components/pages/explore/event-detail/event-detail-media";
-import { eventZoneNote, instantToWallTimeInZone } from "@/lib/event-time";
+import {
+  eventZoneNote,
+  instantToWallTimeInZone,
+  isEventOver,
+} from "@/lib/event-time";
 import ReportEventButton from "@/components/pages/explore/event-detail/report-event-button";
 import HideEventButton from "@/components/pages/explore/event-detail/hide-event-button";
 import EventDetailLineup from "@/components/pages/explore/event-detail/event-detail-lineup";
@@ -36,6 +39,12 @@ import {
 import { postData } from "@/api";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
 import ExploreBackLink from "@/components/pages/explore/explore-back-link";
+import ShareEventDialog from "@/components/pages/explore/event-detail/share-event-dialog";
+import {
+  HighlightsDetails,
+  HighlightsGallery,
+} from "@/components/pages/explore/event-detail/event-highlights";
+import { useEventHighlights } from "@/hooks/use-event-highlights";
 import {
   BlogPostsBoard,
   SponsorsBoard,
@@ -45,7 +54,11 @@ const EventDetails = () => {
   const params = useParams();
   const id = params?.id?.toString() || "";
   const { data, error, refetch } = useEvent(id);
-  const [copied, setCopied] = React.useState(false);
+  // Fetched only once it's over; the gallery replaces the cover when there are some.
+  const { data: highlights } = useEventHighlights(
+    id,
+    isEventOver(data?.date, data?.endDate),
+  );
 
   // Arrived through someone's link: remember them for this event's checkout.
   const searchParams = useSearchParams();
@@ -72,36 +85,9 @@ const EventDetails = () => {
   );
   const shareUrl =
     typeof window !== "undefined" ? eventShareUrl(id, myUsername) : "";
-  const handleShare = useCallback(async () => {
-    const title = data?.name || "Event";
-    const text = data?.name ? `Check out ${data.name} on Turnup` : undefined;
-
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({
-          url: shareUrl,
-          title,
-          text,
-        });
-        setCopied(true);
-        toast.success("Shared successfully");
-        setTimeout(() => setCopied(false), 2000);
-      } catch (err) {
-        if (err instanceof Error && err.name === "AbortError") return;
-        toast.error("Failed to share");
-      }
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      toast.success("Link copied to clipboard");
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("Failed to copy link");
-    }
-  }, [shareUrl, data?.name]);
+  // Turnupz chat first, then the usual places outside.
+  const [sharing, setSharing] = React.useState(false);
+  const handleShare = useCallback(() => setSharing(true), []);
 
   if (!data && !error) return <EventDetailSkeleton />;
 
@@ -119,6 +105,7 @@ const EventDetails = () => {
       </SectionContainer>
     );
 
+  const ended = isEventOver(data?.date, data?.endDate);
   // Shown on the venue's clock, whatever zone the viewer is in.
   const eventDate = data?.date
     ? instantToWallTimeInZone(data.date, data.timezone)
@@ -147,21 +134,38 @@ const EventDetails = () => {
   return (
     <SectionContainer className="space-y-14 py-20">
       <ExploreBackLink />
-      <EventDetailHero
-        image={coverImageUrl}
-        name={data?.name}
-        venueName={data?.venue?.name}
-        date={eventDate}
-      />
+      {/* Over, with the organiser's highlights: they take the cover's place. */}
+      {ended && highlights?.organiser.length ? (
+        <HighlightsGallery eventId={id} />
+      ) : (
+        <EventDetailHero
+          image={coverImageUrl}
+          name={data?.name}
+          venueName={data?.venue?.name}
+          date={eventDate}
+        />
+      )}
 
       <EventDetailTitleRow
         eventId={id}
         salesPaused={!!data?.salesPaused}
+        ended={ended}
+        endedAction={
+          data?.organizerId && !isAdmin ? (
+            <FollowButton
+              type="PLANNER"
+              id={data.organizerId}
+              name={data.organizerName || "this planner"}
+              label="Follow for the next one"
+              className="rounded-xl"
+            />
+          ) : undefined
+        }
         name={data?.name}
         saleMethod={data?.saleMethod}
         ticketUrl={data?.ticketUrl}
         onShare={handleShare}
-        copied={copied}
+        copied={false}
         cta={
           isAdmin
             ? { label: "Manage in admin", href: `/app/admin/events/${id}` }
@@ -200,6 +204,23 @@ const EventDetails = () => {
           ) : undefined
         }
       />
+
+      <ShareEventDialog
+        open={sharing}
+        onOpenChange={setSharing}
+        eventId={id}
+        eventName={data?.name || "this event"}
+        url={shareUrl}
+      />
+
+      {ended && (
+        <HighlightsDetails
+          eventId={id}
+          eventName={data?.name || "this event"}
+          organizerId={data?.organizerId}
+          organizerName={data?.organizerName}
+        />
+      )}
 
       {(data?.days?.length ?? 0) > 1 ? (
         <EventDetailSchedule days={data!.days!} timezone={data?.timezone} />

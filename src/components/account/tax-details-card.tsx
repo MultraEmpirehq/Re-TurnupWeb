@@ -36,30 +36,32 @@ const field = "h-11 w-full rounded-xl border border-secondary-100 bg-card px-3 t
 const failed = (error: unknown, fallback: string) =>
   toast.error(constructErrorMessage(error as TApiErrorResponseType, fallback));
 
-const Registration: React.FC<{
+export const Registration: React.FC<{
   kind: TTaxKind;
   label: string;
   example?: string;
   canadian: boolean;
   saved?: { status: TTaxRegistrationStatus; number: string | null; reviewStatus: string; reviewNote: string | null };
-}> = ({ kind, label, example, canadian, saved }) => {
+  /** Saves somewhere else, e.g. Turnupz's own registrations (admins). */
+  onSave?: (kind: TTaxKind, body: { status: TTaxRegistrationStatus; number?: string }) => Promise<unknown>;
+  /** What to refresh after saving. */
+  queryKey?: string[];
+  /** Says "Turnupz is…" instead of "Are you…". */
+  who?: "you" | "turnupz";
+}> = ({ kind, label, example, canadian, saved, onSave, queryKey = ["vendor-tax"], who = "you" }) => {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<TTaxRegistrationStatus | "">(saved?.status ?? "");
   const [number, setNumber] = useState(saved?.number ?? "");
-  const [saving, setSaving] = useState(false);
   const changed = status !== (saved?.status ?? "") || number !== (saved?.number ?? "");
 
   const save = async () => {
     if (!status) return;
-    setSaving(true);
     try {
-      await saveTaxRegistration(kind, { status, ...(status === "REGISTERED" ? { number } : {}) });
-      await queryClient.invalidateQueries({ queryKey: ["vendor-tax"] });
+      await (onSave ?? saveTaxRegistration)(kind, { status, ...(status === "REGISTERED" ? { number } : {}) });
+      await queryClient.invalidateQueries({ queryKey });
       toast.success(`${label} saved.`);
     } catch (error) {
       failed(error, `We couldn't save your ${label}`);
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -73,20 +75,24 @@ const Registration: React.FC<{
       </div>
       <select
         className={field}
-        aria-label={`Are you registered for ${label}?`}
+        aria-label={`${who === "turnupz" ? "Is Turnupz" : "Are you"} registered for ${label}?`}
         value={status}
         onChange={(event) => setStatus(event.target.value as TTaxRegistrationStatus)}
       >
-        <option value="">Are you registered?</option>
-        <option value="REGISTERED">Yes, I&apos;m registered</option>
-        <option value="NOT_REGISTERED">No, I&apos;m not</option>
-        {canadian && <option value="SMALL_SUPPLIER">I&apos;m a small supplier and didn&apos;t register</option>}
+        <option value="">{who === "turnupz" ? "Is Turnupz registered?" : "Are you registered?"}</option>
+        <option value="REGISTERED">{who === "turnupz" ? "Yes, Turnupz is registered" : "Yes, I'm registered"}</option>
+        <option value="NOT_REGISTERED">{who === "turnupz" ? "No, it isn't" : "No, I'm not"}</option>
+        {canadian && (
+          <option value="SMALL_SUPPLIER">
+            {who === "turnupz" ? "Small supplier, not registered" : "I'm a small supplier and didn't register"}
+          </option>
+        )}
       </select>
       {status === "REGISTERED" && (
         <Input
           value={number}
           onChange={(event) => setNumber(event.target.value)}
-          placeholder={example ? `Your number, like ${example}` : "Your registration number"}
+          placeholder={example ? `The number, like ${example}` : "The registration number"}
           aria-label={`${label} registration number`}
         />
       )}
@@ -94,8 +100,8 @@ const Registration: React.FC<{
         <p className="text-sm text-danger">{saved.reviewNote}</p>
       )}
       {changed && !!status && (
-        <Button size="sm" onClick={save} disabled={saving || (status === "REGISTERED" && !number.trim())}>
-          {saving ? "Saving…" : "Save"}
+        <Button size="sm" onClick={save} disabled={status === "REGISTERED" && !number.trim()}>
+          Save
         </Button>
       )}
     </div>

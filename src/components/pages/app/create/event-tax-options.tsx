@@ -1,7 +1,7 @@
 "use client";
 
 import { Switch } from "@/components/ui/switch";
-import { useVendorTax } from "@/hooks/use-tax";
+import { useTurnupzTax, useVendorTax } from "@/hooks/use-tax";
 import React, { memo } from "react";
 
 /**
@@ -15,8 +15,12 @@ const EventTaxOptions: React.FC<{
   qualifying?: boolean;
   onTaxInclusive: (value: boolean) => void;
   onQualifying: (value: boolean) => void;
-}> = ({ countryCode, stateCode, taxInclusive, qualifying, onTaxInclusive, onQualifying }) => {
-  const { data } = useVendorTax();
+  /** An admin creating the event as Turnupz: Turnupz's registrations count. */
+  forTurnupz?: boolean;
+}> = ({ countryCode, stateCode, taxInclusive, qualifying, onTaxInclusive, onQualifying, forTurnupz }) => {
+  const own = useVendorTax(!forTurnupz);
+  const turnupz = useTurnupzTax(!!forTurnupz);
+  const data = forTurnupz ? turnupz.data : own.data;
   const registeredFor = (kind: string) =>
     data?.registrations.some(
       (row) => row.kind === kind && row.status === "REGISTERED" && row.reviewStatus !== "REJECTED",

@@ -173,8 +173,8 @@ export const useApproveCategory = () => {
   const refresh = useRefresh();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      postData(`/admin/catalogue-reviews/categories/${id}/approve`, {}),
+    mutationFn: ({ id, name }: { id: string; name?: string }) =>
+      postData(`/admin/catalogue-reviews/categories/${id}/approve`, name ? { name } : {}),
     onSuccess: () => {
       refresh();
       void queryClient.invalidateQueries({ queryKey: ["categories"] });

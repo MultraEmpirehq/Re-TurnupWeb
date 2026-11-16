@@ -114,7 +114,7 @@ const Waitlist = () => {
             Email the waitlist
           </Link>
         </Button>
-        <Button variant="outline" className="gap-2" onClick={() => void download()} loading={downloading}>
+        <Button variant="outline" className="gap-2" onClick={() => download()} loading={downloading}>
           <Download className="size-4" />
           Download CSV
         </Button>

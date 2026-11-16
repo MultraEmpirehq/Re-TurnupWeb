@@ -23,6 +23,8 @@ export interface VendorCurrencyEarnings {
   ticketsSold: number;
   sales: PriceDetailsType;
   fees: PriceDetailsType;
+  /** Stripe's own fees on sales paid into their Stripe account (optional for older responses). */
+  processingFees?: PriceDetailsType;
   earnings: PriceDetailsType;
   /** Paid to the organiser's bank by the payment platform. */
   paidDirect: PriceDetailsType;
@@ -70,6 +72,8 @@ export interface VendorSale {
   settledTo: string | null;
   amount: PriceDetailsType;
   fee: PriceDetailsType;
+  /** Stripe's own fee on this sale, when it came out of their share. */
+  processingFee?: PriceDetailsType;
   earnings: PriceDetailsType;
 }
 

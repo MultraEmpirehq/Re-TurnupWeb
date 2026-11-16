@@ -40,7 +40,7 @@ const csvCell = (value: string | number | null | undefined) => {
 /** The sales as a spreadsheet, amounts in major units. */
 const toCsv = (sales: VendorSale[]) => {
   const rows = [
-    ["Date", "Reference", "Event", "Tickets", "Quantity", "Promo code", "Currency", "Paid", "Turnupz fee", "You earn", "Status", "Paid to"],
+    ["Date", "Reference", "Event", "Tickets", "Quantity", "Promo code", "Currency", "Paid", "Turnupz fee", "Stripe fee", "You earn", "Status", "Paid to"],
     ...sales.map((sale) => [
       format(new Date(sale.date), "yyyy-MM-dd HH:mm"),
       sale.reference,
@@ -51,6 +51,7 @@ const toCsv = (sales: VendorSale[]) => {
       sale.amount.currency.code,
       sale.amount.formatted.withoutCurrency,
       sale.fee.formatted.withoutCurrency,
+      sale.processingFee?.formatted.withoutCurrency ?? "0",
       sale.status === "refunded" ? "0" : sale.earnings.formatted.withoutCurrency,
       sale.status === "refunded" ? "Refunded" : "Paid",
       sale.settlement === "direct" ? (sale.settledTo ?? "Your bank") : "Owed by Turnupz",
@@ -121,7 +122,7 @@ const SalesTable = ({
             className="rounded-full border-secondary-100 text-xs"
             loading={exporting}
             disabled={!sales.length}
-            onClick={() => void exportCsv()}
+            onClick={() => exportCsv()}
           >
             <Download className="size-3.5" />
             Export CSV
@@ -187,7 +188,18 @@ const SalesTable = ({
                       <Amount value={sale.amount.formatted.withCurrency} />
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
-                      {refunded ? "—" : <Amount value={`−${sale.fee.formatted.withCurrency}`} />}
+                      {refunded ? (
+                        "—"
+                      ) : (
+                        <>
+                          <Amount value={`−${sale.fee.formatted.withCurrency}`} />
+                          {!!sale.processingFee?.amount && (
+                            <span className="block text-xs">
+                              Stripe <Amount value={`−${sale.processingFee.formatted.withCurrency}`} />
+                            </span>
+                          )}
+                        </>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       {refunded ? (

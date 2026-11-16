@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { useAdminPendingCounts } from "@/hooks/use-admin-dashboard";
 import { cn } from "@/lib/utils";
+import CountBadge from "@/components/ui/count-badge";
 import useScrollFade from "@/hooks/use-scroll-fade";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
@@ -99,12 +100,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
         <Icon className="size-4.5 shrink-0" aria-hidden />
         <span className="min-w-0 flex-1 truncate">{item.label}</span>
         {badge > 0 && (
-          <span
-            className="shrink-0 rounded-full bg-primary px-2 py-1 text-xs font-semibold text-white"
-            aria-label={`${badge} waiting`}
-          >
-            {badge}
-          </span>
+          <CountBadge value={badge} />
         )}
       </Link>
     );
@@ -217,12 +213,7 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
                     )}
                   </span>
                   {!isExpanded && groupBadge > 0 && (
-                    <span
-                      className="shrink-0 rounded-full bg-primary px-2 py-1 text-xs font-semibold text-white"
-                      aria-label={`${groupBadge} awaiting review`}
-                    >
-                      {groupBadge}
-                    </span>
+                    <CountBadge value={groupBadge} label={`${groupBadge} awaiting review`} />
                   )}
                   {!isExpanded && isGroupActive && groupBadge === 0 && (
                     <span

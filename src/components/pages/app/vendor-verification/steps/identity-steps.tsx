@@ -14,6 +14,14 @@ import { Controller, useFormContext } from "react-hook-form";
 import AddressField from "@/components/ui/address-field";
 import { ChoiceCards, DocumentField } from "../fields";
 import { VerificationFormValues } from "../types";
+import SelectField from "@/components/ui/select-field";
+import {
+  BUSINESS_DOCUMENT_TYPES,
+  ID_TYPES,
+  REPRESENTATIVE_ROLES,
+  idHasNoExpiry,
+  idNeedsExpiry,
+} from "../id-options";
 
 
 /**
@@ -158,8 +166,11 @@ export const IdentityStep: React.FC<{ free?: boolean }> = ({ free }) => {
     register,
     getValues,
     setValue,
+    watch,
     formState: { errors },
   } = useFormContext<VerificationFormValues>();
+  const idType = watch("idType");
+  const idNumberLast4 = watch("idNumberLast4");
 
   // What they already told us when they signed up, so it isn't asked twice.
   // Only empty fields are filled, and each can still be changed (an ID may
@@ -297,23 +308,76 @@ export const IdentityStep: React.FC<{ free?: boolean }> = ({ free }) => {
           />
           <Controller
             control={control}
-            name="idExpiresOn"
+            name="idType"
             render={({ field, fieldState }) => (
-              <DateSelect
-                date={field.value}
-                setDate={field.onChange}
-                label="ID expiry date"
-                placeholder="When your ID expires"
+              <SelectField
+                label="Type of ID"
                 required
+                value={field.value}
+                setValue={field.onChange}
+                options={ID_TYPES}
+                placeholder="Choose the ID you uploaded"
                 error={fieldState.error?.message}
-                errorClassName="text-xs"
-                helperText="As printed on the ID. We'll remind you to upload a new one before it expires."
-                minDate={new Date()}
-                maxDate={new Date(new Date().getFullYear() + 25, 11, 31)}
                 inputClassName="h-11"
               />
             )}
           />
+          <InputField
+            label="ID number"
+            placeholder={idNumberLast4 ? `On file: ending ${idNumberLast4}` : "As printed on the ID"}
+            required={!idNumberLast4}
+            autoComplete="off"
+            {...register("idNumber")}
+            error={errors.idNumber?.message}
+            helperText={
+              idNumberLast4
+                ? "Leave it blank to keep the one on file."
+                : "Kept encrypted. Only the last 4 are ever shown, and only our verification team can see it in full."
+            }
+          />
+          <Controller
+            control={control}
+            name="idIssuedOn"
+            render={({ field, fieldState }) => (
+              <DateSelect
+                date={field.value}
+                setDate={field.onChange}
+                label="Issue date (valid from)"
+                placeholder="When the ID was issued"
+                error={fieldState.error?.message}
+                errorClassName="text-xs"
+                helperText="If it's printed on the ID."
+                minDate={new Date(new Date().getFullYear() - 50, 0, 1)}
+                maxDate={new Date()}
+                inputClassName="h-11"
+              />
+            )}
+          />
+          {!idHasNoExpiry(idType) && (
+            <Controller
+              control={control}
+              name="idExpiresOn"
+              render={({ field, fieldState }) => (
+                <DateSelect
+                  date={field.value}
+                  setDate={field.onChange}
+                  label="ID expiry date"
+                  placeholder="When your ID expires"
+                  required={idNeedsExpiry(idType)}
+                  error={fieldState.error?.message}
+                  errorClassName="text-xs"
+                  helperText={
+                    idNeedsExpiry(idType)
+                      ? "As printed on the ID. We'll remind you to upload a new one before it expires."
+                      : "If your ID has one. We'll remind you before it expires."
+                  }
+                  minDate={new Date()}
+                  maxDate={new Date(new Date().getFullYear() + 25, 11, 31)}
+                  inputClassName="h-11"
+                />
+              )}
+            />
+          )}
         </>
       )}
     </div>
@@ -325,7 +389,9 @@ export const BusinessStep = () => {
     register,
     formState: { errors },
     control,
+    watch,
   } = useFormContext<VerificationFormValues>();
+  const taxIdLast4 = watch("taxIdLast4");
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
       <InputField
@@ -343,19 +409,70 @@ export const BusinessStep = () => {
         {...register("businessRegistrationNumber")}
         error={errors.businessRegistrationNumber?.message}
       />
+      <Controller
+        control={control}
+        name="businessDocumentType"
+        render={({ field, fieldState }) => (
+          <SelectField
+            label="Registration document"
+            required
+            value={field.value}
+            setValue={field.onChange}
+            options={BUSINESS_DOCUMENT_TYPES}
+            placeholder="What proves the business exists"
+            error={fieldState.error?.message}
+            helperText="Upload it under Supporting document."
+            inputClassName="h-11"
+          />
+        )}
+      />
+      <Controller
+        control={control}
+        name="businessRegisteredOn"
+        render={({ field, fieldState }) => (
+          <DateSelect
+            date={field.value}
+            setDate={field.onChange}
+            label="Date registered"
+            placeholder="As on the certificate"
+            error={fieldState.error?.message}
+            errorClassName="text-xs"
+            minDate={new Date(1900, 0, 1)}
+            maxDate={new Date()}
+            inputClassName="h-11"
+          />
+        )}
+      />
       <InputField
         label="Authorised representative"
-        placeholder="Who can act for the business"
+        placeholder="Your full name, as on your ID"
         required
         {...register("authorizedRepresentative")}
         error={errors.authorizedRepresentative?.message}
+        helperText="The person applying. The ID you uploaded should be theirs."
+      />
+      <Controller
+        control={control}
+        name="representativeRole"
+        render={({ field, fieldState }) => (
+          <SelectField
+            label="Their role in the business"
+            required
+            value={field.value}
+            setValue={field.onChange}
+            options={REPRESENTATIVE_ROLES}
+            placeholder="Choose a role"
+            error={fieldState.error?.message}
+            inputClassName="h-11"
+          />
+        )}
       />
       <InputField
         label="Tax ID"
-        placeholder="If you have one"
+        placeholder={taxIdLast4 ? `On file: ending ${taxIdLast4}` : "If you have one"}
         {...register("taxId")}
         error={errors.taxId?.message}
-        helperText="Optional."
+        helperText={taxIdLast4 ? "Leave it blank to keep the one on file." : "Optional."}
       />
       <Controller
         control={control}

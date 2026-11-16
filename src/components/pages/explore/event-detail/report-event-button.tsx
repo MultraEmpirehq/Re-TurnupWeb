@@ -166,7 +166,7 @@ const ReportEventButton: React.FC<{
               type="button"
               disabled={!canSend || sending}
               loading={sending}
-              onClick={() => void handleSend()}
+              onClick={() => handleSend()}
               className="rounded-2xl bg-danger-solid text-white hover:bg-danger-solid"
             >
               Send report

@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import PeriodFilter from "@/components/ui/period-filter";
 import SegmentedControl from "@/components/ui/segmented-control";
 import { DEFAULT_PERIOD, periodPhrase, TPeriodDays } from "@/lib/periods";
@@ -25,7 +26,6 @@ import PayoutsList, {
   payoutState,
 } from "@/components/pages/app/wallet/payouts-list";
 import SalesTable from "@/components/pages/app/wallet/sales-table";
-import SplitExplainer from "@/components/pages/app/wallet/split-explainer";
 import WalletStats from "@/components/pages/app/wallet/wallet-stats";
 import { HideAmountsButton } from "@/components/pages/app/wallet/amount";
 import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status";
@@ -174,11 +174,9 @@ const WalletPage = () => {
             currency={account?.currency}
           />
 
-          <div className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">
+          <div className={cn("grid gap-5", !onStripe && "lg:grid-cols-[1.55fr_1fr]")}>
             <EarningsHero totals={totals} periodLabel={periodLabel} onItsWay={onItsWay} />
-            {onStripe ? (
-              <SplitExplainer currency={currency} />
-            ) : (
+            {!onStripe && (
               <PayoutAccountCard
                 account={account}
                 onChangeBank={workspace ? undefined : () => setChangingBank(true)}
@@ -210,17 +208,12 @@ const WalletPage = () => {
             onEventChange={setEventId}
           />
 
-          {(onFlutterwave || !onStripe) && (
-            <div className="grid gap-5 lg:grid-cols-2">
-              {onFlutterwave && (
-                <PayoutsList
-                  payouts={payouts.data ?? []}
-                  loading={payouts.isLoading}
-                  bankLabel={bankLabel}
-                />
-              )}
-              {!onStripe && <SplitExplainer currency={currency} />}
-            </div>
+          {onFlutterwave && (
+            <PayoutsList
+              payouts={payouts.data ?? []}
+              loading={payouts.isLoading}
+              bankLabel={bankLabel}
+            />
           )}
 
           {/* Also for a Nigerian organiser whose payouts need a bank picked first. */}

@@ -68,7 +68,15 @@ const WalletStats = ({
     <Stat
       label="Turnupz fee"
       value={<Amount value={totals.fees.formatted.withCurrency} />}
-      note="Taken at checkout"
+      note={
+        totals.processingFees?.amount ? (
+          <>
+            Plus <Amount value={totals.processingFees.formatted.withCurrency} /> Stripe fees
+          </>
+        ) : (
+          "Taken at checkout"
+        )
+      }
     />
     <Stat
       label="Refunded"

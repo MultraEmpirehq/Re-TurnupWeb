@@ -522,7 +522,7 @@ const AuthForm = ({ intent = "attendee" }: { intent?: TAuthIntent }) => {
                 variant="outline"
                 disabled={isBusy}
                 loading={isSendingCode}
-                onClick={() => void startCode("login")}
+                onClick={() => startCode("login")}
                 className="-mt-4 h-10 w-full rounded-md border-secondary-200 bg-card text-sm font-medium text-secondary-950"
               >
                 <Mail className="size-4" aria-hidden />

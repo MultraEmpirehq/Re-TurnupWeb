@@ -1,4 +1,6 @@
 ﻿"use client";
+import { VENUE_LAYOUTS, layoutOf, type TVenueLayout } from "@/lib/venue-layouts";
+import VenueArranger from "@/components/three/venue-arranger";
 import PaidSalesBlockers from "./paid-sales-blockers";
 import EventTaxOptions from "./event-tax-options";
 import RegistrationApprovalSwitch from "./registration-approval-switch";
@@ -11,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import TicketInput, { ITicketType } from "./ticket-input";
 import { IEventDayFormValue } from "./event-days-input";
 import AccessPassesInput, { IAccessPassType } from "./access-passes-input";
-import { getCurrencyForCountry } from "@/lib/currency";
+import { formatAppMoney, getCurrencyForCountry } from "@/lib/currency";
 import useUserStore from "@/stores/user-store";
 import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status";
 import { ROUTES } from "@/lib/variables";
@@ -27,6 +29,10 @@ export type { IAccessPassType };
 
 export interface ITicketFormValues {
   saleMethod: string;
+  /** The optional 3D ticket view's layout ("" = off). */
+  venueLayout?: string;
+  /** Admins: who hosts it ("turnupz", or an organiser's id). */
+  hostId?: string;
   eventTimezone?: string;
   ticketUrl?: string;
   eventTickets?: ITicketType[];
@@ -135,6 +141,7 @@ const TicketForm: React.FC<{
     setValue,
     setError,
     clearErrors,
+    getValues,
     formState: { errors, isSubmitting },
   } = useFormContext<ITicketFormValues>();
 
@@ -156,6 +163,7 @@ const TicketForm: React.FC<{
   );
 
   const saleMethod = watch("saleMethod");
+  const venueLayout = watch("venueLayout") ?? "";
   const eventCountry = watch("eventCountry");
   const eventCountryCode = watch("eventCountryCode");
   const eventStateCode = watch("eventStateCode");
@@ -415,6 +423,55 @@ const TicketForm: React.FC<{
           />
         )}
 
+        {(saleMethod === ESaleMethods.SELL_ON_TURNUP || saleMethod === ESaleMethods.REGISTER) && (
+          <div className="space-y-2 rounded-2xl border border-secondary-100 p-4">
+            <Controller
+              control={control}
+              name="venueLayout"
+              render={({ field }) => (
+                <SelectField
+                  label="3D view for buyers (optional)"
+                  value={field.value || "none"}
+                  setValue={(value) => field.onChange(value === "none" ? "" : value)}
+                  options={[
+                    { value: "none", label: "No 3D view" },
+                    ...VENUE_LAYOUTS.map((layout) => ({ value: layout.value, label: layout.label })),
+                  ]}
+                  helperText={
+                    venueLayout
+                      ? `${layoutOf(venueLayout)?.description} Choose each ticket's area below.`
+                      : "Pick a layout and choose each ticket's area: buyers get View in 3D to see where they'll be. Skip it and they see the list."
+                  }
+                />
+              )}
+            />
+            {venueLayout && (
+              <VenueArranger
+                layout={venueLayout as TVenueLayout}
+                tickets={(eventTickets ?? []).map((ticket, index) => ({
+                  key: String(index),
+                  name: ticket.ticketName.trim(),
+                  priceLabel:
+                    Number(ticket.ticketPrice) > 0
+                      ? formatAppMoney(Number(ticket.ticketPrice), ticketCurrency)
+                      : "Free",
+                  zone: ticket.zone,
+                }))}
+                onAssign={(key, zone) => {
+                  const current = getValues("eventTickets") ?? [];
+                  setValue(
+                    "eventTickets",
+                    current.map((ticket, index) =>
+                      index === Number(key) ? { ...ticket, zone: zone ?? "" } : ticket,
+                    ),
+                    { shouldDirty: true },
+                  );
+                }}
+              />
+            )}
+          </div>
+        )}
+
         {saleMethod === ESaleMethods.SELL_ON_TURNUP && (
           <>
             <Controller
@@ -436,6 +493,7 @@ const TicketForm: React.FC<{
                   currency={ticketCurrency}
                   dayNames={dayNames}
                   eventDate={eventDate}
+                  venueLayout={venueLayout || undefined}
                   dayStarts={dayStarts}
                 />
               )}
@@ -466,6 +524,7 @@ const TicketForm: React.FC<{
             qualifying={taxQualifyingAdmission}
             onTaxInclusive={(value) => setValue("taxInclusive", value, { shouldDirty: true })}
             onQualifying={(value) => setValue("taxQualifyingAdmission", value, { shouldDirty: true })}
+            forTurnupz={watch("hostId") === "turnupz"}
           />
         )}
 
@@ -494,6 +553,7 @@ const TicketForm: React.FC<{
                   currency={ticketCurrency}
                   dayNames={dayNames}
                   eventDate={eventDate}
+                  venueLayout={venueLayout || undefined}
                   dayStarts={dayStarts}
                 />
               )}

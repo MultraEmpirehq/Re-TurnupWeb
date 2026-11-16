@@ -24,6 +24,20 @@ type TPass = {
  * back (not a sideways swipe); the deck leans toward the pointer; tapping a
  * pass shows that time.
  */
+/**
+ * Two half-circle bites at the tear line (81px up from the bottom: padding,
+ * the footer row and its margin), cut from the card so it reads as a ticket
+ * on any background.
+ */
+const TICKET_NOTCH_MASK: React.CSSProperties = {
+  maskImage:
+    "radial-gradient(circle at 0 calc(100% - 81px), transparent 12px, #000 12.5px), radial-gradient(circle at 100% calc(100% - 81px), transparent 12px, #000 12.5px)",
+  maskComposite: "intersect",
+  WebkitMaskImage:
+    "radial-gradient(circle at 0 calc(100% - 81px), transparent 12px, #000 12.5px), radial-gradient(circle at 100% calc(100% - 81px), transparent 12px, #000 12.5px)",
+  WebkitMaskComposite: "source-in",
+};
+
 const PassDeck = () => {
   const areaRef = useRef<HTMLDivElement>(null);
   usePointerTilt(areaRef, areaRef, { maxX: 10, maxY: 14 });
@@ -113,8 +127,7 @@ const PassDeck = () => {
                 setFilters({ when: isActive ? undefined : pass.when });
               }}
               className={cn(
-                "absolute top-1/2 left-1/2 -mt-[170px] -ml-[130px] h-[340px] w-[260px] rounded-[26px] bg-linear-to-br text-left text-white transition-[transform,opacity,filter] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] [transform-style:preserve-3d]",
-                pass.tone,
+                "absolute top-1/2 left-1/2 -mt-[170px] -ml-[130px] h-[340px] w-[260px] rounded-[26px] text-left text-white transition-[transform,opacity,filter] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] [transform-style:preserve-3d]",
                 depth !== 0 && "saturate-75",
               )}
               style={{
@@ -127,7 +140,15 @@ const PassDeck = () => {
                 opacity: isLifting ? 0 : depth === 2 ? 0.75 : 1,
               }}
             >
-              <span className="absolute inset-0 overflow-hidden rounded-[26px]">
+              {/* The card itself, with real notches cut at the tear line, so
+                  whatever is behind shows through (painted circles showed as
+                  white dots over the cards behind and the banner). */}
+              <span
+                aria-hidden
+                className={cn("absolute inset-0 rounded-[26px] bg-linear-to-br", pass.tone)}
+                style={TICKET_NOTCH_MASK}
+              />
+              <span className="absolute inset-0 overflow-hidden rounded-[26px]" style={TICKET_NOTCH_MASK}>
                 <span className="absolute inset-0 bg-[linear-gradient(115deg,transparent_30%,rgba(255,255,255,0.32)_48%,transparent_62%)] [transform:translateX(calc(var(--mx,0)*45%))]" />
                 <span className="absolute inset-0 bg-[radial-gradient(circle_at_85%_8%,rgba(255,255,255,0.3),transparent_45%)]" />
               </span>
@@ -143,8 +164,6 @@ const PassDeck = () => {
                 </span>
                 <span className="relative my-5 block">
                   <span className="block border-t-2 border-dashed border-white/40" />
-                  <span className="absolute -top-3 -left-9 size-6 rounded-full bg-[#f7fbff]" />
-                  <span className="absolute -top-3 -right-9 size-6 rounded-full bg-[#f7fbff]" />
                 </span>
                 <span className="flex items-center justify-between text-sm font-semibold">
                   {isActive ? "Showing now" : "See what's on"}

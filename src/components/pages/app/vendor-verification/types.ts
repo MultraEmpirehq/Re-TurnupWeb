@@ -154,6 +154,15 @@ export type VendorVerificationApiResponse = SavedPayoutDigits & {
   dateOfBirth?: string | null;
   /** When the ID on file stops being valid (yyyy-mm-dd). */
   idExpiresOn?: string | null;
+  idType?: string | null;
+  idIssuedOn?: string | null;
+  /** Only the last 4 of the ID number ever come back. */
+  idNumberLast4?: string | null;
+  representativeRole?: string | null;
+  businessDocumentType?: string | null;
+  businessRegisteredOn?: string | null;
+  /** An individual's tax ID is kept encrypted: its last 4. */
+  taxIdLast4?: string | null;
   /** A new ID is waiting for the team to check it. */
   idRenewalSubmittedAt?: string | null;
   countryOfResidence?: string | null;
@@ -202,6 +211,16 @@ export interface VerificationFormValues {
   legalLastName: string;
   dateOfBirth?: Date;
   idExpiresOn?: Date;
+  idType: string;
+  idIssuedOn?: Date;
+  /** Typed only to add or change it; blank keeps the one on file. */
+  idNumber: string;
+  /** The one on file, to say so. */
+  idNumberLast4?: string | null;
+  representativeRole: string;
+  businessDocumentType: string;
+  businessRegisteredOn?: Date;
+  taxIdLast4?: string | null;
   countryOfResidence: string;
   address: string;
   phoneNumber: string;
@@ -237,6 +256,14 @@ export const DEFAULT_VALUES: VerificationFormValues = {
   legalLastName: "",
   dateOfBirth: undefined,
   idExpiresOn: undefined,
+  idType: "",
+  idIssuedOn: undefined,
+  idNumber: "",
+  idNumberLast4: null,
+  representativeRole: "",
+  businessDocumentType: "",
+  businessRegisteredOn: undefined,
+  taxIdLast4: null,
   countryOfResidence: "",
   address: "",
   phoneNumber: "",
@@ -291,6 +318,14 @@ export const formFromApi = (
         ? dateOfBirth
         : undefined,
     idExpiresOn: data.idExpiresOn ? new Date(data.idExpiresOn) : undefined,
+    idType: data.idType ?? "",
+    idIssuedOn: data.idIssuedOn ? new Date(data.idIssuedOn) : undefined,
+    idNumber: "",
+    idNumberLast4: data.idNumberLast4 ?? null,
+    representativeRole: data.representativeRole ?? "",
+    businessDocumentType: data.businessDocumentType ?? "",
+    businessRegisteredOn: data.businessRegisteredOn ? new Date(data.businessRegisteredOn) : undefined,
+    taxIdLast4: data.taxIdLast4 ?? null,
     countryOfResidence: data.countryOfResidence ?? "",
     address: data.address ?? "",
     phoneNumber: data.phoneNumber ?? "",
@@ -321,6 +356,9 @@ export const STEP_FIELDS: Record<VerificationStepKey, (keyof ApiPayload)[]> = {
     "legalLastName",
     "dateOfBirth",
     "idExpiresOn",
+    "idType",
+    "idIssuedOn",
+    "idNumber",
     "countryOfResidence",
     "address",
     "phoneNumber",
@@ -332,6 +370,9 @@ export const STEP_FIELDS: Record<VerificationStepKey, (keyof ApiPayload)[]> = {
     "businessAddress",
     "taxId",
     "authorizedRepresentative",
+    "representativeRole",
+    "businessDocumentType",
+    "businessRegisteredOn",
   ],
   payout: [
     "payoutCountry",
@@ -362,6 +403,12 @@ export interface ApiPayload {
   legalLastName?: string;
   dateOfBirth?: string;
   idExpiresOn?: string;
+  idType?: string;
+  idIssuedOn?: string;
+  idNumber?: string;
+  representativeRole?: string;
+  businessDocumentType?: string;
+  businessRegisteredOn?: string;
   countryOfResidence?: string;
   address?: string;
   phoneNumber?: string;
@@ -416,6 +463,14 @@ export const toApiPayload = (
       : undefined,
     idExpiresOn: values.idExpiresOn
       ? format(values.idExpiresOn, "yyyy-MM-dd")
+      : undefined,
+    idType: values.idType || undefined,
+    idIssuedOn: values.idIssuedOn ? format(values.idIssuedOn, "yyyy-MM-dd") : undefined,
+    idNumber: clean(values.idNumber),
+    representativeRole: values.representativeRole || undefined,
+    businessDocumentType: values.businessDocumentType || undefined,
+    businessRegisteredOn: values.businessRegisteredOn
+      ? format(values.businessRegisteredOn, "yyyy-MM-dd")
       : undefined,
     countryOfResidence: clean(values.countryOfResidence),
     address: clean(values.address),

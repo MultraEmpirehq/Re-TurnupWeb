@@ -53,6 +53,15 @@ const who = (
       person.email
     : "—";
 
+/** The create-venue form, filled in from what the organiser typed. */
+const createVenueHref = (suggestion: IVenueSuggestion) => {
+  const params = new URLSearchParams({ suggestion: suggestion.id, name: suggestion.name });
+  for (const key of ["address", "city", "state", "country"] as const) {
+    if (suggestion[key]) params.set(key, suggestion[key] as string);
+  }
+  return `${ROUTES.CREATE_VENUE.href}?${params.toString()}`;
+};
+
 const failed = (fallback: string) => (error: unknown) =>
   toast.error(constructErrorMessage(error as TApiErrorResponseType, fallback));
 
@@ -253,13 +262,13 @@ const VenueCard: React.FC<{ suggestion: IVenueSuggestion }> = ({
             <p className="text-xs text-muted-foreground">
               Not in the directory yet?{" "}
               <Link
-                href={ROUTES.CREATE_VENUE.href}
-                target="_blank"
+                href={createVenueHref(suggestion)}
                 className="inline-flex items-center gap-1 font-semibold text-primary-700 hover:underline"
               >
-                Create it <ExternalLink className="size-3" />
-              </Link>{" "}
-              (with its map location), then search for it here.
+                Create it from this <ExternalLink className="size-3" />
+              </Link>
+              : the form starts with what the organiser typed. Set the map pin, check the rest, and saving links
+              their event.
             </p>
           )}
 
@@ -383,6 +392,47 @@ const CategoryList: React.FC<{
   );
 };
 
+/** Lower case, letters and numbers only, no plural "s": "Afro-Beats" → "afrobeat". */
+const normalise = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .replace(/s$/, "");
+
+/** Letters that would have to change to turn one word into the other. */
+const editDistance = (a: string, b: string) => {
+  const row = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i++) {
+    let previous = row[0];
+    row[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const current = row[j];
+      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, previous + (a[i - 1] === b[j - 1] ? 0 : 1));
+      previous = current;
+    }
+  }
+  return row[b.length];
+};
+
+type TCategoryAdvice =
+  | { kind: "same"; match: { id: string; name: string } }
+  | { kind: "close"; match: { id: string; name: string } }
+  | { kind: "new" };
+
+/** Whether a typed category is one we already have (or nearly), so it's filed rather than added twice. */
+const adviseCategory = (name: string, listed: { id: string; name: string }[]): TCategoryAdvice => {
+  const typed = normalise(name);
+  if (!typed) return { kind: "new" };
+  const same = listed.find((item) => normalise(item.name) === typed);
+  if (same) return { kind: "same", match: same };
+  const close = listed.find((item) => {
+    const other = normalise(item.name);
+    if (other.length < 4 || typed.length < 4 || item.name === "Other") return false;
+    return other.includes(typed) || typed.includes(other) || (typed.length >= 5 && editDistance(typed, other) <= 2);
+  });
+  return close ? { kind: "close", match: close } : { kind: "new" };
+};
+
 const CategoryCard: React.FC<{ category: ICategoryForReview }> = ({
   category,
 }) => {
@@ -395,10 +445,23 @@ const CategoryCard: React.FC<{ category: ICategoryForReview }> = ({
       (listed ?? []).filter((item) => !item.id.startsWith("custom-category-")),
     [listed],
   );
+  // Starts as typed; fix spelling or capitals before adding.
+  const [name, setName] = useState(category.name);
+  const trimmed = name.trim().replace(/\s+/g, " ");
+  const advice = useMemo(() => adviseCategory(trimmed, options), [trimmed, options]);
+  const other = options.find((item) => item.name === "Other");
+  const suggested = advice.kind === "new" ? other : advice.match;
   const [into, setInto] = useState("");
-  const target =
-    options.find((item) => item.id === into) ??
-    options.find((item) => item.name === "Other");
+  const target = options.find((item) => item.id === into) ?? suggested;
+  const nameProblem =
+    trimmed.length < 2
+      ? "Give it a name"
+      : trimmed.length > 40
+        ? "Keep it under 40 characters"
+        : advice.kind === "same"
+          ? `There's already a category called ${advice.match.name}`
+          : null;
+  const busy = approve.isPending || merge.isPending;
 
   return (
     <li className="space-y-4 rounded-xl border border-border bg-card p-4">
@@ -423,21 +486,66 @@ const CategoryCard: React.FC<{ category: ICategoryForReview }> = ({
         )}
       </div>
 
+      <div
+        className={cn(
+          "rounded-lg px-3 py-2 text-sm",
+          advice.kind === "new" ? "bg-success-soft text-success" : "bg-warning-soft text-warning",
+        )}
+      >
+        {advice.kind === "same" ? (
+          <>
+            <strong>File it under {advice.match.name}.</strong> It&apos;s the same category, so it can&apos;t be
+            added twice.
+          </>
+        ) : advice.kind === "close" ? (
+          <>
+            <strong>Probably {advice.match.name}.</strong> It looks like the same thing under another name or
+            spelling. File it there, unless it&apos;s really something different.
+          </>
+        ) : category.eventsCount > 1 ? (
+          <>
+            <strong>You can add it.</strong> Nothing like it is listed yet, and {category.eventsCount} events already
+            use it.
+          </>
+        ) : (
+          <>
+            <strong>You can add it.</strong> Nothing like it is listed yet.{" "}
+            {category.eventsCount === 1 ? "It's on one event so far" : "No event uses it right now"}: add it if you
+            expect more events like it, or file it under Other.
+          </>
+        )}
+      </div>
+
       <div className="space-y-3 rounded-lg bg-muted/40 p-3">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-start gap-2">
+          <div className="min-w-48 flex-1 space-y-1">
+            <Input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              aria-label="Name to list it under"
+              maxLength={60}
+              className="h-8 bg-card"
+            />
+            {nameProblem && <p className="text-xs text-danger">{nameProblem}</p>}
+          </div>
           <Button
             size="sm"
-            disabled={approve.isPending || merge.isPending}
+            variant={advice.kind === "new" ? "default" : "outline"}
+            disabled={busy || !!nameProblem}
             onClick={() =>
-              approve.mutate(category.id, {
-                onSuccess: () =>
-                  toast.success(`${category.name} is now a category`),
-                onError: failed("Couldn't add it"),
-              })
+              approve.mutateAsync(
+                { id: category.id, name: trimmed },
+                {
+                  onSuccess: () => toast.success(`${trimmed} is now a category`),
+                  onError: failed("Couldn't add it"),
+                },
+              )
             }
           >
-            Add as a category
+            Add as a new category
           </Button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-muted-foreground">or file it under</span>
           <select
             value={target?.id ?? ""}
@@ -448,16 +556,17 @@ const CategoryCard: React.FC<{ category: ICategoryForReview }> = ({
             {options.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.name}
+                {item.id === suggested?.id ? " (suggested)" : ""}
               </option>
             ))}
           </select>
           <Button
             size="sm"
-            variant="outline"
-            disabled={!target || approve.isPending || merge.isPending}
+            variant={advice.kind === "new" ? "outline" : "default"}
+            disabled={!target || busy}
             onClick={() =>
               target &&
-              merge.mutate(
+              merge.mutateAsync(
                 { id: category.id, categoryId: target.id },
                 {
                   onSuccess: () =>
