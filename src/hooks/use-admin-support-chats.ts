@@ -1,6 +1,6 @@
 "use client";
 
-import { getData, postData } from "@/api";
+import { getData, patchData, postData } from "@/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export type TSupportChat = {
@@ -8,8 +8,13 @@ export type TSupportChat = {
   preview: string | null;
   lastMessageAt: string;
   person: { id: string; name: string; email: string; role: string };
-  /** Their message is the latest: it's waiting on the team. */
+  /** Their message is the latest and it isn't resolved: it's waiting on the team. */
   waitingOnUs: boolean;
+  /** Who said "I'm on it" (or replied first). */
+  pickedUpBy: { id: string; name: string } | null;
+  pickedUpAt: string | null;
+  /** Marked resolved; a new message from them reopens it. */
+  resolvedAt: string | null;
 };
 
 export type TSupportMessage = {
@@ -58,3 +63,75 @@ export const useReplyToSupport = (chatId: string | null) => {
     },
   });
 };
+
+/** "I'm on it" or "Mark resolved" on a support chat. */
+export const useSupportChatAction = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ chatId, action }: { chatId: string; action: "pick-up" | "resolve" }) =>
+      patchData(`/admin/support/chats/${chatId}/${action}`, undefined),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin-support-chats"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin-support-team"] });
+    },
+  });
+};
+
+export type TSupportTeam = {
+  /** Head of Support or an escalation admin: can hand chats to someone. */
+  canAssign: boolean;
+  meAway: boolean;
+  staff: { id: string; name: string; away: boolean; isHead: boolean; openChats: number }[];
+};
+
+/** Who takes live chats and who's away; checked again every 30 seconds. */
+export const useSupportTeam = (enabled = true) =>
+  useQuery({
+    queryKey: ["admin-support-team"],
+    enabled,
+    refetchInterval: 30_000,
+    queryFn: async () => (await getData<TSupportTeam>("/admin/support/chats/team")).data?.data ?? null,
+  });
+
+/** Hand a chat to someone on Support. */
+export const useAssignSupportChat = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ chatId, adminId }: { chatId: string; adminId: string }) =>
+      patchData(`/admin/support/chats/${chatId}/assign`, { adminId }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin-support-chats"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin-support-team"] });
+    },
+  });
+};
+
+/** Whether you're marked away (any admin). */
+export const useAdminAwayStatus = (enabled = true) =>
+  useQuery({
+    queryKey: ["admin-away"],
+    enabled,
+    queryFn: async () => (await getData<{ away: boolean; since: string | null }>("/admin/me/away")).data?.data ?? null,
+  });
+
+/** Away (alerts skip you; your live chats go back to Support) or back. Any admin. */
+export const useSupportAway = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (away: boolean) =>
+      (await patchData<{ away: boolean }, { away: boolean; released: number }>("/admin/me/away", { away })).data?.data,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin-away"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin-support-chats"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin-support-team"] });
+    },
+  });
+};
+
+/** The message after switching away on or off. */
+export const awayToast = (away: boolean, released = 0) =>
+  away
+    ? released
+      ? `You're away. ${released} open chat${released === 1 ? "" : "s"} went back to Support.`
+      : "You're away. Alerts will skip you until you're back."
+    : "You're back. Alerts reach you again.";

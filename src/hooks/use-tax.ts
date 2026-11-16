@@ -50,9 +50,10 @@ export type TVendorTaxOverview = {
   }[];
 };
 
-export const useVendorTax = () =>
+export const useVendorTax = (enabled = true) =>
   useQuery({
     queryKey: ["vendor-tax"],
+    enabled,
     queryFn: async () => (await getData<TVendorTaxOverview>("/vendor/tax")).data?.data,
   });
 
@@ -68,6 +69,19 @@ export const requestTaxExemption = (body: {
 }) => postData<typeof body, unknown>("/vendor/tax/exemptions", body);
 
 /* ---------------------------------------------------------------- admins */
+
+/** Turnupz's own registrations: they decide the tax on events Turnupz hosts. */
+export const useTurnupzTax = (enabled = true) =>
+  useQuery({
+    queryKey: ["turnupz-tax"],
+    enabled,
+    queryFn: async () => (await getData<TVendorTaxOverview>("/admin/tax/turnupz")).data?.data,
+  });
+
+export const saveTurnupzTaxRegistration = (
+  kind: TTaxKind,
+  body: { status: TTaxRegistrationStatus; number?: string },
+) => putData<typeof body, unknown>(`/admin/tax/turnupz/registrations/${kind}`, body);
 
 export type TTaxDecision = {
   id: string;

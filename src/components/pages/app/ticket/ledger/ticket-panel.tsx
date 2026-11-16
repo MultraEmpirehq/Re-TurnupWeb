@@ -205,7 +205,7 @@ const LetInAgain = ({ record, onDone }: { record: ILedgerRecord; onDone: () => v
         <Button variant="outline" size="sm" className="rounded-full" onClick={() => setOpen(false)}>
           Cancel
         </Button>
-        <Button size="sm" className="rounded-full" loading={saving} onClick={() => void submit()}>
+        <Button size="sm" className="rounded-full" loading={saving} onClick={() => submit()}>
           Let in again
         </Button>
       </div>

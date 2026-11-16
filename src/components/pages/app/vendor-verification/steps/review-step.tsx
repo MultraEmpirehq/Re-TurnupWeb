@@ -1,5 +1,6 @@
 "use client";
 
+import { BUSINESS_DOCUMENT_TYPES, ID_TYPES, REPRESENTATIVE_ROLES, labelOf } from "../id-options";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getAllCountryOptions } from "@/lib/vendor-verification-helpers";
 import { cn } from "@/lib/utils";
@@ -308,6 +309,21 @@ const ReviewSummary: React.FC<{
           <>
             <Row label="Address" value={values.address} />
             <Row label="Government ID" value={doc(values.idDocument)} />
+            <Row label="Type of ID" value={labelOf(ID_TYPES, values.idType) ?? ""} />
+            <Row
+              label="ID number"
+              value={
+                values.idNumber.trim()
+                  ? `Ending ${values.idNumber.replace(/[^0-9A-Za-z]/g, "").slice(-4).toUpperCase()}`
+                  : values.idNumberLast4
+                    ? `Ending ${values.idNumberLast4}`
+                    : ""
+              }
+            />
+            <Row
+              label="ID issued"
+              value={values.idIssuedOn ? format(values.idIssuedOn, "d MMMM yyyy") : ""}
+            />
             <Row
               label="ID expires"
               value={
@@ -327,8 +343,24 @@ const ReviewSummary: React.FC<{
             label="Registration number"
             value={values.businessRegistrationNumber}
           />
-          <Row label="Representative" value={values.authorizedRepresentative} />
-          <Row label="Tax ID" value={values.taxId} />
+          <Row
+            label="Registration document"
+            value={labelOf(BUSINESS_DOCUMENT_TYPES, values.businessDocumentType) ?? ""}
+          />
+          <Row
+            label="Registered"
+            value={values.businessRegisteredOn ? format(values.businessRegisteredOn, "d MMMM yyyy") : ""}
+          />
+          <Row
+            label="Representative"
+            value={[
+              values.authorizedRepresentative,
+              labelOf(REPRESENTATIVE_ROLES, values.representativeRole),
+            ]
+              .filter(Boolean)
+              .join(", ")}
+          />
+          <Row label="Tax ID" value={values.taxId || (values.taxIdLast4 ? `Ending ${values.taxIdLast4}` : "")} />
           <Row label="Address" value={values.businessAddress} />
         </Group>
       )}

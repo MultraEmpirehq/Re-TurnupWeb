@@ -419,7 +419,7 @@ const PromoteDialog: React.FC<{
                       variant="outline"
                       size="sm"
                       className="shrink-0 rounded-lg"
-                      onClick={() => void copy(link, "Link copied")}
+                      onClick={() => copy(link, "Link copied")}
                     >
                       <Copy className="size-3.5" aria-hidden />
                       Copy
@@ -449,7 +449,7 @@ const PromoteDialog: React.FC<{
                     variant="ghost"
                     size="sm"
                     className="mt-1 rounded-lg"
-                    onClick={() => void copy(caption, "Caption copied")}
+                    onClick={() => copy(caption, "Caption copied")}
                   >
                     <Copy className="size-3.5" aria-hidden />
                     Copy caption

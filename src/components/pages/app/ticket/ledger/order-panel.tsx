@@ -273,7 +273,7 @@ const OrderPanel = ({
                 variant="outline"
                 className="flex-1 rounded-full"
                 loading={exporting}
-                onClick={() => void exportOrder()}
+                onClick={() => exportOrder()}
               >
                 <Download className="size-4" aria-hidden />
                 Door list for this order

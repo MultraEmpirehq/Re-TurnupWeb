@@ -108,7 +108,9 @@ const EventListingCard: React.FC<{
     isAdmin &&
     has("EVENTS_HOST") &&
     (event.hostedByTurnupz === true || (event.preparedByYou === true && isDraft));
-  const canEdit = event.isOwner === true || hosts;
+  // A team member also needs "Manage events" (the api acts as the owner for them).
+  const { can: teamCan } = useActingVendor();
+  const canEdit = (event.isOwner === true && teamCan("EVENTS_MANAGE")) || hosts;
   const canDelete = canEdit || canModerate;
   // Moderators take a published event down or bring a suspended one back.
   const canSuspend = canModerate && event.status === "published";
@@ -117,7 +119,11 @@ const EventListingCard: React.FC<{
   // Admins can switch Promote off for everyone.
   const { promotion } = useFeatures();
   const canPromote =
-    event.isOwner === true && event.status === "published" && isUpcomingEvent(eventDate) && promotion;
+    event.isOwner === true &&
+    teamCan("EVENTS_MANAGE") &&
+    event.status === "published" &&
+    isUpcomingEvent(eventDate) &&
+    promotion;
   const [promoting, setPromoting] = useState(false);
   const buttonCount =
     1 + Number(canEdit) + Number(canDelete) + Number(canSuspend || canRestore);

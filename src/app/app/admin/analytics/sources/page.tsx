@@ -1,8 +1,6 @@
-import Sources from "@/components/pages/app/admin/analytics/sources";
-import React, { memo } from "react";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
+// Buyer sources is now part of the sales funnel page.
+const Page = () => redirect("/app/admin/analytics/funnel");
 
-const Page = () => <Sources />;
-
-export default memo(Page);
+export default Page;

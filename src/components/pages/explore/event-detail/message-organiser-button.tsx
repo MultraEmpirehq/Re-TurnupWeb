@@ -22,7 +22,10 @@ const MessageOrganiserButton: React.FC<{
   className?: string;
   /** A round icon button, where there's no room for the words. */
   iconOnly?: boolean;
-}> = ({ eventId, isOwner, className, iconOnly }) => {
+  /** In place of "Message organiser". */
+  label?: string;
+  variant?: "outline" | "default";
+}> = ({ eventId, isOwner, className, iconOnly, label, variant = "outline" }) => {
   const router = useRouter();
   const pathname = usePathname();
   const isSignedIn = !!useUserStore((state) => state.userDetails);
@@ -65,8 +68,8 @@ const MessageOrganiserButton: React.FC<{
   return (
     <Button
       type="button"
-      variant="outline"
-      onClick={() => void open()}
+      variant={variant}
+      onClick={() => open()}
       disabled={opening}
       aria-label={iconOnly ? "Message organiser" : undefined}
       title={iconOnly ? "Message organiser" : undefined}
@@ -77,7 +80,7 @@ const MessageOrganiserButton: React.FC<{
       ) : (
         <MessageCircle className="size-4" aria-hidden />
       )}
-      {!iconOnly && "Message organiser"}
+      {!iconOnly && (label ?? "Message organiser")}
     </Button>
   );
 };

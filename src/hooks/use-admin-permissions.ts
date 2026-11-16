@@ -23,7 +23,8 @@ export type TAdminPermission =
   | "ACTIONS_UNDO"
   | "EVENTS_HOST"
   | "SALES_MANAGE"
-  | "STAFF_MANAGE";
+  | "STAFF_MANAGE"
+  | "IDENTITY_REVEAL";
 
 /** Every permission, in the order the admin screens list them. */
 export const ADMIN_PERMISSIONS: {
@@ -136,6 +137,12 @@ export const ADMIN_PERMISSIONS: {
     label: "Manage departments",
     description:
       "Put admins in departments (Support, Sales, Trust & safety, Finance, Marketing), choose each department's head, and set who hears about work nobody picked up.",
+  },
+  {
+    value: "IDENTITY_REVEAL",
+    label: "See full ID numbers",
+    description:
+      "See a vendor's full ID number and tax ID (normally only the last 4), giving a reason each time. Every look is in the audit log. Give it only to the people who handle fraud, chargebacks and legal requests.",
   },
   {
     value: "ADMINS_MANAGE",

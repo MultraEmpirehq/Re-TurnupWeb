@@ -16,10 +16,16 @@ import useUserStore from "@/stores/user-store";
 import Link from "next/link";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import Change from "./change";
+import {
+  Amount,
+  HideAmountsButton,
+} from "@/components/pages/app/wallet/amount";
+import useHideAmounts from "@/stores/hide-amounts-store";
 import PeriodFilter from "@/components/ui/period-filter";
 import SegmentedControl from "@/components/ui/segmented-control";
 import { PERIODS as SITE_PERIODS } from "@/lib/periods";
 import SalesChart from "./sales-chart";
+import { Discovery } from "../dashboard-more";
 
 // One set of periods across the site (src/lib/periods.ts).
 const PERIODS = SITE_PERIODS.map((period) => ({
@@ -45,8 +51,103 @@ const Tile: React.FC<{
   </article>
 );
 
+/** A change as words: "up 12% on", "down 5% on", "level with". */
+const changeWords = (value: number | null | undefined, versus: string) =>
+  value === null || value === undefined
+    ? ""
+    : value === 0
+      ? `, level with the ${versus}`
+      : `, ${value > 0 ? "up" : "down"} ${Math.abs(value)}% on the ${versus}`;
+
+/** The period in plain sentences, from the same numbers as below. */
+const InShort: React.FC<{
+  data: IVendorInsights;
+  periodText: string;
+  versus: string;
+  days: number;
+}> = ({ data, periodText, versus, days }) => {
+  const { summary } = data;
+  const hidden = useHideAmounts((state) => state.hidden);
+  const lines: string[] = [];
+  if (!summary.ticketsSold) {
+    lines.push(`No tickets sold ${days ? `in ${periodText}` : "yet"}.`);
+  } else {
+    lines.push(
+      `You sold ${number(summary.ticketsSold)} ticket${summary.ticketsSold === 1 ? "" : "s"} to ${number(summary.buyers)} buyer${summary.buyers === 1 ? "" : "s"} ${days ? `in ${periodText}${changeWords(summary.ticketsSoldChange, versus)}` : "so far"}.`,
+    );
+    const money = summary.revenue.filter((item) => item.total.amount > 0);
+    if (money.length === 1) {
+      lines.push(
+        `That's ${hidden ? "••••••" : money[0].total.formatted?.withCurrency} in ticket sales${days ? changeWords(money[0].change, versus) : ""}.`,
+      );
+    } else if (money.length > 1) {
+      lines.push(
+        `Ticket sales: ${hidden ? "••••••" : money.map((item) => item.total.formatted?.withCurrency).join(", ")}.`,
+      );
+    }
+    const best = data.topTicketTypes[0];
+    if (best)
+      lines.push(
+        `Your best seller was ${best.name} for ${best.eventName} (${number(best.sold)} sold).`,
+      );
+    const source = data.sources?.[0];
+    if (source && source.key !== "direct") {
+      lines.push(
+        `Most buyers came from ${source.label.toLowerCase()} (${source.share ?? 0}% of paid orders).`,
+      );
+    } else if (source && data.sources!.length > 1) {
+      const next = data.sources![1];
+      lines.push(
+        `Besides direct links, most buyers came from ${next.label.toLowerCase()}.`,
+      );
+    }
+    const funnel = data.funnel;
+    if (funnel && funnel.views > 0 && funnel.bought < funnel.views) {
+      lines.push(
+        `About ${Math.round((funnel.bought / funnel.views) * 1000) / 10}% of your event page views turned into a paid order.`,
+      );
+    }
+  }
+  if (summary.checkInRate !== null) {
+    lines.push(
+      `${summary.checkInRate}% of ticket holders turned up at events that have started.`,
+    );
+  }
+  if (summary.upcomingEvents) {
+    lines.push(
+      `${number(summary.upcomingEvents)} of your events ${summary.upcomingEvents === 1 ? "is" : "are"} still to come.`,
+    );
+  }
+  return (
+    <section
+      className="rounded-3xl border border-primary/15 bg-primary/5 p-5 sm:p-6"
+      aria-labelledby="in-short"
+    >
+      <h2
+        id="in-short"
+        className="text-sm font-bold tracking-wide text-primary uppercase"
+      >
+        In short
+      </h2>
+      <ul className="mt-2 space-y-1.5 text-[15px] leading-relaxed text-secondary-900">
+        {lines.map((line) => (
+          <li key={line} className="flex gap-2">
+            <span
+              aria-hidden
+              className="mt-2.5 size-1.5 shrink-0 rounded-full bg-primary"
+            />
+            <span>{line}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+};
+
 const BigNumber: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <p className="text-3xl font-bold tracking-tight text-secondary-950">{children}</p>
+  <p className="text-3xl font-bold tracking-tight text-secondary-950">
+    {children}
+  </p>
 );
 
 const Card: React.FC<{
@@ -65,7 +166,9 @@ const Card: React.FC<{
     <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <h2 className="text-lg font-bold text-secondary-950">{title}</h2>
-        {subtitle && <p className="mt-0.5 text-sm text-secondary-500">{subtitle}</p>}
+        {subtitle && (
+          <p className="mt-0.5 text-sm text-secondary-500">{subtitle}</p>
+        )}
       </div>
       {action}
     </div>
@@ -93,18 +196,22 @@ const sortEvents = (events: IVendorInsights["events"], sort: TSort) => {
   return [...upcoming, ...past];
 };
 
-const SellThrough: React.FC<{ sold: number; capacity: number; percent: number | null }> = ({
-  sold,
-  capacity,
-  percent,
-}) => {
-  if (!capacity) return <span className="text-sm text-secondary-400">No tickets set</span>;
+const SellThrough: React.FC<{
+  sold: number;
+  capacity: number;
+  percent: number | null;
+}> = ({ sold, capacity, percent }) => {
+  if (!capacity)
+    return <span className="text-sm text-secondary-400">No tickets set</span>;
   const soldOut = sold >= capacity;
   return (
     <div className="min-w-[140px] space-y-1.5">
       <div className="flex items-baseline justify-between gap-2 text-sm">
         <span className="font-semibold text-secondary-950">
-          {number(sold)} <span className="font-normal text-secondary-400">/ {number(capacity)}</span>
+          {number(sold)}{" "}
+          <span className="font-normal text-secondary-400">
+            / {number(capacity)}
+          </span>
         </span>
         <span className="text-xs font-semibold text-secondary-500">
           {soldOut ? "Sold out" : `${percent ?? 0}%`}
@@ -121,7 +228,9 @@ const SellThrough: React.FC<{ sold: number; capacity: number; percent: number | 
 };
 
 const Skeleton: React.FC<{ className?: string }> = ({ className }) => (
-  <div className={cn("animate-pulse rounded-3xl bg-secondary-100/70", className)} />
+  <div
+    className={cn("animate-pulse rounded-3xl bg-secondary-100/70", className)}
+  />
 );
 
 /**
@@ -132,14 +241,17 @@ const Skeleton: React.FC<{ className?: string }> = ({ className }) => (
 const AnalysisPage = () => {
   const userDetails = useUserStore((state) => state.userDetails);
   const ownCurrency = getCurrencyForCountry(
-    userDetails?.platformCurrency || userDetails?.countryCode || userDetails?.country,
+    userDetails?.platformCurrency ||
+      userDetails?.countryCode ||
+      userDetails?.country,
   ).code;
 
   const [days, setDays] = useState<TInsightsDays>(30);
   useEffect(() => {
     try {
       const saved = Number(localStorage.getItem(PERIOD_KEY));
-      if (PERIODS.some((period) => period.days === saved)) setDays(saved as TInsightsDays);
+      if (PERIODS.some((period) => period.days === saved))
+        setDays(saved as TInsightsDays);
     } catch {
       // Starts on 30 days.
     }
@@ -169,6 +281,7 @@ const AnalysisPage = () => {
   );
   const data = filter.isFiltered ? filtered : everything;
 
+  const hidden = useHideAmounts((state) => state.hidden);
   const [metric, setMetric] = useState<"tickets" | "revenue">("tickets");
   const [sort, setSort] = useState<TSort>("upcoming");
 
@@ -196,13 +309,21 @@ const AnalysisPage = () => {
     () =>
       (data?.series ?? []).map((point) => ({
         start: point.start,
-        value: showRevenue ? (point.revenue[chartCurrency!] ?? 0) : point.tickets,
+        value: showRevenue
+          ? (point.revenue[chartCurrency!] ?? 0)
+          : point.tickets,
       })),
     [chartCurrency, data?.series, showRevenue],
   );
   const chartTotal = points.reduce((sum, point) => sum + point.value, 0);
-  const events = useMemo(() => sortEvents(data?.events ?? [], sort), [data?.events, sort]);
-  const topMax = Math.max(1, ...(data?.topTicketTypes ?? []).map((item) => item.sold));
+  const events = useMemo(
+    () => sortEvents(data?.events ?? [], sort),
+    [data?.events, sort],
+  );
+  const topMax = Math.max(
+    1,
+    ...(data?.topTicketTypes ?? []).map((item) => item.sold),
+  );
   const scope = filter.isFiltered ? ` priced in ${filter.selected}` : "";
   const periodText = days ? `the last ${period.label}` : "all time";
 
@@ -219,9 +340,16 @@ const AnalysisPage = () => {
           </p>
         </div>
         <div className="flex flex-col items-start gap-2 lg:items-end">
-          <PeriodFilter value={days} onChange={choosePeriod} />
+          <div className="flex flex-wrap items-center gap-2">
+            <HideAmountsButton className="h-9 border border-secondary-100 bg-card px-3 text-secondary-700 hover:bg-secondary-50" />
+            <PeriodFilter value={days} onChange={choosePeriod} />
+          </div>
           <CurrencyFilter
-            totals={codes.map<TCurrencyTotal>((code) => ({ code, amount: 0, formatted: "" }))}
+            totals={codes.map<TCurrencyTotal>((code) => ({
+              code,
+              amount: 0,
+              formatted: "",
+            }))}
             selected={filter.selected}
             onSelect={filter.select}
           />
@@ -244,6 +372,12 @@ const AnalysisPage = () => {
         </p>
       ) : (
         <>
+          <InShort
+            data={data}
+            periodText={periodText}
+            versus={period.previous}
+            days={days}
+          />
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Tile
               label="Tickets sold"
@@ -276,16 +410,31 @@ const AnalysisPage = () => {
               {revenue.length > 1 ? (
                 <ul className="space-y-0.5">
                   {revenue.map((item) => (
-                    <li key={item.code} className="flex items-baseline justify-between gap-3">
+                    <li
+                      key={item.code}
+                      className="flex items-baseline justify-between gap-3"
+                    >
                       <span className="text-lg font-bold text-secondary-950">
-                        {item.total.formatted?.withCurrency}
+                        <Amount
+                          value={item.total.formatted?.withCurrency ?? ""}
+                        />
                       </span>
-                      <span className="text-xs font-semibold text-secondary-400">{item.code}</span>
+                      <span className="text-xs font-semibold text-secondary-400">
+                        {item.code}
+                      </span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <BigNumber>{revenue[0]?.total.formatted?.withCurrency ?? "No sales yet"}</BigNumber>
+                <BigNumber>
+                  {revenue[0] ? (
+                    <Amount
+                      value={revenue[0].total.formatted?.withCurrency ?? ""}
+                    />
+                  ) : (
+                    "No sales yet"
+                  )}
+                </BigNumber>
               )}
             </Tile>
             <Tile
@@ -311,7 +460,9 @@ const AnalysisPage = () => {
               }
             >
               <BigNumber>
-                {data.summary.checkInRate === null ? "—" : `${data.summary.checkInRate}%`}
+                {data.summary.checkInRate === null
+                  ? "—"
+                  : `${data.summary.checkInRate}%`}
               </BigNumber>
             </Tile>
           </section>
@@ -320,7 +471,7 @@ const AnalysisPage = () => {
             title="Sales over time"
             subtitle={
               showRevenue && money
-                ? `${money.format(chartTotal)} in ${periodText}`
+                ? `${hidden ? "••••••" : money.format(chartTotal)} in ${periodText}`
                 : `${number(chartTotal)} ticket${chartTotal === 1 ? "" : "s"} in ${periodText}`
             }
             action={
@@ -349,7 +500,9 @@ const AnalysisPage = () => {
                 integer={!showRevenue}
                 formatValue={(value) =>
                   showRevenue && money
-                    ? money.format(value)
+                    ? hidden
+                      ? "••••••"
+                      : money.format(value)
                     : `${number(value)} ticket${value === 1 ? "" : "s"}`
                 }
               />
@@ -361,10 +514,12 @@ const AnalysisPage = () => {
             )}
           </Card>
 
+          <Discovery data={data} />
+
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
             <Card
               title="Event performance"
-              subtitle={`${number(data.summary.events)} event${data.summary.events === 1 ? "" : "s"}${scope}, ${number(data.summary.upcomingEvents)} still to come. Totals are all time.`}
+              subtitle={`${number(data.summary.events)} event${data.summary.events === 1 ? "" : "s"}${scope}, ${number(data.summary.upcomingEvents)} still to come`}
               action={
                 <Segmented
                   label="Sort events"
@@ -379,22 +534,33 @@ const AnalysisPage = () => {
               }
             >
               {events.length === 0 ? (
-                <p className="py-10 text-center text-sm text-secondary-500">No events{scope} yet.</p>
+                <p className="py-10 text-center text-sm text-secondary-500">
+                  No events{scope} yet.
+                </p>
               ) : (
                 <div className="-mx-5 overflow-x-auto sm:-mx-6">
                   <table className="w-full min-w-[720px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-secondary-100 text-xs font-semibold tracking-wide text-secondary-400 uppercase">
-                        <th className="px-5 pb-3 font-semibold sm:px-6">Event</th>
+                        <th className="px-5 pb-3 font-semibold sm:px-6">
+                          Event
+                        </th>
                         <th className="px-3 pb-3 font-semibold">Sold</th>
                         <th className="px-3 pb-3 font-semibold">In period</th>
-                        <th className="px-3 pb-3 text-right font-semibold">Revenue</th>
-                        <th className="px-5 pb-3 text-right font-semibold sm:px-6">Checked in</th>
+                        <th className="px-3 pb-3 text-right font-semibold">
+                          Revenue
+                        </th>
+                        <th className="px-5 pb-3 text-right font-semibold sm:px-6">
+                          Checked in
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {events.map((event) => (
-                        <tr key={event.id} className="border-b border-secondary-50 last:border-0">
+                        <tr
+                          key={event.id}
+                          className="border-b border-secondary-50 last:border-0"
+                        >
                           <td className="max-w-[260px] px-5 py-3.5 sm:px-6">
                             <Link
                               href={`/app/events/${event.id}`}
@@ -404,8 +570,13 @@ const AnalysisPage = () => {
                             </Link>
                             <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-secondary-500">
                               {event.endDate
-                                ? formatEventDateRange(event.date, event.endDate)
-                                : formatEventTime(event.date, undefined, { withWeekday: false })}
+                                ? formatEventDateRange(
+                                    event.date,
+                                    event.endDate,
+                                  )
+                                : formatEventTime(event.date, undefined, {
+                                    withWeekday: false,
+                                  })}
                               {event.isPast && (
                                 <span className="rounded-full bg-secondary-50 px-1.5 py-0.5 font-semibold">
                                   Ended
@@ -426,11 +597,21 @@ const AnalysisPage = () => {
                             />
                           </td>
                           <td className="px-3 py-3.5 text-secondary-700">
-                            {event.soldInPeriod ? `+${number(event.soldInPeriod)}` : "—"}
+                            {event.soldInPeriod
+                              ? `+${number(event.soldInPeriod)}`
+                              : "—"}
                           </td>
                           <td className="px-3 py-3.5 text-right font-semibold whitespace-nowrap text-secondary-950">
-                            {event.sold ? event.revenue.formatted?.withCurrency : (
-                              <span className="font-normal text-secondary-400">—</span>
+                            {event.sold ? (
+                              <Amount
+                                value={
+                                  event.revenue.formatted?.withCurrency ?? ""
+                                }
+                              />
+                            ) : (
+                              <span className="font-normal text-secondary-400">
+                                —
+                              </span>
                             )}
                           </td>
                           <td className="px-5 py-3.5 text-right whitespace-nowrap text-secondary-700 sm:px-6">
@@ -446,9 +627,14 @@ const AnalysisPage = () => {
               )}
             </Card>
 
-            <Card title="Best-selling tickets" subtitle={`In ${periodText}${scope}`}>
+            <Card
+              title="Best-selling tickets"
+              subtitle={`In ${periodText}${scope}`}
+            >
               {data.topTicketTypes.length === 0 ? (
-                <p className="py-6 text-sm text-secondary-500">Nothing sold in this period yet.</p>
+                <p className="py-6 text-sm text-secondary-500">
+                  Nothing sold in this period yet.
+                </p>
               ) : (
                 <ol className="space-y-4">
                   {data.topTicketTypes.map((item) => (
@@ -467,7 +653,9 @@ const AnalysisPage = () => {
                             {number(item.sold)} sold
                           </span>
                           <span className="block text-xs text-secondary-500">
-                            {item.revenue.formatted?.withCurrency}
+                            <Amount
+                              value={item.revenue.formatted?.withCurrency ?? ""}
+                            />
                           </span>
                         </span>
                       </div>

@@ -4,6 +4,7 @@ import { getData } from "@/api";
 import { Button } from "@/components/ui/button";
 import Notice from "@/components/ui/notice";
 import useUserStore, { EUserRoles } from "@/stores/user-store";
+import { useActingVendor } from "@/stores/workspace-store";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -42,7 +43,10 @@ export const useOrganiserToDo = () => {
  */
 const OrganiserToDo = () => {
   const { data: items } = useOrganiserToDo();
-  if (!items?.length) return null;
+  // Working in someone else's account: their application and payouts aren't
+  // this person's to do (and the list would be their own account's).
+  const { isTeamMember } = useActingVendor();
+  if (isTeamMember || !items?.length) return null;
 
   return (
     <section aria-labelledby="to-do-title" className="space-y-3">

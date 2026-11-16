@@ -328,7 +328,7 @@ const PrivacyCard = () => {
                 type="button"
                 className="rounded-full"
                 loading={update.isPending}
-                onClick={() => void save()}
+                onClick={() => save()}
               >
                 Save changes
               </Button>

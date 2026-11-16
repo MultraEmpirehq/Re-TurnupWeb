@@ -242,6 +242,12 @@ export interface IVendorInsights {
     sold: number;
     revenue: PriceDetailsType;
   }[];
+  /** Page views to paid orders on these events in the period (older responses leave it out). */
+  funnel?: { views: number; ticketViews: number; started: number; bought: number };
+  /** What brought each paid order, most first. */
+  sources?: { key: string; label: string; orders: number; tickets: number; share: number | null }[];
+  /** The promo codes used most. */
+  codes?: { code: string; orders: number; tickets: number }[];
 }
 
 /** The analytics page: a period's sales, compared with the period before, and every event. */

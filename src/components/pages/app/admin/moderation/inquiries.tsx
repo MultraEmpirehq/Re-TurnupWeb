@@ -50,6 +50,8 @@ const replyLink = (inquiry: IInquiry) =>
     `Hi ${inquiry.name.split(" ")[0] || "there"},\n\n\n\n> ${inquiry.message.replace(/\n/g, "\n> ")}`,
   )}`;
 
+const CALENDLY_LINK = /^https:\/\/([a-z0-9-]+\.)?calendly\.com\//i;
+
 /** The sales booking link on the Contact page (sales team only). */
 const BookingLinkSetting = () => {
   const queryClient = useQueryClient();
@@ -72,6 +74,10 @@ const BookingLinkSetting = () => {
       className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:p-5"
       onSubmit={(event) => {
         event.preventDefault();
+        if (value.trim() && !CALENDLY_LINK.test(value.trim())) {
+          toast.error("Use your Calendly link (https://calendly.com/...)");
+          return;
+        }
         save.mutate();
       }}
     >
@@ -80,7 +86,7 @@ const BookingLinkSetting = () => {
         placeholder="https://calendly.com/turnupz/sales"
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        helperText="Calendly, Cal.com or a Google Calendar booking page. Leave empty to hide the button."
+        helperText="Your Calendly booking page. Leave empty to hide the button."
         containerClassName="min-w-0 flex-1"
       />
       <Button type="submit" className="rounded-xl" loading={save.isPending}>
@@ -224,7 +230,7 @@ const Inquiries = ({ scope = "support" }: { scope?: "support" | "sales" }) => {
                   className="rounded-lg"
                   loading={busyId === inquiry.id && pickUp.isPending}
                   disabled={!!busyId}
-                  onClick={() => void act(inquiry.id, "pickUp")}
+                  onClick={() => act(inquiry.id, "pickUp")}
                 >
                   <Hand className="size-4" aria-hidden /> I&apos;m on it
                 </Button>
@@ -242,7 +248,7 @@ const Inquiries = ({ scope = "support" }: { scope?: "support" | "sales" }) => {
                   className="rounded-lg"
                   loading={busyId === inquiry.id && resolve.isPending}
                   disabled={!!busyId}
-                  onClick={() => void act(inquiry.id, "resolve")}
+                  onClick={() => act(inquiry.id, "resolve")}
                 >
                   Mark resolved
                 </Button>

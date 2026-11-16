@@ -143,6 +143,8 @@ export interface IEventTicketOptionDetails {
   salesStartAt?: string | null;
   salesEndAt?: string | null;
   maxPerOrder?: number | null;
+  /** Its area in the event's 3D view. */
+  zone?: string | null;
   /** Inside its sales window right now. */
   isOnSale?: boolean;
   /** For a multi-day event: the days it admits on. Empty means every day. */
@@ -268,9 +270,13 @@ export interface IEventDetailsType {
   sponsors?: TEventSponsor[];
   sponsorImages?: string[];
   saleMethod?: string;
+  /** The optional 3D ticket view's layout; null: the list only. */
+  venueLayout?: string | null;
   ticketUrl?: string;
   venueName?: string;
   venueAddress?: string;
+  /** How many the venue holds (directory or typed-in), or null. */
+  venueCapacity?: number | null;
   eventCountry?: string;
   eventCountryCode?: string;
   eventState?: string;
@@ -335,6 +341,8 @@ export interface ITicketDetailsType {
   salesEndAt?: string | null;
   maxPerOrder?: number | null;
   isOnSale?: boolean;
+  /** Its area in the event's 3D view (see lib/venue-layouts). */
+  zone?: string | null;
 }
 
 export enum ETicketStatus {
@@ -612,6 +620,23 @@ export interface IVendorVerification {
   idExpiresOn?: string | null;
   /** A new ID sent by the organiser, waiting to be checked. */
   idRenewalSubmittedAt?: string | null;
+  idType?: string | null;
+  idIssuedOn?: string | null;
+  /** Only the last 4; the full number needs IDENTITY_REVEAL. */
+  idNumberLast4?: string | null;
+  representativeRole?: string | null;
+  businessDocumentType?: string | null;
+  businessRegisteredOn?: string | null;
+  authorizedRepresentative?: string | null;
+  taxId?: string | null;
+  taxIdLast4?: string | null;
+  /** Deleted 5 years after the account closed. */
+  identityPurgedAt?: string | null;
+  /** The same ID or registration number on other applications (admin view). */
+  duplicates?: {
+    idNumber: IIdentityDuplicate[];
+    registrationNumber: IIdentityDuplicate[];
+  };
   supportingDocumentDetails: IVerificationDocument | null;
   businessName: string | null;
   businessRegistrationNumber: string | null;
@@ -743,3 +768,15 @@ export const sponsorLogo = (sponsor: TEventSponsor) =>
 /** The organiser chose the name over the logo for this sponsor. */
 export const sponsorShowsName = (sponsor: TEventSponsor) =>
   typeof sponsor !== "string" && !!sponsor?.showName;
+
+/** Another application with the same ID or registration number. */
+export interface IIdentityDuplicate {
+  id: string;
+  reference: string | null;
+  status: string;
+  vendorId: string;
+  name: string;
+  email: string | null;
+  accountClosed: boolean;
+  suspended: boolean;
+}

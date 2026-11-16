@@ -1,4 +1,3 @@
-import DashboardEvents from "@/components/pages/app/dashboard-events";
 import DashboardOverview from "@/components/pages/app/dashboard-overview";
 import OrganiserToDo from "@/components/pages/app/organiser-to-do";
 import TwoFactorNudge from "@/components/account/two-factor-nudge";
@@ -12,7 +11,6 @@ const DashboardPage = () => {
       <OrganiserToDo />
       <TwoFactorNudge gap="2.5rem" />
       <DashboardOverview />
-      <DashboardEvents />
     </div>
   );
 };

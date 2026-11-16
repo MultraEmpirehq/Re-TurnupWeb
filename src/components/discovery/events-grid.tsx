@@ -48,7 +48,7 @@ const EventsGrid: React.FC<{
             variant="outline"
             className="rounded-full"
             loading={isFetchingNextPage}
-            onClick={() => void fetchNextPage()}
+            onClick={() => fetchNextPage()}
           >
             Load more
           </Button>

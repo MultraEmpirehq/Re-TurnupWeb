@@ -135,6 +135,12 @@ const Revenue = () => {
               note={totals && `${totals.tickets.toLocaleString()} tickets`}
             />
           </div>
+          {!!totals?.processingFees && (
+            <p className="text-xs text-muted-foreground">
+              Stripe took {compactMoney(totals.processingFees, currency)} in processing fees from organisers&apos; own Stripe
+              accounts. That comes out of their share, not Turnupz&apos;s.
+            </p>
+          )}
 
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
             <FinanceCard title="Sales and fees by month">

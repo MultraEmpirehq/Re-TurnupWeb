@@ -497,7 +497,7 @@ const VendorVenues = () => {
                 variant="outline"
                 className="rounded-full"
                 loading={directory.isFetchingNextPage}
-                onClick={() => void directory.fetchNextPage()}
+                onClick={() => directory.fetchNextPage()}
               >
                 Load more
               </Button>

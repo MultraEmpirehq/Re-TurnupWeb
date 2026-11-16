@@ -4,6 +4,7 @@ import { LogoWhiteSVG } from "@/assets/svg";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import CountBadge from "@/components/ui/count-badge";
 import useScrollFade from "@/hooks/use-scroll-fade";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
@@ -155,16 +156,10 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
                 <Icon className="size-4.5 shrink-0" aria-hidden />
                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
                 {badge > 0 && (
-                  <span
-                    className="shrink-0 rounded-full bg-primary px-2 py-1 text-xs font-semibold text-white tabular-nums"
-                    aria-label={
-                      item.badge === "chats"
-                        ? `${badge} unread`
-                        : `${badge} waiting for approval`
-                    }
-                  >
-                    {badge > 99 ? "99+" : badge}
-                  </span>
+                  <CountBadge
+                    value={badge}
+                    label={item.badge === "chats" ? `${badge} unread` : `${badge} waiting for approval`}
+                  />
                 )}
               </Link>
             );

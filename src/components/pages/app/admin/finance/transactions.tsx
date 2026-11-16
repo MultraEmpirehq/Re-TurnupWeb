@@ -63,6 +63,9 @@ const PaymentPanel: React.FC<{ row: IFinanceTransaction | null; currency: string
         ...(row.discount ? ([["Organiser discount", `−${money(row.discount, currency)}`]] as [string, string][]) : []),
         ["Ticket value", money(row.gross, currency), true],
         ["Turnupz fee", money(row.fee, currency)],
+        ...(row.processingFee
+          ? ([["Stripe fee (from the organiser's share)", `−${money(row.processingFee, currency)}`]] as [string, string][])
+          : []),
         [`To ${row.organiser ?? "the organiser"}`, money(row.toOrganiser, currency), true],
         ...(row.creditTopUp
           ? ([["Of that, Turnupz sends them later", money(row.creditTopUp, currency), false]] as [string, string, boolean][])
@@ -147,7 +150,7 @@ const Transactions = () => {
       // Everything matching, up to 5,000 rows.
       const all = await fetchFinanceTransactions(range, { status, q, page: 1, limit: 5000 });
       downloadCsv(`turnupz-transactions-${currency}.csv`, [
-        ["Date", "Order", "Status", "Buyer", "Event", "Organiser", "Provider", "Provider ref", "Tickets", `Ticket value (${currency})`, `Credit (${currency})`, `Turnupz fee (${currency})`, `To organiser (${currency})`, `Refunded (${currency})`, "Paid to"],
+        ["Date", "Order", "Status", "Buyer", "Event", "Organiser", "Provider", "Provider ref", "Tickets", `Ticket value (${currency})`, `Credit (${currency})`, `Turnupz fee (${currency})`, `Stripe fee (${currency})`, `To organiser (${currency})`, `Refunded (${currency})`, "Paid to"],
         ...all.items.map((row) => [
           format(new Date(row.createdAt), "yyyy-MM-dd HH:mm"),
           row.reference,
@@ -161,6 +164,7 @@ const Transactions = () => {
           row.gross,
           row.credit,
           row.fee,
+          row.processingFee ?? 0,
           row.toOrganiser,
           row.refunded,
           settledText(row),

@@ -1,7 +1,12 @@
 "use client";
 
 import PeriodFilter from "@/components/ui/period-filter";
-import { DEFAULT_PERIOD, periodPhrase, previousPhrase, type TPeriodDays } from "@/lib/periods";
+import {
+  DEFAULT_PERIOD,
+  periodPhrase,
+  previousPhrase,
+  type TPeriodDays,
+} from "@/lib/periods";
 
 import { constructErrorMessage } from "@/api/functions";
 import ErrorContainer from "@/components/ui/error-container";
@@ -19,7 +24,6 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   CalendarCheck,
-  ChevronDown,
   Minus,
   Moon,
   ShoppingBag,
@@ -30,7 +34,8 @@ import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { ROUTES } from "@/lib/variables";
 import Link from "next/link";
 import React, { memo, useMemo, useState } from "react";
-import QuickLinks from "./quick-links";
+import AdminToDo from "./admin-to-do";
+import TwoFactorNudge from "@/components/account/two-factor-nudge";
 import styles from "./admin-dashboard.module.css";
 import { toast } from "@/lib/toast";
 import {
@@ -53,7 +58,6 @@ const BLUE = "var(--primary)";
 const MUTED = "var(--muted-foreground)";
 
 type TPoint = { date: string; value: number };
-
 
 const compact = (value: number) =>
   new Intl.NumberFormat(undefined, {
@@ -333,7 +337,13 @@ const AdminDashboard = () => {
   }, [money, sections]);
   const measure =
     measures.find((item) => item.key === measureKey) ?? measures[0] ?? null;
-  const latest = data?.activity?.[0];
+  const hasFigures = !!(
+    sections?.people ||
+    sections?.events ||
+    sections?.money ||
+    sections?.growth ||
+    sections?.engagement
+  );
 
   return (
     <div
@@ -345,7 +355,9 @@ const AdminDashboard = () => {
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            Dashboard
+          </h1>
           <p className="text-sm text-muted-foreground">
             {firstName ? `Welcome back, ${firstName}. ` : ""}
             {days === 0
@@ -367,25 +379,12 @@ const AdminDashboard = () => {
             )}
             {isDarkMode ? "Light mode" : "Dark mode"}
           </button>
-          {latest && (
-            <div
-              className="flex items-center gap-3 rounded-xl border px-3 py-2"
-              style={{ background: CARD, borderColor: LINE }}
-            >
-              <ActivityIcon kind={latest.kind} />
-              <div className="text-xs">
-                <p className="font-semibold">{latest.title}</p>
-                <p className="text-muted-foreground">
-                  {formatDistanceToNow(new Date(latest.at), {
-                    addSuffix: true,
-                  })}
-                </p>
-              </div>
-            </div>
-          )}
           <PeriodFilter value={days} onChange={setDays} />
         </div>
       </div>
+
+      {/* Under the heading, on the dashboard's own background. */}
+      <TwoFactorNudge gap="1rem" />
 
       {isLoading && <DashboardSkeleton />}
       {!!error && !isLoading && (
@@ -400,81 +399,98 @@ const AdminDashboard = () => {
 
       {data && (
         <>
-          <QuickLinks />
-          {sections?.growth && <Audience growth={sections.growth} />}
+          {!hasFigures ? (
+            // No figures in their permissions: their work, full width.
+            <>
+              <AdminToDo />
+              <p className="text-sm text-muted-foreground">
+                Your permissions don&apos;t include dashboard figures. Your
+                sections are in the menu on the left.
+              </p>
+            </>
+          ) : (
+            <>
+              <KpiRow data={data} money={money} days={days} />
 
-          <KpiRow data={data} money={money} days={days} />
-
-          {measure && (
-            <Card>
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <label className="relative inline-flex items-center">
-                    <span className="sr-only">Chart</span>
-                    <select
-                      value={measure.key}
-                      onChange={(event) => setMeasureKey(event.target.value)}
-                      className="appearance-none rounded-lg bg-transparent py-1 pr-7 text-sm font-semibold text-foreground focus:outline-none"
-                    >
-                      {measures.map((item) => (
-                        <option
-                          key={item.key}
-                          value={item.key}
-                          className="text-foreground"
-                        >
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-1 size-4 text-muted-foreground" />
-                  </label>
-                  <span className="text-sm font-semibold">{measure.total}</span>
-                  <Change value={measure.change} days={days} />
-                </div>
-                {(sections?.money?.length ?? 0) > 1 &&
-                  measure.key === "sales" && (
-                    <div className="flex gap-1">
-                      {sections!.money!.map((row) => (
-                        <button
-                          key={row.currency}
-                          type="button"
-                          onClick={() => setCurrency(row.currency)}
-                          className={cn(
-                            "rounded-md px-2 py-1 text-xs font-semibold",
-                            row.currency === money?.currency
-                              ? "bg-primary/10 text-primary"
-                              : "text-muted-foreground hover:text-foreground",
+              {/* What needs doing sits beside the main trend, so it's seen first. */}
+              <div className="grid gap-4 lg:grid-cols-3">
+                <div className="min-w-0 lg:col-span-2">
+                  {measure && (
+                    <Card className="h-full">
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <label className="relative inline-flex items-center">
+                            <span className="sr-only">Chart</span>
+                            <select
+                              value={measure.key}
+                              onChange={(event) =>
+                                setMeasureKey(event.target.value)
+                              }
+                              className="rounded-lg bg-transparent py-1 text-sm font-semibold text-foreground focus:outline-none"
+                            >
+                              {measures.map((item) => (
+                                <option
+                                  key={item.key}
+                                  value={item.key}
+                                  className="text-foreground"
+                                >
+                                  {item.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <span className="text-sm font-semibold">
+                            {measure.total}
+                          </span>
+                          <Change value={measure.change} days={days} />
+                        </div>
+                        {(sections?.money?.length ?? 0) > 1 &&
+                          measure.key === "sales" && (
+                            <div className="flex gap-1">
+                              {sections!.money!.map((row) => (
+                                <button
+                                  key={row.currency}
+                                  type="button"
+                                  onClick={() => setCurrency(row.currency)}
+                                  className={cn(
+                                    "rounded-md px-2 py-1 text-xs font-semibold",
+                                    row.currency === money?.currency
+                                      ? "bg-primary/10 text-primary"
+                                      : "text-muted-foreground hover:text-foreground",
+                                  )}
+                                >
+                                  {row.currency}
+                                </button>
+                              ))}
+                            </div>
                           )}
-                        >
-                          {row.currency}
-                        </button>
-                      ))}
-                    </div>
+                      </div>
+                      <MainChart data={measure.data} unit={measure.unit} />
+                    </Card>
                   )}
+                  {!measure && (
+                    <Card className="h-full">
+                      <p className="text-sm text-muted-foreground">
+                        No trend to show for your sections in this period.
+                      </p>
+                    </Card>
+                  )}
+                </div>
+                {/* First on a phone, beside the chart on a wide screen. */}
+                <div className="order-first min-w-0 lg:order-none">
+                  <AdminToDo />
+                </div>
               </div>
-              <MainChart data={measure.data} unit={measure.unit} />
-            </Card>
+            </>
           )}
 
           <SecondRow data={data} money={money} days={days} />
           {sections?.engagement && (
             <Engagement engagement={sections.engagement} days={days} />
           )}
+          {sections?.growth && <Audience growth={sections.growth} />}
           {sections?.growth && <Downloads growth={sections.growth} />}
           <Activity activity={data.activity} />
-
-          {!sections?.people &&
-            !sections?.events &&
-            !sections?.money &&
-            !sections?.growth &&
-            !sections?.engagement && (
-              <Card>
-                <p className="text-sm text-muted-foreground">
-                  Your permissions don&apos;t include any dashboard figures.
-                  Your sections are in the menu on the left.
-                </p>
-              </Card>
-            )}
         </>
       )}
     </div>
@@ -547,7 +563,9 @@ const KpiRow: React.FC<{
                 <Change value={tile.change} days={days} />
               )}
               {tile.note && (
-                <span className="text-xs text-muted-foreground">{tile.note}</span>
+                <span className="text-xs text-muted-foreground">
+                  {tile.note}
+                </span>
               )}
             </div>
           </Tile>
@@ -606,7 +624,9 @@ const SecondRow: React.FC<{
             <li key={row.label} className="text-xs">
               <div className="mb-1 flex justify-between text-muted-foreground">
                 <span>{row.label}</span>
-                <span className="font-semibold text-foreground">{row.value}</span>
+                <span className="font-semibold text-foreground">
+                  {row.value}
+                </span>
               </div>
               <div className="h-1.5 rounded-full bg-muted">
                 <div
@@ -663,8 +683,8 @@ const Engagement: React.FC<{
         <div className="p-4">
           <p className="text-2xl font-bold">{engagement.active30.share}%</p>
           <p className="text-xs text-muted-foreground">
-            Got a ticket in the last <b className="text-foreground">30 days</b> (
-            {engagement.active30.count.toLocaleString()})
+            Got a ticket in the last <b className="text-foreground">30 days</b>{" "}
+            ({engagement.active30.count.toLocaleString()})
           </p>
         </div>
         <div className="p-4">
@@ -684,7 +704,10 @@ const Engagement: React.FC<{
             {engagement.referredSignUps.toLocaleString()}
           </p>
           <p className="text-xs text-muted-foreground">
-            Joined with an invite code in {days === 0 ? "all time" : periodPhrase(days as TPeriodDays).replace(/^the last /, "")}
+            Joined with an invite code in{" "}
+            {days === 0
+              ? "all time"
+              : periodPhrase(days as TPeriodDays).replace(/^the last /, "")}
           </p>
         </Tile>
       </div>
@@ -969,7 +992,9 @@ const Activity: React.FC<{ activity: IAdminDashboard["activity"] }> = ({
             <ActivityIcon kind={item.kind} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{item.title}</p>
-              <p className="truncate text-xs text-muted-foreground">{item.detail}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {item.detail}
+              </p>
             </div>
             <span className="shrink-0 text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(item.at), { addSuffix: true })}

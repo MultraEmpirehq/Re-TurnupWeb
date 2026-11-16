@@ -1,4 +1,5 @@
 ﻿"use client";
+import { zoneLabel } from "@/lib/venue-layouts";
 import { getData, postData, putData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
 import BasicForm, {
@@ -118,6 +119,7 @@ const defaultValues: TFormValues = {
   sponsorLogoIds: [],
   sponsorShowNames: [],
   saleMethod: "",
+  venueLayout: "",
   eventTickets: [],
   ticketUrl: "",
   passAssignments: [],
@@ -254,6 +256,8 @@ const buildEventFormData = async (
     if (body.venueAddress?.trim()) {
       formData.append("customVenueAddress", body.venueAddress.trim());
     }
+    // Kept with the event, so the limit holds after a draft reopens or an edit.
+    formData.append("customVenueCapacity", body.venueCapacity ? String(body.venueCapacity) : "");
   }
   if (isLocallyCreatedOption(body.categoryId) && body.categoryName) {
     formData.append("customCategoryName", body.categoryName);
@@ -265,6 +269,9 @@ const buildEventFormData = async (
   if (body.saleMethod) {
     formData.append("saleMethod", body.saleMethod);
   }
+  // The optional 3D view, for tickets sold or registered on Turnupz.
+  const layout = body.saleMethod !== "external_link" ? body.venueLayout : "";
+  formData.append("venueLayout", layout || "none");
   formData.append("acceptedTerms", String(!!body.acceptedTerms));
 
   const multiDay = body.isMultiDay && (body.eventDays?.length ?? 0) >= 2;
@@ -320,6 +327,7 @@ const buildEventFormData = async (
       actionType: ticket.actionType,
       transferable: !!ticket.transferable,
       ...saleRulesPayload(ticket),
+      ...(layout && ticket.zone && zoneLabel(layout, ticket.zone) ? { zone: ticket.zone } : {}),
       ...(ticket.visibility === "private" && ticket.privateAccessCode
         ? { privateAccessCode: ticket.privateAccessCode }
         : {}),
@@ -576,7 +584,7 @@ const CreateEvent = () => {
             venueName: draftEvent.venue?.name ?? draftEvent.venueName ?? "",
             venueAddress:
               draftEvent.venue?.address ?? draftEvent.venueAddress ?? "",
-            venueCapacity: draftEvent.venue?.totalAvailableSeat || null,
+            venueCapacity: draftEvent.venue?.totalAvailableSeat || draftEvent.venueCapacity || null,
             categoryId: draftEvent.category?.id ?? "",
             categoryName:
               draftEvent.category?.name ?? draftEvent.customCategoryName ?? "",
@@ -607,6 +615,7 @@ const CreateEvent = () => {
             ),
             sponsorShowNames: (draftEvent.sponsors ?? []).map(sponsorShowsName),
             saleMethod: draftEvent.saleMethod ?? "",
+            venueLayout: draftEvent.venueLayout ?? "",
             eventTickets: (draftEvent.eventTickets ?? []).map((ticket) => ({
               ...ticket,
               ticketPrice: getTicketPriceValue(ticket.ticketPrice),
@@ -817,7 +826,6 @@ const CreateEvent = () => {
     }
     try {
       const body = form.getValues();
-      console.log("body", body);
       const formData = await buildEventFormData(
         body,
         "published",

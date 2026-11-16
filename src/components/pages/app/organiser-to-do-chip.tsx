@@ -6,6 +6,7 @@ import { AlertTriangle, ArrowRight, Info, ListChecks, OctagonAlert } from "lucid
 import Link from "next/link";
 import React, { memo, useState } from "react";
 import { TToDoItem, useOrganiserToDo } from "./organiser-to-do";
+import { useActingVendor } from "@/stores/workspace-store";
 
 const RANK: Record<TToDoItem["tone"], number> = { danger: 0, warning: 1, info: 2 };
 const LOOK = {
@@ -22,7 +23,9 @@ const LOOK = {
 const OrganiserToDoChip = ({ tone = "onLight" }: { tone?: "onLight" | "onDark" }) => {
   const { data: items } = useOrganiserToDo();
   const [open, setOpen] = useState(false);
-  if (!items?.length) return null;
+  // Not while working in someone else's account: these are their own items.
+  const { isTeamMember } = useActingVendor();
+  if (isTeamMember || !items?.length) return null;
 
   const sorted = [...items].sort((a, b) => RANK[a.tone] - RANK[b.tone]);
   const top = LOOK[sorted[0].tone];

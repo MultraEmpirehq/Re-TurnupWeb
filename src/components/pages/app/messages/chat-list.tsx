@@ -72,6 +72,15 @@ export const ChatPicture: React.FC<{
       </span>
     );
   }
+  // Your chat with the Turnupz team shows the Turnupz logo (the team sees the person).
+  if (kind === "SUPPORT" && !!myId && chat.vendor.id === myId) {
+    return (
+      <span className={cn("relative shrink-0 overflow-hidden rounded-[14px]", box)}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/turnupz-icon.png" alt="Turnupz" className="size-full object-cover" />
+      </span>
+    );
+  }
   const light = kind === "EVENT_GROUP" || iAmOrganiser;
   return (
     <span

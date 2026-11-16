@@ -1,5 +1,6 @@
 ﻿import Joi from "joi";
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { layoutOf, zoneLabel } from "@/lib/venue-layouts";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
 import { Label } from "@/components/ui/label";
@@ -28,6 +29,8 @@ export interface ITicketType extends TTicketSaleRules {
   privateAccessCode?: string;
   /** For a multi-day event: positions of the days it admits on. Empty is every day. */
   dayIndexes?: number[];
+  /** Its area in the event's optional 3D view. */
+  zone?: string | null;
 }
 
 /** "Every day", or the days a ticket is for, by name. */
@@ -83,6 +86,8 @@ const schema = Joi.object({
   salesEndAt: Joi.string().allow(null, "").optional(),
   maxPerOrder: Joi.number().integer().min(1).allow(null).optional(),
   dayIndexes: Joi.array().items(Joi.number().integer().min(0)).optional(),
+  // Its area in the optional 3D view.
+  zone: Joi.string().allow(null, "").optional(),
 });
 
 const defaultValues: ITicketType = {
@@ -97,6 +102,7 @@ const defaultValues: ITicketType = {
   salesEndAt: null,
   maxPerOrder: null,
   dayIndexes: [],
+  zone: "",
 };
 
 interface ITicketInputProps {
@@ -114,6 +120,8 @@ interface ITicketInputProps {
   eventDate?: Date;
   /** Each day's start for a multi-day event, in order, on the event's clock. */
   dayStarts?: Date[];
+  /** The 3D view's layout, when the organiser picked one: each ticket gets an area. */
+  venueLayout?: string;
 }
 
 /** What's typed as a price: digits and one decimal point, two places at most. */
@@ -144,17 +152,26 @@ const TicketInput: React.FC<ITicketInputProps> = ({
   dayNames = [],
   eventDate,
   dayStarts = [],
+  venueLayout,
 }) => {
   const [showTicketInput, setShowTicketInput] = useState(false);
   // The price as typed (with commas) while the field is in use.
   const [priceText, setPriceText] = useState<string | null>(null);
   // The ticket being changed (its place in the list), or null when adding.
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+  /** Glides to the category form once it's open, then puts the cursor in the name. */
+  const revealForm = useCallback(() => {
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Without jumping: the glide above does the scrolling.
+      formRef.current?.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true });
+    }, 60);
+  }, []);
   const {
     register,
     handleSubmit,
     reset,
-    setFocus,
     setError,
     control,
     setValue,
@@ -268,6 +285,15 @@ const TicketInput: React.FC<ITicketInputProps> = ({
         );
       } else {
         setTickets([...tickets, ticket]);
+        // Show the new category where it landed.
+        const added = tickets.length;
+        setTimeout(
+          () =>
+            document
+              .querySelector(`[data-ticket-category="${added}"]`)
+              ?.scrollIntoView({ behavior: "smooth", block: "center" }),
+          50,
+        );
       }
       closeForm();
     },
@@ -290,9 +316,9 @@ const TicketInput: React.FC<ITicketInputProps> = ({
       setPriceText(null);
       setEditingIndex(index);
       setShowTicketInput(true);
-      setTimeout(() => setFocus("ticketName"), 100);
+      revealForm();
     },
-    [mode, reset, setFocus, tickets],
+    [mode, reset, revealForm, tickets],
   );
 
   const handleRemoveTicket = useCallback(
@@ -347,9 +373,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
             onClick={() => {
               setShowTicketInput(true);
               setValue("actionType", mode);
-              setTimeout(() => {
-                setFocus("ticketName");
-              }, 100);
+              revealForm();
             }}
             className="rounded-full border border-dashed border-primary/50 bg-primary-50/50 px-4 py-2 text-xs font-bold text-primary-700 transition hover:border-primary hover:bg-primary-50"
           >
@@ -363,6 +387,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
           {parsedTickets.map((ticket, index) => (
             <TicketCategoryCard
               key={`${ticket.ticketName}-${index}`}
+              index={index}
               ticket={ticket}
               currency={currency}
               timezone={timezone}
@@ -371,6 +396,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                   ? describeTicketDays(ticket.dayIndexes, dayNames)
                   : undefined
               }
+              areaLabel={zoneLabel(venueLayout, ticket.zone) ?? undefined}
               editing={editingIndex === index}
               onEdit={() => handleEditTicket(index)}
               onDelete={() => handleRemoveTicket(index)}
@@ -380,7 +406,7 @@ const TicketInput: React.FC<ITicketInputProps> = ({
       )}
 
       {shouldShowTicketInput && (
-        <div className="mt-7 space-y-3">
+        <div ref={formRef} className="mt-7 scroll-mt-24 space-y-3">
           {editingIndex !== null && (
             <p className="text-sm font-semibold text-secondary-950">
               Editing “{tickets[editingIndex]?.ticketName}”
@@ -560,6 +586,27 @@ const TicketInput: React.FC<ITicketInputProps> = ({
                     </fieldset>
                   );
                 }}
+              />
+            )}
+
+            {venueLayout && (
+              <Controller
+                control={control}
+                name="zone"
+                render={({ field }) => (
+                  <SelectField
+                    className="col-span-full md:col-span-1"
+                    label="Area in the 3D view"
+                    value={field.value ?? ""}
+                    setValue={field.onChange}
+                    placeholder="Not in the 3D view"
+                    options={(layoutOf(venueLayout)?.zones ?? []).map((zone) => ({
+                      value: zone.value,
+                      label: zone.label,
+                    }))}
+                    helperText="Where buyers will be. Buyers see it with View in 3D."
+                  />
+                )}
               />
             )}
 

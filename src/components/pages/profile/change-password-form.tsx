@@ -1,6 +1,11 @@
 "use client";
 
 import TwoFactorSection from "@/components/account/two-factor-section";
+import {
+  AddPasswordForm,
+  GoogleSignIn,
+  useSignInMethods,
+} from "@/components/account/sign-in-methods";
 
 import { patchData } from "@/api";
 import { constructErrorMessage } from "@/api/functions";
@@ -12,7 +17,7 @@ import React, { memo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "@/lib/toast";
 import StatusBadge from "@/components/ui/status-badge";
-import useUserStore from "@/stores/user-store";
+import useUserStore, { EUserRoles } from "@/stores/user-store";
 import { BadgeCheck, CircleAlert, Mail } from "lucide-react";
 
 interface IPasswordFormValues {
@@ -85,7 +90,15 @@ const ChangePasswordForm = () => {
   );
 
   const email = useUserStore((state) => state.userDetails?.email);
-  const emailVerified = useUserStore((state) => state.userDetails?.isEmailVerified);
+  const emailVerified = useUserStore(
+    (state) => state.userDetails?.isEmailVerified,
+  );
+  // Admins always sign in with a password, never Google.
+  const isAdmin = useUserStore(
+    (state) => state.userDetails?.role === EUserRoles.ADMIN,
+  );
+  const methods = useSignInMethods(!isAdmin);
+  const noPassword = methods.data?.password === false;
 
   return (
     <section
@@ -98,60 +111,76 @@ const ChangePasswordForm = () => {
           Sign-in and security
         </h2>
         <p className="text-sm text-muted-foreground">
-          The email you sign in with, your password, and a code from your phone at sign-in.
+          The email you sign in with, {isAdmin ? "" : "Google, "}your password,
+          and a code from your phone at sign-in.
         </p>
       </div>
 
       <div className="flex items-start gap-3 rounded-xl border border-border bg-muted px-3.5 py-3">
-        <Mail className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <Mail
+          className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+          aria-hidden
+        />
         <div className="min-w-0 space-y-1">
-          <p className="truncate text-sm font-semibold text-foreground">{email ?? "No email"}</p>
+          <p className="truncate text-sm font-semibold text-foreground">
+            {email ?? "No email"}
+          </p>
           {emailVerified === false ? (
-            <StatusBadge tone="warning" icon={CircleAlert}>Not verified yet</StatusBadge>
+            <StatusBadge tone="warning" icon={CircleAlert}>
+              Not verified yet
+            </StatusBadge>
           ) : (
-            <StatusBadge tone="success" icon={BadgeCheck}>Verified · used to sign in</StatusBadge>
+            <StatusBadge tone="success" icon={BadgeCheck}>
+              Verified · used to sign in
+            </StatusBadge>
           )}
         </div>
       </div>
 
+      {!isAdmin && methods.data && <GoogleSignIn methods={methods.data} />}
+
       <h3 className="text-sm font-semibold text-foreground">Password</h3>
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="grid grid-cols-1 gap-5 md:grid-cols-2"
-      >
-        <InputField
-          label="Current Password"
-          placeholder="Enter your current password"
-          type="password"
-          containerClassName="md:col-span-2 md:max-w-[calc(50%-0.625rem)]"
-          {...register("currentPassword")}
-          error={errors.currentPassword?.message}
-        />
-        <InputField
-          label="New Password"
-          placeholder="Enter a new password"
-          type="password"
-          {...register("newPassword")}
-          error={errors.newPassword?.message}
-        />
-        <InputField
-          label="Confirm New Password"
-          placeholder="Confirm your new password"
-          type="password"
-          {...register("confirmPassword")}
-          error={errors.confirmPassword?.message}
-        />
-        <div className="md:col-span-2">
-          <Button
-            type="submit"
-            disabled={!isValid}
-            loading={isSubmitting}
-            className="rounded-xl"
-          >
-            Update password
-          </Button>
-        </div>
-      </form>
+      {noPassword && methods.data ? (
+        <AddPasswordForm email={methods.data.email} />
+      ) : (
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="grid grid-cols-1 gap-5 md:grid-cols-2"
+        >
+          <InputField
+            label="Current Password"
+            placeholder="Enter your current password"
+            type="password"
+            containerClassName="md:col-span-2 md:max-w-[calc(50%-0.625rem)]"
+            {...register("currentPassword")}
+            error={errors.currentPassword?.message}
+          />
+          <InputField
+            label="New Password"
+            placeholder="Enter a new password"
+            type="password"
+            {...register("newPassword")}
+            error={errors.newPassword?.message}
+          />
+          <InputField
+            label="Confirm New Password"
+            placeholder="Confirm your new password"
+            type="password"
+            {...register("confirmPassword")}
+            error={errors.confirmPassword?.message}
+          />
+          <div className="md:col-span-2">
+            <Button
+              type="submit"
+              disabled={!isValid}
+              loading={isSubmitting}
+              className="rounded-xl"
+            >
+              Update password
+            </Button>
+          </div>
+        </form>
+      )}
 
       <div className="border-t border-border pt-5">
         <TwoFactorSection />

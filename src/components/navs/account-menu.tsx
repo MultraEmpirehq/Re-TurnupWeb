@@ -21,6 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import React, { Fragment, memo, useMemo } from "react";
 import { getAccountNav } from "./general-nav/account-nav";
+import AwayMenuItem from "@/components/pages/app/admin/shell/away-menu-item";
 
 export const accountInitials = (user?: TUserDetails | null) => {
   const first = user?.firstName?.[0] ?? "";
@@ -74,8 +75,9 @@ const AccountMenu: React.FC<{ variant: "site" | "workspace" }> = ({
           className={cn(
             "flex cursor-pointer items-center gap-2 rounded-full p-1 outline-none transition-colors",
             isSite
-              ? "pr-2 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/40"
-              : "pr-1.5 hover:bg-secondary-50 focus-visible:ring-2 focus-visible:ring-secondary-300",
+              ? // No shape on hover; the ring is for keyboard focus only.
+                "pr-2 hover:opacity-90 focus-visible:ring-2 focus-visible:ring-white/40"
+              : "pr-1.5 hover:opacity-90 focus-visible:ring-2 focus-visible:ring-secondary-300",
           )}
         >
           <Avatar
@@ -146,6 +148,8 @@ const AccountMenu: React.FC<{ variant: "site" | "workspace" }> = ({
               <Compass className="size-4" />
               {isAdmin ? "View the website" : "Back to the site"}
             </DropdownMenuItem>
+            {/* Admins only: mutes their alerts while they're off. */}
+            {isAdmin && <AwayMenuItem />}
           </>
         )}
         {isSite && workspaces.length > 0 && (

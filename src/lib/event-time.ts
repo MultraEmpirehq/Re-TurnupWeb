@@ -244,3 +244,18 @@ export const formatEventDateRange = (
     ? formatter.formatRange(from, to)
     : `${formatter.format(from)} – ${formatter.format(to)}`;
 };
+
+/**
+ * Whether an event is over, by the backend's rule: once its last day has ended
+ * (or started, without an end time), or once a one-day event has started.
+ * Tickets can't be bought after that.
+ */
+export const isEventOver = (
+  date?: Date | string | null,
+  endDate?: Date | string | null,
+  now = new Date(),
+) => {
+  const last = endDate ?? date;
+  if (!last) return false;
+  return new Date(last).getTime() < now.getTime();
+};

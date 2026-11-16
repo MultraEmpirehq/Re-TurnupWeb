@@ -294,7 +294,7 @@ const PerformerFormDialog: React.FC<{
             type="button"
             loading={saving}
             disabled={saving || !!clash || nameCheck.checking}
-            onClick={() => void handleSave()}
+            onClick={() => handleSave()}
             className="rounded-2xl bg-secondary text-white hover:bg-secondary-600"
           >
             {isEditing ? "Save changes" : "Add performer"}

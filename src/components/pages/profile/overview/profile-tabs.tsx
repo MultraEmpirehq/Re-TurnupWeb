@@ -155,10 +155,11 @@ const ProfileTabs: React.FC = () => {
     count: number;
     icon: React.ElementType;
   }[] = [
-    { id: "tickets", label: "Tickets", count: ticketCount, icon: TicketIcon },
-    { id: "saved", label: "Saved", count: saved.length, icon: Bookmark },
+    // The app's order; Tickets is still the one that opens first.
     { id: "posts", label: "Posts", count: 0, icon: ImageIcon },
     { id: "tagged", label: "Tagged", count: 0, icon: Tag },
+    { id: "tickets", label: "Tickets", count: ticketCount, icon: TicketIcon },
+    { id: "saved", label: "Saved", count: saved.length, icon: Bookmark },
   ];
   const noteFor = (item: { event: IEventDetailsType; count: number }) =>
     item.event.saleMethod === "register"
@@ -187,7 +188,7 @@ const ProfileTabs: React.FC = () => {
               className={cn(
                 "-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-3 pb-3 text-sm font-bold transition-colors sm:px-4",
                 on
-                  ? "border-secondary-900 text-secondary-950"
+                  ? "border-primary text-secondary-950"
                   : "border-transparent text-secondary-500 hover:text-secondary-800",
               )}
             >
@@ -197,7 +198,7 @@ const ProfileTabs: React.FC = () => {
                 className={cn(
                   "rounded-full px-1.5 text-xs tabular-nums",
                   on
-                    ? "bg-secondary-900 text-white"
+                    ? "bg-[#E5F7FF] text-[#0577FA] dark:bg-primary/20 dark:text-primary"
                     : "bg-secondary-50 text-secondary-500",
                 )}
               >
