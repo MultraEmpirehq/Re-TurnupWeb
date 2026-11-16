@@ -273,7 +273,7 @@ const TicketScanner: React.FC<{
                             size="sm"
                             variant="outline"
                             disabled={pending}
-                            onClick={() => void letInAgain(item)}
+                            onClick={() => letInAgain(item)}
                           >
                             {item}
                           </Button>

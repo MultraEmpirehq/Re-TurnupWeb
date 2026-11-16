@@ -263,7 +263,7 @@ const LiveChat = ({
             maxLength={2000}
             onChange={(event) => setMessage(event.target.value)}
           />
-          <Button className="rounded-xl" loading={starting} disabled={!message.trim() || starting} onClick={() => void start()}>
+          <Button className="rounded-xl" loading={starting} disabled={!message.trim() || starting} onClick={() => start()}>
             <MessagesSquare className="size-4" aria-hidden /> Start chat
           </Button>
         </>

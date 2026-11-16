@@ -58,7 +58,7 @@ const CreditTile: React.FC = () => {
     (row) => row !== main && row.available.amount > 0,
   ).length;
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-secondary-700 to-secondary-500 p-4 text-white">
+    <div className="relative overflow-hidden rounded-3xl bg-[#0B1D2A] p-4 text-white">
       <div className="flex items-center justify-between">
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/80">
           <Wallet className="size-3.5" aria-hidden />
@@ -117,7 +117,7 @@ const InviteTile: React.FC<{ code?: string | null }> = ({ code }) => {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full flex-col items-start rounded-3xl border border-secondary-100 bg-card p-4 text-left transition-colors hover:border-primary/40"
+        className="flex w-full flex-col items-start rounded-3xl bg-[#E5F7FF] p-4 text-left transition-colors hover:bg-[#d6f1ff] dark:bg-primary/15 dark:hover:bg-primary/20"
       >
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-secondary-500">
           <Gift className="size-3.5" aria-hidden />
@@ -219,32 +219,38 @@ const ProfileCard: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <section className="overflow-hidden rounded-3xl border border-secondary-100 bg-card shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-        <div
-          aria-hidden
-          className="h-24 bg-linear-to-r from-secondary-400 via-primary-300 to-primary"
-        />
-        <div className="px-5 pb-5">
-          <div className="flex items-end justify-between gap-3">
-            <div className="relative -mt-12 w-fit shrink-0">
-              <Avatar className="size-24 rounded-3xl shadow-md ring-4 ring-white">
-                <AvatarImage src={photo} alt={name} className="object-cover" />
-                <AvatarFallback className="rounded-3xl bg-secondary-800 text-2xl font-semibold text-white">
-                  {initialsOf(name)}
-                </AvatarFallback>
-              </Avatar>
+      {/* As on the app: a heading with settings, then the photo on the left
+          and who you are beside it. */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Profile</h1>
+        <Link
+          href={ROUTES.PROFILE_SETTINGS.href}
+          aria-label="Settings"
+          className="flex size-10 items-center justify-center rounded-full border border-secondary-100 bg-card text-secondary-600 hover:bg-secondary-50"
+        >
+          <Settings className="size-4" />
+        </Link>
+      </div>
+      <section className="rounded-3xl border border-secondary-100 bg-card p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+        <div>
+          <div className="flex items-start gap-4">
+            <div className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
                 aria-label="Change profile photo"
-                className="absolute -right-1 -bottom-1 flex size-9 items-center justify-center rounded-full bg-secondary-500 text-white ring-4 ring-white hover:bg-secondary-600 disabled:opacity-60"
+                className="block rounded-full"
               >
-                {uploading ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Camera className="size-4" />
-                )}
+                <Avatar className="size-20 rounded-full shadow-md ring-4 ring-white dark:ring-secondary-900">
+                  <AvatarImage src={photo} alt={name} className="object-cover" />
+                  <AvatarFallback className="rounded-full bg-secondary-800 text-xl font-semibold text-white">
+                    {initialsOf(name)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="absolute -right-0.5 -bottom-0.5 flex size-7 items-center justify-center rounded-full bg-secondary-500 text-white ring-2 ring-white dark:ring-secondary-900">
+                  {uploading ? <Loader2 className="size-3.5 animate-spin" /> : <Camera className="size-3.5" />}
+                </span>
               </button>
               <input
                 ref={fileRef}
@@ -254,75 +260,56 @@ const ProfileCard: React.FC = () => {
                 onChange={(event) => void changePhoto(event.target.files?.[0])}
               />
             </div>
-            <Link
-              href={ROUTES.PROFILE_SETTINGS.href}
-              aria-label="Settings"
-              className="mb-1 flex size-10 items-center justify-center rounded-full border border-secondary-100 text-secondary-600 hover:bg-secondary-50"
-            >
-              <Settings className="size-4" />
-            </Link>
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-2 text-xl leading-7 font-extrabold text-foreground">{name}</p>
+              <p className="truncate text-sm text-secondary-500">
+                {[
+                  user?.username ? `@${user.username}` : null,
+                  user?.showCountry ? user?.country : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+              <div className="mt-2 flex gap-4 text-sm">
+                <Link
+                  href={`${ROUTES.PROFILE_FOLLOWING.href}?tab=followers`}
+                  className="text-secondary-500 hover:text-secondary-900"
+                >
+                  <b className="text-secondary-950">{followers.toLocaleString()}</b>{" "}
+                  {followers === 1 ? "follower" : "followers"}
+                </Link>
+                <Link href={ROUTES.PROFILE_FOLLOWING.href} className="text-secondary-500 hover:text-secondary-900">
+                  <b className="text-secondary-950">{following.toLocaleString()}</b> following
+                </Link>
+              </div>
+            </div>
           </div>
-
-          <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground">
-            {name}
-          </h1>
-          <p className="text-sm text-secondary-500">
-            {[
-              user?.username ? `@${user.username}` : null,
-              user?.showCountry ? user?.country : null,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
           {user?.bio ? (
-            <p className="mt-2 text-sm leading-6 whitespace-pre-line text-secondary-800">
-              {user.bio}
-            </p>
+            <p className="mt-3 text-sm leading-6 whitespace-pre-line text-secondary-800">{user.bio}</p>
           ) : (
             <Link
               href={ROUTES.PROFILE_EDIT.href}
-              className="mt-2 inline-block text-sm font-semibold text-secondary-500 hover:text-secondary-800"
+              className="mt-3 inline-block text-sm font-semibold text-secondary-500 hover:text-secondary-800"
             >
               + Add a bio
             </Link>
           )}
           {website && (
             <a
-              href={
-                user!.website!.startsWith("http")
-                  ? user!.website!
-                  : `https://${user!.website}`
-              }
+              href={user!.website!.startsWith("http") ? user!.website! : `https://${user!.website}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-1.5 inline-flex items-center gap-1 text-sm font-semibold text-secondary-700 hover:underline"
+              className="mt-1.5 flex items-center gap-1 text-sm font-semibold text-secondary-700 hover:underline"
             >
               <Globe className="size-3.5" aria-hidden />
               {website}
             </a>
           )}
 
-          <div className="mt-3 flex gap-4 text-sm">
-            <Link
-              href={`${ROUTES.PROFILE_FOLLOWING.href}?tab=followers`}
-              className="text-secondary-500 hover:text-secondary-900"
-            >
-              <b className="text-secondary-950">{followers.toLocaleString()}</b>{" "}
-              {followers === 1 ? "follower" : "followers"}
-            </Link>
-            <Link
-              href={ROUTES.PROFILE_FOLLOWING.href}
-              className="text-secondary-500 hover:text-secondary-900"
-            >
-              <b className="text-secondary-950">{following.toLocaleString()}</b>{" "}
-              following
-            </Link>
-          </div>
-
           <div className="mt-4 grid grid-cols-2 gap-2">
             <Button
               asChild
-              className="h-10 rounded-xl bg-secondary-700 font-semibold text-white hover:bg-secondary-800"
+              className="h-10 rounded-xl bg-[#0B1D2A] font-semibold text-white hover:bg-[#0B1D2A]/90 dark:bg-white dark:text-[#0B1D2A]"
             >
               <Link href={ROUTES.PROFILE_EDIT.href}>
                 <Pencil className="size-3.5" aria-hidden />
@@ -332,7 +319,7 @@ const ProfileCard: React.FC = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => void share()}
+              onClick={() => share()}
               disabled={!user?.username}
               className="h-10 rounded-xl border-secondary-200 font-semibold"
             >
@@ -348,6 +335,20 @@ const ProfileCard: React.FC = () => {
         {/* Invites are for attendees: an organiser's code no longer works. */}
         {user?.role !== EUserRoles.VENDOR && <InviteTile code={user?.username} />}
       </div>
+
+      {/* Organisers: a quiet way across, as on the app. This is an attendee's page first. */}
+      {user?.role === EUserRoles.VENDOR && (
+        <Link
+          href={ROUTES.DASHBOARD.href}
+          className="flex items-center justify-between rounded-2xl border border-secondary-100 bg-card px-4 py-3 transition-colors hover:border-primary/40"
+        >
+          <span className="min-w-0">
+            <span className="block text-sm font-bold text-foreground">Organiser tools</span>
+            <span className="block truncate text-xs text-secondary-500">Sales, your events and the door</span>
+          </span>
+          <ChevronRight className="size-4 text-secondary-400" aria-hidden />
+        </Link>
+      )}
     </div>
   );
 };

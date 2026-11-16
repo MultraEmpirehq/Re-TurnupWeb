@@ -248,7 +248,7 @@ const WaitlistEmail = () => {
             </label>
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-            <Button variant="ghost" className="px-0 text-primary hover:bg-transparent hover:underline" disabled={!ready} loading={testing} onClick={() => void sendTest()}>
+            <Button variant="ghost" className="px-0 text-primary hover:bg-transparent hover:underline" disabled={!ready} loading={testing} onClick={() => sendTest()}>
               Send a test to me
             </Button>
             <Button className="rounded-full px-5" disabled={!ready || !recipients} onClick={() => setConfirming(true)}>
@@ -320,7 +320,7 @@ const WaitlistEmail = () => {
                     <td className="py-2.5 text-right text-muted-foreground">{campaign.createdBy}</td>
                     <td className="py-2.5 pl-3 text-right">
                       {campaign.status === "SENDING" ? (
-                        <Button size="sm" variant="outline" className="h-7 rounded-full text-xs" onClick={() => void resume(campaign.id)}>
+                        <Button size="sm" variant="outline" className="h-7 rounded-full text-xs" onClick={() => resume(campaign.id)}>
                           Sending… carry on
                         </Button>
                       ) : null}

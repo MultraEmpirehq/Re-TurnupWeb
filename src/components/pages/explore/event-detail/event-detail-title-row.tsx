@@ -22,6 +22,10 @@ interface EventDetailTitleRowProps {
   cta?: { label: string; href: string };
   /** New sales paused while the team checks reports. */
   salesPaused?: boolean;
+  /** The event is over: nothing left to book. */
+  ended?: boolean;
+  /** In place of booking once it's over, e.g. "Follow for the next one". */
+  endedAction?: React.ReactNode;
 }
 
 const EventDetailTitleRow = ({
@@ -35,6 +39,8 @@ const EventDetailTitleRow = ({
   actions,
   cta,
   salesPaused,
+  ended,
+  endedAction,
 }: EventDetailTitleRowProps) => {
   const isExternal = saleMethod === "external_link" || !!ticketUrl;
   const href =
@@ -66,7 +72,13 @@ const EventDetailTitleRow = ({
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {actions}
-        {salesPaused && !cta ? (
+        {ended && !cta ? (
+          endedAction ?? (
+            <Button disabled variant="outline" className="shrink-0">
+              Event ended
+            </Button>
+          )
+        ) : salesPaused && !cta ? (
           <Button disabled className="shrink-0" title="Sales are paused while our team checks this event">
             Sales paused
           </Button>
@@ -88,7 +100,21 @@ const EventDetailTitleRow = ({
         </Button>
         )}
       </div>
-      {salesPaused && !cta && (
+      {ended && !cta && (
+        <Notice
+          tone="neutral"
+          title="This event has ended"
+          className="md:w-full md:basis-full"
+          action={
+            <Button asChild variant="outline" className="rounded-xl">
+              <Link href={ROUTES.EXPLORE.href}>Find what&apos;s on</Link>
+            </Button>
+          }
+        >
+          <p>Tickets are no longer on sale. If you went, we hope it was a good one.</p>
+        </Notice>
+      )}
+      {salesPaused && !ended && !cta && (
         <Notice tone="warning" title="Ticket sales are paused" className="md:w-full md:basis-full">
           <p>Our team is checking this event. If you already have a ticket, it&apos;s still valid.</p>
         </Notice>

@@ -78,8 +78,11 @@ const TwoFactorNudge = ({
       style={{
         gridTemplateRows: closing ? "0fr" : "1fr",
         opacity: closing ? 0 : 1,
-        // Takes one section gap with it, so nothing jumps when it's removed.
-        marginBottom: closing ? `calc(-1 * ${gap})` : 0,
+        // The page's gap sits below each section (Tailwind 4's space-y), so the
+        // card keeps that gap while shown and folds it away with itself, so
+        // nothing jumps when it's removed. (Setting 0 here used to wipe the gap
+        // and left the card sitting on the next heading.)
+        marginBottom: closing ? 0 : gap,
       }}
       onTransitionEnd={(event) => {
         if (

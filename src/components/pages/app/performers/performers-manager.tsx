@@ -411,7 +411,7 @@ const PerformersManager = () => {
 
       {hasNextPage && (
         <div className="flex justify-center">
-          <Button variant="outline" className="rounded-full" loading={isFetchingNextPage} onClick={() => void fetchNextPage()}>
+          <Button variant="outline" className="rounded-full" loading={isFetchingNextPage} onClick={() => fetchNextPage()}>
             Load more
           </Button>
         </div>

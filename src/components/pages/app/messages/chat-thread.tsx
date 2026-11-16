@@ -55,7 +55,7 @@ export const chatSubtitle = (chat: IEventChatGroup, iAmOrganiser: boolean) => {
   }
   if (kind === "PERSON")
     return chat.person?.username ? `@${chat.person.username}` : "";
-  if (kind === "SUPPORT") return "The Turnupz team, about your account";
+  if (kind === "SUPPORT") return "Messages from the Turnupz team";
   return iAmOrganiser ? "Asked about your event" : "Organiser";
 };
 

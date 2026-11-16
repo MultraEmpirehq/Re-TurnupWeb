@@ -139,7 +139,7 @@ const ChangeBankDialog = ({
           />
           <Button
             className="w-full rounded-full"
-            onClick={() => void save()}
+            onClick={() => save()}
             disabled={!ready}
             loading={change.isPending}
           >

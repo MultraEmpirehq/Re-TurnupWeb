@@ -153,7 +153,7 @@ const VenueSuggestionDialog = ({
           <Button variant="outline" className="rounded-full" onClick={onClose} disabled={save.isPending}>
             Cancel
           </Button>
-          <Button className="rounded-full" loading={save.isPending} onClick={() => void submit()}>
+          <Button className="rounded-full" loading={save.isPending} onClick={() => submit()}>
             {fixing ? "Send for review" : "Suggest venue"}
           </Button>
         </DialogFooter>

@@ -70,10 +70,14 @@ const TicketCategoryCard: React.FC<{
   timezone?: string;
   /** For a multi-day event: the days it's for, e.g. "Fri & Sat". */
   daysLabel?: string;
+  /** Its area in the 3D view, e.g. "Front pit". */
+  areaLabel?: string;
   editing?: boolean;
+  /** Its place in the list, so the page can scroll to it once it's added. */
+  index?: number;
   onEdit: () => void;
   onDelete: () => void;
-}> = ({ ticket, currency, timezone, daysLabel, editing, onEdit, onDelete }) => {
+}> = ({ ticket, currency, timezone, daysLabel, areaLabel, editing, index, onEdit, onDelete }) => {
   const [copied, setCopied] = useState(false);
   const registration = ticket.actionType === "register";
   const free = registration || !(ticket.ticketPrice > 0);
@@ -94,8 +98,9 @@ const TicketCategoryCard: React.FC<{
 
   return (
     <div
+      data-ticket-category={index}
       className={cn(
-        "relative flex overflow-hidden rounded-2xl border border-secondary-100 bg-card shadow-[0_8px_22px_-14px_rgba(7,20,29,0.35)]",
+        "relative flex scroll-mt-24 overflow-hidden rounded-2xl border border-secondary-100 bg-card shadow-[0_8px_22px_-14px_rgba(7,20,29,0.35)]",
         editing && "ring-2 ring-primary",
       )}
     >
@@ -110,6 +115,7 @@ const TicketCategoryCard: React.FC<{
           <Chip tone={isPrivate ? undefined : "blue"}>{isPrivate ? "Private" : "Public"}</Chip>
           {!free && <Chip>{ticket.transferable ? "Transferable" : "Not transferable"}</Chip>}
           {daysLabel && <Chip tone="green">{daysLabel}</Chip>}
+          {areaLabel && <Chip tone="blue">3D: {areaLabel}</Chip>}
           {ticket.salesEndAt && (
             <Chip tone="amber">
               Sales end {formatEventTime(ticket.salesEndAt, timezone, short)}

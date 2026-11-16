@@ -13,6 +13,12 @@ import useUserStore from "@/stores/user-store";
 import { useActingVendor } from "@/stores/workspace-store";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import {
+  Amount,
+  HideAmountsButton,
+} from "@/components/pages/app/wallet/amount";
+import useHideAmounts from "@/stores/hide-amounts-store";
+import DashboardMore from "./dashboard-more";
 import React, { memo, useMemo } from "react";
 import {
   DailyColumns,
@@ -162,7 +168,11 @@ const RevenuePanel: React.FC<{
   <Panel className="flex flex-col gap-2">
     <Label aside={revenue.main?.code}>Revenue</Label>
     <p className="text-3xl font-bold tracking-tight text-secondary-950">
-      {revenue.main?.total.formatted?.withCurrency ?? "No sales yet"}
+      {revenue.main ? (
+        <Amount value={revenue.main.total.formatted?.withCurrency ?? ""} />
+      ) : (
+        "No sales yet"
+      )}
     </p>
     {revenue.main && (
       <Change
@@ -172,7 +182,12 @@ const RevenuePanel: React.FC<{
       />
     )}
     {revenue.main && money && revenue.main.total.amount > 0 && (
-      <Sparkline points={points} format={(value) => money.format(value)} />
+      <Sparkline
+        points={points}
+        format={(value) =>
+          useHideAmounts.getState().hidden ? "••••••" : money.format(value)
+        }
+      />
     )}
     {revenue.others.length > 0 && (
       <ul className="flex flex-wrap gap-1.5 pt-1" aria-label="Other currencies">
@@ -181,7 +196,7 @@ const RevenuePanel: React.FC<{
             key={item.code}
             className="rounded-full bg-secondary-50 px-2 py-0.5 text-xs font-semibold text-secondary-700"
           >
-            {item.total.formatted?.withCurrency}
+            <Amount value={item.total.formatted?.withCurrency ?? ""} />
           </li>
         ))}
       </ul>
@@ -314,7 +329,8 @@ const DashboardOverview = () => {
     [data?.events],
   );
 
-  if (!can("SALES_VIEW")) return null;
+  // Without sales access a team member still sees what they may (wallet).
+  if (!can("SALES_VIEW")) return <DashboardMore data={null} />;
 
   const scope = filter.isFiltered ? ` on ${filter.selected} events` : "";
 
@@ -352,12 +368,15 @@ const DashboardOverview = () => {
             selected={filter.selected}
             onSelect={filter.select}
           />
-          <Link
-            href={ROUTES.ANALYSIS.href}
-            className="inline-flex items-center gap-1 text-sm font-semibold text-secondary-600 hover:text-secondary-900"
-          >
-            Full report <ArrowRight className="size-3.5" aria-hidden />
-          </Link>
+          <div className="flex items-center gap-3">
+            <HideAmountsButton className="h-9 border border-secondary-100 bg-card px-3 text-secondary-700 hover:bg-secondary-50" />
+            <Link
+              href={ROUTES.ANALYSIS.href}
+              className="inline-flex items-center gap-1 text-sm font-semibold text-secondary-600 hover:text-secondary-900"
+            >
+              Full report <ArrowRight className="size-3.5" aria-hidden />
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -418,9 +437,9 @@ const DashboardOverview = () => {
           </div>
 
           <NextEvent event={nextEvent} upcoming={summary.upcomingEvents} />
+          <DashboardMore data={data} currency={revenue.main?.code} />
         </>
       )}
-
     </section>
   );
 };

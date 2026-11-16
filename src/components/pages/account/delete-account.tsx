@@ -118,7 +118,7 @@ const DeleteAccount = () => {
               variant="destructive"
               disabled={!ready || deleting}
               loading={deleting}
-              onClick={() => void remove()}
+              onClick={() => remove()}
             >
               Delete my account
             </Button>

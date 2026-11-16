@@ -96,9 +96,37 @@ const identitySchema = Joi.object({
       "any.required": "Date of birth is required",
       "date.adult": "You must be at least 18 to verify as a vendor",
     }),
-  idExpiresOn: Joi.date()
-    .required()
-    .custom((value: Date, helpers) => {
+  idType: Joi.string().required().messages({
+    "string.empty": "Choose the kind of ID",
+    "any.required": "Choose the kind of ID",
+  }),
+  // Blank keeps the number already on file.
+  idNumber: Joi.when("idNumberLast4", {
+    is: Joi.string().min(1),
+    then: Joi.string().allow("").optional(),
+    otherwise: Joi.string()
+      .trim()
+      .pattern(/^[0-9A-Za-z][0-9A-Za-z \-/]{3,39}$/)
+      .required()
+      .messages({
+        "string.empty": "Enter the number on your ID",
+        "any.required": "Enter the number on your ID",
+        "string.pattern.base": "Enter the number as it appears on your ID",
+      }),
+  }),
+  idIssuedOn: Joi.date()
+    .optional()
+    .allow(null)
+    .max("now")
+    .messages({ "date.max": "The issue date can't be in the future" }),
+  // Passports, licences and permits always expire; a voter's card never does.
+  idExpiresOn: Joi.when("idType", {
+    is: Joi.valid("passport", "drivers_licence", "residence_permit"),
+    then: Joi.date().required(),
+    otherwise: Joi.date().optional().allow(null),
+  })
+    .custom((value: Date | null, helpers) => {
+      if (!value) return value;
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       return value < today ? helpers.error("date.expired") : value;
@@ -119,6 +147,19 @@ const businessSchema = Joi.object({
   businessRegistrationNumber: text("Registration number"),
   businessAddress: text("Business address", 5),
   authorizedRepresentative: text("Authorised representative"),
+  representativeRole: Joi.string().required().messages({
+    "string.empty": "Choose your role in the business",
+    "any.required": "Choose your role in the business",
+  }),
+  businessDocumentType: Joi.string().required().messages({
+    "string.empty": "Choose the document that proves the business exists",
+    "any.required": "Choose the document that proves the business exists",
+  }),
+  businessRegisteredOn: Joi.date()
+    .optional()
+    .allow(null)
+    .max("now")
+    .messages({ "date.max": "The registration date can't be in the future" }),
   taxId: Joi.string().allow("").optional(),
 }).unknown(true);
 

@@ -50,6 +50,15 @@ export const getCurrencyForCountry = (country?: string | null): AppCurrency => {
   );
 };
 
+/** The app currency for a code such as "NGN" (an event's own currency). */
+export const getCurrencyForCode = (code?: string | null): AppCurrency => {
+  const upper = code?.trim().toUpperCase();
+  return (
+    Object.values(countryCurrencyMap).find((currency) => currency.code === upper) ??
+    DEFAULT_APP_CURRENCY
+  );
+};
+
 export const formatAppMoney = (
   amount: number,
   currency: AppCurrency = DEFAULT_APP_CURRENCY,

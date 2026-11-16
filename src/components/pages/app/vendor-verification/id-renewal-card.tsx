@@ -128,7 +128,7 @@ const IdRenewalCard: React.FC<{
             <Button type="button" variant="outline" disabled={busy} onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="button" loading={busy} disabled={!file || !newExpiry} onClick={() => void submit()}>
+            <Button type="button" loading={busy} disabled={!file || !newExpiry} onClick={() => submit()}>
               Send for checking
             </Button>
           </div>

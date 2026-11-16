@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import React, { memo } from "react";
 import { toast } from "@/lib/toast";
+import MessageOrganiserButton from "@/components/pages/explore/event-detail/message-organiser-button";
 
 interface IEventOrganiser {
   eventId: string;
@@ -74,8 +75,9 @@ const copy = async (value: string, what: string) => {
 
 /**
  * Who created an event and every way to reach them, for an admin following up on
- * a suspension or a report. Email opens with the event and any suspension reason
- * filled in; the phone number comes from their vendor verification.
+ * a suspension or a report. A Turnupz chat comes first (our own channel); email
+ * opens with the event and any suspension reason filled in; the phone number
+ * comes from their vendor verification.
  */
 const OrganiserContactDialog: React.FC<{
   target: TOrganiserContactTarget | null;
@@ -165,7 +167,7 @@ const OrganiserContactDialog: React.FC<{
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => void refetch()}
+              onClick={() => refetch()}
             >
               Try again
             </Button>
@@ -212,11 +214,20 @@ const OrganiserContactDialog: React.FC<{
               </div>
             </div>
 
-            {organiser.isAccountDisabled && (
+            {organiser.isAccountDisabled ? (
               <p className="rounded-xl bg-secondary-50 px-3 py-2 text-xs text-secondary-800">
                 This account is disabled, so they can&apos;t sign in to see
                 notifications. Email is the way to reach them.
               </p>
+            ) : (
+              // Turnupz first: a chat they see in the app and on the web,
+              // with the event attached. Email and phone are below.
+              <MessageOrganiserButton
+                eventId={data.eventId}
+                variant="default"
+                label="Message on Turnupz"
+                className="h-11 w-full rounded-xl"
+              />
             )}
 
             <div className="flex items-center gap-2 rounded-xl border border-secondary-100 p-2 pl-3">
@@ -233,7 +244,7 @@ const OrganiserContactDialog: React.FC<{
                 size="icon"
                 className="size-8 shrink-0"
                 aria-label="Copy email"
-                onClick={() => void copy(organiser.email, "Email")}
+                onClick={() => copy(organiser.email, "Email")}
               >
                 <Copy className="size-4" />
               </Button>
@@ -271,7 +282,13 @@ const OrganiserContactDialog: React.FC<{
             <div className="grid gap-2 sm:grid-cols-3">
               <Button
                 asChild
-                className="h-11 rounded-xl bg-secondary-950 text-white hover:bg-secondary-900 sm:col-span-3"
+                variant={organiser.isAccountDisabled ? "default" : "outline"}
+                className={cn(
+                  "h-11 rounded-xl sm:col-span-3",
+                  organiser.isAccountDisabled
+                    ? "bg-secondary-950 text-white hover:bg-secondary-900"
+                    : "border-secondary-200",
+                )}
               >
                 <a href={mailto}>
                   <Mail className="size-4" />

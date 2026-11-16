@@ -180,7 +180,7 @@ const EventReviews = () => {
                 className="rounded-xl bg-success-solid text-white hover:bg-success-solid"
                 loading={approvingId === event.id}
                 disabled={!!approvingId}
-                onClick={() => void handleApprove(event)}
+                onClick={() => handleApprove(event)}
               >
                 Approve
               </Button>

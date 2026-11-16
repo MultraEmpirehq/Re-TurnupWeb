@@ -9,12 +9,17 @@ import ErrorContainer from "@/components/ui/error-container";
 import { useEvent } from "@/hooks/use-event";
 import { useEventTickets } from "@/hooks/use-ticket.hook";
 import { formatCurrency } from "@/lib/functions";
-import { eventDayName } from "@/lib/event-time";
+import { eventDayName, isEventOver } from "@/lib/event-time";
+import { ZONE_COLOURS, layoutOf } from "@/lib/venue-layouts";
+import dynamic from "next/dynamic";
+import type { TVenueZoneTicket } from "@/components/three/venue-3d";
 import { describeTicketSaleState, ticketSaleState } from "@/lib/ticket-sales";
 import { joinEventChatGroup } from "@/lib/event-chat";
 import LeavingTurnupzDialog from "@/components/pages/explore/leaving-turnupz-dialog";
 import ExploreBackLink from "@/components/pages/explore/explore-back-link";
 import { ROUTES } from "@/lib/variables";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import {
   readArrival,
   readShareRef,
@@ -36,6 +41,7 @@ import {
   Minus,
   Plus,
   TicketIcon,
+  Box,
 } from "lucide-react";
 import {
   EOrderStatus,
@@ -44,6 +50,8 @@ import {
 import { useFeatures } from "@/hooks/use-features";
 import { useEventTaxRates } from "@/hooks/use-tax";
 import { checkoutTax } from "@/lib/checkout-tax";
+// three.js loads only when someone opens the 3D view.
+const Venue3D = dynamic(() => import("@/components/three/venue-3d"), { ssr: false });
 
 const EXTERNAL_LINK_TYPE = "EXTERNAL_LINK";
 
@@ -435,6 +443,38 @@ const TicketPage = () => {
     }
   }, [startedWithOne, isRegistrationOnly, buyableTickets]);
 
+  // The optional 3D view: each area with its ticket (several in one area are
+  // grouped, and "Pick this" takes the cheapest one still on sale).
+  const [showVenue, setShowVenue] = useState(false);
+  const venueLayout = layoutOf(event?.venueLayout);
+  const venueZones = useMemo<TVenueZoneTicket[]>(() => {
+    if (!venueLayout) return [];
+    return venueLayout.zones.flatMap((area, position) => {
+      const inArea = buyableTickets.filter((ticket) => ticket.zone === area.value);
+      if (!inArea.length) return [];
+      const open = inArea
+        .filter((ticket) => ticketSaleState(ticket).status === "open" && maxFor(ticket) > 0)
+        .sort((a, b) => (a.price?.amount ?? 0) - (b.price?.amount ?? 0));
+      const pick = open[0] ?? inArea[0];
+      const price = (ticket: ITicketDetailsType) =>
+        ticket.price?.amount > 0 ? ticket.price?.formatted?.withCurrency ?? "" : "Free";
+      return [
+        {
+          zone: area.value,
+          ticketId: pick.id,
+          title: inArea.length === 1 ? pick.name : area.label,
+          subtitle: inArea.length === 1 ? price(pick) : `from ${price(pick)}`,
+          note:
+            inArea.length > 1
+              ? inArea.map((ticket) => ticket.name).join(", ")
+              : `${area.label}${typeof pick.available === "number" && pick.available > 0 ? ` · ${pick.available} left` : ""}`,
+          color: ZONE_COLOURS[position % ZONE_COLOURS.length],
+          soldOut: open.length === 0,
+        },
+      ];
+    });
+  }, [venueLayout, buyableTickets]);
+
   /** Sets how many of one ticket type; another currency starts the order afresh. */
   const setCount = useCallback(
     (ticket: ITicketDetailsType, count: number) => {
@@ -672,6 +712,25 @@ const TicketPage = () => {
       </SectionContainer>
     );
 
+  // Over: nothing to buy (the API lists no tickets), so say so plainly.
+  if (event && isEventOver(event.date, event.endDate))
+    return (
+      <SectionContainer className="flex min-h-[500px] flex-col items-center justify-center gap-4 py-14 text-center">
+        <h2 className="text-2xl font-bold">This event has ended</h2>
+        <p className="max-w-md text-sm text-muted-foreground">
+          Tickets for {event.name || "this event"} are no longer on sale.
+        </p>
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button asChild variant="outline" className="rounded-xl">
+            <Link href={`${ROUTES.EXPLORE.href}/event/${eventId}`}>Back to event</Link>
+          </Button>
+          <Button asChild className="rounded-xl">
+            <Link href={ROUTES.EXPLORE.href}>Find what&apos;s on</Link>
+          </Button>
+        </div>
+      </SectionContainer>
+    );
+
   return (
     <SectionContainer className="py-10 space-y-10 max-w-3xl">
       <ExploreBackLink
@@ -817,6 +876,43 @@ const TicketPage = () => {
           </div>
         )}
 
+        {!isRegistrationOnly && venueZones.length > 0 && venueLayout && (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm text-muted-foreground">
+                See where each ticket puts you before you choose.
+              </p>
+              <Button
+                type="button"
+                variant={showVenue ? "default" : "outline"}
+                className="rounded-full"
+                aria-pressed={showVenue}
+                onClick={() => setShowVenue((open) => !open)}
+              >
+                <Box className="size-4" aria-hidden />
+                {showVenue ? "Hide 3D view" : "View in 3D"}
+              </Button>
+            </div>
+            {showVenue && (
+              <Venue3D
+                layout={venueLayout.value}
+                zones={venueZones}
+                selectedTicketId={
+                  buyableTickets.find((ticket) => (counts[ticket.id] ?? 0) > 0)?.id ?? null
+                }
+                onPick={(ticketId) => {
+                  const ticket = buyableTickets.find((item) => item.id === ticketId);
+                  if (!ticket) return;
+                  if (!(counts[ticket.id] ?? 0)) setCount(ticket, 1);
+                  document
+                    .querySelector(`[data-ticket-id="${ticketId}"]`)
+                    ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                }}
+              />
+            )}
+          </div>
+        )}
+
         {!isRegistrationOnly && accessibleTickets.length > 0 && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -837,6 +933,7 @@ const TicketPage = () => {
                   return (
                     <div
                       key={ticket.id}
+                      data-ticket-id={ticket.id}
                       role="button"
                       tabIndex={unavailable ? -1 : 0}
                       aria-disabled={unavailable}

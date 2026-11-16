@@ -19,6 +19,8 @@ export interface IFinanceRevenue {
     salesChange: number | null;
     fees: number;
     feesChange: number | null;
+    /** Stripe's fees on organisers' own Stripe accounts (out of their share). */
+    processingFees?: number;
     refunds: number;
     refundRate: number;
     credit: number;
@@ -62,6 +64,8 @@ export interface IFinanceTransaction {
   gross: number;
   discount: number;
   fee: number;
+  /** Stripe's fee, taken from the organiser's share on their own account. */
+  processingFee?: number;
   credit: number;
   toOrganiser: number;
   creditTopUp?: number;

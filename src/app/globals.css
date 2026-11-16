@@ -695,7 +695,9 @@
   height: 32px;
   margin: 0;
 }
-[data-sonner-toaster] [data-sonner-toast] [data-description] {
+/* One step more specific than sonner's own (#3f3f3f), which it injects after
+   this file: the line under the title was coming out dark. */
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-description] {
   color: rgba(255, 255, 255, 0.85);
 }
 [data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-close-button] {
@@ -725,4 +727,13 @@ select:not([multiple]):not([size]) {
   background-position: right 0.75rem center;
   background-size: 1rem;
   padding-inline-end: 2.5rem;
+}
+
+/* An open menu, select or dialog locks scrolling by giving <body>
+   `overflow: hidden`. This page scrolls on <html> (smooth scrolling), so that
+   turned <body> into its own scroll box and every sticky bar (the header, the
+   dashboard sidebar) jumped up by however far the page was scrolled. `clip`
+   still stops scrolling but isn't a scroll box, so sticky bars stay put. */
+html body[data-scroll-locked] {
+  overflow: clip !important;
 }

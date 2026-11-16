@@ -1,6 +1,7 @@
 "use client";
 
 import IdExpiryPanel from "./id-expiry-panel";
+import IdentityPanel from "./identity-panel";
 import { constructErrorMessage } from "@/api/functions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import ErrorContainer from "@/components/ui/error-container";
@@ -244,6 +245,10 @@ const Details: React.FC<{
               </FieldGrid>
             </Section>
           )}
+
+          <Section title="Identity">
+            <IdentityPanel verification={verification} />
+          </Section>
 
           <Section title="ID validity">
             <IdExpiryPanel verification={verification} />

@@ -476,7 +476,7 @@ const BoostDialog: React.FC<{
                 ) : (
                   <Button
                     type="button"
-                    onClick={() => void pay()}
+                    onClick={() => pay()}
                     disabled={create.isPending || isFetching}
                     className="h-11 w-full rounded-xl bg-linear-to-r from-secondary-500 to-primary font-bold text-white hover:opacity-90"
                   >

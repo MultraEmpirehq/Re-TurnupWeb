@@ -145,7 +145,7 @@ const ReceivedTransfers = () => {
                   size="sm"
                   loading={busyId === transfer.id}
                   disabled={!!busyId}
-                  onClick={() => void handleAccept(transfer)}
+                  onClick={() => handleAccept(transfer)}
                   className="bg-secondary text-white hover:bg-secondary-600"
                 >
                   Accept

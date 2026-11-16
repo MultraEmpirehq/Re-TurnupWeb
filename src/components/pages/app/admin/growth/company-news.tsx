@@ -189,7 +189,7 @@ const PostEditor = ({
             <Button variant="outline" className="rounded-full" onClick={onClose} disabled={save.isPending}>
               Cancel
             </Button>
-            <Button className="rounded-full" loading={save.isPending} onClick={() => void submit()}>
+            <Button className="rounded-full" loading={save.isPending} onClick={() => submit()}>
               {draft.published ? "Save and publish" : "Save draft"}
             </Button>
           </div>

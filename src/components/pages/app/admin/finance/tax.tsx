@@ -1,5 +1,8 @@
 "use client";
 
+import DateSelect from "@/components/ui/date-select";
+import { addMonths, addYears, format, isSameDay, startOfDay, startOfMonth, startOfYear } from "date-fns";
+import { Registration } from "@/components/account/tax-details-card";
 import { constructErrorMessage } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,6 +21,8 @@ import {
   useTaxExemptions,
   useTaxOptions,
   useTaxRegistrations,
+  saveTurnupzTaxRegistration,
+  useTurnupzTax,
 } from "@/hooks/use-tax";
 import { percentOf } from "@/lib/checkout-tax";
 import { cn } from "@/lib/utils";
@@ -46,6 +51,14 @@ const failed = (error: unknown, fallback: string) =>
 const place = (decision: Pick<TTaxDecision, "countryCode" | "regionCode">) =>
   [COUNTRY[decision.countryCode] ?? decision.countryCode, decision.regionCode].filter(Boolean).join(" · ");
 
+/** Quick picks for when a decision starts. */
+const START_PRESETS = [
+  { label: "Today", date: () => startOfDay(new Date()) },
+  { label: "Start of this month", date: () => startOfMonth(new Date()) },
+  { label: "Start of next month", date: () => startOfMonth(addMonths(new Date(), 1)) },
+  { label: "1 January", date: () => startOfYear(new Date()) },
+];
+
 /* ------------------------------------------------------------- decisions */
 
 const NewDecision: React.FC<{ open: boolean; onClose: () => void }> = ({ open, onClose }) => {
@@ -56,7 +69,7 @@ const NewDecision: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
   const [purpose, setPurpose] = useState<"ADMISSION" | "COMMISSION">("ADMISSION");
   const [reason, setReason] = useState("");
   const [evidenceRef, setEvidenceRef] = useState("");
-  const [effectiveFrom, setEffectiveFrom] = useState(new Date().toISOString().slice(0, 10));
+  const [effectiveFrom, setEffectiveFrom] = useState<Date | undefined>(() => startOfDay(new Date()));
   const [saving, setSaving] = useState(false);
 
   const regions = useMemo(
@@ -76,7 +89,10 @@ const NewDecision: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
         lines: rates.map(({ code, ppm }) => ({ code, ppm })),
         reason,
         evidenceRef: evidenceRef || undefined,
-        effectiveFrom: new Date(effectiveFrom).toISOString(),
+        // The day as picked, at midnight UTC, so no time zone moves it a day.
+        effectiveFrom: new Date(
+          Date.UTC(effectiveFrom!.getFullYear(), effectiveFrom!.getMonth(), effectiveFrom!.getDate()),
+        ).toISOString(),
       });
       await queryClient.invalidateQueries({ queryKey: ["admin-tax-decisions"] });
       toast.success("Saved as a draft. Nothing changes until it's approved.");
@@ -137,10 +153,38 @@ const NewDecision: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
               <option value="COMMISSION">Turnupz&apos;s commission</option>
             </select>
           </label>
-          <label className="space-y-1 text-sm font-medium">
-            Starts on
-            <Input type="date" value={effectiveFrom} onChange={(event) => setEffectiveFrom(event.target.value)} />
-          </label>
+          <div className="space-y-2 sm:col-span-2">
+            <DateSelect
+              date={effectiveFrom}
+              setDate={setEffectiveFrom}
+              label="Starts on"
+              placeholder="When the decision applies from"
+              helperText="Usually today or the start of a month. It can be in the past, e.g. when a rate has applied for a while."
+              minDate={new Date(2015, 0, 1)}
+              maxDate={addYears(new Date(), 2)}
+              inputClassName="h-10"
+            />
+            <div className="flex flex-wrap gap-1.5">
+              {START_PRESETS.map((preset) => {
+                const day = preset.date();
+                const on = !!effectiveFrom && isSameDay(effectiveFrom, day);
+                return (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => setEffectiveFrom(day)}
+                    aria-pressed={on}
+                    className={cn(
+                      "rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
+                      on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
         <div className="rounded-xl bg-muted/50 p-3 text-sm">
           <p className="font-medium">Rates</p>
@@ -183,7 +227,7 @@ const NewDecision: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
           <Button variant="outline" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={save} disabled={saving || !rates.length || reason.trim().length < 10}>
+          <Button onClick={save} disabled={saving || !rates.length || !effectiveFrom || reason.trim().length < 10}>
             {saving ? "Saving…" : "Save draft"}
           </Button>
         </div>
@@ -195,7 +239,6 @@ const NewDecision: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
 const Decisions = () => {
   const queryClient = useQueryClient();
   const { data, isPending } = useTaxDecisions();
-  const { data: options } = useTaxOptions();
   const [creating, setCreating] = useState(false);
   const [approving, setApproving] = useState<TTaxDecision | null>(null);
   const [evidence, setEvidence] = useState("");
@@ -261,7 +304,7 @@ const Decisions = () => {
                     </Button>
                   )}
                   {decision.status !== "RETIRED" && (
-                    <Button size="sm" variant="outline" onClick={() => void retire(decision)}>
+                    <Button size="sm" variant="outline" onClick={() => retire(decision)}>
                       Retire
                     </Button>
                   )}
@@ -271,7 +314,7 @@ const Decisions = () => {
                 {decision.lines.map((line) => `${line.label} ${percentOf(line.ppm)}`).join(", ") || "No tax"}
                 <span className="text-muted-foreground">
                   {" "}
-                  · from {new Date(decision.effectiveFrom).toLocaleDateString()}
+                  · from {format(new Date(decision.effectiveFrom), "d MMM yyyy")}
                   {decision.effectiveUntil ? ` to ${new Date(decision.effectiveUntil).toLocaleDateString()}` : ""}
                 </span>
               </p>
@@ -279,19 +322,6 @@ const Decisions = () => {
             </div>
           ))}
         </div>
-      )}
-
-      {!!options?.unresolved?.length && (
-        <FinanceCard title="Still open with the adviser">
-          <ul className="space-y-3 text-sm">
-            {options.unresolved.map((item) => (
-              <li key={item.id}>
-                <p>{item.question}</p>
-                <p className="text-xs text-muted-foreground">Holds back: {item.blocks}</p>
-              </li>
-            ))}
-          </ul>
-        </FinanceCard>
       )}
 
       <NewDecision open={creating} onClose={() => setCreating(false)} />
@@ -340,7 +370,7 @@ const ReviewButtons: React.FC<{
       <div className="flex w-full flex-col gap-2 sm:flex-row">
         <Input value={note} onChange={(event) => setNote(event.target.value)} placeholder="Why, for the organiser" />
         <div className="flex gap-2">
-          <Button size="sm" disabled={busy || !note.trim()} onClick={() => void run("REJECTED", note)}>
+          <Button size="sm" disabled={busy || !note.trim()} onClick={() => run("REJECTED", note)}>
             Reject
           </Button>
           <Button size="sm" variant="outline" onClick={() => setRejecting(false)}>
@@ -352,7 +382,7 @@ const ReviewButtons: React.FC<{
   }
   return (
     <div className="flex gap-2">
-      <Button size="sm" disabled={busy} onClick={() => void run("CONFIRMED")}>
+      <Button size="sm" disabled={busy} onClick={() => run("CONFIRMED")}>
         Confirm
       </Button>
       <Button size="sm" variant="outline" disabled={busy} onClick={() => setRejecting(true)}>
@@ -491,8 +521,51 @@ const StatusFilter: React.FC<{ value: TTaxReview; onChange: (value: TTaxReview) 
   </div>
 );
 
+/**
+ * Turnupz's own registrations. On events Turnupz hosts, Turnupz is the seller,
+ * so these decide whether tax is added to those tickets.
+ */
+/** The company that is Turnupz in each country. */
+const TURNUPZ_ENTITY: Record<string, string> = {
+  NG: "Nigeria · Turnupz Experience Limited",
+  CA: "Canada · Turnupz Inc.",
+};
+
+const TurnupzTax = () => {
+  const { data, isLoading } = useTurnupzTax();
+  if (isLoading || !data) return <ListSkeleton />;
+  return (
+    <div className="space-y-4">
+      <p className="max-w-2xl text-sm text-muted-foreground">
+        On events Turnupz hosts, Turnupz is the seller. Where it&apos;s registered (and a decision is approved), tax is
+        added to those tickets like any registered organiser&apos;s. Changes are recorded in the audit log.
+      </p>
+      {data.countries.map((country) => (
+        <FinanceCard key={country.countryCode} title={TURNUPZ_ENTITY[country.countryCode] ?? COUNTRY[country.countryCode] ?? country.countryCode}>
+          <div className="grid gap-3 md:grid-cols-2">
+            {country.kinds.map((kind) => (
+              <Registration
+                key={kind.kind}
+                kind={kind.kind}
+                label={kind.label}
+                example={kind.example}
+                canadian={country.countryCode === "CA"}
+                saved={data.registrations.find((row) => row.kind === kind.kind)}
+                onSave={saveTurnupzTaxRegistration}
+                queryKey={["turnupz-tax"]}
+                who="turnupz"
+              />
+            ))}
+          </div>
+        </FinanceCard>
+      ))}
+    </div>
+  );
+};
+
 const TABS = [
   ["decisions", "Decisions", Decisions],
+  ["turnupz", "Turnupz's own", TurnupzTax],
   ["registrations", "Organiser registrations", Registrations],
   ["exemptions", "Exemption requests", Exemptions],
 ] as const;

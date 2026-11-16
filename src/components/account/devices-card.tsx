@@ -59,7 +59,7 @@ const DevicesCard = () => {
             className="rounded-xl"
             loading={pendingId === "all"}
             disabled={!!pendingId}
-            onClick={() => void handleSignOut()}
+            onClick={() => handleSignOut()}
           >
             Sign out all others
           </Button>
@@ -120,7 +120,7 @@ const DevicesCard = () => {
                     className="text-danger hover:text-danger"
                     loading={pendingId === session.id}
                     disabled={!!pendingId}
-                    onClick={() => void handleSignOut(session.id)}
+                    onClick={() => handleSignOut(session.id)}
                   >
                     Sign out
                   </Button>

@@ -306,7 +306,7 @@ const NotificationsPage = () => {
               variant="outline"
               className="rounded-full"
               loading={marking}
-              onClick={() => void markAllRead()}
+              onClick={() => markAllRead()}
             >
               Mark all as read
             </Button>

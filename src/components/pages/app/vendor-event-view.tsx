@@ -1,5 +1,7 @@
 "use client";
 
+import HighlightsManager from "@/components/pages/app/events/highlights-manager";
+
 import {
   isVideo,
   MediaLightbox,
@@ -37,6 +39,7 @@ import {
   eventZoneNote,
   formatEventTime as formatEventTimeIn,
   instantToWallTimeInZone,
+  isEventOver,
   ticketDaysNote,
 } from "@/lib/event-time";
 import EventDetailLineup from "@/components/pages/explore/event-detail/event-detail-lineup";
@@ -435,7 +438,9 @@ const BookingChip: React.FC<{
   eventTickets?: IEventTicketOptionDetails[];
   /** The event's status: only a published event can be bought from. */
   status?: string;
-}> = ({ eventId, saleMethod, ticketUrl, eventTickets, status }) => {
+  /** Over: nothing left to buy. */
+  ended?: boolean;
+}> = ({ eventId, saleMethod, ticketUrl, eventTickets, status, ended }) => {
   const isExternal = saleMethod === "external_link" || !!ticketUrl;
   const hasPaidTicket = (eventTickets ?? []).some(
     (ticket) => getTicketPriceAmount(ticket.ticketPrice) > 0,
@@ -451,6 +456,21 @@ const BookingChip: React.FC<{
 
   const href =
     isExternal && ticketUrl ? ticketUrl : `/explore/event/${eventId}/ticket`;
+
+  // Over: what visitors see now.
+  if (ended) {
+    return (
+      <div className="flex flex-col items-start gap-1.5 md:items-end">
+        <span
+          aria-disabled="true"
+          className="inline-flex h-11 cursor-not-allowed items-center justify-center rounded-2xl border-2 border-dashed border-secondary-200 px-5 text-sm font-semibold text-secondary-400"
+        >
+          Event ended
+        </span>
+        <p className="text-xs text-secondary-500">Tickets are no longer on sale.</p>
+      </div>
+    );
+  }
 
   // A draft (or one waiting for review) can't be bought from yet: show the
   // button as people will see it, but inactive, and say why.
@@ -935,6 +955,7 @@ export const EventPreviewCard: React.FC<{
               ticketUrl={data.ticketUrl}
               eventTickets={data.eventTickets}
               status={data.status}
+              ended={isEventOver(data.date, data.endDate)}
             />
           </div>
         </div>
@@ -1105,7 +1126,7 @@ const OpenEventChatButton: React.FC<{ eventId: string }> = ({ eventId }) => {
       type="button"
       variant="outline"
       loading={opening}
-      onClick={() => void open()}
+      onClick={() => open()}
       className="h-11 rounded-2xl border-secondary-200 px-5 text-sm font-semibold text-secondary-950 hover:bg-secondary-50"
     >
       <MessagesSquare className="size-4" aria-hidden />
@@ -1203,6 +1224,10 @@ const VendorEventView: React.FC<{ id: string }> = ({ id }) => {
           )}
         </div>
       </div>
+
+      {data.isOwner && !inAdmin && isEventOver(data.date, data.endDate) && (
+        <HighlightsManager eventId={data.id} eventName={data.name} />
+      )}
 
       <EventPreviewCard data={data} blogPosts={blogPosts} />
     </div>
