@@ -23,6 +23,9 @@ export interface IHighlight {
   fromOrganiser: boolean;
   status: "pending" | "approved" | "declined";
   createdAt: string;
+  /** Fans' photos: the post it belongs to, and whether it's the viewer's own. */
+  postId?: string;
+  mine?: boolean;
 }
 
 export interface IEventHighlights {
@@ -63,7 +66,7 @@ export const useEventHighlights = (eventId: string, enabled = true) =>
     retry: false,
   });
 
-/** The organiser's view, with fans' photos waiting for approval. */
+/** The organiser's view: their photos and ticket holders' posts (showing and taken off). */
 export const useManageHighlights = (eventId: string, enabled = true) =>
   useQuery({
     queryKey: manageKey(eventId),
@@ -116,7 +119,7 @@ const useRefresh = (eventId: string) => {
   return () => void queryClient.invalidateQueries({ queryKey: publicKey(eventId) });
 };
 
-/** A ticket holder sends their photos (they wait for the organiser). */
+/** A ticket holder posts their photos to the event (they show straight away). */
 export const useSendCrowdPhotos = (eventId: string) => {
   const refresh = useRefresh(eventId);
   return useMutation({
@@ -158,14 +161,6 @@ export const useReviewHighlight = (eventId: string) => {
   return useMutation({
     mutationFn: ({ id, ...body }: { id: string; status?: "approved" | "declined"; isCover?: boolean }) =>
       patchData(`/event/${eventId}/highlights/${id}`, body),
-    onSuccess: refresh,
-  });
-};
-
-export const useApproveAllHighlights = (eventId: string) => {
-  const refresh = useRefresh(eventId);
-  return useMutation({
-    mutationFn: () => postData(`/event/${eventId}/highlights/approve-all`, {}),
     onSuccess: refresh,
   });
 };

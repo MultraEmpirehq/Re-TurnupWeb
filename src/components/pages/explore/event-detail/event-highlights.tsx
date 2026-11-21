@@ -10,7 +10,7 @@ import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/variables";
 import useUserStore from "@/stores/user-store";
-import { ArrowRight, Camera, ChevronLeft, ChevronRight, Clock, Flag, Play, Sparkles, Users } from "lucide-react";
+import { ArrowRight, Camera, ChevronLeft, ChevronRight, Flag, Play, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { memo, useMemo, useState } from "react";
@@ -227,14 +227,9 @@ export const HighlightsDetails = memo(
             <div className="space-y-1">
               <h2 id="crowd-title" className="text-xl font-bold text-foreground">From the crowd</h2>
               <p className="text-sm text-muted-foreground">
-                Photos and clips from people who were there. The organiser approves each one.
+                Photos and clips from people who were there.
               </p>
             </div>
-            {!!data.me?.pending && (
-              <p className="inline-flex items-center gap-1.5 rounded-full border border-warning-line bg-warning-soft px-3 py-1 text-sm font-semibold text-warning">
-                <Clock className="size-3.5" aria-hidden /> {data.me.pending} of yours waiting for approval
-              </p>
-            )}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {showAdd && (
                 <button

@@ -39,6 +39,8 @@ import { TComboboxItem } from "@/components/ui/combobox-select";
 import { constructErrorMessage } from "@/api/functions";
 import { saveCustomCategory } from "@/lib/custom-event-options";
 import { toast } from "@/lib/toast";
+import ImageCropDialog from "@/components/ui/image-crop-dialog";
+import PhoneCoverField from "./phone-cover-field";
 import { useMarketOptions } from "@/hooks/use-markets";
 import useVendorVerificationStatus from "@/hooks/use-vendor-verification-status";
 import HostPicker, { IHostFormValues } from "./host-picker";
@@ -46,6 +48,8 @@ import useUserStore, { EUserRoles } from "@/stores/user-store";
 
 export interface IBasicFormValues extends IHostFormValues {
   coverImage: File | string | null;
+  /** Optional 4:5 cover for phones (a picked file, or the saved one's link). */
+  phoneCover?: File | string | null;
   eventName: string;
   organizerName: string;
   eventDate: Date;
@@ -115,6 +119,7 @@ export const basicInformationSchema = Joi.object({
       "any.required": "Please select an event banner",
       "any.custom": "Please select a valid event banner image",
     }),
+  phoneCover: Joi.any().allow(null),
   eventName: Joi.string().required().messages({
     "string.empty": "Event name is required",
     "any.required": "Event name is required",
@@ -229,6 +234,8 @@ const BasicForm: React.FC<{
   const eventDate = watch("eventDate");
   const isMultiDay = watch("isMultiDay");
   const coverImage = watch("coverImage");
+  // A banner waiting to be cropped (16:9) before it's used.
+  const [bannerToCrop, setBannerToCrop] = useState<File | null>(null);
   const coverImagePreviewUrl = useMemo(
     () => getImagePreviewUrl(coverImage),
     [coverImage],
@@ -430,7 +437,9 @@ const BasicForm: React.FC<{
                       field.onChange(null);
                       return;
                     }
-                    field.onChange(file);
+                    // Cropped to 16:9 first, with a look at the phone and website.
+                    setBannerToCrop(file);
+                    event.target.value = "";
                   }}
                   className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
                 />
@@ -465,11 +474,29 @@ const BasicForm: React.FC<{
               </div>
             )}
           </div>
+          <ImageCropDialog
+            file={bannerToCrop}
+            aspect={16 / 9}
+            kind="banner"
+            title="Crop your banner"
+            description="Banners show at 16:9 on phones and on the website. Drag and zoom to frame it."
+            onCancel={() => setBannerToCrop(null)}
+            onDone={(cropped) => {
+              setValue("coverImage", cropped, { shouldValidate: true, shouldDirty: true });
+              setBannerToCrop(null);
+            }}
+          />
+          <p className="text-xs text-secondary-500">Shown at 16:9. You&apos;ll crop it and see it on a phone before it&apos;s used.</p>
           {errors?.coverImage?.message && (
             <p className="text-sm text-destructive">
               {errors.coverImage.message}
             </p>
           )}
+          <PhoneCoverField
+            value={watch("phoneCover")}
+            bannerUrl={coverImagePreviewUrl || undefined}
+            onChange={(file) => setValue("phoneCover", file, { shouldDirty: true })}
+          />
         </div>
 
         <TextareaField

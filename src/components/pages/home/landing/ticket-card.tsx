@@ -32,6 +32,9 @@ const TicketCard: React.FC<{
   const ref = useRef<HTMLAnchorElement>(null);
   const date = event.date ? new Date(event.date) : null;
   const hasDate = !!date && !Number.isNaN(date.getTime());
+  // An ended event shows what people who were there posted.
+  const ended = new Date(event.endDate ?? event.date ?? 0).getTime() < Date.now() - 6 * 3_600_000;
+  const crowd = ended && event.crowdPosts ? event.crowdPosts : 0;
 
   const handleMove = (pointer: React.PointerEvent<HTMLAnchorElement>) => {
     const node = ref.current;
@@ -123,6 +126,24 @@ const TicketCard: React.FC<{
           </p>
         </div>
       </div>
+      {crowd > 0 && (
+        <div className="flex items-center gap-3 border-t border-secondary-100 px-5 py-3">
+          <div className="flex">
+            {(event.crowdPreviews ?? []).slice(0, 3).map((url, index) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={url + index}
+                src={url}
+                alt=""
+                className={cn("size-8 rounded-lg border-2 border-card object-cover", index > 0 && "-ml-2.5")}
+              />
+            ))}
+          </div>
+          <span className="flex-1 text-sm font-semibold text-secondary-950">
+            {crowd} {crowd === 1 ? "post" : "posts"} from the crowd
+          </span>
+        </div>
+      )}
     </Link>
   );
 };

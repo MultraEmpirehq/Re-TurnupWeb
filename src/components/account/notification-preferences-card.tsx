@@ -60,6 +60,11 @@ const TOPICS: {
     description: "Receipts, refunds and anything that needs a look.",
   },
   {
+    key: "socialUpdates",
+    title: "Posts from people you follow",
+    description: "When someone you follow posts. At most one a day for each person.",
+  },
+  {
     key: "ticketTransfers",
     title: "Ticket transfers",
     description: "When someone sends you a ticket, or accepts one you sent.",

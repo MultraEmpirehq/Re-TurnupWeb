@@ -140,10 +140,18 @@ const isWithin = (pathname: string, href: string) =>
 export const isVendorNavItemActive = (
   pathname: string,
   item: TVendorNavItem,
-) =>
-  item.href === ROUTES.DASHBOARD.href
-    ? pathname === item.href
-    : isWithin(pathname, item.href);
+) => {
+  if (item.href === ROUTES.DASHBOARD.href) return pathname === item.href;
+  if (!isWithin(pathname, item.href)) return false;
+  // Only the closest match: on /app/events/create, "Create Event" is active,
+  // not "My Events" (/app/events) too.
+  return !VENDOR_NAV_ITEMS.some(
+    (other) =>
+      other !== item &&
+      other.href.length > item.href.length &&
+      isWithin(pathname, other.href),
+  );
+};
 
 export const vendorSectionLabel = (pathname: string) =>
   VENDOR_NAV_ITEMS.find((item) => isVendorNavItemActive(pathname, item))

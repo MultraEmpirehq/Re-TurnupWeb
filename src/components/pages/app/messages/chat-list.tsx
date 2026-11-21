@@ -11,7 +11,11 @@ import { answerMessageRequest } from "@/hooks/use-privacy";
 import { useQueryClient } from "@tanstack/react-query";
 import { IEventChatGroup } from "@/lib/event-chat";
 import { cn } from "@/lib/utils";
-import { Loader2, MessageSquareIcon, SearchIcon, TicketIcon } from "lucide-react";
+import { Loader2, MessageSquareIcon, SearchIcon, TicketIcon, UsersRoundIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ROUTES } from "@/lib/variables";
+import { useRouter } from "next/navigation";
+import NewGroupDialog from "./new-group-dialog";
 import React, { memo, useMemo, useState } from "react";
 import { toast } from "@/lib/toast";
 import {
@@ -48,7 +52,7 @@ export const ChatPicture: React.FC<{
   const box = size === "lg" ? "size-12" : "size-10";
   const iAmOrganiser = kind !== "PERSON" && chat.vendor.id === myId;
   const image =
-    kind === "EVENT_GROUP"
+    kind === "EVENT_GROUP" || kind === "GROUP"
       ? chat.eventImage
       : kind === "PERSON"
         ? chat.person?.image
@@ -278,6 +282,8 @@ const ChatList: React.FC<{
   onSelect: (chat: IEventChatGroup) => void;
   emptyHint: string;
 }> = ({ chats, isLoading, selectedId, myId, onSelect, emptyHint }) => {
+  const router = useRouter();
+  const [newGroupOpen, setNewGroupOpen] = useState(false);
   const [filter, setFilter] = useState<TChatFilter>("all");
   const [query, setQuery] = useState("");
 
@@ -303,7 +309,13 @@ const ChatList: React.FC<{
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="space-y-3 border-b border-secondary-100 p-4">
-        <label className="flex h-10 items-center gap-2 rounded-2xl border border-secondary-100 bg-secondary-50/60 px-3.5 focus-within:border-primary/40">
+        <NewGroupDialog
+          open={newGroupOpen}
+          onOpenChange={setNewGroupOpen}
+          onCreated={(groupId) => router.push(`${ROUTES.MESSAGES.href}?chat=${groupId}`)}
+        />
+        <div className="flex items-center gap-2">
+        <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-2xl border border-secondary-100 bg-secondary-50/60 px-3.5 focus-within:border-primary/40">
           <SearchIcon className="size-4 text-secondary-400" aria-hidden />
           <input
             value={query}
@@ -313,6 +325,17 @@ const ChatList: React.FC<{
             className="min-w-0 flex-1 bg-transparent text-sm text-secondary-950 outline-none placeholder:text-secondary-400"
           />
         </label>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 shrink-0 rounded-2xl px-3"
+          onClick={() => setNewGroupOpen(true)}
+          aria-label="New group"
+        >
+          <UsersRoundIcon className="size-4" aria-hidden />
+          <span className="hidden sm:inline">New group</span>
+        </Button>
+        </div>
         <div
           role="tablist"
           aria-label="Chat type"

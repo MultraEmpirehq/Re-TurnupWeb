@@ -128,6 +128,15 @@ const VENDOR_NAV: TAccountNav = {
 };
 
 /**
+ * A business organiser account runs events as the brand: no tickets, orders or
+ * people to follow of its own. The people behind it use personal accounts.
+ */
+const BUSINESS_NAV: TAccountNav = {
+  ...VENDOR_NAV,
+  menuGroups: [VENDOR_NAV.menuGroups[0], [dashboardSettings], [help]],
+};
+
+/**
  * Admins use turnupz.com, where only the admin console is served, so their
  * menu stays there: personal tickets and orders aren't for staff accounts.
  */
@@ -152,12 +161,12 @@ const ADMIN_NAV: TAccountNav = {
   ],
 };
 
-export const getAccountNav = (role?: EUserRoles): TAccountNav => {
+export const getAccountNav = (role?: EUserRoles, isBusiness = false): TAccountNav => {
   switch (role) {
     case EUserRoles.ADMIN:
       return ADMIN_NAV;
     case EUserRoles.VENDOR:
-      return VENDOR_NAV;
+      return isBusiness ? BUSINESS_NAV : VENDOR_NAV;
     default:
       return ATTENDEE_NAV;
   }

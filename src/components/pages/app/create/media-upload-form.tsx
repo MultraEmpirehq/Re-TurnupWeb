@@ -16,6 +16,7 @@ import {
 import React, { memo, useCallback, useMemo } from "react";
 import { useFormContext } from "react-hook-form";
 import { toast } from "@/lib/toast";
+import { useGalleryCrop } from "@/components/ui/image-crop-dialog";
 import { moveItem } from "@/lib/move-item";
 
 export interface IMediaUploadFormValues {
@@ -150,7 +151,7 @@ const MediaUploadForm: React.FC<{
   }, [errors?.mediaFiles]);
 
   const addFiles = useCallback(
-    (newFiles: FileList | null) => {
+    (newFiles: FileList | File[] | null) => {
       if (!newFiles?.length) return;
       const current = getValues("mediaFiles") ?? [];
       const filesToAdd: File[] = [];
@@ -176,6 +177,8 @@ const MediaUploadForm: React.FC<{
     },
     [getValues, setValue],
   );
+
+  const gallery = useGalleryCrop((files) => addFiles(files));
 
   const removeFile = useCallback(
     (index: number) => {
@@ -395,6 +398,7 @@ const MediaUploadForm: React.FC<{
               hasMediaFiles ? "aspect-video" : "py-10",
             )}
           >
+            {gallery.dialog}
             <Input
               key={mediaFiles.length}
               type="file"
@@ -402,7 +406,8 @@ const MediaUploadForm: React.FC<{
               multiple
               className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
               onChange={(e) => {
-                addFiles(e.target.files);
+                // Photos are cropped to 4:5 first; videos go straight in.
+                gallery.start(Array.from(e.target.files ?? []));
                 e.target.value = "";
               }}
             />

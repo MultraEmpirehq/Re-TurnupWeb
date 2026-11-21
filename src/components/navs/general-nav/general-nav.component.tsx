@@ -73,8 +73,8 @@ const GeneralNavComponent = () => {
     (pathname === href || pathname.startsWith(`${href}/`));
   // What a signed-in person sees depends on whether they attend, sell or run the platform.
   const accountNav = useMemo(
-    () => getAccountNav(userDetails?.role),
-    [userDetails?.role],
+    () => getAccountNav(userDetails?.role, !!userDetails?.isBusiness),
+    [userDetails?.role, userDetails?.isBusiness],
   );
 
   // Once signed in, the header keeps only what they come back for: Explore, plus

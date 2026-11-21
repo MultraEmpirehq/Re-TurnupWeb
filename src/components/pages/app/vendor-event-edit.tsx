@@ -46,6 +46,8 @@ import VenueArranger from "@/components/three/venue-arranger";
 import { formatAppMoney, getCurrencyForCode, getCurrencyForCountry } from "@/lib/currency";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { toast } from "@/lib/toast";
+import PhoneCoverField from "@/components/pages/app/create/phone-cover-field";
+import ImageCropDialog, { useGalleryCrop } from "@/components/ui/image-crop-dialog";
 import { uploadAttachment, uploadAttachments } from "@/api/attachments";
 import TimezoneSelect from "@/components/ui/timezone-select";
 import LineupPicker from "@/components/discovery/lineup-picker";
@@ -279,6 +281,12 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
   const [blogPosts, setBlogPosts] = useState<IEventBlogPostDetails[]>([]);
   const [bannerImage, setBannerImage] = useState("");
   const [bannerImageFile, setBannerImageFile] = useState<File | null>(null);
+  // The optional 4:5 phone cover: the saved one's link, a new file, or none.
+  const [phoneCover, setPhoneCover] = useState<File | string | null>(null);
+  const [savedPhoneCover, setSavedPhoneCover] = useState<string | null>(null);
+  // New banners are cropped to 16:9 and gallery photos to 4:5 before they're used.
+  const [bannerToCrop, setBannerToCrop] = useState<File | null>(null);
+  const gallery = useGalleryCrop((files) => handleMediaUpload(files));
   const [mediaImages, setMediaImages] = useState<string[]>([]);
   // Parallel to mediaImages: a saved photo's attachment id, or a new file.
   const [mediaSources, setMediaSources] = useState<(string | File)[]>([]);
@@ -333,6 +341,8 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     );
     setBannerImage(data.image ?? "");
     setBannerImageFile(null);
+    setPhoneCover(data.mobileImage ?? null);
+    setSavedPhoneCover(data.mobileImage ?? null);
     setMediaImages(data.medias ?? []);
     setMediaSources((data.mediaDetails ?? []).map((media) => media.id ?? ""));
     // Names to edit; logos uploaded with them stay alongside.
@@ -690,6 +700,15 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     );
   };
 
+  // A new banner is cropped to 16:9 first (with the phone preview), then used.
+  const chooseBanner = (file?: File | null) => {
+    if (!file || !file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    setBannerToCrop(file);
+  };
+
   const handleBannerUpload = (file?: File | null) => {
     const imageUrl = createObjectUrl(file);
     if (!imageUrl) {
@@ -701,7 +720,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
     setBannerImageFile(file ?? null);
   };
 
-  const handleMediaUpload = (files?: FileList | null) => {
+  const handleMediaUpload = (files?: FileList | File[] | null) => {
     // Photos up to 5MB and short videos up to 10MB, as when creating.
     const nextFiles = Array.from(files ?? []).filter((file) => {
       const video = file.type.startsWith("video/");
@@ -983,6 +1002,13 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
         if (bannerImageFile) {
           const banner = await uploadAttachment(bannerImageFile, "EVENT_COVER");
           formData.append("coverImageId", banner.id);
+        }
+        // The phone cover: a new one is uploaded; removed, an empty id clears it.
+        if (phoneCover instanceof File) {
+          const phone = await uploadAttachment(phoneCover, "EVENT_COVER");
+          formData.append("phoneCoverImageId", phone.id);
+        } else if (!phoneCover && savedPhoneCover) {
+          formData.append("phoneCoverImageId", "");
         }
         // The gallery, whole and in order: saved photos by id, new ones
         // uploaded first. Anything removed is left out.
@@ -1334,10 +1360,23 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                     accept="image/*"
                     className="h-12 rounded-2xl border-secondary-200"
                     onChange={(event) => {
-                      handleBannerUpload(event.target.files?.[0]);
+                      chooseBanner(event.target.files?.[0]);
                       event.currentTarget.value = "";
                     }}
                   />
+                  <ImageCropDialog
+                    file={bannerToCrop}
+                    aspect={16 / 9}
+                    kind="banner"
+                    title="Crop your banner"
+                    description="Banners show at 16:9 on phones and on the website. Drag and zoom to frame it."
+                    onCancel={() => setBannerToCrop(null)}
+                    onDone={(cropped) => {
+                      handleBannerUpload(cropped);
+                      setBannerToCrop(null);
+                    }}
+                  />
+                  <PhoneCoverField value={phoneCover} bannerUrl={bannerImage || undefined} onChange={setPhoneCover} />
                 </div>
               </>
             )}
@@ -1446,10 +1485,12 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                         multiple
                         className="hidden"
                         onChange={(event) => {
-                          handleMediaUpload(event.target.files);
+                          // Photos are cropped to 4:5 first; videos go straight in.
+                          gallery.start(Array.from(event.target.files ?? []));
                           event.currentTarget.value = "";
                         }}
                       />
+                      {gallery.dialog}
                     </label>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -2591,6 +2632,7 @@ const VendorEventEdit: React.FC<{ id: string }> = ({ id }) => {
                       bannerImage || bannerImageFile
                         ? "Banner set"
                         : "No banner",
+                      phoneCover ? "Phone cover set" : null,
                       count(
                         mediaSources.length || mediaImages.length,
                         "photo or video",

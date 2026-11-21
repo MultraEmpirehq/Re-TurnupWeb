@@ -26,8 +26,16 @@ import {
   verificationMessageFor,
 } from "./vendor-nav";
 import WorkspaceSwitcher from "./workspace-switcher";
+import SidebarToggle from "../../sidebar-toggle";
+import useSidebarStore from "@/stores/sidebar-store";
 
-const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
+const VendorSidebar: React.FC<{
+  className?: string;
+  /** The desktop nav can be minimized to icons; the phone menu can't. */
+  collapsible?: boolean;
+}> = ({ className, collapsible = false }) => {
+  const storedCollapsed = useSidebarStore((state) => state.collapsed);
+  const collapsed = collapsible && storedCollapsed;
   const pathname = usePathname();
   const router = useRouter();
   const userDetails = useUserStore((state) => state.userDetails);
@@ -76,42 +84,53 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
   return (
     <aside
       className={cn(
-        "flex w-[248px] shrink-0 flex-col gap-1 border-r border-border bg-card px-4 pb-4",
+        "flex shrink-0 flex-col gap-1 border-r border-border bg-card pb-4 transition-[width] duration-200 ease-out",
+        collapsed ? "w-[76px] px-3" : "w-[248px] px-4",
         className,
       )}
     >
-      <div className="-mx-4 mb-3 flex h-[70px] shrink-0 items-center gap-3 border-b border-border/60 px-5">
-        <Link
-          href={ROUTES.DASHBOARD.href}
-          className="flex h-10 items-center rounded-xl bg-linear-to-r from-secondary to-primary px-3"
-        >
-          <Image
-            src={LogoWhiteSVG}
-            alt="Turnupz"
-            className="h-6 w-auto"
-            priority
-          />
-        </Link>
-        <span className="rounded-full bg-secondary-50 px-2 py-1 text-2xs font-bold tracking-wide text-secondary-700">
-          {workspace ? "TEAM" : "VENDOR"}
-        </span>
-      </div>
+      {collapsed ? (
+        <div className="-mx-3 mb-3 flex h-[70px] shrink-0 items-center justify-center border-b border-border/60">
+          <SidebarToggle />
+        </div>
+      ) : (
+        <div className="-mx-4 mb-3 flex h-[70px] shrink-0 items-center gap-3 border-b border-border/60 px-5">
+          <Link
+            href={ROUTES.DASHBOARD.href}
+            className="flex h-10 items-center rounded-xl bg-linear-to-r from-secondary to-primary px-3"
+          >
+            <Image
+              src={LogoWhiteSVG}
+              alt="Turnupz"
+              className="h-6 w-auto"
+              priority
+            />
+          </Link>
+          <span className="rounded-full bg-secondary-50 px-2 py-1 text-2xs font-bold tracking-wide text-secondary-700">
+            {workspace ? "TEAM" : "VENDOR"}
+          </span>
+          {collapsible && <SidebarToggle className="ml-auto" />}
+        </div>
+      )}
 
-      <WorkspaceSwitcher className="mb-2" />
+      {!collapsed && <WorkspaceSwitcher className="mb-2" />}
 
       <div className="relative flex min-h-0 flex-1 flex-col">
         <nav
           ref={navRef}
           className="scrollbar-none flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto"
         >
-          <p className="px-3 pt-2.5 pb-0.5 text-2xs font-bold tracking-[0.08em] text-muted-foreground uppercase">
-            Workspace
-          </p>
+          {!collapsed && (
+            <p className="px-3 pt-2.5 pb-0.5 text-2xs font-bold tracking-[0.08em] text-muted-foreground uppercase">
+              Workspace
+            </p>
+          )}
           {navItems.map((item) => {
             const isActive = isVendorNavItemActive(pathname, item);
             const Icon = item.icon;
             const itemClassName = cn(
-              "flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 text-sm transition-colors duration-100 ease-out",
+              "relative flex items-center gap-2.5 rounded-[10px] py-2.5 text-sm transition-colors duration-100 ease-out",
+              collapsed ? "justify-center px-0" : "px-3",
               isActive
                 ? "bg-secondary-50 font-semibold text-secondary-800"
                 : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -130,11 +149,23 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
                     itemClassName,
                     "cursor-pointer text-left opacity-60",
                   )}
-                  title="Available once your vendor account is verified"
+                  title={
+                    collapsed
+                      ? `${item.label} (once verified)`
+                      : "Available once your vendor account is verified"
+                  }
                 >
                   <Icon className="size-4.5 shrink-0" aria-hidden />
-                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                  <Lock className="size-3.5 shrink-0" aria-hidden />
+                  <span
+                    className={
+                      collapsed ? "sr-only" : "min-w-0 flex-1 truncate"
+                    }
+                  >
+                    {item.label}
+                  </span>
+                  {!collapsed && (
+                    <Lock className="size-3.5 shrink-0" aria-hidden />
+                  )}
                   <span className="sr-only">(locked until verified)</span>
                 </button>
               );
@@ -152,13 +183,27 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
                 }
                 aria-current={isActive ? "page" : undefined}
                 className={itemClassName}
+                title={collapsed ? item.label : undefined}
               >
                 <Icon className="size-4.5 shrink-0" aria-hidden />
-                <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                <span
+                  className={collapsed ? "sr-only" : "min-w-0 flex-1 truncate"}
+                >
+                  {item.label}
+                </span>
                 {badge > 0 && (
                   <CountBadge
                     value={badge}
-                    label={item.badge === "chats" ? `${badge} unread` : `${badge} waiting for approval`}
+                    label={
+                      item.badge === "chats"
+                        ? `${badge} unread`
+                        : `${badge} waiting for approval`
+                    }
+                    className={
+                      collapsed
+                        ? "absolute -top-1 right-0.5 h-5 min-w-5 text-[10px]"
+                        : undefined
+                    }
                   />
                 )}
               </Link>
@@ -182,21 +227,31 @@ const VendorSidebar: React.FC<{ className?: string }> = ({ className }) => {
         />
       </div>
 
-      <div className="flex items-center gap-2.5 rounded-xl border border-border p-2.5">
-        <Avatar className="size-[34px]">
+      <div
+        className={cn(
+          "flex items-center gap-2.5 rounded-xl border border-border p-2.5",
+          collapsed && "flex-col gap-2 border-0 p-0",
+        )}
+      >
+        <Avatar
+          className="size-[34px]"
+          title={collapsed ? displayName : undefined}
+        >
           <AvatarImage src={userDetails?.avatar} />
           <AvatarFallback className="bg-secondary-800 text-xs font-semibold text-white">
             {initials}
           </AvatarFallback>
         </Avatar>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-sm font-semibold text-foreground">
-            {displayName}
-          </span>
-          <span className="truncate text-xs text-muted-foreground">
-            {userDetails?.email ?? "Vendor account"}
-          </span>
-        </div>
+        {!collapsed && (
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-sm font-semibold text-foreground">
+              {displayName}
+            </span>
+            <span className="truncate text-xs text-muted-foreground">
+              {userDetails?.email ?? "Vendor account"}
+            </span>
+          </div>
+        )}
         <Button
           variant="ghost"
           size="icon"

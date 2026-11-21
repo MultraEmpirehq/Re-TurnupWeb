@@ -31,7 +31,8 @@ export const matchesFilter = (chat: IEventChatGroup, filter: TChatFilter) => {
   if (kind === "SUPPORT") return filter === "all";
   if (filter === "events") return kind === "EVENT_GROUP";
   if (filter === "organisers") return kind === "DIRECT";
-  if (filter === "friends") return kind === "PERSON";
+  // Friends: one-to-one chats and friends' own groups.
+  if (filter === "friends") return kind === "PERSON" || kind === "GROUP";
   return true;
 };
 

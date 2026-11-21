@@ -39,6 +39,8 @@ import { AboutEventCard, YourTicketsCard, useChatTopic } from "./chat-cards";
 import { QUICK_QUESTIONS, dayDivider, kindOf } from "./chat-format";
 import { ChatPicture } from "./chat-list";
 import ChatMessage from "./chat-message";
+import GroupInfo from "./group-info";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 const EMOJIS = ["🔥", "🎉", "🙌", "❤️", "👏", "✅", "👀", "✨"];
 
@@ -56,6 +58,8 @@ export const chatSubtitle = (chat: IEventChatGroup, iAmOrganiser: boolean) => {
   if (kind === "PERSON")
     return chat.person?.username ? `@${chat.person.username}` : "";
   if (kind === "SUPPORT") return "Messages from the Turnupz team";
+  if (kind === "GROUP")
+    return `Group · ${(chat.memberCount ?? 0).toLocaleString()} ${chat.memberCount === 1 ? "member" : "members"}`;
   return iAmOrganiser ? "Asked about your event" : "Organiser";
 };
 
@@ -104,7 +108,9 @@ const ChatThread: React.FC<{
   const isOneToOne = kind === "DIRECT" || kind === "PERSON";
   const iAmOrganiser = kind !== "PERSON" && !!myId && chat.vendor.id === myId;
   // The Turnupz team, moderating an event chat they opened from the console.
-  const isAdmin = useUserStore((state) => state.userDetails?.role === EUserRoles.ADMIN);
+  const isAdmin = useUserStore(
+    (state) => state.userDetails?.role === EUserRoles.ADMIN,
+  );
   const onlyOrganiser = isGroup && !!chat.announcementMode && !iAmOrganiser;
   const canPost = !chat.isClosed && !onlyOrganiser;
 
@@ -119,6 +125,8 @@ const ChatThread: React.FC<{
 
   const [draft, setDraft] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  // Friends' groups: Group info opens from the header.
+  const [groupInfoOpen, setGroupInfoOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLInputElement>(null);
@@ -252,11 +260,13 @@ const ChatThread: React.FC<{
       : "Message everyone going"
     : kind === "PERSON"
       ? "Message"
-      : kind === "SUPPORT"
-        ? "Reply to the Turnupz team"
-        : iAmOrganiser
-          ? "Reply"
-          : "Message the organiser";
+      : kind === "GROUP"
+        ? "Message the group"
+        : kind === "SUPPORT"
+          ? "Reply to the Turnupz team"
+          : iAmOrganiser
+            ? "Reply"
+            : "Message the organiser";
   const busy = send.isPending || upload.isPending;
 
   return (
@@ -272,16 +282,47 @@ const ChatThread: React.FC<{
           <ArrowLeftIcon className="size-5" />
         </button>
         <ChatPicture chat={chat} myId={myId} size="md" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-base font-extrabold text-secondary-950">
-            {chat.eventName}
-          </p>
-          <p className="truncate text-2xs font-semibold text-secondary-500">
-            {chatSubtitle(chat, iAmOrganiser)}
-            {chat.muted ? " · Muted" : ""}
-          </p>
-        </div>
-        {kind !== "SUPPORT" && (
+        {kind === "GROUP" ? (
+          <button
+            type="button"
+            onClick={() => setGroupInfoOpen(true)}
+            className="min-w-0 flex-1 text-left"
+            aria-label={`${chat.eventName}: group info`}
+          >
+            <p className="truncate text-base font-extrabold text-secondary-950">
+              {chat.eventName}
+            </p>
+            <p className="truncate text-2xs font-semibold text-secondary-500">
+              {chatSubtitle(chat, iAmOrganiser)}
+              {chat.muted ? " · Muted" : ""} · Tap for group info
+            </p>
+          </button>
+        ) : (
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-base font-extrabold text-secondary-950">
+              {chat.eventName}
+            </p>
+            <p className="truncate text-2xs font-semibold text-secondary-500">
+              {chatSubtitle(chat, iAmOrganiser)}
+              {chat.muted ? " · Muted" : ""}
+            </p>
+          </div>
+        )}
+        {kind === "GROUP" && (
+          <Dialog open={groupInfoOpen} onOpenChange={setGroupInfoOpen}>
+            <DialogContent className="max-h-[90vh] overflow-y-auto bg-secondary-50 sm:max-w-md">
+              <DialogTitle className="sr-only">Group info</DialogTitle>
+              <GroupInfo
+                groupId={chat.id}
+                onLeft={() => {
+                  setGroupInfoOpen(false);
+                  onBack();
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
+        {kind !== "SUPPORT" && kind !== "GROUP" && (
           <div className="relative">
             <Button
               type="button"

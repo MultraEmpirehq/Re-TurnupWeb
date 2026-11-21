@@ -29,13 +29,22 @@ import {
   TAdminNavItem,
   visibleAdminNavGroups,
 } from "./admin-nav";
+import SidebarToggle from "../../sidebar-toggle";
+import useSidebarStore from "@/stores/sidebar-store";
 
 const activeGroupLabel = (pathname: string) =>
   ADMIN_NAV_GROUPS.find((group) =>
     group.items.some((item) => isAdminNavItemActive(pathname, item)),
   )?.label;
 
-const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
+const AdminSidebar: React.FC<{
+  className?: string;
+  /** The desktop nav can be minimized to icons; the phone menu can't. */
+  collapsible?: boolean;
+}> = ({ className, collapsible = false }) => {
+  const storedCollapsed = useSidebarStore((state) => state.collapsed);
+  const setCollapsed = useSidebarStore((state) => state.setCollapsed);
+  const collapsed = collapsible && storedCollapsed;
   const pathname = usePathname();
   const userDetails = useUserStore((state) => state.userDetails);
   const handleLogout = useSignOut();
@@ -54,9 +63,8 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
   const firstDepartment = navGroups.find((group) => group.department);
 
   // What's waiting in each queue; the api leaves out the ones they can't work on.
-  const { data: pending, refetch: refetchPending } = useAdminPendingCounts(
-    !isLoadingPermissions,
-  );
+  const { data: pending, refetch: refetchPending } =
+    useAdminPendingCounts(!isLoadingPermissions);
   // Coming back from a queue usually means something in it was dealt with.
   useEffect(() => {
     void refetchPending();
@@ -90,17 +98,28 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
         key={item.href}
         href={item.href}
         aria-current={isActive ? "page" : undefined}
+        title={collapsed ? item.label : undefined}
         className={cn(
-          "flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 text-sm transition-colors duration-100 ease-out",
+          "relative flex items-center gap-2.5 rounded-[10px] py-2.5 text-sm transition-colors duration-100 ease-out",
+          collapsed ? "justify-center px-0" : "px-3",
           isActive
             ? "bg-secondary-50 font-semibold text-secondary-800 dark:bg-white/10 dark:text-foreground"
             : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
         )}
       >
         <Icon className="size-4.5 shrink-0" aria-hidden />
-        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+        <span className={collapsed ? "sr-only" : "min-w-0 flex-1 truncate"}>
+          {item.label}
+        </span>
         {badge > 0 && (
-          <CountBadge value={badge} />
+          <CountBadge
+            value={badge}
+            className={
+              collapsed
+                ? "absolute -top-1 right-0.5 h-5 min-w-5 text-[10px]"
+                : undefined
+            }
+          />
         )}
       </Link>
     );
@@ -127,26 +146,34 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
   return (
     <aside
       className={cn(
-        "flex w-[248px] shrink-0 flex-col gap-1 border-r border-border bg-card px-4 dark:bg-card pb-4",
+        "flex shrink-0 flex-col gap-1 border-r border-border bg-card dark:bg-card pb-4 transition-[width] duration-200 ease-out",
+        collapsed ? "w-[76px] px-3" : "w-[248px] px-4",
         className,
       )}
     >
-      <div className="-mx-4 mb-3 flex h-[70px] shrink-0 items-center gap-3 border-b border-border/60 px-5">
-        <Link
-          href={ROUTES.ADMIN_OVERVIEW.href}
-          className="flex h-10 items-center rounded-xl bg-linear-to-r from-secondary to-primary px-3"
-        >
-          <Image
-            src={LogoWhiteSVG}
-            alt="Turnupz"
-            className="h-6 w-auto"
-            priority
-          />
-        </Link>
-        <span className="rounded-full bg-secondary-50 px-2 py-1 text-2xs font-bold tracking-wide text-secondary-700 dark:bg-white/10 dark:text-foreground">
-          ADMIN
-        </span>
-      </div>
+      {collapsed ? (
+        <div className="-mx-3 mb-3 flex h-[70px] shrink-0 items-center justify-center border-b border-border/60">
+          <SidebarToggle />
+        </div>
+      ) : (
+        <div className="-mx-4 mb-3 flex h-[70px] shrink-0 items-center gap-3 border-b border-border/60 px-5">
+          <Link
+            href={ROUTES.ADMIN_OVERVIEW.href}
+            className="flex h-10 items-center rounded-xl bg-linear-to-r from-secondary to-primary px-3"
+          >
+            <Image
+              src={LogoWhiteSVG}
+              alt="Turnupz"
+              className="h-6 w-auto"
+              priority
+            />
+          </Link>
+          <span className="rounded-full bg-secondary-50 px-2 py-1 text-2xs font-bold tracking-wide text-secondary-700 dark:bg-white/10 dark:text-foreground">
+            ADMIN
+          </span>
+          {collapsible && <SidebarToggle className="ml-auto" />}
+        </div>
+      )}
 
       <div className="relative flex min-h-0 flex-1 flex-col">
         <nav
@@ -157,9 +184,11 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
             if (!group.department) {
               return (
                 <Fragment key={group.label}>
-                  <p className="px-3 pt-2.5 pb-0.5 text-2xs font-bold tracking-[0.08em] text-muted-foreground uppercase">
-                    {group.label}
-                  </p>
+                  {!collapsed && (
+                    <p className="px-3 pt-2.5 pb-0.5 text-2xs font-bold tracking-[0.08em] text-muted-foreground uppercase">
+                      {group.label}
+                    </p>
+                  )}
                   {group.items.map(renderItem)}
                 </Fragment>
               );
@@ -176,6 +205,42 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
               0,
             );
             const listId = `admin-nav-${group.label.toLowerCase().replace(/\s+/g, "-")}`;
+
+            // Minimized: the department's icon; it opens the menu on that department.
+            if (collapsed) {
+              return (
+                <button
+                  key={group.label}
+                  type="button"
+                  title={group.label}
+                  aria-label={`${group.label}${groupBadge ? `, ${groupBadge} waiting` : ""}`}
+                  onClick={() => {
+                    setCollapsed(false);
+                    setExpandedGroup(group.label);
+                  }}
+                  className={cn(
+                    "relative mt-1 flex items-center justify-center rounded-[10px] py-1.5 transition-colors duration-100 ease-out hover:bg-muted",
+                    isGroupActive && "bg-secondary-50 dark:bg-white/10",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "flex size-8 items-center justify-center rounded-lg",
+                      accentClassName,
+                    )}
+                  >
+                    <DepartmentIcon className="size-4" aria-hidden />
+                  </span>
+                  {groupBadge > 0 && (
+                    <CountBadge
+                      value={groupBadge}
+                      label={`${groupBadge} awaiting review`}
+                      className="absolute -top-1 right-0.5 h-5 min-w-5 text-[10px]"
+                    />
+                  )}
+                </button>
+              );
+            }
 
             return (
               <div key={group.label} className="flex flex-col gap-1 pt-1">
@@ -194,7 +259,9 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
                     isGroupActive
                       ? "text-secondary-800 dark:text-foreground"
                       : "text-foreground hover:bg-muted",
-                    isGroupActive && !isExpanded && "bg-secondary-50 dark:bg-white/10",
+                    isGroupActive &&
+                      !isExpanded &&
+                      "bg-secondary-50 dark:bg-white/10",
                     isGroupActive && isExpanded && "hover:bg-muted",
                   )}
                 >
@@ -213,7 +280,10 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
                     )}
                   </span>
                   {!isExpanded && groupBadge > 0 && (
-                    <CountBadge value={groupBadge} label={`${groupBadge} awaiting review`} />
+                    <CountBadge
+                      value={groupBadge}
+                      label={`${groupBadge} awaiting review`}
+                    />
                   )}
                   {!isExpanded && isGroupActive && groupBadge === 0 && (
                     <span
@@ -258,21 +328,31 @@ const AdminSidebar: React.FC<{ className?: string }> = ({ className }) => {
         />
       </div>
 
-      <div className="flex items-center gap-2.5 rounded-xl border border-border p-2.5">
-        <Avatar className="size-[34px]">
+      <div
+        className={cn(
+          "flex items-center gap-2.5 rounded-xl border border-border p-2.5",
+          collapsed && "flex-col gap-2 border-0 p-0",
+        )}
+      >
+        <Avatar
+          className="size-[34px]"
+          title={collapsed ? displayName : undefined}
+        >
           <AvatarImage src={userDetails?.avatar} />
           <AvatarFallback className="bg-secondary-800 text-xs font-semibold text-white">
             {initials}
           </AvatarFallback>
         </Avatar>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-sm font-semibold text-foreground">
-            {displayName}
-          </span>
-          <span className="truncate text-xs text-muted-foreground">
-            {userDetails?.email ?? "Administrator"}
-          </span>
-        </div>
+        {!collapsed && (
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-sm font-semibold text-foreground">
+              {displayName}
+            </span>
+            <span className="truncate text-xs text-muted-foreground">
+              {userDetails?.email ?? "Administrator"}
+            </span>
+          </div>
+        )}
         <Button
           variant="ghost"
           size="icon"

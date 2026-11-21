@@ -49,6 +49,8 @@ export type TUserDetails = {
   mustChangePassword?: boolean;
   /** Restricted by the team: signs in, but can't publish, buy, send or message. */
   restriction?: IAccountRestriction | null;
+  /** A business organiser account: no attendee features (buying, posting, friends). */
+  isBusiness?: boolean;
 };
 
 type TStoreState = {
