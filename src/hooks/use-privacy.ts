@@ -8,6 +8,8 @@ export type TPrivacy = {
   /** Only approved followers see your followers and following. */
   isPrivate: boolean;
   messagePolicy: TMessagePolicy;
+  /** People who follow each other with you can tag you in posts. */
+  allowTags?: boolean;
   blockedCount: number;
 };
 
@@ -29,7 +31,7 @@ export const useUpdatePrivacy = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (
-      body: Partial<Pick<TPrivacy, "isPrivate" | "messagePolicy">>,
+      body: Partial<Pick<TPrivacy, "isPrivate" | "messagePolicy" | "allowTags">>,
     ) => (await patchData<typeof body, TPrivacy>("/privacy", body)).data?.data,
     onMutate: async (body) => {
       await queryClient.cancelQueries({ queryKey: ["privacy"] });

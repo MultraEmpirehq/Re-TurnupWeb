@@ -76,7 +76,7 @@ const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="flex min-h-svh bg-[linear-gradient(180deg,rgba(244,248,255,0.92)_0%,rgba(255,255,255,1)_30%)] dark:bg-none dark:bg-background">
-      <AdminSidebar className="sticky top-0 hidden h-svh lg:flex" />
+      <AdminSidebar className="sticky top-0 hidden h-svh lg:flex" collapsible />
 
       <Sheet open={isNavOpen} onOpenChange={setIsNavOpen}>
         <SheetContent side="left" className="w-[272px] p-0 sm:max-w-[272px]">

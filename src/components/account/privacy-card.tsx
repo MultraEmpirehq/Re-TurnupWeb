@@ -107,10 +107,10 @@ const PrivacyCard = () => {
 
   // Changes wait here until Save, which sends them in one request.
   const [draft, setDraft] = useState<
-    Partial<Pick<TPrivacy, "isPrivate" | "messagePolicy">>
+    Partial<Pick<TPrivacy, "isPrivate" | "messagePolicy" | "allowTags">>
   >({});
   const shown = privacy ? { ...privacy, ...draft } : undefined;
-  const changes: Partial<Pick<TPrivacy, "isPrivate" | "messagePolicy">> = {};
+  const changes: Partial<Pick<TPrivacy, "isPrivate" | "messagePolicy" | "allowTags">> = {};
   if (
     privacy &&
     draft.isPrivate !== undefined &&
@@ -124,6 +124,9 @@ const PrivacyCard = () => {
     draft.messagePolicy !== privacy.messagePolicy
   ) {
     changes.messagePolicy = draft.messagePolicy;
+  }
+  if (privacy && draft.allowTags !== undefined && draft.allowTags !== (privacy.allowTags ?? true)) {
+    changes.allowTags = draft.allowTags;
   }
   const dirty = Object.keys(changes).length > 0;
 
@@ -143,6 +146,11 @@ const PrivacyCard = () => {
             changes.messagePolicy
               ? SAVED_MESSAGE_POLICY[changes.messagePolicy]
               : null,
+            changes.allowTags === undefined
+              ? null
+              : changes.allowTags
+                ? "People can tag you."
+                : "Nobody can tag you.",
           ]
             .filter(Boolean)
             .join(" "),
@@ -223,6 +231,24 @@ const PrivacyCard = () => {
             <p className="px-1 text-xs text-secondary-500 italic">
               Going private doesn&apos;t remove the followers you already have.
             </p>
+            <label className="flex items-center justify-between gap-4 rounded-2xl border border-secondary-100 bg-secondary-50/60 px-4 py-3">
+              <span>
+                <span className="block font-semibold text-secondary-950">
+                  Let people tag me
+                </span>
+                <span className="block text-sm text-secondary-500">
+                  People who follow you back can tag you in their posts. They
+                  show on your Tagged tab.
+                </span>
+              </span>
+              <Switch
+                checked={shown.allowTags ?? true}
+                onCheckedChange={(value) =>
+                  setDraft((current) => ({ ...current, allowTags: value }))
+                }
+                aria-label="Let people tag me"
+              />
+            </label>
             {privacy.isPrivate && (requests.data?.length ?? 0) > 0 && (
               <div className="space-y-2 pt-1">
                 <p className="px-1 text-sm font-semibold text-secondary-950">

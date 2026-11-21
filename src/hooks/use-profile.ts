@@ -17,6 +17,12 @@ export interface IPersonProfile {
   isFollowing: boolean;
   followsYou: boolean;
   isMe: boolean;
+  /** Asked to follow a private person; waiting for them. */
+  requested?: boolean;
+  isPrivate?: boolean;
+  /** Private and you don't follow them (or you've blocked them): only the card shows. */
+  locked?: boolean;
+  blockedByMe?: boolean;
 }
 
 export interface IPersonCard {

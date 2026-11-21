@@ -255,6 +255,11 @@ export interface IEventDetailsType {
   venue?: IVenueDetailsType;
   image: string;
   imageDetails?: TAttachmentDetails | null;
+  /** The organiser's optional 4:5 cover for phones. */
+  mobileImage?: string | null;
+  /** Posts from people who were there, and up to three of their photos. */
+  crowdPosts?: number;
+  crowdPreviews?: string[];
   totalTickets: number;
   organizerName?: string;
   eventYear?: string;

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { CalendarDays, Globe2, MapPin, Mic2 } from "lucide-react";
 import React, { memo } from "react";
 import DayStrip from "./day-strip";
+import PostCircles from "./post-circles";
 import EventContent from "./event-content";
 import { PerformerResults, PlaceResults } from "./explore-results";
 import useExploreFilters, {
@@ -35,6 +36,9 @@ const ExploreContentComponent = () => {
         <div className="-mt-20">
           <DayStrip />
         </div>
+
+        {/* People you follow who posted lately, as on the app's Home. */}
+        <PostCircles />
 
         <ScrollRow fadeClassName="from-[#f7f9fc]">
           <div

@@ -8,6 +8,8 @@ export type TNotificationPreferences = {
   eventUpdates: boolean;
   orderUpdates: boolean;
   ticketTransfers: boolean;
+  /** Posts from people you follow. */
+  socialUpdates?: boolean;
 };
 
 export type TSession = {

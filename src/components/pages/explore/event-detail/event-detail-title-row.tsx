@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Share2, ExternalLink, Check } from "lucide-react";
 import { ROUTES } from "@/lib/variables";
 import Notice from "@/components/ui/notice";
+import useUserStore from "@/stores/user-store";
 
 interface EventDetailTitleRowProps {
   eventId: string;
@@ -48,6 +49,8 @@ const EventDetailTitleRow = ({
       ? ticketUrl
       : `${ROUTES.EXPLORE.href}/event/${eventId}/ticket`;
   const label = saleMethod === "register" ? "Register free" : "Book Now";
+  // A business organiser account doesn't book: its people use personal accounts.
+  const isBusiness = !!useUserStore((state) => state.userDetails?.isBusiness);
 
   return (
     <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-start md:justify-between">
@@ -81,6 +84,10 @@ const EventDetailTitleRow = ({
         ) : salesPaused && !cta ? (
           <Button disabled className="shrink-0" title="Sales are paused while our team checks this event">
             Sales paused
+          </Button>
+        ) : isBusiness && !cta && !(isExternal && ticketUrl) ? (
+          <Button disabled className="shrink-0" title="Use your personal Turnupz account to get tickets">
+            Business accounts can&apos;t book
           </Button>
         ) : (
         <Button

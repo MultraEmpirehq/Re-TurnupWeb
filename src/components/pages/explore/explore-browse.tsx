@@ -518,11 +518,12 @@ const ExploreBrowse = () => {
             title="Event planners"
             withPlace={false}
           />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* One column on phones that never grows past the screen (long names truncate). */}
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {planners.map((planner) => (
               <div
                 key={planner.id}
-                className="flex items-center gap-4 rounded-3xl bg-card p-4 ring-1 ring-black/5"
+                className="flex min-w-0 items-center gap-4 rounded-3xl bg-card p-4 ring-1 ring-black/5"
               >
                 <PerformerAvatar
                   name={planner.name}

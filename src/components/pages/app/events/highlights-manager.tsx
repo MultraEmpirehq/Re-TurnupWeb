@@ -10,7 +10,6 @@ import TextareaField from "@/components/ui/textarea-field";
 import {
   HIGHLIGHT_LIMITS,
   IManagedHighlight,
-  useApproveAllHighlights,
   useHighlightSettings,
   useManageHighlights,
   usePostHighlights,
@@ -47,26 +46,26 @@ const Thumb = ({ item }: { item: IManagedHighlight }) => (
   </>
 );
 
-type TTab = "pending" | "approved" | "declined";
+type TTab = "approved" | "declined";
 
 /**
  * The organiser's highlights for an event that's over: post their own photos
- * and clips, write the thank-you line, choose what shows, and approve photos
- * from ticket holders.
+ * and clips, write the thank-you line, choose what shows, and look after
+ * ticket holders' posts: they show straight away, and you can take any off
+ * (it stays on the person's profile) or put it back.
  */
 const HighlightsManager = ({ eventId, eventName }: { eventId: string; eventName: string }) => {
   const { data } = useManageHighlights(eventId);
   const post = usePostHighlights(eventId);
   const settings = useHighlightSettings(eventId);
   const review = useReviewHighlight(eventId);
-  const approveAll = useApproveAllHighlights(eventId);
   const remove = useRemoveHighlight(eventId);
   const input = useRef<HTMLInputElement>(null);
   const section = useRef<HTMLElement>(null);
   const params = useSearchParams();
   const [notifyHolders, setNotifyHolders] = useState(true);
   const [recap, setRecap] = useState("");
-  const [tab, setTab] = useState<TTab>("pending");
+  const [tab, setTab] = useState<TTab>("approved");
 
   useEffect(() => setRecap(data?.settings.recap ?? ""), [data?.settings.recap]);
   // From the "new photos from the crowd" notification.
@@ -209,7 +208,7 @@ const HighlightsManager = ({ eventId, eventName }: { eventId: string; eventName:
               <span className="block text-sm font-semibold text-foreground">Let ticket holders add photos</span>
               <span className="block text-xs text-muted-foreground">
                 {data.settings.crowdPhotosOpen && new Date(data.crowdOpenUntil) > new Date()
-                  ? `Open until ${format(new Date(data.crowdOpenUntil), "d MMM")}. You approve each one.`
+                  ? `Open until ${format(new Date(data.crowdOpenUntil), "d MMM")}. They show straight away; take off any you don't want.`
                   : "Closed. Ticket holders can't add more."}
               </span>
             </span>
@@ -229,16 +228,15 @@ const HighlightsManager = ({ eventId, eventName }: { eventId: string; eventName:
             value={tab}
             onChange={setTab}
             options={[
-              { value: "pending", label: `Waiting (${data.counts.pending})` },
               { value: "approved", label: `Showing (${data.counts.approved})` },
-              { value: "declined", label: `Declined (${data.counts.declined})` },
+              { value: "declined", label: `Taken off (${data.counts.declined})` },
             ]}
           />
         </div>
 
         {crowd.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            {tab === "pending" ? "Nothing waiting. Photos from ticket holders show up here for you to approve." : "None yet."}
+            {tab === "approved" ? "No posts from ticket holders yet. They show here and on the event page as they come in." : "None taken off."}
           </p>
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -264,9 +262,9 @@ const HighlightsManager = ({ eventId, eventName }: { eventId: string; eventName:
                         size="sm"
                         className="flex-1 rounded-lg"
                         disabled={review.isPending}
-                        onClick={() => review.mutate({ id: item.id, status: "approved" }, { onError: (error) => failed(error, "Couldn't approve it.") })}
+                        onClick={() => review.mutate({ id: item.id, status: "approved" }, { onError: (error) => failed(error, "Couldn't put it back.") })}
                       >
-                        Approve
+                        Put back
                       </Button>
                     )}
                     {item.status !== "declined" && (
@@ -275,9 +273,9 @@ const HighlightsManager = ({ eventId, eventName }: { eventId: string; eventName:
                         variant="outline"
                         className="flex-1 rounded-lg"
                         disabled={review.isPending}
-                        onClick={() => review.mutate({ id: item.id, status: "declined" }, { onError: (error) => failed(error, "Couldn't decline it.") })}
+                        onClick={() => review.mutate({ id: item.id, status: "declined" }, { onError: (error) => failed(error, "Couldn't take it off.") })}
                       >
-                        {item.status === "approved" ? "Take down" : "Decline"}
+                        Take off event
                       </Button>
                     )}
                   </div>
@@ -286,19 +284,7 @@ const HighlightsManager = ({ eventId, eventName }: { eventId: string; eventName:
             ))}
           </ul>
         )}
-        {tab === "pending" && data.counts.pending > 1 && (
-          <div className="flex justify-end">
-            <Button
-              variant="outline"
-              className="rounded-xl"
-              loading={approveAll.isPending}
-              onClick={() => approveAll.mutate(undefined, { onSuccess: () => toast.success("Approved."), onError: (error) => failed(error, "Couldn't approve them.") })}
-            >
-              Approve all {data.counts.pending}
-            </Button>
-          </div>
-        )}
-        {!data.crowdOpen && data.counts.pending === 0 && data.counts.approved === 0 && (
+        {!data.crowdOpen && data.counts.approved === 0 && (
           <Notice tone="neutral" title="Fan photos are closed">
             <p>Turn on &quot;Let ticket holders add photos&quot; to open it again.</p>
           </Notice>

@@ -8,7 +8,7 @@ import InputField from "@/components/ui/input-field";
 import Notice from "@/components/ui/notice";
 import { Switch } from "@/components/ui/switch";
 import { HIGHLIGHT_LIMITS, useSendCrowdPhotos } from "@/hooks/use-event-highlights";
-import { CheckCircle2, Clock, ImagePlus, X } from "lucide-react";
+import { CheckCircle2, ImagePlus, X } from "lucide-react";
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 
 /** Picked files with a preview each; previews are freed when the list changes. */
@@ -20,8 +20,8 @@ const usePreviews = (files: File[]) => {
 
 /**
  * "Were you there?": a ticket holder picks photos and clips, adds a caption,
- * chooses whether their username shows, confirms they may share them, and
- * sends them to the organiser for approval.
+ * chooses whether their username shows and confirms they may share them. It
+ * goes up straight away, on the event page and as a post on their profile.
  */
 const AddCrowdPhotos = ({
   eventId,
@@ -73,7 +73,7 @@ const AddCrowdPhotos = ({
           setError(
             failure instanceof Error && !("response" in failure)
               ? failure.message
-              : constructErrorMessage(failure as TApiErrorResponseType, "Couldn't send them. Try again."),
+              : constructErrorMessage(failure as TApiErrorResponseType, "Couldn't post them. Try again."),
           ),
       },
     );
@@ -85,13 +85,10 @@ const AddCrowdPhotos = ({
         {sent ? (
           <div className="flex flex-col items-center gap-3 py-4 text-center">
             <CheckCircle2 className="size-10 text-success" aria-hidden />
-            <DialogTitle className="text-xl">Sent to the organiser</DialogTitle>
+            <DialogTitle className="text-xl">Posted</DialogTitle>
             <DialogDescription>
-              We&apos;ll let you know when they&apos;re up on the {eventName} page.
+              {sent === 1 ? "It's" : "They're"} on the {eventName} page and your profile.
             </DialogDescription>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-warning-line bg-warning-soft px-3 py-1 text-sm font-semibold text-warning">
-              <Clock className="size-3.5" aria-hidden /> {sent} waiting for approval
-            </span>
             <Button className="mt-2 rounded-xl" onClick={() => onOpenChange(false)}>
               Done
             </Button>
@@ -169,7 +166,7 @@ const AddCrowdPhotos = ({
             </label>
 
             {error && (
-              <Notice tone="danger" title="Not sent">
+              <Notice tone="danger" title="Not posted">
                 <p>{error}</p>
               </Notice>
             )}
@@ -181,10 +178,11 @@ const AddCrowdPhotos = ({
                 loading={send.isPending}
                 onClick={submit}
               >
-                {files.length ? `Send ${files.length} to the organiser` : "Pick photos or clips"}
+                {files.length ? `Post ${files.length}` : "Pick photos or clips"}
               </Button>
               <p className="text-center text-xs text-muted-foreground">
-                They show on the event page once the organiser approves them.
+                Shows on the event page and your profile straight away. The organiser can take it off their event.
+                If your profile is private, only your followers see it.
               </p>
             </div>
           </>
