@@ -21,6 +21,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import React, { Fragment, memo, useMemo } from "react";
 import { getAccountNav } from "./general-nav/account-nav";
+import { ADMIN_NAV_GROUPS } from "@/components/pages/app/admin/shell/admin-nav";
+import { VENDOR_NAV_ITEMS } from "@/components/pages/app/vendor/shell/vendor-nav";
+
+/** Everything the console's side nav already links to, so the menu doesn't repeat it. */
+const SIDE_NAV_HREFS = {
+  admin: new Set([ROUTES.ADMIN_OVERVIEW.href, ...ADMIN_NAV_GROUPS.flatMap((group) => group.items.map((item) => item.href))]),
+  vendor: new Set(VENDOR_NAV_ITEMS.map((item) => item.href)),
+};
 import AwayMenuItem from "@/components/pages/app/admin/shell/away-menu-item";
 
 export const accountInitials = (user?: TUserDetails | null) => {
@@ -56,13 +64,21 @@ const AccountMenu: React.FC<{ variant: "site" | "workspace" }> = ({
   const setWorkspace = useWorkspaceStore((state) => state.setWorkspace);
   // On the site, the way in to the organisers' teams this person is on.
   const { data: workspaces = [] } = useMyWorkspaces();
-  const accountNav = useMemo(
-    () => getAccountNav(userDetails?.role),
-    [userDetails?.role],
-  );
+  const isSite = variant === "site";
+  const accountNav = useMemo(() => {
+    const nav = getAccountNav(userDetails?.role, !!userDetails?.isBusiness);
+    // In the console the side nav is right there: only what it doesn't have.
+    if (isSite) return nav;
+    const inSideNav = userDetails?.role === EUserRoles.ADMIN ? SIDE_NAV_HREFS.admin : SIDE_NAV_HREFS.vendor;
+    return {
+      ...nav,
+      menuGroups: nav.menuGroups
+        .map((group) => group.filter((link) => !inSideNav.has(link.href)))
+        .filter((group) => group.length > 0),
+    };
+  }, [isSite, userDetails?.role, userDetails?.isBusiness]);
   const initials = accountInitials(userDetails);
   const displayName = accountDisplayName(userDetails);
-  const isSite = variant === "site";
 
   if (!userDetails) return null;
 

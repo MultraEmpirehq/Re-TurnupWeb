@@ -9,9 +9,11 @@ import { IEventDetailsType, UserTicketDetailsResponseType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/variables";
 import { useQuery } from "@tanstack/react-query";
+import ProfilePosts from "@/components/pages/profile/posts/profile-posts";
+import { useProfilePosts } from "@/hooks/use-posts";
+import useUserStore from "@/stores/user-store";
 import {
   Bookmark,
-  Camera,
   ChevronRight,
   ImageIcon,
   Tag,
@@ -33,6 +35,9 @@ const whenOf = (event: IEventDetailsType) =>
 
 const placeOf = (event: IEventDetailsType) =>
   event.venue?.name ?? event.venueName ?? event.eventCity ?? null;
+
+/** Ticket holders can post to an event for 14 days after it ends (highlights.rules.ts). */
+const POSTABLE_DAYS = 14;
 
 /** Every ticket they hold, not just the first page. */
 const useAllMyTickets = () =>
@@ -110,11 +115,16 @@ const Empty: React.FC<{
 
 /**
  * The events side of their profile, as on the app: the events they hold tickets
- * for (coming up first, then past), what they saved, and Posts and Tagged, which
- * are on their way.
+ * for (coming up first, then past), what they saved, their Posts, and the
+ * posts they're tagged in.
  */
 const ProfileTabs: React.FC = () => {
   const [tab, setTab] = useState<TTab>("tickets");
+  const username = useUserStore((state) => state.userDetails?.username);
+  const { data: postPages } = useProfilePosts(username);
+  const postCount = postPages?.pages[0]?.total ?? 0;
+  const { data: taggedPages } = useProfilePosts(username, "tagged");
+  const taggedCount = taggedPages?.pages[0]?.total ?? 0;
   const { data: tickets = [], isLoading: ticketsLoading } = useAllMyTickets();
   const { data: savedPages, isLoading: savedLoading } = useEvents({
     isFavorite: true,
@@ -144,6 +154,18 @@ const ProfileTabs: React.FC = () => {
       ticketCount: all.reduce((sum, item) => sum + item.count, 0),
     };
   }, [tickets]);
+  // Past events they had a ticket for that are still open for photos.
+  const postable = useMemo(
+    () =>
+      past
+        .filter(
+          (item) =>
+            Date.now() - new Date(item.event.endDate ?? item.event.date).getTime() <
+            POSTABLE_DAYS * 86_400_000,
+        )
+        .map((item) => ({ id: item.event.id, name: item.event.name })),
+    [past],
+  );
   const saved = useMemo(
     () => savedPages?.pages?.flatMap((page) => page?.data ?? []) ?? [],
     [savedPages],
@@ -156,8 +178,8 @@ const ProfileTabs: React.FC = () => {
     icon: React.ElementType;
   }[] = [
     // The app's order; Tickets is still the one that opens first.
-    { id: "posts", label: "Posts", count: 0, icon: ImageIcon },
-    { id: "tagged", label: "Tagged", count: 0, icon: Tag },
+    { id: "posts", label: "Posts", count: postCount, icon: ImageIcon },
+    { id: "tagged", label: "Tagged", count: taggedCount, icon: Tag },
     { id: "tickets", label: "Tickets", count: ticketCount, icon: TicketIcon },
     { id: "saved", label: "Saved", count: saved.length, icon: Bookmark },
   ];
@@ -276,17 +298,9 @@ const ProfileTabs: React.FC = () => {
           />
         )
       ) : tab === "posts" ? (
-        <Empty
-          icon={Camera}
-          title="Posts are coming soon"
-          body="You'll be able to share photos from events you went to."
-        />
+        <ProfilePosts username={username} events={postable} />
       ) : (
-        <Empty
-          icon={Tag}
-          title="Tagged is coming soon"
-          body="Photos friends tag you in will show here."
-        />
+        <ProfilePosts username={username} events={[]} which="tagged" />
       )}
     </section>
   );

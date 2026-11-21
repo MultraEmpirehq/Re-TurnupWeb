@@ -81,6 +81,8 @@ const ChatMessage: React.FC<{
   onHide,
 }) => {
   const isGroup = kindOf(chat) === "EVENT_GROUP";
+  // Who wrote each message shows in any chat of several people: event chats and friends' groups.
+  const showsSenders = isGroup || kindOf(chat) === "GROUP";
   const fromOrganiser =
     message.role === "vendor" || message.kind === "event-update";
   const href = hrefOf(message, chat);
@@ -234,7 +236,7 @@ const ChatMessage: React.FC<{
         mine ? "flex-row-reverse" : "",
       )}
     >
-      {!mine && isGroup && (
+      {!mine && showsSenders && (
         <Avatar name={message.senderName} src={message.senderAvatar} />
       )}
       <div
@@ -290,7 +292,7 @@ const ChatMessage: React.FC<{
                 : "rounded-bl-md border border-secondary-100 bg-card text-secondary-950",
             )}
           >
-            {!mine && isGroup && (
+            {!mine && showsSenders && (
               <p className="mb-0.5 text-2xs font-extrabold text-secondary-700">
                 {message.senderName}
                 {/* Admins see which of the team wrote it; everyone else just "Turnupz team". */}

@@ -13,6 +13,7 @@ import Link from "next/link";
 import React, { memo } from "react";
 import { AboutEventCard, YourTicketsCard, useChatTopic } from "./chat-cards";
 import { initials, kindOf } from "./chat-format";
+import GroupInfo from "./group-info";
 import { chatSubtitle } from "./chat-thread";
 
 const Row: React.FC<{ icon: React.ElementType; children: React.ReactNode }> = ({
@@ -38,6 +39,15 @@ const ChatDetails: React.FC<{
   const kind = kindOf(chat);
   const iAmOrganiser = kind !== "PERSON" && !!myId && chat.vendor.id === myId;
   const image = kind === "PERSON" ? chat.person?.image : chat.eventImage;
+
+  // A friends' group: its own info panel.
+  if (kind === "GROUP") {
+    return (
+      <div className="h-full overflow-y-auto bg-secondary-50/50 p-5">
+        <GroupInfo groupId={chat.id} />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full space-y-5 overflow-y-auto p-5">

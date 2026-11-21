@@ -55,7 +55,7 @@ export interface IChatSharedEvent {
 }
 
 /** What kind of chat: an event's group, a chat with an organiser, the Turnupz team, or two people. */
-export type TChatKind = "EVENT_GROUP" | "DIRECT" | "SUPPORT" | "PERSON";
+export type TChatKind = "EVENT_GROUP" | "DIRECT" | "SUPPORT" | "PERSON" | "GROUP";
 
 export interface IEventChatGroup {
   id: string;

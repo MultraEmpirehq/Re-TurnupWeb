@@ -112,6 +112,7 @@ const defaultValues: TFormValues = {
   description: "",
   eventActivities: [],
   coverImage: null,
+  phoneCover: null,
   mediaFiles: [],
   mediaFileIds: [],
   sponsorNames: [],
@@ -180,6 +181,8 @@ const swapUploadedFiles = (form: UseFormReturn<TFormValues>) => {
 
   const cover = uploaded(form.getValues("coverImage"));
   if (cover) form.setValue("coverImage", cover.url);
+  const phone = uploaded(form.getValues("phoneCover"));
+  if (phone) form.setValue("phoneCover", phone.url);
 
   const media = form.getValues("mediaFiles") ?? [];
   if (media.some(uploaded)) {
@@ -361,6 +364,13 @@ const buildEventFormData = async (
   if (body.coverImage instanceof File) {
     const cover = await uploadOnce(body.coverImage, "EVENT_COVER");
     formData.append("coverImageId", cover.id);
+  }
+  // The phone cover: a new one is uploaded; removed, an empty id clears it.
+  if (body.phoneCover instanceof File) {
+    const phone = await uploadOnce(body.phoneCover, "EVENT_COVER");
+    formData.append("phoneCoverImageId", phone.id);
+  } else if (!body.phoneCover) {
+    formData.append("phoneCoverImageId", "");
   }
   // The gallery in its order: saved photos by id, new ones uploaded first.
   const mediaFiles = body.mediaFiles.filter(
@@ -601,6 +611,7 @@ const CreateEvent = () => {
               ),
             })),
             coverImage: draftEvent.image || null,
+            phoneCover: draftEvent.mobileImage || null,
             mediaFiles: draftEvent.medias ?? [],
             mediaFileIds: (draftEvent.mediaDetails ?? []).map(
               (media) => media.id ?? null,
@@ -647,6 +658,10 @@ const CreateEvent = () => {
                 kept.values.coverImage === undefined
                   ? draftEvent.image || null
                   : kept.values.coverImage,
+              phoneCover:
+                kept.values.phoneCover === undefined
+                  ? draftEvent.mobileImage || null
+                  : kept.values.phoneCover,
             });
             activeStepRef.current = kept.step;
             setStep(kept.step);

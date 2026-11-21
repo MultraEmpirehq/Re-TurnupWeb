@@ -13,13 +13,17 @@ import {
   Loader2,
   XCircle,
 } from "lucide-react";
-import React, { memo, useCallback, useState } from "react";
+import React, { memo, useCallback, useEffect, useRef, useState } from "react";
 import QrCamera from "./qr-camera";
 
 type TLogEntry = TScanResult & { code: string; at: number };
 
 /** How long a result stays up before the camera reads again. */
 const RESULT_MS = 2600;
+/** Automatic or tap-to-check, remembered on this device. */
+const TRIGGER_KEY = "turnupz-scan-trigger";
+/** Tap mode: a ticket out of view this long is no longer the one to check. */
+const SEEN_MS = 4000;
 
 /** Reasons staff usually have for letting someone in again; they can write their own. */
 const READMIT_REASONS = [
@@ -72,6 +76,39 @@ const TicketScanner: React.FC<{
   disabledMessage?: string;
 }> = ({ onScan, onReadmit, onScanned, disabled, disabledMessage }) => {
   const [mode, setMode] = useState<"camera" | "manual">("camera");
+  // Automatic: a ticket is checked as soon as the camera reads it. Tap: the
+  // camera reads it, and staff tap "Check ticket" when they're ready (busy
+  // queues, phones passed around). Remembered on this device.
+  const [trigger, setTrigger] = useState<"auto" | "tap">("auto");
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(TRIGGER_KEY) === "tap") setTrigger("tap");
+    } catch {
+      // Starts on automatic.
+    }
+  }, []);
+  const chooseTrigger = (next: "auto" | "tap") => {
+    setTrigger(next);
+    setSeen(null);
+    try {
+      window.localStorage.setItem(TRIGGER_KEY, next);
+    } catch {
+      // Not remembered this time.
+    }
+  };
+  // Tap mode: the ticket the camera can see right now.
+  const [seen, setSeen] = useState<string | null>(null);
+  const seenTimer = useRef<number | null>(null);
+  const onCameraRead = (value: string) => {
+    if (trigger === "auto") {
+      void submit(value);
+      return;
+    }
+    setSeen(value);
+    // Out of view for a few seconds: nothing to check.
+    if (seenTimer.current) window.clearTimeout(seenTimer.current);
+    seenTimer.current = window.setTimeout(() => setSeen(null), SEEN_MS);
+  };
   const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<TLogEntry | null>(null);
@@ -150,6 +187,7 @@ const TicketScanner: React.FC<{
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="flex gap-2" role="tablist" aria-label="How to scan">
         {(
           [
@@ -175,6 +213,31 @@ const TicketScanner: React.FC<{
           </button>
         ))}
       </div>
+      {mode === "camera" && (
+        <div className="inline-flex rounded-full border border-border bg-card p-1" role="radiogroup" aria-label="When to check">
+          {(
+            [
+              { value: "auto", label: "Automatic" },
+              { value: "tap", label: "Tap to check" },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={trigger === option.value}
+              onClick={() => chooseTrigger(option.value)}
+              className={cn(
+                "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                trigger === option.value ? "bg-secondary-800 text-white" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+      </div>
 
       {disabled ? (
         <div className="flex aspect-square max-h-[460px] w-full items-center justify-center rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground sm:aspect-[4/3]">
@@ -183,11 +246,28 @@ const TicketScanner: React.FC<{
       ) : (
         <div className="relative">
           {mode === "camera" ? (
-            <QrCamera
-              paused={pending || !!result}
-              onDetect={submit}
-              className="aspect-square max-h-[460px] w-full sm:aspect-[4/3]"
-            />
+            <div className="space-y-3">
+              <QrCamera
+                paused={pending || (!!result && trigger === "auto")}
+                onDetect={onCameraRead}
+                className="aspect-square max-h-[460px] w-full sm:aspect-[4/3]"
+              />
+              {trigger === "tap" && (
+                <Button
+                  type="button"
+                  className="h-14 w-full rounded-2xl text-base font-bold"
+                  disabled={!seen || pending}
+                  onClick={() => {
+                    if (!seen) return;
+                    const code = seen;
+                    setSeen(null);
+                    return submit(code);
+                  }}
+                >
+                  {seen ? "Check ticket" : "Point the camera at a ticket"}
+                </Button>
+              )}
+            </div>
           ) : (
             <form
               onSubmit={(event) => {

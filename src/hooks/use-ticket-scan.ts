@@ -1,4 +1,4 @@
-import { getData, postData } from "@/api";
+import { getData, patchData, postData } from "@/api";
 import { useQuery } from "@tanstack/react-query";
 
 export type TScanStatus = "approved" | "denied" | "already_checked_in";
@@ -40,7 +40,15 @@ export type TScanSummary = {
   checkedIn: number;
   days: TScanDaySummary[];
   todayDayId: string | null;
+  /** The organiser's choice, in minutes before the start (null: 6 hours). */
+  doorsOpenMinutes?: number | null;
+  /** When doors open for the event, or for today's day. */
+  doorsOpenAt?: string;
 };
+
+/** Choose when doors open: minutes before the start, or null for 6 hours. */
+export const setDoorsOpen = (eventId: string, minutes: number | null) =>
+  patchData(`/event/${eventId}/doors`, { minutes });
 
 export const scanSummaryKey = (eventId?: string) => ["scan-summary", eventId];
 

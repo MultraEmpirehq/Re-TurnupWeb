@@ -14,6 +14,7 @@ import {
   Gift,
   Handshake,
   Headset,
+  Images,
   Inbox,
   Landmark,
   LayoutDashboard,
@@ -157,7 +158,7 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
     department: {
       icon: ShieldCheck,
       accentClassName: "bg-amber-50 text-amber-600",
-      description: "Verifies organisers and deals with reported events.",
+      description: "Verifies organisers and deals with reported events and posts.",
     },
     items: [
       {
@@ -172,6 +173,12 @@ export const ADMIN_NAV_GROUPS: TAdminNavGroup[] = [
         pendingKey: "reports",
         href: `${ADMIN_BASE}/events/reports`,
         icon: Flag,
+        permission: "EVENTS_MODERATE",
+      },
+      {
+        label: "Reported Posts",
+        href: `${ADMIN_BASE}/moderation/posts`,
+        icon: Images,
         permission: "EVENTS_MODERATE",
       },
     ],

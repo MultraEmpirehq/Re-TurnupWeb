@@ -140,6 +140,7 @@ const EventDetails = () => {
       ) : (
         <EventDetailHero
           image={coverImageUrl}
+          mobileImage={data?.mobileImage}
           name={data?.name}
           venueName={data?.venue?.name}
           date={eventDate}

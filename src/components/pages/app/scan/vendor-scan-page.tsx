@@ -1,6 +1,7 @@
 "use client";
 
 import ScanProgress from "@/components/scanning/scan-progress";
+import DoorsOpen from "@/components/scanning/doors-open";
 import TicketScanner from "@/components/scanning/ticket-scanner";
 import { useEvents } from "@/hooks/use-event";
 import {
@@ -36,7 +37,7 @@ const whenOf = (event: IEventDetailsType) =>
 const VendorScanPage = () => {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const { vendorId, isTeamMember } = useActingVendor();
+  const { vendorId, isTeamMember, can } = useActingVendor();
   const { data, isPending } = useEvents(
     { limit: 50, userId: vendorId ?? undefined },
     { enabled: !!vendorId },
@@ -76,6 +77,11 @@ const VendorScanPage = () => {
           new Date(a.date).getTime() - new Date(b.date).getTime(),
       ) as IEventDetailsType[];
   }, [data, doorEvents]);
+
+  const ownIds = useMemo(
+    () => new Set((data?.pages?.flatMap((page) => page?.data || []) ?? []).map((event: IEventDetailsType) => event.id)),
+    [data],
+  );
 
   const [chosenEventId, setChosenEventId] = useState(searchParams.get("event") ?? "");
   // A linked event that isn't one of the scannable ones (a draft, one long over)
@@ -153,6 +159,13 @@ const VendorScanPage = () => {
           </div>
           {summary && (
             <ScanProgress summary={summary} dayId={dayId} onDayChange={setChosenDayId} />
+          )}
+          {summary && (
+            <DoorsOpen
+              summary={summary}
+              // Their own event (not one they only scan at), with "Manage events".
+              canChange={ownIds.has(summary.eventId) && can("EVENTS_MANAGE")}
+            />
           )}
         </aside>
       </div>
